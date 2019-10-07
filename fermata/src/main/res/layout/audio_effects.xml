@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- ====================== Equalizer  ====================== -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/equalizer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="6dp"
+        android:layout_marginTop="12sp"
+        android:layout_marginRight="6dp"
+        android:background="@drawable/group_outline"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <me.aap.fermata.pref.PreferenceView
+            android:id="@+id/equalizer_preset"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="20sp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/focusable"
+            android:focusable="true"
+            app:layout_constraintBottom_toTopOf="@id/equalizer_bands"
+            app:layout_constraintEnd_toStartOf="@id/equalizer_preset_save"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <me.aap.fermata.ui.view.ImageButton
+            android:id="@+id/equalizer_preset_save"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:layout_marginTop="20sp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/focusable"
+            android:focusable="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/save"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/equalizer_preset"
+            app:layout_constraintEnd_toStartOf="@id/equalizer_preset_delete"
+            app:layout_constraintStart_toEndOf="@id/equalizer_preset"
+            app:layout_constraintTop_toTopOf="@id/equalizer_preset" />
+
+        <me.aap.fermata.ui.view.ImageButton
+            android:id="@+id/equalizer_preset_delete"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:layout_marginTop="20sp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/focusable"
+            android:focusable="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/delete"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/equalizer_preset"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/equalizer_preset_save"
+            app:layout_constraintTop_toTopOf="@id/equalizer_preset" />
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:id="@+id/equalizer_bands"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/equalizer_preset" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/equalizer_title"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/app_background"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="@string/equalier"
+        android:textSize="?attr/appGroupOutlineTextSize"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/equalizer_switch"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="?attr/appGroupOutlineTextSize"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:theme="?attr/appEqualizerStyle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <!-- ======================================================== -->
+
+    <!-- ====================== Virtualizer  ====================== -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/virtualizer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="6dp"
+        android:layout_marginTop="18sp"
+        android:layout_marginRight="6dp"
+        android:background="@drawable/group_outline"
+        app:layout_constraintBottom_toTopOf="@id/bass"
+        app:layout_constraintEnd_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/equalizer">
+
+        <me.aap.fermata.pref.PreferenceView
+            android:id="@+id/virtualizer_mode"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="20sp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/focusable"
+            android:focusable="true"
+            app:layout_constraintBottom_toTopOf="@id/virtualizer_seek_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/virtualizer_seek_title"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="8dp"
+            android:lines="1"
+            android:text="@string/strength"
+            android:textSize="?attr/appGroupOutlineTextSize"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/virtualizer_seek"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/virtualizer_mode" />
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:id="@+id/virtualizer_seek"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20sp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/focusable"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toEndOf="@id/virtualizer_seek_title"
+            app:layout_constraintTop_toBottomOf="@id/virtualizer_mode" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/virtualizer_title"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6sp"
+        android:background="@drawable/app_background"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="@string/virtualizer"
+        android:textSize="?attr/appGroupOutlineTextSize"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/equalizer" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/virtualizer_switch"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="?attr/appGroupOutlineTextSize"
+        android:layout_marginTop="6sp"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:theme="?attr/appEqualizerStyle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/equalizer" />
+    <!-- ======================================================== -->
+
+    <!-- ====================== Bass  ====================== -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="6dp"
+        android:layout_marginTop="18sp"
+        android:layout_marginRight="6dp"
+        android:background="@drawable/group_outline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/virtualizer">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/bass_seek_title"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="8dp"
+            android:lines="1"
+            android:text="@string/strength"
+            android:textSize="?attr/appGroupOutlineTextSize"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/bass_seek"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:id="@+id/bass_seek"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20sp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/focusable"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toEndOf="@id/bass_seek_title"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/bass_title"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6sp"
+        android:background="@drawable/app_background"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="@string/bass_boost"
+        android:textSize="?attr/appGroupOutlineTextSize"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/virtualizer" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/bass_switch"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="?attr/appGroupOutlineTextSize"
+        android:layout_marginTop="6sp"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:theme="?attr/appEqualizerStyle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/virtualizer" />
+    <!-- ======================================================== -->
+
+    <!-- ====================== Apply to  ====================== -->
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/apply_to"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="6dp"
+        android:layout_marginTop="18sp"
+        android:layout_marginRight="6dp"
+        android:background="@drawable/group_outline"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bass">
+
+        <me.aap.fermata.pref.PreferenceView
+            android:id="@+id/track"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="18sp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/focusable"
+            android:focusable="true" />
+
+        <me.aap.fermata.pref.PreferenceView
+            android:id="@+id/folder"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="4sp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/focusable"
+            android:focusable="true" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/apply_to_title"
+        style="?attr/appEqualizerStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6sp"
+        android:background="@drawable/app_background"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="@string/apply_to"
+        android:textSize="?attr/appGroupOutlineTextSize"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bass" />
+    <!-- ======================================================== -->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

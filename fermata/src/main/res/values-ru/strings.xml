@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="interface_prefs">Интерфейс</string>
+    <string name="playback_prefs">Управление воспроизведением</string>
+
+    <string name="theme">Тема приложения</string>
+    <string name="theme_sub">Текущая тема: %1$s</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Темная</string>
+    <string name="theme_day_night">День/Ночь</string>
+
+    <string name="hide_bars">Скрывать панели</string>
+    <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
+
+    <string name="fullscreen_mode">Полноэкранный режим</string>
+
+    <string name="rw_ff_click">Назад/Вперед - нажатие</string>
+    <string name="rw_ff_long_click">Назад/Вперед - долгое нажатие</string>
+    <string name="prev_next_long_click">Предыдущий/Следующий - долгое нажатие</string>
+    <string name="play_pause_stop">Стоп при долгом нажати на Воспроизведение/Пауза</string>
+
+    <string name="time">Время</string>
+    <string name="time_unit">Единица времени</string>
+    <string name="time_unit_sub">Текущее знаение: %1$s</string>
+    <string name="time_unit_second">Секунда</string>
+    <string name="time_unit_minute">Минута</string>
+    <string name="time_unit_percent">Процент</string>
+
+    <string name="speed">Скорость</string>
+
+    <string name="audio_effects">Аудио эффекты</string>
+    <string name="equalier">Эквалайзер</string>
+    <string name="preset_name">Название пресета</string>
+    <string name="virtualizer">Виртуалайзер</string>
+    <string name="auto">Авто</string>
+    <string name="binaural">Бинауральный</string>
+    <string name="transaural">Трансауральный</string>
+    <string name="bass_boost">Усиление басов</string>
+    <string name="strength">Уровень</string>
+    <string name="apply_to">Применить к</string>
+
+    <string name="eq_hz">%1$s Гц</string>
+    <string name="eq_khz">%1$s кГц</string>
+
+    <string name="current_track">Текущий трек</string>
+    <string name="current_folder">Текущая папка</string>
+
+    <string name="folders">Папки</string>
+    <string name="favorites">Избранное</string>
+    <string name="playlists">Плейлисты</string>
+    <string name="settings">Настройки</string>
+    <string name="search">Поиск</string>
+    <string name="filter">Фильтр</string>
+    <string name="menu">Меню</string>
+    <string name="exit">Выход</string>
+    <string name="cancel">Отменить</string>
+    <string name="got_to_current">Текущий трек</string>
+
+    <string name="view">Вид</string>
+    <string name="title">Заголовок</string>
+    <string name="subtitle">Подзаголовок</string>
+    <string name="seq_num">Порядковый номер</string>
+    <string name="track_name">Название</string>
+    <string name="file_name">Имя файла</string>
+    <string name="album">Альбом</string>
+    <string name="artist">Исполнитель</string>
+    <string name="duration">Длительность</string>
+
+    <string name="sort_by">Сортировать по</string>
+    <string name="do_not_sort">Не сортировать</string>
+
+    <string name="play">Играть</string>
+    <string name="pause">Пауза</string>
+    <string name="stop">Стоп</string>
+    <string name="prev">Предыдущий</string>
+    <string name="next">Следующй</string>
+    <string name="rewind">Назад</string>
+    <string name="fast_forward">Вперед</string>
+    <string name="repeat">Повторять</string>
+    <string name="repeat_disable">Не повторять</string>
+    <string name="shuffle">Перемешать</string>
+    <string name="shuffle_disable">Не перемешивать</string>
+    <string name="favorites_add">Добавить в избранное</string>
+    <string name="favorites_remove">Удалть из избранного</string>
+
+    <string name="playlist_add">Добавить в плейлист</string>
+    <string name="playlist_remove">Удалть из плейлиста</string>
+    <string name="playlist_create">Создать плейлист</string>
+    <string name="playlist_name">Название плейлиста</string>
+
+    <string name="bookmarks">Закладки</string>
+    <string name="create_bookmark">Создать закладку</string>
+    <string name="remove_bookmark">Удалить закладку</string>
+    <string name="remove_all_bookmarks">Удалить все закладки</string>
+    <string name="bookmark_name">Название</string>
+    <string name="bookmark_time">Время</string>
+
+    <string name="folder_subtitle">Файлов: %1$d. Папок: %2$d.</string>
+    <string name="browsable_subtitle">Треков: %1$d.</string>
+    <string name="add_folder">Добавить папку</string>
+    <string name="select">Выбрать</string>
+    <string name="select_all">Выбрать все</string>
+    <string name="unselect_all">Отменить выбор</string>
+    <string name="loading">Загрузка…</string>
+    <string name="press_back_again">Нажмите кнопку назад еще раз, чтобы выйти</string>
+    <string name="please_restart_app">Пожалуйста, перезапустите приложение</string>
+
+    <string name="eq_manual">Ручные</string>
+    <string name="eq_normal">Номальные</string>
+    <string name="eq_classical">Классика</string>
+    <string name="eq_dance">Танцевальная</string>
+    <string name="eq_flat">Бемоль</string>
+    <string name="eq_folk">Фолк</string>
+    <string name="eq_heavy_metal">Тяжелый металл</string>
+    <string name="eq_hip_hop">Хип-хоп</string>
+    <string name="eq_jazz">Джаз</string>
+    <string name="eq_pop">Поп</string>
+    <string name="eq_rock">Рок</string>
+
+    <string name="err_failed_to_play">Не удалось воспроизвести %s</string>
+    <string name="err_failed_to_play_cause">Не удалось воспроизвести %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">Неподдерживаемый тип источника: %s</string>
+    <string name="err_playlist_exists">Плейлист уже существует: %1$s</string>
+    <string name="err_invalid_playlist_name">Невалидное имя плейлиста: %1$s</string>
+</resources>

@@ -1,0 +1,23 @@
+android {
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        mobile {
+            dimension "version"
+        }
+
+        auto {
+            dimension "version"
+        }
+    }
+}
+
+dependencies {
+    implementation project(':fermata')
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.10.0'
+}

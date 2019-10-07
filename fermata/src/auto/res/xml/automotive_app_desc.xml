@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<automotiveApp xmlns:tools="http://schemas.android.com/tools">
+    <uses
+        name="service"
+        tools:ignore="InvalidUsesTagAttribute" />
+    <uses
+        name="projection"
+        tools:ignore="InvalidUsesTagAttribute" />
+</automotiveApp>

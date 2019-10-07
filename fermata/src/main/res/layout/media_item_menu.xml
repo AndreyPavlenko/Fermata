@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/favorites_add"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/favorite"
+        app:text="@string/favorites_add" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/favorites_remove"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/favorite_filled"
+        app:text="@string/favorites_remove" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/playlist_add"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/playlist_add"
+        app:text="@string/playlist_add" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/playlist_remove"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/playlist_remove"
+        app:text="@string/playlist_remove" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/bookmarks"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/bookmark_filled"
+        app:text="@string/bookmarks" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/create_bookmark"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/bookmark"
+        app:text="@string/create_bookmark" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/repeat_enable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/repeat"
+        app:text="@string/repeat" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/repeat_disable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/repeat_filled"
+        app:text="@string/repeat_disable" />
+
+</merge>

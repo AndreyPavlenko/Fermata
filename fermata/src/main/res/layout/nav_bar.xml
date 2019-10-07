@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <LinearLayout
+        android:id="@+id/nav_folders"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/focusable"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            style="?attr/appNavBarStyle"
+            android:layout_width="24dp"
+            android:layout_height="0dp"
+            android:layout_gravity="center|bottom"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            android:src="@drawable/folder" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?attr/appNavBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:layout_marginBottom="2dp"
+            android:text="@string/folders"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/nav_favorites"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/focusable"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            style="?attr/appNavBarStyle"
+            android:layout_width="24dp"
+            android:layout_height="0dp"
+            android:layout_gravity="center|bottom"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            android:src="@drawable/favorite_filled" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?attr/appNavBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:layout_marginBottom="2dp"
+            android:text="@string/favorites"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/nav_playlist"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/focusable"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            style="?attr/appNavBarStyle"
+            android:layout_width="24dp"
+            android:layout_height="0dp"
+            android:layout_gravity="center|bottom"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            android:src="@drawable/playlist" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?attr/appNavBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:layout_marginBottom="2dp"
+            android:text="@string/playlists"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/nav_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@drawable/focusable"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            style="?attr/appNavBarStyle"
+            android:layout_width="24dp"
+            android:layout_height="0dp"
+            android:layout_gravity="center|bottom"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            android:src="@drawable/menu" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?attr/appNavBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|bottom"
+            android:layout_marginBottom="2dp"
+            android:text="@string/menu"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</merge>

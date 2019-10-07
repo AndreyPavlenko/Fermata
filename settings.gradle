@@ -1,0 +1,3 @@
+rootProject.name='Fermata Music Player'
+include ':fermata'
+include ':exoplayer'

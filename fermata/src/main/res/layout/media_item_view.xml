@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<me.aap.fermata.ui.view.MediaItemView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="?attr/appMediaItemStyle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="1dp"
+    android:background="?attr/appMediaItemBackground"
+    android:focusable="true"
+    android:padding="5dp" />

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Fermata</string>
+    <string name="media_service_name" translatable="false">Fermata</string>
+    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
+    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
+
+    <string name="interface_prefs">Interface</string>
+    <string name="playback_prefs">Playback control</string>
+
+    <string name="theme">Application theme</string>
+    <string name="theme_sub">Current theme: %1$s</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_day_night">Day/Night</string>
+
+    <string name="hide_bars">Hide bars</string>
+    <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
+
+    <string name="fullscreen_mode">Fullscreen mode</string>
+
+    <string name="rw_ff_click">RW/FF - click</string>
+    <string name="rw_ff_long_click">RW/FF - long click</string>
+    <string name="prev_next_long_click">Prev/Next - long click</string>
+    <string name="play_pause_stop">Stop on Play/Pause long click</string>
+
+    <string name="time">Time</string>
+    <string name="time_unit">Time unit</string>
+    <string name="time_unit_sub">Current value: %1$s</string>
+    <string name="time_unit_second">Second</string>
+    <string name="time_unit_minute">Minute</string>
+    <string name="time_unit_percent">Percent</string>
+
+    <string name="speed">Speed</string>
+
+    <string name="audio_effects">Audio effects</string>
+    <string name="equalier">Equalizer</string>
+    <string name="preset_name">Preset name</string>
+    <string name="virtualizer">Virtualizer</string>
+    <string name="auto" translatable="false">Auto</string>
+    <string name="binaural">Binaural</string>
+    <string name="transaural">Transaural</string>
+    <string name="bass_boost">Bass boost</string>
+    <string name="strength">Strength</string>
+    <string name="apply_to">Apply to</string>
+
+    <string name="string_format" translatable="false">%1$s</string>
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">Current track</string>
+    <string name="current_folder">Current folder</string>
+
+    <string name="folders">Folders</string>
+    <string name="favorites">Favorites</string>
+    <string name="playlists">Playlists</string>
+    <string name="search">Search</string>
+    <string name="filter">Filter</string>
+    <string name="settings">Settings</string>
+    <string name="menu">Menu</string>
+    <string name="exit">Exit</string>
+    <string name="cancel">Cancel</string>
+    <string name="got_to_current">Current track</string>
+
+    <string name="view">View</string>
+    <string name="title">Title</string>
+    <string name="subtitle">Subtitle</string>
+    <string name="seq_num">Sequence number</string>
+    <string name="track_name">Name</string>
+    <string name="file_name">File name</string>
+    <string name="album">Album</string>
+    <string name="artist">Artist</string>
+    <string name="duration">Duration</string>
+
+    <string name="sort_by">Sort by</string>
+    <string name="do_not_sort">Do not sort</string>
+
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="prev">Previous</string>
+    <string name="next">Next</string>
+    <string name="rewind">Rewind</string>
+    <string name="fast_forward">Fast forward</string>
+    <string name="repeat">Repeat</string>
+    <string name="repeat_disable">Do not repeat</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="shuffle_disable">Do not shuffle</string>
+    <string name="favorites_add">Add to favorites</string>
+    <string name="favorites_remove">Remove from favorites</string>
+
+    <string name="playlist_add">Add to playlist</string>
+    <string name="playlist_remove">Remove from playlist</string>
+    <string name="playlist_create">Create playlist</string>
+    <string name="playlist_name">Playlist name</string>
+
+    <string name="bookmarks">Bookmarks</string>
+    <string name="create_bookmark">Create bookmark</string>
+    <string name="remove_bookmark">Remove bookmark</string>
+    <string name="remove_all_bookmarks">Remove all bookmarks</string>
+    <string name="bookmark_name">Name</string>
+    <string name="bookmark_time">Time</string>
+
+    <string name="folder_subtitle">Files: %1$d. Folders: %2$d.</string>
+    <string name="browsable_subtitle">Tracks: %1$d.</string>
+    <string name="add_folder">Add folder</string>
+    <string name="select">Select</string>
+    <string name="select_all">Select all</string>
+    <string name="unselect_all">Unselect all</string>
+    <string name="loading">Loading…</string>
+    <string name="press_back_again">Press back button again to exit</string>
+    <string name="please_restart_app">Please restart the application</string>
+
+    <string name="eq_manual">Manual</string>
+    <string name="eq_normal">Normal</string>
+    <string name="eq_classical">Classical</string>
+    <string name="eq_dance">Dance</string>
+    <string name="eq_flat">Flat</string>
+    <string name="eq_folk">Folk</string>
+    <string name="eq_heavy_metal">Heavy Metal</string>
+    <string name="eq_hip_hop">Hip Hop</string>
+    <string name="eq_jazz">Jazz</string>
+    <string name="eq_pop">Pop</string>
+    <string name="eq_rock">Rock</string>
+
+    <string name="err_failed_to_play">Failed to play %s</string>
+    <string name="err_failed_to_play_cause">Failed to play %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">Unsupported source type: %s</string>
+    <string name="err_playlist_exists">Playlist already exists: %1$s</string>
+    <string name="err_invalid_playlist_name">Invalid playlist name: %1$s</string>
+</resources>

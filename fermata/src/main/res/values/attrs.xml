@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="AppMenuItemView">
+        <attr name="icon" format="reference" />
+        <attr name="text" format="reference" />
+        <attr name="checkable" format="boolean" />
+        <attr name="submenu" format="reference" />
+    </declare-styleable>
+</resources>

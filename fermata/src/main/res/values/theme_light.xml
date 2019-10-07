@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme.Light">
+        <item name="appStatusBarColor">#40555E</item>
+        <item name="appNotificationColor">#546e7a</item>
+
+        <item name="appBgColor">#FFEBF5FA</item>
+        <item name="appTextColor">#4E5C61</item>
+        <item name="appIconColor">#7DA1B1</item>
+
+        <item name="appPopupMenuColor">#FFEBF5FA</item>
+        <item name="appPopupMenuHeaderColor">#E1EAEF</item>
+
+        <item name="appToolBarColor">#546e7a</item>
+        <item name="appToolBarTextColor">#FFA3B8C3</item>
+        <item name="appToolBarIconColor">?attr/appToolBarTextColor</item>
+        <item name="appToolBarFilterBgColor">#627C88</item>
+
+        <item name="appMediaItemColor">#E8F1F6</item>
+        <item name="appMediaItemTextColor">?attr/appTextColor</item>
+        <item name="appMediaItemIconColor">?attr/appIconColor</item>
+        <item name="appMediaItemBorderColor">#BCCED8</item>
+        <item name="appMediaItemFocusBorderColor">#4A6E7E</item>
+        <item name="appPlayingMediaItemColor">#8CB9CD</item>
+        <item name="appPlayingMediaItemTextColor">#435861</item>
+        <item name="appPlayingMediaItemIconColor">#4A6E7E</item>
+        <item name="appPlayingMediaItemBorderColor">#8CB9CD</item>
+
+        <item name="appSeekBarBgTint">#495255</item>
+    </style>
+
+</resources>

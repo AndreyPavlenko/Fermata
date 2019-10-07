@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <include layout="@layout/menu_item" />
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        style="?attr/appPopupMenuStyle"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="end"
+        android:layout_marginStart="5dp"
+        android:gravity="center_horizontal" />
+</merge>

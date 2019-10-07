@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="playlist_create" type="id" />
+    <item name="playlist_add_item" type="id" />
+    <item name="bookmark_select" type="id" />
+    <item name="bookmark_remove" type="id" />
+    <item name="bookmark_remove_all" type="id" />
+    <item name="bookmark_remove_all_confirm" type="id" />
+</resources>

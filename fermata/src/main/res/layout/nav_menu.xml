@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_got_to_current"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/go_to_current"
+        app:text="@string/got_to_current" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_add_folder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/add_folder"
+        app:text="@string/add_folder" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_select"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/check_box"
+        app:text="@string/select" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_select_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/check_box"
+        app:text="@string/select_all" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_unselect_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/check_box_blank"
+        app:text="@string/unselect_all" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_favorites_add"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/favorite"
+        app:text="@string/favorites_add" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_favorites_remove"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/favorite_filled"
+        app:text="@string/favorites_remove" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/playlist_add"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/playlist_add"
+        app:text="@string/playlist_add" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_playlist_remove"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/playlist_remove"
+        app:text="@string/playlist_remove" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/settings"
+        app:text="@string/settings" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/nav_exit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/exit"
+        app:text="@string/exit" />
+
+</merge>

@@ -1,0 +1,2 @@
+-keepattributes LineNumberTable,SourceFile
+-keep class me.aap.** { *; }
