@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.apps.auto.sdk.CarActivity;
+import com.google.android.apps.auto.sdk.CarUiController;
 
 import java.util.function.BiConsumer;
 
@@ -38,6 +39,10 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 		super.onCreate(savedInstanceState);
 		delegate = MainActivityDelegate.create(this);
 		delegate.onActivityCreate();
+
+		CarUiController ctrl = getCarUiController();
+		ctrl.getStatusBarController().hideAppHeader();
+		ctrl.getMenuController().hideMenuButton();
 	}
 
 	@Override

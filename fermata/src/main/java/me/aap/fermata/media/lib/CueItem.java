@@ -103,7 +103,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 					if (!name.equals(fileName)) {
 						fileName = name;
 						file = dir.getChild(name);
-						isVideo = Utils.isVideoFile(file.getName());
+						isVideo = (file != null) && Utils.isVideoFile(file.getName());
 					}
 				}
 			}

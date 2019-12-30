@@ -82,6 +82,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	private View controlPanel;
 	@Nullable
 	private SurfaceView surface;
+	@Nullable
+	private TextView title;
 	private boolean surfaceCreated;
 
 	private FermataServiceUiBinder(@NonNull Context ctx, @NonNull BiConsumer<FermataServiceUiBinder, Throwable> resultHandler) {
@@ -249,6 +251,11 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		if ((currentItem != null) && currentItem.isVideo()) surface.setVisibility(VISIBLE);
 	}
 
+	public void bindTitle(TextView title) {
+		this.title = title;
+		title.setText((currentItem == null) ? "" : currentItem.getTitle());
+	}
+
 	public void bound() {
 		bound = true;
 		callback.onPlaybackStateChanged(mediaController.getPlaybackState());
@@ -262,12 +269,15 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		if (progressBar != null) progressBar.setOnSeekBarChangeListener(null);
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
 		playPauseButton = prevButton = nextButton = rwButton = ffButton = null;
+		controlPanel = null;
+		title = null;
 
 		if (surface != null) {
 			surface.getHolder().removeCallback(this);
 			MediaEngine eng = sessionCallback.getEngine();
 			if (eng != null) eng.setSurface(null);
 			surface.setVisibility(GONE);
+			surface = null;
 		}
 	}
 
@@ -424,6 +434,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			if (!Objects.equals(currentItem, i)) {
 				PlayableItem old = currentItem;
 				currentItem = i;
+				if (title != null) title.setText((i == null) ? "" : i.getTitle());
 				fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
 			}
 

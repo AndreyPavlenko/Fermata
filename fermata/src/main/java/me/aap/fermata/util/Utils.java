@@ -11,7 +11,6 @@ import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.system.Os;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 import android.widget.EditText;
@@ -305,9 +304,7 @@ public class Utils {
 	}
 
 	public static int toPx(int dp) {
-		DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
-		float px = dp * (metrics.densityDpi / 160f);
-		return Math.round(px);
+		return Math.round(dp * Resources.getSystem().getDisplayMetrics().density);
 	}
 
 	private static final class HexTable {

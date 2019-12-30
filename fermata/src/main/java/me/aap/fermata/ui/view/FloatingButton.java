@@ -37,6 +37,7 @@ public class FloatingButton extends FloatingActionButton implements OnClickListe
 		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.FRAGMENT_CHANGED,
 				Event.FRAGMENT_CONTENT_CHANGED, Event.BACK_PRESSED, Event.VIDEO_MODE_ON,
 				Event.VIDEO_MODE_OFF);
+		if(a.isVideoMode()) setVisibility(GONE);
 	}
 
 	@Override

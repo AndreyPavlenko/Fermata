@@ -1,19 +1,15 @@
 package me.aap.fermata.media.service;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
 import android.media.audiofx.Virtualizer;
 import android.media.session.PlaybackState;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.media.MediaMetadataCompat;
@@ -24,6 +20,9 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
+import androidx.media.AudioAttributesCompat;
+import androidx.media.AudioFocusRequestCompat;
+import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
 import java.util.Collection;
@@ -114,8 +113,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private final PlaybackControlPrefs playbackControlPrefs;
 	private final Handler handler;
 	private final AudioManager audioManager;
-	@TargetApi(Build.VERSION_CODES.O)
-	private final AudioFocusRequest audioFocusReq;
+	private final AudioFocusRequestCompat audioFocusReq;
 	private final PlaybackStateCompat.CustomAction customRewind;
 	private final PlaybackStateCompat.CustomAction customFastForward;
 	private final PlaybackStateCompat.CustomAction customRepeatEnable;
@@ -163,18 +161,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			if (audioManager != null) {
-				AudioAttributes focusAttrs = new AudioAttributes.Builder()
-						.setUsage(AudioAttributes.USAGE_MEDIA)
-						.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-						.build();
-				audioFocusReq = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-						.setOnAudioFocusChangeListener(this).setAcceptsDelayedFocusGain(false)
-						.setAudioAttributes(focusAttrs).build();
-			} else {
-				audioFocusReq = null;
-			}
+		if (audioManager != null) {
+			AudioAttributesCompat focusAttrs = new AudioAttributesCompat.Builder()
+					.setUsage(AudioAttributesCompat.USAGE_MEDIA)
+					.setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC)
+					.build();
+			audioFocusReq = new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
+					.setAudioAttributes(focusAttrs)
+					.setWillPauseWhenDucked(false)
+					.setOnAudioFocusChangeListener(this)
+					.build();
 		} else {
 			audioFocusReq = null;
 		}
@@ -875,18 +871,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	private boolean requestAudioFocus() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			return (audioManager == null) ||
-					(audioManager.requestAudioFocus(audioFocusReq) == AUDIOFOCUS_REQUEST_GRANTED);
-		} else {
-			return true;
-		}
+		return (audioManager == null) ||
+				(AudioManagerCompat.requestAudioFocus(audioManager, audioFocusReq) == AUDIOFOCUS_REQUEST_GRANTED);
 	}
 
 	private void releaseAudioFocus() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			if (audioManager != null) audioManager.abandonAudioFocusRequest(audioFocusReq);
-		}
+		if (audioManager != null)
+			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
 	}
 
 	private Runnable timer;

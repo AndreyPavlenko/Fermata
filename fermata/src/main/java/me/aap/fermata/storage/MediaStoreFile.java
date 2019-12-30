@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.util.Utils;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * @author Andrey Pavlenko
  */
@@ -80,6 +82,6 @@ class MediaStoreFile implements MediaFile {
 
 	@NonNull
 	MediaStoreFile getRoot() {
-		return getParent().getRoot();
+		return requireNonNull(getParent()).getRoot();
 	}
 }

@@ -46,7 +46,7 @@ class FsFile implements MediaFile {
 
 		f = f.getParentFile();
 
-		for (MediaFile p = msFile.getParent(); f != null; p = p.getParent(), f = f.getParentFile()) {
+		for (MediaFile p = msFile.getParent(); (p != null) && (f != null); p = p.getParent(), f = f.getParentFile()) {
 			if (p == msDir) {
 				try {
 					path = f.getCanonicalPath();
@@ -151,6 +151,7 @@ class FsFile implements MediaFile {
 	@NonNull
 	RootFsFile getRoot(List<FsFile> parents) {
 		FsFile p = getParent();
+		assert p != null;
 		parents.add(p);
 		return p.getRoot(parents);
 	}

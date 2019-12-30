@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
@@ -46,13 +47,12 @@ import me.aap.fermata.ui.menu.AppMenuItem;
  */
 public class ControlPanelView extends LinearLayoutCompat implements MainActivityListener,
 		PreferenceStore.Listener, AppMenu.SelectionHandler {
-	private static final byte STATE_ACTIVE = 1;
-	private static final byte STATE_HIDDEN = 2;
 	@ColorInt
 	private final int outlineColor;
 	private final ImageButton showHideBars;
-	private byte state;
+	private boolean enabled;
 	private Runnable showHideTimer;
+	private TextView videoText;
 
 	@SuppressLint("PrivateResource")
 	public ControlPanelView(Context context, AttributeSet attrs) {
@@ -74,9 +74,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		findViewById(R.id.seek_time).setOnClickListener(this::showHideBars);
 		findViewById(R.id.seek_menu).setOnClickListener(this::showMenu);
 		findViewById(R.id.seek_total).setOnClickListener(this::showMenu);
-
 		setShowHideBarsIcon(a);
-		showHide();
 	}
 
 	@Nullable
@@ -84,7 +82,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	protected Parcelable onSaveInstanceState() {
 		Parcelable parentState = super.onSaveInstanceState();
 		Bundle b = new Bundle();
-		b.putByte("STATE", state);
+		b.putBoolean("ENABLED", enabled);
 		b.putParcelable("PARENT", parentState);
 		return b;
 	}
@@ -94,16 +92,13 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	protected void onRestoreInstanceState(Parcelable st) {
 		if (st instanceof Bundle) {
 			Bundle b = (Bundle) st;
-			this.state = b.getByte("STATE");
 			super.onRestoreInstanceState(b.getParcelable("PARENT"));
-			if ((state & STATE_ACTIVE) == 0) super.setVisibility(GONE);
-			setShowHideBarsIcon(getActivity());
-			showHide();
+			if (b.getBoolean("ENABLED")) setVisibility(VISIBLE);
 		}
 	}
 
 	public void bind(FermataServiceUiBinder b) {
-		VideoView surface = getActivity().findViewById(R.id.video);
+		VideoView video = getActivity().findViewById(R.id.video);
 		b.bindControlPanel(this);
 		b.bindPrevButton(findViewById(R.id.control_prev));
 		b.bindRwButton(findViewById(R.id.control_rw));
@@ -113,7 +108,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		b.bindProgressBar(findViewById(R.id.seek_bar));
 		b.bindProgressTime(findViewById(R.id.seek_time));
 		b.bindProgressTotal(findViewById(R.id.seek_total));
-		b.bindSurface(surface.getSurface());
+		b.bindSurface(video.getSurface());
+		b.bindTitle(videoText = video.getTitle());
 		b.bound();
 	}
 
@@ -130,27 +126,37 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent e) {
+		if (showHideTimer != null) startHideTimer();
 		return getActivity().interceptTouchEvent(e, super::onTouchEvent);
+	}
+
+	@SuppressLint("ClickableViewAccessibility")
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		// Intercept touch events to prevent video surface touch through the panel
+		return true;
 	}
 
 	@Override
 	public void setVisibility(int visibility) {
 		if (visibility == VISIBLE) {
-			if ((state & STATE_ACTIVE) != 0) return;
+			if (enabled) return;
 
 			MainActivityDelegate a = getActivity();
-			state |= STATE_ACTIVE;
+			boolean video = a.isVideoMode();
+			enabled = true;
 			super.setVisibility(VISIBLE);
 
-			if (a.isVideoMode() || a.getPrefs().getHideBarsPref()) {
+			if (video || a.getPrefs().getHideBarsPref()) {
 				a.setBarsHidden(true);
 				setShowHideBarsIcon(a);
+				if (video) startHideTimer();
 			}
 		} else {
-			if ((state & STATE_ACTIVE) == 0) return;
+			if (!enabled) return;
 
 			MainActivityDelegate a = getActivity();
-			state &= ~STATE_ACTIVE;
+			enabled = false;
 			super.setVisibility(GONE);
 
 			if (a.isBarsHidden()) {
@@ -160,29 +166,17 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	private void showHide() {
-		showHideTimer = null;
-		boolean videoMode = getActivity().isVideoMode();
-
-		if (videoMode) {
-			if ((state & STATE_HIDDEN) != 0) {
-				state &= ~STATE_HIDDEN;
-				super.setVisibility(VISIBLE);
-				showHideTimer = new Runnable() {
-					@Override
-					public void run() {
-						if (showHideTimer == this) showHide();
-					}
-				};
-				FermataApplication.get().getHandler().postDelayed(showHideTimer, 5000);
-			} else {
-				state |= STATE_HIDDEN;
-				super.setVisibility(GONE);
+	private void startHideTimer() {
+		showHideTimer = new Runnable() {
+			@Override
+			public void run() {
+				if ((showHideTimer == this) && enabled) {
+					if (videoText != null) videoText.setVisibility(GONE);
+					ControlPanelView.super.setVisibility(GONE);
+				}
 			}
-		} else if ((state & STATE_HIDDEN) != 0) {
-			state &= ~STATE_HIDDEN;
-			if ((state & STATE_ACTIVE) != 0) super.setVisibility(VISIBLE);
-		}
+		};
+		FermataApplication.get().getHandler().postDelayed(showHideTimer, 5000);
 	}
 
 	@Override
@@ -195,15 +189,22 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				case VIDEO_MODE_ON:
 					a.setBarsHidden(true);
 					setShowHideBarsIcon(a);
-					showHide();
+					startHideTimer();
 					break;
 				case VIDEO_MODE_OFF:
-					a.setBarsHidden(((state & STATE_ACTIVE) != 0) && a.getPrefs().getHideBarsPref());
+					showHideTimer = null;
+					a.setBarsHidden(enabled && a.getPrefs().getHideBarsPref());
 					setShowHideBarsIcon(a);
-					showHide();
 					break;
 				case VIDEO_SURFACE_TOUCH:
-					showHide();
+					if (getVisibility() == VISIBLE) {
+						super.setVisibility(GONE);
+						if (videoText != null) videoText.setVisibility(GONE);
+					} else {
+						startHideTimer();
+						super.setVisibility(VISIBLE);
+						if (videoText != null) videoText.setVisibility(VISIBLE);
+					}
 					break;
 			}
 		}
@@ -215,7 +216,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			MainActivityDelegate a = getActivity();
 
 			if (a.getPrefs().getHideBarsPref()) {
-				a.setBarsHidden((state & STATE_ACTIVE) != 0);
+				a.setBarsHidden(enabled);
 				setShowHideBarsIcon(a);
 			} else if (a.isBarsHidden()) {
 				a.setBarsHidden(false);

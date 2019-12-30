@@ -9,10 +9,12 @@ import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.Window;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.util.Utils;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -52,10 +54,20 @@ public class VideoView extends FrameLayout {
 				}
 			}
 		});
+
+		TextView text = new TextView(context);
+		text.setPadding(Utils.toPx(10), Utils.toPx(10), Utils.toPx(10), 0);
+		text.setTextSize(20);
+		text.setTextColor(Color.WHITE);
+		addView(text);
 	}
 
 	public SurfaceView getSurface() {
 		return (SurfaceView) getChildAt(0);
+	}
+
+	public TextView getTitle() {
+		return (TextView) getChildAt(1);
 	}
 
 	@SuppressLint("ClickableViewAccessibility")

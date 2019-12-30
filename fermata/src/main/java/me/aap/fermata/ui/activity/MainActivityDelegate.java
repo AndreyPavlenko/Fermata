@@ -323,6 +323,8 @@ public class MainActivityDelegate extends Fragment implements
 	}
 
 	public void setVideoMode(boolean videoMode) {
+		if(this.videoMode == videoMode) return;
+
 		if (videoMode) {
 			this.videoMode = true;
 			setSystemUiVisibility();
