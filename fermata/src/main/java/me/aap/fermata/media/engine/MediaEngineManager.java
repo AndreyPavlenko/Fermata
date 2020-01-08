@@ -15,7 +15,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
  */
 public class MediaEngineManager {
 	private final List<MediaEngineProvider> providers;
-	private MediaEngineProvider prefered;
+	private final MediaEngineProvider prefered;
 
 	public MediaEngineManager(Context ctx) {
 		this.providers = new ArrayList<>(2);

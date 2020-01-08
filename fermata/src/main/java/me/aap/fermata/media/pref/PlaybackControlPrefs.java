@@ -5,9 +5,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
-import java.util.function.Supplier;
 
 import me.aap.fermata.pref.SharedPreferenceStore;
 import me.aap.fermata.util.BasicEventBroadcaster;

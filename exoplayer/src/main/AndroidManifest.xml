@@ -10,5 +10,7 @@
         </dist:delivery>
         <dist:fusing dist:include="false" />
     </dist:module>
+
+    <application android:hasCode="false" />
 </manifest>
 

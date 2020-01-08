@@ -14,6 +14,7 @@ import com.google.android.apps.auto.sdk.CarUiController;
 import java.util.function.BiConsumer;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.AppActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.menu.AppMenu;
@@ -54,7 +55,14 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		getMainActivityDelegate().onActivityDestroy();
+
+		MainActivityDelegate a = getMainActivityDelegate();
+
+		if (a != null) {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			if (b != null) b.getMediaSessionCallback().onPause();
+			a.onActivityDestroy();
+		}
 	}
 
 	@Override

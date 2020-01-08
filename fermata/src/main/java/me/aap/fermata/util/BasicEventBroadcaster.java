@@ -7,7 +7,7 @@ import java.util.LinkedList;
  * @author Andrey Pavlenko
  */
 public class BasicEventBroadcaster<L> implements EventBroadcaster<L> {
-	private Collection<ListenerRef<L>> listeners = new LinkedList<>();
+	private final Collection<ListenerRef<L>> listeners = new LinkedList<>();
 
 	@Override
 	public Collection<ListenerRef<L>> getBroadcastEventListeners() {

@@ -144,7 +144,10 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 
 	@Override
 	public boolean isRootPage() {
-		BrowsableItem p = getAdapter().getParent();
+		ListAdapter a = getAdapter();
+		if (a == null) return true;
+
+		BrowsableItem p = a.getParent();
 		return (p == null) || (p.getParent() == null);
 	}
 

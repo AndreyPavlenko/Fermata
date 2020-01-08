@@ -105,7 +105,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			| ACTION_SKIP_TO_PREVIOUS | ACTION_SKIP_TO_NEXT | ACTION_SKIP_TO_QUEUE_ITEM
 			| ACTION_REWIND | ACTION_FAST_FORWARD | ACTION_SEEK_TO
 			| ACTION_SET_REPEAT_MODE | ACTION_SET_SHUFFLE_MODE;
-	private Collection<ListenerRef<MediaSessionCallback.Listener>> listeners = new LinkedList<>();
+	private final Collection<ListenerRef<MediaSessionCallback.Listener>> listeners = new LinkedList<>();
 	private final MediaLib lib;
 	private final FermataMediaService service;
 	private final MediaSessionCompat session;

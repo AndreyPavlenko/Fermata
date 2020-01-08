@@ -367,7 +367,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		private class PrefStore extends BasicPreferenceStore {
 			final Pref<BooleanSupplier> TRACK = Pref.b("TRACK", false);
 			final Pref<BooleanSupplier> FOLDER = Pref.b("FOLDER", false);
-			private MediaSessionCallback cb = getActivity().getMediaServiceBinder().getMediaSessionCallback();
+			private final MediaSessionCallback cb = getActivity().getMediaServiceBinder().getMediaSessionCallback();
 			private final Item item;
 
 			PrefStore(Item item) {

@@ -300,12 +300,16 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			TextView max = bandView.findViewById(R.id.eq_band_max);
 			float freq = (float) eq.getCenterFreq(i) / 1000;
 			short band = i;
-			SeekBarListener listener = (s, p, u) -> eqBandChanged(eq, band, p, u);
 			sb.setMax(sbMax);
 			sb.setProgress(eq.getBandLevel(i) - range[0]);
-			sb.setOnSeekBarChangeListener(listener);
 			min.setText(minText);
 			max.setText(maxText);
+			sb.setOnSeekBarChangeListener(new SeekBarListener() {
+				@Override
+				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+					eqBandChanged(eq, band, progress, fromUser);
+				}
+			});
 
 			if (freq >= 1000) {
 				freq /= 1000;
@@ -349,8 +353,12 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 	private void configureSeek(SeekBar sb, IntSupplier get, ShortConsumer set) {
 		sb.setMax(1000);
 		sb.setProgress(get.getAsInt());
-		SeekBarListener l = (s, p, u) -> set.accept((short) p);
-		sb.setOnSeekBarChangeListener(l);
+		sb.setOnSeekBarChangeListener(new SeekBarListener() {
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				set.accept((short) progress);
+			}
+		});
 	}
 
 	private void eqBandChanged(Equalizer eq, short band, int progress, boolean fromUser) {
@@ -510,11 +518,11 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 		}
 	}
 
-	private interface SeekBarListener extends SeekBar.OnSeekBarChangeListener {
-		default void onStartTrackingTouch(SeekBar seekBar) {
+	private static abstract class SeekBarListener implements SeekBar.OnSeekBarChangeListener {
+		public void onStartTrackingTouch(SeekBar seekBar) {
 		}
 
-		default void onStopTrackingTouch(SeekBar seekBar) {
+		public void onStopTrackingTouch(SeekBar seekBar) {
 		}
 	}
 }

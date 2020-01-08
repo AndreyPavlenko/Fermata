@@ -64,8 +64,7 @@ public interface EventBroadcaster<L> {
 	}
 
 	class ListenerRef<L> extends WeakReference<L> {
-		private long mask;
-
+		private final long mask;
 
 		public ListenerRef(L listener, long eventMask) {
 			super(listener);
