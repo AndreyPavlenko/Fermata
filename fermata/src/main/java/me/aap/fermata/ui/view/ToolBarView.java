@@ -41,8 +41,8 @@ public class ToolBarView extends ConstraintLayout implements TextWatcher, MainAc
 		MainActivityDelegate a = getActivity();
 		setTitle(a);
 		setToolsVisibility(a);
-		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.SHOW_BARS, Event.HIDE_BARS,
-				Event.FRAGMENT_CHANGED, Event.FRAGMENT_CONTENT_CHANGED);
+		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.FRAGMENT_CHANGED,
+				Event.FRAGMENT_CONTENT_CHANGED);
 		if (a.isBarsHidden()) setVisibility(GONE);
 
 		if (getActivity().isCarActivity()) filerButton.setVisibility(GONE);
@@ -58,6 +58,17 @@ public class ToolBarView extends ConstraintLayout implements TextWatcher, MainAc
 
 	public Pattern getFilter() {
 		return filter;
+	}
+
+	public boolean onBackPressed() {
+		EditText filter = getFilterEdit();
+
+		if (filter.getVisibility() != GONE) {
+			hideFilter();
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private void setFilter(String text) {
@@ -281,10 +292,6 @@ public class ToolBarView extends ConstraintLayout implements TextWatcher, MainAc
 	public void onMainActivityEvent(MainActivityDelegate a, Event e) {
 		if (!handleActivityFinishEvent(a, e)) {
 			switch (e) {
-				case SHOW_BARS:
-				case HIDE_BARS:
-					setVisibility((e == Event.SHOW_BARS) ? VISIBLE : GONE);
-					break;
 				case FRAGMENT_CHANGED:
 					setToolsVisibility(a);
 				case FRAGMENT_CONTENT_CHANGED:

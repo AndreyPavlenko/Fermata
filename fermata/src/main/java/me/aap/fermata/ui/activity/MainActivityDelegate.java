@@ -46,13 +46,16 @@ import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
+import me.aap.fermata.ui.fragment.VideoFragment;
 import me.aap.fermata.ui.menu.AppMenu;
 import me.aap.fermata.ui.view.ControlPanelView;
+import me.aap.fermata.ui.view.FloatingButton;
 import me.aap.fermata.ui.view.NavBarView;
 import me.aap.fermata.ui.view.ToolBarView;
 import me.aap.fermata.util.EventBroadcaster;
 import me.aap.fermata.util.Utils;
 
+import static android.view.View.GONE;
 import static android.view.View.SYSTEM_UI_FLAG_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 import static android.view.View.SYSTEM_UI_FLAG_IMMERSIVE;
@@ -62,21 +65,19 @@ import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 import static android.view.View.SYSTEM_UI_FLAG_LOW_PROFILE;
 import static android.view.View.SYSTEM_UI_FLAG_VISIBLE;
+import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
 import static me.aap.fermata.ui.activity.MainActivityListener.Event.ACTIVITY_FINISH;
 import static me.aap.fermata.ui.activity.MainActivityListener.Event.FRAGMENT_CHANGED;
-import static me.aap.fermata.ui.activity.MainActivityListener.Event.HIDE_BARS;
-import static me.aap.fermata.ui.activity.MainActivityListener.Event.SHOW_BARS;
-import static me.aap.fermata.ui.activity.MainActivityListener.Event.VIDEO_MODE_OFF;
-import static me.aap.fermata.ui.activity.MainActivityListener.Event.VIDEO_MODE_ON;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MainActivityDelegate extends Fragment implements
-		EventBroadcaster<MainActivityListener>, PreferenceStore.Listener {
+		EventBroadcaster<MainActivityListener>, PreferenceStore.Listener,
+		FermataServiceUiBinder.Listener {
 	private static final int FULLSCREEN_FLAGS = SYSTEM_UI_FLAG_LAYOUT_STABLE |
 			SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
 			SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
@@ -92,6 +93,8 @@ public class MainActivityDelegate extends Fragment implements
 	private FermataServiceUiBinder mediaServiceBinder;
 	private ToolBarView toolBar;
 	private NavBarView navBar;
+	private ControlPanelView controlPanel;
+	private FloatingButton floatingButton;
 	private AppMenu activeMenu;
 	private boolean bind = true;
 	private boolean backPressed;
@@ -166,7 +169,10 @@ public class MainActivityDelegate extends Fragment implements
 	}
 
 	public void onActivityFinish() {
-		if (mediaServiceBinder != null) FermataApplication.get().unbindService(mediaServiceBinder);
+		if (mediaServiceBinder != null) {
+			mediaServiceBinder.removeBroadcastListener(this);
+			FermataApplication.get().unbindService(mediaServiceBinder);
+		}
 	}
 
 	public void finish() {
@@ -309,33 +315,41 @@ public class MainActivityDelegate extends Fragment implements
 		return toolBar;
 	}
 
+	public ControlPanelView getControlPanel() {
+		return controlPanel;
+	}
+
+	public FloatingButton getFloatingButton() {
+		return floatingButton;
+	}
+
 	public boolean isBarsHidden() {
 		return barsHidden;
 	}
 
-	public boolean isVideoMode() {
-		return videoMode;
-	}
-
 	public void setBarsHidden(boolean barsHidden) {
 		this.barsHidden = barsHidden;
-		fireBroadcastEvent(barsHidden ? HIDE_BARS : SHOW_BARS);
+		int visibility = barsHidden ? GONE : VISIBLE;
+		getToolBar().setVisibility(visibility);
+		getNavBar().setVisibility(visibility);
 	}
 
 	public void setVideoMode(boolean videoMode) {
-		if(this.videoMode == videoMode) return;
-
 		if (videoMode) {
 			this.videoMode = true;
 			setSystemUiVisibility();
-			fireBroadcastEvent(VIDEO_MODE_ON);
 			getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
+			getControlPanel().enableVideoMode();
 		} else {
 			this.videoMode = false;
 			setSystemUiVisibility();
-			fireBroadcastEvent(VIDEO_MODE_OFF);
 			getWindow().clearFlags(FLAG_KEEP_SCREEN_ON);
+			getControlPanel().disableVideoMode();
 		}
+	}
+
+	public boolean isVideoMode() {
+		return videoMode;
 	}
 
 	@NonNull
@@ -393,6 +407,8 @@ public class MainActivityDelegate extends Fragment implements
 				return new SettingsFragment();
 			case R.id.audio_effects:
 				return new AudioEffectsFragment();
+			case R.id.video:
+				return new VideoFragment();
 			default:
 				throw new IllegalArgumentException("Invalid fragment id: " + id);
 		}
@@ -549,6 +565,8 @@ public class MainActivityDelegate extends Fragment implements
 			return;
 		}
 
+		if (getToolBar().onBackPressed()) return;
+
 		MainActivityFragment f = getActiveFragment();
 
 		if (f != null) {
@@ -577,8 +595,9 @@ public class MainActivityDelegate extends Fragment implements
 		a.setContentView(a.getContentView());
 		toolBar = a.findViewById(R.id.tool_bar);
 		navBar = a.findViewById(R.id.nav_bar);
-		ControlPanelView p = findViewById(R.id.control_panel);
-		p.bind(getMediaServiceBinder());
+		controlPanel = a.findViewById(R.id.control_panel);
+		floatingButton = a.findViewById(R.id.floating_button);
+		controlPanel.bind(getMediaServiceBinder());
 	}
 
 	private void onMediaServiceBind(FermataServiceUiBinder b, Throwable err) {
@@ -595,6 +614,11 @@ public class MainActivityDelegate extends Fragment implements
 
 			if (!goToCurrent()) showFragment(R.id.nav_folders);
 			a.checkPermissions(getRequiredPermissions());
+
+			FermataApplication.get().getHandler().post(() -> {
+				b.addBroadcastListener(this);
+				onPlayableChanged(null, b.getCurrentItem());
+			});
 		} else {
 			Log.e(getClass().getName(), err.getMessage(), err);
 			new AlertDialog.Builder(a.getContext())
@@ -626,6 +650,11 @@ public class MainActivityDelegate extends Fragment implements
 		} else if (prefs.contains(MainActivityPrefs.FULLSCREEN)) {
 			setSystemUiVisibility();
 		}
+	}
+
+	@Override
+	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
+		if ((newItem != null) && newItem.isVideo()) showFragment(R.id.video);
 	}
 
 	private static final class Prefs implements MainActivityPrefs {

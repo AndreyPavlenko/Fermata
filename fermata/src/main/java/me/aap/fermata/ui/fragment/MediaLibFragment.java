@@ -288,7 +288,10 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 			discardSelection();
 
 			if (i instanceof PlayableItem) {
-				getMediaServiceBinder().playItem((PlayableItem) i);
+				PlayableItem pi = (PlayableItem) i;
+				MainActivityDelegate a = getMainActivity();
+				a.getMediaServiceBinder().playItem((PlayableItem) i);
+				if (pi.isVideo()) a.showFragment(R.id.video);
 			} else {
 				super.onClick(v);
 			}

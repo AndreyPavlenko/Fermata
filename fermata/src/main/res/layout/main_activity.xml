@@ -59,7 +59,6 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:nextFocusUp="@id/app_back"
-        android:paddingTop="4dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         app:layout_constraintBottom_toTopOf="@id/control_panel"
         app:layout_constraintEnd_toEndOf="parent"
@@ -69,7 +68,7 @@
         tools:context="MainActivity" />
 
     <me.aap.fermata.ui.view.FloatingButton
-        android:id="@+id/add_folder_fab"
+        android:id="@+id/floating_button"
         style="?attr/appFloatingButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -78,17 +77,6 @@
         android:elevation="10dp"
         app:layout_constraintBottom_toTopOf="@id/control_panel"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <me.aap.fermata.ui.view.VideoView
-        android:id="@+id/video"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_weight="1" />
 
     <me.aap.fermata.ui.view.ControlPanelView
         android:id="@+id/control_panel"

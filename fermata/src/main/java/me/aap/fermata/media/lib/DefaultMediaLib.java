@@ -166,8 +166,25 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public void setLastPlayed(PlayableItem i, long position) {
-		BrowsableItemPrefs p = i.getParent().getPrefs();
-		String id = i.getId();
+		String id;
+		BrowsableItemPrefs p;
+
+		if ((i.getDuration() - position) <= 1000) {
+			PlayableItem next = i.getNextPlayable();
+			position = 0;
+
+			if (next == null) {
+				id = i.getId();
+				p = i.getParent().getPrefs();
+			} else {
+				id = next.getId();
+				p = next.getParent().getPrefs();
+			}
+		} else {
+			id = i.getId();
+			p = i.getParent().getPrefs();
+		}
+
 		setLastPlayedItemPref(id);
 		setLastPlayedPosPref(position);
 		p.setLastPlayedItemPref(id);

@@ -25,7 +25,9 @@ import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,6 +44,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.pref.PreferenceStore;
+import me.aap.fermata.ui.view.VideoView;
 import me.aap.fermata.util.EventBroadcaster;
 import me.aap.fermata.util.Utils;
 
@@ -128,6 +131,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private boolean playOnAudioFocus;
 	@NonNull
 	private PlaybackStateCompat currentState;
+	private List<VideoViewWraper> videoView;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
 															MediaEngineManager engineManager,
@@ -216,6 +220,40 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		return engine;
 	}
 
+	public void addVideoView(VideoView view, int priority) {
+		if (this.videoView == null) {
+			videoView = new ArrayList<>(2);
+			videoView.add(new VideoViewWraper(view, priority));
+		} else {
+			for (VideoViewWraper s : videoView) {
+				if (s.view == view) return;
+			}
+
+			videoView.add(new VideoViewWraper(view, priority));
+			Collections.sort(videoView);
+		}
+
+		if (engine != null) {
+			PlayableItem i = engine.getSource();
+			if (i.isVideo()) engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+		}
+	}
+
+	public void removeVideoView(VideoView view) {
+		if ((videoView != null) && videoView.remove(new VideoViewWraper(view, 0))) {
+			if (videoView.isEmpty()) {
+				videoView = null;
+				if (engine != null) engine.setSurface(null);
+			} else if (engine != null) {
+				engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+			}
+		}
+	}
+
+	public VideoView getVideoView() {
+		return (videoView == null) ? null : videoView.get(0).view;
+	}
+
 	@Override
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
 		KeyEvent ke = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
@@ -272,13 +310,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (engine == null) return;
 
 		playOnPrepared = false;
+		if (i.isVideo() && (videoView != null))
+			engine.setSurface(videoView.get(0).view.getSurface().getHolder());
 		engine.prepare(i);
 	}
 
 	@SuppressLint("SwitchIntDef")
 	@Override
 	public void onPlay() {
-		if (!requestAudioFocus()) return;
+		if (!requestAudioFocus()) {
+			Log.i(getClass().getName(), "Audio focus request failed");
+			return;
+		}
 
 		PlaybackStateCompat state = getPlaybackState();
 		PlayableItem i;
@@ -309,6 +352,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@Override
 	public void onPlayFromMediaId(String mediaId, Bundle extras) {
 		if (!requestAudioFocus()) {
+			Log.i(getClass().getName(), "Audio focus request failed");
 			return;
 		}
 
@@ -357,6 +401,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onStop() {
+		onStop(true);
+	}
+
+	private void onStop(boolean setPosition) {
 		if (getPlaybackState().getState() != PlaybackStateCompat.STATE_STOPPED) {
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 					.setState(PlaybackStateCompat.STATE_STOPPED, 0, 1.0f).build();
@@ -364,8 +412,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		if (engine != null) {
-			PlayableItem i = engine.getSource();
-			if (i != null) lib.setLastPlayed(i, engine.getPosition());
+			if (setPosition) {
+				PlayableItem i = engine.getSource();
+				if (i != null) lib.setLastPlayed(i, engine.getPosition());
+			}
 
 			engine.stop();
 			engine.close();
@@ -646,15 +696,22 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		PlayableItem i = engine.getSource();
 
 		if (i != null) {
-			i = i.getNextPlayable();
+			PlayableItem next = i.getNextPlayable();
 
-			if (i != null) {
-				skipTo(true, i);
-				return;
+			if (next != null) {
+				skipTo(true, next);
+			} else {
+				onStop(false);
+				lib.setLastPlayed(i, 0);
 			}
+		} else {
+			onStop(false);
 		}
+	}
 
-		onStop();
+	@Override
+	public void onVideoSizeChanged(MediaEngine engine, int width, int height) {
+		if (videoView != null) videoView.get(0).view.setSurfaceSize(engine);
 	}
 
 	@Override
@@ -728,6 +785,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		playOnPrepared = true;
+		if (i.isVideo() && (videoView != null))
+			engine.setSurface(videoView.get(0).view.getSurface().getHolder());
 		engine.prepare(i);
 	}
 
@@ -901,5 +960,31 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	public interface Listener {
 		void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state);
+	}
+
+	private static final class VideoViewWraper implements Comparable<VideoViewWraper> {
+		final VideoView view;
+		final int priority;
+
+		VideoViewWraper(VideoView view, int priority) {
+			this.view = view;
+			this.priority = priority;
+		}
+
+		@Override
+		public int compareTo(VideoViewWraper o) {
+			return Integer.compare(priority, o.priority);
+		}
+
+		@SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+		@Override
+		public boolean equals(Object obj) {
+			return view == ((VideoViewWraper) obj).view;
+		}
+
+		@Override
+		public int hashCode() {
+			return view.hashCode();
+		}
 	}
 }

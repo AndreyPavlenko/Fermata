@@ -44,7 +44,7 @@ public class FoldersFragment extends MediaLibFragment {
 	@Override
 	public void initNavBarMenu(AppMenu menu) {
 		if (isRootFolder()) {
-			menu.findItem(R.id.nav_add_folder).setVisible(true);
+			if (!getMainActivity().isCarActivity()) menu.findItem(R.id.nav_add_folder).setVisible(true);
 		} else {
 			FoldersAdapter a = getAdapter();
 			if (!a.hasSelectable()) return;

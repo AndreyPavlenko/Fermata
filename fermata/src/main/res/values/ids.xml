@@ -6,4 +6,5 @@
     <item name="bookmark_remove" type="id" />
     <item name="bookmark_remove_all" type="id" />
     <item name="bookmark_remove_all_confirm" type="id" />
+    <item name="video" type="id" />
 </resources>

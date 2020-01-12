@@ -11,7 +11,6 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
@@ -47,12 +46,13 @@ import me.aap.fermata.ui.menu.AppMenuItem;
  */
 public class ControlPanelView extends LinearLayoutCompat implements MainActivityListener,
 		PreferenceStore.Listener, AppMenu.SelectionHandler {
+	private static final byte MASK_VISIBLE = 1;
+	private static final byte MASK_VIDEO_MODE = 2;
 	@ColorInt
 	private final int outlineColor;
 	private final ImageButton showHideBars;
-	private boolean enabled;
-	private Runnable showHideTimer;
-	private TextView videoText;
+	private HideTimer hideTimer;
+	private byte mask;
 
 	@SuppressLint("PrivateResource")
 	public ControlPanelView(Context context, AttributeSet attrs) {
@@ -65,8 +65,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		outlineColor = typedValue.data;
 
 		MainActivityDelegate a = getActivity();
-		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.VIDEO_MODE_ON,
-				Event.VIDEO_MODE_OFF, Event.VIDEO_SURFACE_TOUCH);
+		a.addBroadcastListener(this, Event.ACTIVITY_FINISH);
 		a.getPrefs().addBroadcastListener(this);
 
 		showHideBars = findViewById(R.id.show_hode_bars);
@@ -82,23 +81,22 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	protected Parcelable onSaveInstanceState() {
 		Parcelable parentState = super.onSaveInstanceState();
 		Bundle b = new Bundle();
-		b.putBoolean("ENABLED", enabled);
+		b.putByte("MASK", mask);
 		b.putParcelable("PARENT", parentState);
 		return b;
 	}
-
 
 	@Override
 	protected void onRestoreInstanceState(Parcelable st) {
 		if (st instanceof Bundle) {
 			Bundle b = (Bundle) st;
 			super.onRestoreInstanceState(b.getParcelable("PARENT"));
-			if (b.getBoolean("ENABLED")) setVisibility(VISIBLE);
+			mask = b.getByte("MASK");
+			if (mask != MASK_VISIBLE) super.setVisibility(GONE);
 		}
 	}
 
 	public void bind(FermataServiceUiBinder b) {
-		VideoView video = getActivity().findViewById(R.id.video);
 		b.bindControlPanel(this);
 		b.bindPrevButton(findViewById(R.id.control_prev));
 		b.bindRwButton(findViewById(R.id.control_rw));
@@ -108,8 +106,6 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		b.bindProgressBar(findViewById(R.id.seek_bar));
 		b.bindProgressTime(findViewById(R.id.seek_time));
 		b.bindProgressTotal(findViewById(R.id.seek_total));
-		b.bindSurface(video.getSurface());
-		b.bindTitle(videoText = video.getTitle());
 		b.bound();
 	}
 
@@ -126,38 +122,31 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent e) {
-		if (showHideTimer != null) startHideTimer();
+		if (hideTimer != null) {
+			hideTimer = new HideTimer(hideTimer.views);
+			FermataApplication.get().getHandler().postDelayed(hideTimer, 5000);
+		}
 		return getActivity().interceptTouchEvent(e, super::onTouchEvent);
-	}
-
-	@SuppressLint("ClickableViewAccessibility")
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-		// Intercept touch events to prevent video surface touch through the panel
-		return true;
 	}
 
 	@Override
 	public void setVisibility(int visibility) {
 		if (visibility == VISIBLE) {
-			if (enabled) return;
+			if ((mask & MASK_VIDEO_MODE) != 0) return;
+			mask |= MASK_VISIBLE;
 
 			MainActivityDelegate a = getActivity();
-			boolean video = a.isVideoMode();
-			enabled = true;
 			super.setVisibility(VISIBLE);
 
-			if (video || a.getPrefs().getHideBarsPref()) {
+			if (a.getPrefs().getHideBarsPref()) {
 				a.setBarsHidden(true);
 				setShowHideBarsIcon(a);
-				if (video) startHideTimer();
 			}
 		} else {
-			if (!enabled) return;
-
 			MainActivityDelegate a = getActivity();
-			enabled = false;
+			mask = 0;
 			super.setVisibility(GONE);
+			a.getFloatingButton().setVisibility(VISIBLE);
 
 			if (a.isBarsHidden()) {
 				a.setBarsHidden(false);
@@ -166,17 +155,67 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	private void startHideTimer() {
-		showHideTimer = new Runnable() {
-			@Override
-			public void run() {
-				if ((showHideTimer == this) && enabled) {
-					if (videoText != null) videoText.setVisibility(GONE);
-					ControlPanelView.super.setVisibility(GONE);
-				}
-			}
-		};
-		FermataApplication.get().getHandler().postDelayed(showHideTimer, 5000);
+	public void enableVideoMode() {
+		if ((mask & MASK_VISIBLE) == 0) return;
+
+		MainActivityDelegate a = getActivity();
+		hideTimer = null;
+		mask |= MASK_VIDEO_MODE;
+		super.setVisibility(GONE);
+		a.getFloatingButton().setVisibility(GONE);
+		a.setBarsHidden(true);
+		setShowHideBarsIcon(a);
+	}
+
+	public void disableVideoMode() {
+		MainActivityDelegate a = getActivity();
+		hideTimer = null;
+		mask &= ~MASK_VIDEO_MODE;
+		a.getFloatingButton().setVisibility(VISIBLE);
+
+		if ((mask & MASK_VISIBLE) == 0) {
+			super.setVisibility(GONE);
+			a.setBarsHidden(false);
+		} else {
+			super.setVisibility(VISIBLE);
+			a.setBarsHidden(a.getPrefs().getHideBarsPref());
+		}
+
+		setShowHideBarsIcon(a);
+	}
+
+	public void onVideoViewTouch(VideoView view) {
+		MainActivityDelegate a = getActivity();
+		View title = view.getTitle();
+		View fb = a.getFloatingButton();
+
+		if (getVisibility() == VISIBLE) {
+			super.setVisibility(GONE);
+			title.setVisibility(GONE);
+			fb.setVisibility(GONE);
+		} else {
+			super.setVisibility(VISIBLE);
+			title.setVisibility(VISIBLE);
+			fb.setVisibility(VISIBLE);
+			clearFocus();
+			hideTimer = new HideTimer(title, fb);
+			FermataApplication.get().getHandler().postDelayed(hideTimer, 5000);
+		}
+	}
+
+	public void onVideoSeek() {
+		MainActivityDelegate a = getActivity();
+		VideoView vv = a.getMediaServiceBinder().getMediaSessionCallback().getVideoView();
+		if (vv == null) return;
+
+		View title = vv.getTitle();
+		View fb = a.getFloatingButton();
+		super.setVisibility(VISIBLE);
+		title.setVisibility(VISIBLE);
+		fb.setVisibility(VISIBLE);
+		clearFocus();
+		hideTimer = new HideTimer(title, fb);
+		FermataApplication.get().getHandler().postDelayed(hideTimer, 3000);
 	}
 
 	@Override
@@ -184,44 +223,18 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		if (handleActivityFinishEvent(a, e)) {
 			a.getMediaServiceBinder().unbind();
 			a.getPrefs().removeBroadcastListener(this);
-		} else {
-			switch (e) {
-				case VIDEO_MODE_ON:
-					a.setBarsHidden(true);
-					setShowHideBarsIcon(a);
-					startHideTimer();
-					break;
-				case VIDEO_MODE_OFF:
-					showHideTimer = null;
-					a.setBarsHidden(enabled && a.getPrefs().getHideBarsPref());
-					setShowHideBarsIcon(a);
-					break;
-				case VIDEO_SURFACE_TOUCH:
-					if (getVisibility() == VISIBLE) {
-						super.setVisibility(GONE);
-						if (videoText != null) videoText.setVisibility(GONE);
-					} else {
-						startHideTimer();
-						super.setVisibility(VISIBLE);
-						if (videoText != null) videoText.setVisibility(VISIBLE);
-					}
-					break;
-			}
 		}
 	}
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
+		if (mask != MASK_VISIBLE) return;
+
 		if (prefs.contains(MainActivityPrefs.HIDE_BARS)) {
 			MainActivityDelegate a = getActivity();
-
-			if (a.getPrefs().getHideBarsPref()) {
-				a.setBarsHidden(enabled);
-				setShowHideBarsIcon(a);
-			} else if (a.isBarsHidden()) {
-				a.setBarsHidden(false);
-				setShowHideBarsIcon(a);
-			}
+			if (a.getPrefs().getHideBarsPref()) a.setBarsHidden(getVisibility() == VISIBLE);
+			else if (a.isBarsHidden()) a.setBarsHidden(false);
+			setShowHideBarsIcon(a);
 		}
 	}
 
@@ -437,6 +450,25 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				if (value == 0.0f) value = 0.1f;
 				super.applyFloatPref(pref, value);
 				if (cb.isPlaying()) cb.onSetPlaybackSpeed(value);
+			}
+		}
+	}
+
+	private final class HideTimer implements Runnable {
+		final View[] views;
+
+		HideTimer(View... views) {
+			this.views = views;
+		}
+
+		@Override
+		public void run() {
+			if ((hideTimer == this) && ((mask & MASK_VIDEO_MODE) != 0)) {
+				ControlPanelView.super.setVisibility(GONE);
+
+				for (View v : views) {
+					v.setVisibility(GONE);
+				}
 			}
 		}
 	}

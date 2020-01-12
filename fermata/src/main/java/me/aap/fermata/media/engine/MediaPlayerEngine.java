@@ -15,7 +15,8 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
  */
 public class MediaPlayerEngine implements MediaEngine,
 		MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
-		MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnErrorListener {
+		MediaPlayer.OnVideoSizeChangedListener,
+		MediaPlayer.OnErrorListener {
 	public static final String ID = "MediaPlayerEngine";
 	private final Context ctx;
 	private final Listener listener;
@@ -35,8 +36,8 @@ public class MediaPlayerEngine implements MediaEngine,
 		player.setAudioAttributes(attrs);
 		player.setOnPreparedListener(this);
 		player.setOnCompletionListener(this);
-		player.setOnBufferingUpdateListener(this);
 		player.setOnErrorListener(this);
+		player.setOnVideoSizeChangedListener(this);
 	}
 
 	@Override
@@ -148,8 +149,8 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
-	public void onBufferingUpdate(MediaPlayer mp, int percent) {
-		listener.onEngineBuffering(this, percent);
+	public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
+		listener.onVideoSizeChanged(this, width, height);
 	}
 
 	@Override

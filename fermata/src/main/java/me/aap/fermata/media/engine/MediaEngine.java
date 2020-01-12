@@ -63,6 +63,9 @@ public interface MediaEngine extends Closeable {
 		default void onEngineBufferingCompleted(MediaEngine engine) {
 		}
 
+		default void onVideoSizeChanged(MediaEngine engine, int width, int height) {
+		}
+
 		default void onEngineError(MediaEngine engine, Throwable ex) {
 		}
 	}

@@ -109,6 +109,7 @@
     <string name="unselect_all">Unselect all</string>
     <string name="loading">Loading…</string>
     <string name="press_back_again">Press back button again to exit</string>
+    <string name="press_x_again">Press X button again to exit</string>
     <string name="please_restart_app">Please restart the application</string>
 
     <string name="eq_manual">Manual</string>

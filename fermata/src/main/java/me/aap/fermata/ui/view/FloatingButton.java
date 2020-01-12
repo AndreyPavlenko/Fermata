@@ -35,9 +35,7 @@ public class FloatingButton extends FloatingActionButton implements OnClickListe
 		setOnLongClickListener(this);
 		setMode(a, a.getActiveFragment());
 		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.FRAGMENT_CHANGED,
-				Event.FRAGMENT_CONTENT_CHANGED, Event.BACK_PRESSED, Event.VIDEO_MODE_ON,
-				Event.VIDEO_MODE_OFF);
-		if(a.isVideoMode()) setVisibility(GONE);
+				Event.FRAGMENT_CONTENT_CHANGED, Event.BACK_PRESSED);
 	}
 
 	@Override
@@ -54,16 +52,7 @@ public class FloatingButton extends FloatingActionButton implements OnClickListe
 	@Override
 	public void onMainActivityEvent(MainActivityDelegate a, Event e) {
 		if (!handleActivityFinishEvent(a, e)) {
-			switch (e) {
-				case VIDEO_MODE_ON:
-					setVisibility(GONE);
-					break;
-				case VIDEO_MODE_OFF:
-					setVisibility(VISIBLE);
-					break;
-				default:
-					setMode(a, a.getActiveFragment());
-			}
+			setMode(a, a.getActiveFragment());
 		}
 	}
 

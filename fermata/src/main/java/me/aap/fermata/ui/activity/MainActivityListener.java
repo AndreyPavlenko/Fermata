@@ -10,11 +10,6 @@ public interface MainActivityListener {
 		FRAGMENT_CHANGED,
 		FRAGMENT_CONTENT_CHANGED,
 		FILTER_CHANGED,
-		SHOW_BARS,
-		HIDE_BARS,
-		VIDEO_MODE_ON,
-		VIDEO_MODE_OFF,
-		VIDEO_SURFACE_TOUCH,
 		ACTIVITY_FINISH;
 
 		public long mask() {

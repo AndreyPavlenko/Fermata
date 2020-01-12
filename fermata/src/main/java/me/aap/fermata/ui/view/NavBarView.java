@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.LinearLayoutCompat;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -42,8 +43,7 @@ public class NavBarView extends LinearLayoutCompat implements MainActivityListen
 		outlineColor = typedValue.data;
 
 		MainActivityDelegate a = getActivity();
-		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.SHOW_BARS, Event.HIDE_BARS,
-				Event.FRAGMENT_CHANGED);
+		a.addBroadcastListener(this, Event.ACTIVITY_FINISH, Event.FRAGMENT_CHANGED);
 		if (a.isBarsHidden()) setVisibility(GONE);
 
 		int id = a.getActiveNavItemId();
@@ -58,7 +58,6 @@ public class NavBarView extends LinearLayoutCompat implements MainActivityListen
 			}
 		}
 	}
-
 
 	@Override
 	public void draw(Canvas canvas) {
@@ -81,8 +80,11 @@ public class NavBarView extends LinearLayoutCompat implements MainActivityListen
 		if (checkReselected && (item == selectedItem)) {
 			itemReselected(item);
 		} else if (itemSelected(item)) {
-			setTextVisibility(selectedItem, GONE);
-			selectedItem = item;
+			if (item != selectedItem) {
+				setTextVisibility(selectedItem, GONE);
+				selectedItem = item;
+			}
+
 			getActivity().setActiveNavItemId(item.getId());
 			setTextVisibility(item, VISIBLE);
 		}
@@ -149,7 +151,10 @@ public class NavBarView extends LinearLayoutCompat implements MainActivityListen
 	}
 
 	private void setTextVisibility(@Nullable ViewGroup item, int visibility) {
-		if (item != null) item.getChildAt(1).setVisibility(visibility);
+		if (item != null) {
+			item.getChildAt(1).setVisibility(visibility);
+			FermataApplication.get().getHandler().post(this::requestLayout);
+		}
 	}
 
 	@Override
@@ -160,14 +165,8 @@ public class NavBarView extends LinearLayoutCompat implements MainActivityListen
 	@Override
 	public void onMainActivityEvent(MainActivityDelegate a, Event e) {
 		if (!handleActivityFinishEvent(a, e)) {
-			switch (e) {
-				case SHOW_BARS:
-				case HIDE_BARS:
-					setVisibility((e == Event.SHOW_BARS) ? VISIBLE : GONE);
-					break;
-				case FRAGMENT_CHANGED:
-					setSelectedItem(findViewById(getActivity().getActiveFragmentId()), false);
-					break;
+			if (e == Event.FRAGMENT_CHANGED) {
+				setSelectedItem(findViewById(getActivity().getActiveFragmentId()), false);
 			}
 		}
 	}

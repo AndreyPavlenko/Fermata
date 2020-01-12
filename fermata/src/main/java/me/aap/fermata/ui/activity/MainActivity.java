@@ -3,6 +3,8 @@ package me.aap.fermata.ui.activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.KeyEvent;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +13,7 @@ import androidx.core.content.ContextCompat;
 
 import java.util.function.BiConsumer;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 
 public class MainActivity extends AppCompatActivity implements AppActivity {
@@ -18,6 +21,7 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 	private static final int GRANT_PERM_REQ = 1;
 	private BiConsumer<Integer, Intent> resultHandler;
 	private MainActivityDelegate delegate;
+	private boolean exitPressed;
 
 	@Override
 	public MainActivityDelegate getMainActivityDelegate() {
@@ -51,6 +55,34 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 	@Override
 	public void onBackPressed() {
 		getMainActivityDelegate().onBackPressed();
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		switch (keyCode) {
+			case KeyEvent.KEYCODE_BACK:
+				onBackPressed();
+				return true;
+			case KeyEvent.KEYCODE_P:
+				delegate.getMediaServiceBinder().onPlayPauseButtonClick();
+				if (delegate.isVideoMode()) delegate.getControlPanel().onVideoSeek();
+				return true;
+			case KeyEvent.KEYCODE_S:
+				delegate.getMediaServiceBinder().getMediaSessionCallback().onStop();
+				return true;
+			case KeyEvent.KEYCODE_X:
+				if (exitPressed) {
+					finish();
+				} else {
+					exitPressed = true;
+					Toast.makeText(getContext(), R.string.press_x_again, Toast.LENGTH_SHORT).show();
+					FermataApplication.get().getHandler().postDelayed(() -> exitPressed = false, 2000);
+				}
+
+				return true;
+		}
+
+		return super.onKeyUp(keyCode, event);
 	}
 
 	@Override

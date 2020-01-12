@@ -4,7 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -12,11 +11,7 @@ import android.os.RemoteException;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.util.DisplayMetrics;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -48,7 +43,7 @@ import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_SERVI
  * @author Andrey Pavlenko
  */
 public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataServiceUiBinder.Listener>
-		implements ServiceConnection, OnSeekBarChangeListener, SurfaceHolder.Callback {
+		implements ServiceConnection, OnSeekBarChangeListener {
 	private final Context ctx;
 	private PlayableItem currentItem;
 	private BiConsumer<FermataServiceUiBinder, Throwable> resultHandler;
@@ -80,11 +75,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	private TextView progressTotal;
 	@Nullable
 	private View controlPanel;
-	@Nullable
-	private SurfaceView surface;
-	@Nullable
-	private TextView title;
-	private boolean surfaceCreated;
 
 	private FermataServiceUiBinder(@NonNull Context ctx, @NonNull BiConsumer<FermataServiceUiBinder, Throwable> resultHandler) {
 		this.ctx = ctx;
@@ -138,25 +128,31 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public void playItem(PlayableItem i, long pos) {
-		Bundle b = null;
+		MediaControllerCompat mediaController = getMediaController();
 
-		if (pos > 0) {
-			b = new Bundle();
+		if (i.equals(getCurrentItem())) {
+			PlaybackStateCompat st = mediaController.getPlaybackState();
+			if ((st != null) && (st.getState() == PlaybackStateCompat.STATE_PAUSED)) {
+				mediaController.getTransportControls().play();
+			}
+		} else if (pos > 0) {
+			Bundle b = new Bundle();
 			b.putLong(MediaSessionCallback.EXTRA_POS, pos);
+			mediaController.getTransportControls().playFromMediaId(i.getId(), b);
+		} else {
+			mediaController.getTransportControls().playFromMediaId(i.getId(), null);
 		}
-
-		getMediaController().getTransportControls().playFromMediaId(i.getId(), b);
 	}
 
 	public void bindPlayPauseButton(View v) {
 		playPauseButton = v;
-		v.setOnClickListener(this::onPlayPauseButtonClick);
+		v.setOnClickListener(b -> onPlayPauseButtonClick());
 		v.setOnLongClickListener(this::onPlayPauseButtonLongClick);
 	}
 
-	private void onPlayPauseButtonClick(View v) {
-		if (isPlaying()) mediaController.getTransportControls().pause();
-		else mediaController.getTransportControls().play();
+	public void onPlayPauseButtonClick() {
+		if (isPlaying()) getMediaSessionCallback().onPause();
+		else getMediaSessionCallback().onPlay();
 	}
 
 	private boolean onPlayPauseButtonLongClick(View v) {
@@ -192,29 +188,37 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 	public void bindRwButton(View v) {
 		rwButton = v;
-		v.setOnClickListener(this::onRwButtonClick);
+		v.setOnClickListener(this::onRwFfButtonClick);
 		v.setOnLongClickListener(this::onRwFfButtonLongClick);
-	}
-
-	private void onRwButtonClick(View v) {
-		mediaController.getTransportControls().rewind();
 	}
 
 	public void bindFfButton(View v) {
 		ffButton = v;
-		v.setOnClickListener(this::onFfButtonClick);
+		v.setOnClickListener(this::onRwFfButtonClick);
 		v.setOnLongClickListener(this::onRwFfButtonLongClick);
 	}
 
-	private void onFfButtonClick(View v) {
-		mediaController.getTransportControls().fastForward();
+	private void onRwFfButtonClick(View v) {
+		onRwFfButtonClick(v == ffButton);
+	}
+
+	public void onRwFfButtonClick(boolean ff) {
+		if (ff) {
+			mediaController.getTransportControls().fastForward();
+		} else {
+			mediaController.getTransportControls().rewind();
+		}
 	}
 
 	private boolean onRwFfButtonLongClick(View v) {
+		onRwFfButtonLongClick(v == ffButton);
+		return true;
+	}
+
+	public void onRwFfButtonLongClick(boolean ff) {
 		MediaSessionCallback cb = getMediaSessionCallback();
 		PlaybackControlPrefs pp = cb.getPlaybackControlPrefs();
-		cb.rewindFastForward(v == ffButton, pp.getRwFfLongTimePref(), pp.getRwFfLongTimeUnitPref(), 1);
-		return true;
+		cb.rewindFastForward(ff, pp.getRwFfLongTimePref(), pp.getRwFfLongTimeUnitPref(), 1);
 	}
 
 	private boolean onPrevNextButtonLongClick(View v) {
@@ -245,17 +249,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		this.controlPanel = controlPanel;
 	}
 
-	public void bindSurface(SurfaceView surface) {
-		this.surface = surface;
-		this.surface.getHolder().addCallback(this);
-		if ((currentItem != null) && currentItem.isVideo()) surface.setVisibility(VISIBLE);
-	}
-
-	public void bindTitle(TextView title) {
-		this.title = title;
-		title.setText((currentItem == null) ? "" : currentItem.getTitle());
-	}
-
 	public void bound() {
 		bound = true;
 		callback.onPlaybackStateChanged(mediaController.getPlaybackState());
@@ -270,15 +263,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
 		playPauseButton = prevButton = nextButton = rwButton = ffButton = null;
 		controlPanel = null;
-		title = null;
-
-		if (surface != null) {
-			surface.getHolder().removeCallback(this);
-			MediaEngine eng = sessionCallback.getEngine();
-			if (eng != null) eng.setSurface(null);
-			surface.setVisibility(GONE);
-			surface = null;
-		}
 	}
 
 	private void unbindButtons(View... buttons) {
@@ -334,52 +318,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		}
 	}
 
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		surfaceCreated = true;
-
-		if ((currentItem != null) && (currentItem.isVideo())) {
-			assert surface != null;
-			showVideoSurface();
-		}
-	}
-
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		surfaceCreated = false;
-		MediaEngine eng = sessionCallback.getEngine();
-		if (eng != null) eng.setSurface(null);
-		assert surface != null;
-	}
-
 	public boolean isConnected() {
 		return resultHandler == null;
-	}
-
-	private void showVideoSurface() {
-		assert surface != null;
-		MediaEngine eng = sessionCallback.getEngine();
-		if (eng == null) return;
-
-		ViewGroup.LayoutParams lp = surface.getLayoutParams();
-		DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
-		float vw = eng.getVideoWidth();
-		float vh = eng.getVideoHeight();
-
-		if (vw > vh) {
-			lp.width = dm.widthPixels;
-			lp.height = (int) (dm.widthPixels * vh / vw);
-		} else {
-			lp.width = (int) (dm.heightPixels * vw / vh);
-			lp.height = dm.heightPixels;
-		}
-
-		surface.setLayoutParams(lp);
-		eng.setSurface(surface.getHolder());
 	}
 
 	private final class MediaControllerCallback extends MediaControllerCompat.Callback {
@@ -398,6 +338,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			if ((state == null) || !bound) return;
 
 			int st = state.getState();
+			boolean fireEvent = true;
 
 			switch (st) {
 				case PlaybackStateCompat.STATE_PAUSED:
@@ -411,12 +352,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 					resetProgressBar();
 					showPanel(false);
 
-					if (surface != null) {
-						MediaEngine eng = sessionCallback.getEngine();
-						if (eng != null) eng.setSurface(null);
-						surface.setVisibility(GONE);
-					}
-
 					break;
 				case PlaybackStateCompat.STATE_FAST_FORWARDING:
 				case PlaybackStateCompat.STATE_REWINDING:
@@ -426,29 +361,17 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				case PlaybackStateCompat.STATE_SKIPPING_TO_NEXT:
 				case PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM:
 					showPanel(true);
+					fireEvent = false;
 					break;
 			}
 
-			PlayableItem i = sessionCallback.getCurrentItem();
+			if (fireEvent) {
+				PlayableItem i = sessionCallback.getCurrentItem();
 
-			if (!Objects.equals(currentItem, i)) {
-				PlayableItem old = currentItem;
-				currentItem = i;
-				if (title != null) title.setText((i == null) ? "" : i.getTitle());
-				fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
-			}
-
-			if (surface != null) {
-				MediaEngine eng = sessionCallback.getEngine();
-
-				if (eng != null) {
-					if ((i != null) && i.isVideo()) {
-						surface.setVisibility(VISIBLE);
-						if (surfaceCreated) showVideoSurface();
-					} else {
-						eng.setSurface(null);
-						surface.setVisibility(GONE);
-					}
+				if (!Objects.equals(currentItem, i)) {
+					PlayableItem old = currentItem;
+					currentItem = i;
+					fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
 				}
 			}
 		}
