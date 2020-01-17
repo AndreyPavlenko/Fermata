@@ -154,6 +154,6 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 
 	@Override
 	void saveChildren(List<Playlist> children) {
-		setPlaylistIdsPref(children.stream().mapToInt(i -> ((DefaultPlaylist) i).getPlaylistId()).toArray());
+		setPlaylistIdsPref(Utils.map(children, (i, t, a) -> a[i] = ((DefaultPlaylist) t).getPlaylistId(), int[]::new));
 	}
 }

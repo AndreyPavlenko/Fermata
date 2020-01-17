@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.function.Consumer;
+
+import static me.aap.fermata.util.Utils.forEach;
 
 /**
  * @author Andrey Pavlenko
@@ -60,7 +62,7 @@ public interface EventBroadcaster<L> {
 			else if ((r.mask & eventMask) != 0) list.add(l);
 		}
 
-		list.forEach(broadcaster);
+		forEach(list, broadcaster);
 	}
 
 	class ListenerRef<L> extends WeakReference<L> {

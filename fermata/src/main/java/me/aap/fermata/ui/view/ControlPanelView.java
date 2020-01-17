@@ -18,8 +18,8 @@ import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.DoubleSupplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;

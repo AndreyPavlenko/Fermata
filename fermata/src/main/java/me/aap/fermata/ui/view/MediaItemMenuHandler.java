@@ -8,8 +8,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.IntSupplier;
-import java.util.function.Supplier;
+import me.aap.fermata.function.IntSupplier;
+import me.aap.fermata.function.Supplier;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;

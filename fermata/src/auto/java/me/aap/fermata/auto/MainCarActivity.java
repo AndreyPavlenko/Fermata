@@ -11,7 +11,7 @@ import androidx.fragment.app.FragmentManager;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
-import java.util.function.BiConsumer;
+import me.aap.fermata.function.BiConsumer;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataServiceUiBinder;

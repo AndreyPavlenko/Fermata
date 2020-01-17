@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.function.Consumer;
+import me.aap.fermata.function.Consumer;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;

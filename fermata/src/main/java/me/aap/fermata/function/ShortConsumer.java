@@ -1,4 +1,4 @@
-package me.aap.fermata.util;
+package me.aap.fermata.function;
 
 /**
  * @author Andrey Pavlenko

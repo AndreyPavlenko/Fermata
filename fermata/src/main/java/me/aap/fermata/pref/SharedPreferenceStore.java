@@ -13,14 +13,14 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-import java.util.function.IntFunction;
-import java.util.function.IntSupplier;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.DoubleSupplier;
+import me.aap.fermata.function.IntFunction;
+import me.aap.fermata.function.IntSupplier;
+import me.aap.fermata.function.LongSupplier;
+import me.aap.fermata.function.Supplier;
 
-import me.aap.fermata.util.IntBiConsumer;
+import me.aap.fermata.function.IntBiConsumer;
 import me.aap.fermata.util.Utils;
 
 /**

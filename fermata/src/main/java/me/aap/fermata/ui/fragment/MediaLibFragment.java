@@ -138,10 +138,6 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 		return getMainActivity().getLib();
 	}
 
-	public FermataServiceUiBinder getMediaServiceBinder() {
-		return getMainActivity().getMediaServiceBinder();
-	}
-
 	@Override
 	public boolean isRootPage() {
 		ListAdapter a = getAdapter();

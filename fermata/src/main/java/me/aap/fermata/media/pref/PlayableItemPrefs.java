@@ -3,7 +3,7 @@ package me.aap.fermata.media.pref;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
+import me.aap.fermata.function.Supplier;
 
 /**
  * @author Andrey Pavlenko

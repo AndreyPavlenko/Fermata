@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
+import me.aap.fermata.function.Consumer;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.R;

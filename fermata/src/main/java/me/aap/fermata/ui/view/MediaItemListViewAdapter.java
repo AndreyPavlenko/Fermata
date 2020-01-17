@@ -12,13 +12,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.util.Utils;
+
+import static me.aap.fermata.util.Utils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -65,8 +66,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 
 	@CallSuper
 	protected void setChildren(List<? extends Item> children) {
-		list = children.stream().filter(this::filter)
-				.map(MediaItemWrapper::new).collect(Collectors.toList());
+		list = filterMap(children, this::filter, (i, c, l) -> l.add(new MediaItemWrapper(c)), ArrayList::new);
 		notifyDataSetChanged();
 	}
 

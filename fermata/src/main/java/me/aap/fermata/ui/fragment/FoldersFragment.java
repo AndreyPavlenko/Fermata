@@ -3,8 +3,8 @@ package me.aap.fermata.ui.fragment;
 import android.content.Intent;
 import android.net.Uri;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -20,6 +20,8 @@ import me.aap.fermata.ui.menu.AppMenuItem;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.util.Utils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -80,9 +82,9 @@ public class FoldersFragment extends MediaLibFragment {
 				getAdapter().getListView().select(false);
 				return true;
 			case R.id.nav_favorites_add:
-				getLib().getFavorites().addItems(getAdapter().getList().stream()
-						.filter(MediaItemWrapper::isSelected).map(w -> (PlayableItem) w.getItem())
-						.collect(Collectors.toList()));
+				requireNonNull(getLib()).getFavorites().addItems(filterMap(getAdapter().getList(),
+						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
+						ArrayList::new));
 				discardSelection();
 				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
 				if (f != null) f.reload();

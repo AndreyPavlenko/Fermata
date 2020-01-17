@@ -19,6 +19,7 @@ import me.aap.fermata.pref.SharedPreferenceStore;
 import me.aap.fermata.util.Utils;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
+import static me.aap.fermata.util.Utils.mapToArray;
 
 
 /**
@@ -34,7 +35,7 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 		super(ID, null, null);
 		this.lib = lib;
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("favorites", Context.MODE_PRIVATE);
-		favoritesPrefStore =  SharedPreferenceStore.create(prefs, getLib().getPrefs());
+		favoritesPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
 	}
 
 	@NonNull
@@ -106,6 +107,6 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 
 	@Override
 	void saveChildren(List<PlayableItem> children) {
-		setFavoritesPref(children.stream().map(PlayableItem::getOrigId).toArray(String[]::new));
+		setFavoritesPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
 	}
 }

@@ -4,16 +4,16 @@ import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.function.Consumer;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
+import me.aap.fermata.util.CompletedFuture;
 import me.aap.fermata.util.Utils;
 
 import static java.util.Objects.requireNonNull;
@@ -110,7 +110,7 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 			});
 		} else {
 			consumer.accept(meta);
-			return CompletableFuture.completedFuture(null);
+			return CompletedFuture.nullResult();
 		}
 	}
 

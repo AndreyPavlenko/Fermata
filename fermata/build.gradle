@@ -1,8 +1,8 @@
 android {
     defaultConfig {
         applicationId "me.aap.fermata"
-        versionCode 7
-        versionName "1.0.3"
+        versionCode 8
+        versionName "1.1.0"
         setProperty("archivesBaseName", "fermata-$versionName")
     }
 

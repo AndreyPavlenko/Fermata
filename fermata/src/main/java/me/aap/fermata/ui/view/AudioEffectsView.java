@@ -20,9 +20,9 @@ import androidx.appcompat.widget.AppCompatSeekBar;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BooleanSupplier;
-import java.util.function.IntSupplier;
-import java.util.function.Supplier;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.IntSupplier;
+import me.aap.fermata.function.Supplier;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -37,7 +37,7 @@ import me.aap.fermata.pref.PreferenceView;
 import me.aap.fermata.pref.PreferenceView.BooleanOpts;
 import me.aap.fermata.pref.PreferenceView.ListOpts;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.util.ShortConsumer;
+import me.aap.fermata.function.ShortConsumer;
 import me.aap.fermata.util.Utils;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;

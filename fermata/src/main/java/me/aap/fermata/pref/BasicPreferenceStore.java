@@ -3,11 +3,11 @@ package me.aap.fermata.pref;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-import java.util.function.IntSupplier;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.DoubleSupplier;
+import me.aap.fermata.function.IntSupplier;
+import me.aap.fermata.function.LongSupplier;
+import me.aap.fermata.function.Supplier;
 
 import me.aap.fermata.util.BasicEventBroadcaster;
 

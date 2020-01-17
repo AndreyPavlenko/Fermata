@@ -22,6 +22,9 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.pref.SharedPreferenceStore;
 import me.aap.fermata.util.BasicEventBroadcaster;
+import me.aap.fermata.util.Utils;
+
+import static me.aap.fermata.util.Utils.forEach;
 
 /**
  * @author Andrey Pavlenko
@@ -144,7 +147,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 		Pattern q = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE);
 		List<MediaItem> r = new ArrayList<>();
-		getFolders().getChildren().forEach(i -> i.search(q, r));
+		forEach(getFolders().getChildren(), i -> i.search(q, r));
 		result.sendResult(r);
 	}
 
@@ -220,7 +223,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	private static List<MediaItem> toMediaItems(List<? extends DefaultMediaLib.Item> items) {
 		List<MediaItem> media = new ArrayList<>(items.size());
-		items.forEach(i -> media.add(i.asMediaItem()));
+		forEach(items, i -> media.add(i.asMediaItem()));
 		return media;
 	}
 
@@ -237,7 +240,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		if (r != null) {
 			Item cached = r.get();
 			if (cached != null) return cached;
-			else cache.remove(id, r);
+			else Utils.remove(cache, id, r);
 		}
 
 		return null;
@@ -245,7 +248,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	private void clearRefs() {
 		for (ItemRef r = (ItemRef) refQueue.poll(); r != null; r = (ItemRef) refQueue.poll()) {
-			cache.remove(r.id, r);
+			Utils.remove(cache, r.id, r);
 		}
 	}
 

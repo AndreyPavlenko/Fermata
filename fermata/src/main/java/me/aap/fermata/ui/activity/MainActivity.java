@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import java.util.function.BiConsumer;
+import me.aap.fermata.function.BiConsumer;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;

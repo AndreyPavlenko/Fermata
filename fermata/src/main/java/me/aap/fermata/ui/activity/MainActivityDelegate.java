@@ -29,11 +29,11 @@ import androidx.fragment.app.FragmentTransaction;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.function.BiConsumer;
+import me.aap.fermata.function.Function;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
@@ -71,6 +71,7 @@ import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
 import static me.aap.fermata.ui.activity.MainActivityListener.Event.ACTIVITY_FINISH;
 import static me.aap.fermata.ui.activity.MainActivityListener.Event.FRAGMENT_CHANGED;
+import static me.aap.fermata.util.Utils.forEach;
 
 /**
  * @author Andrey Pavlenko
@@ -136,7 +137,7 @@ public class MainActivityDelegate extends Fragment implements
 		if ((delegate == null) || delegate.recreate) {
 			delegate = new MainActivityDelegate(activity);
 			FragmentTransaction tr = fm.beginTransaction();
-			fm.getFragments().forEach(tr::remove);
+			forEach(fm.getFragments(), tr::remove);
 			tr.add(delegate, "MainActivityDelegate");
 			tr.commit();
 		} else {

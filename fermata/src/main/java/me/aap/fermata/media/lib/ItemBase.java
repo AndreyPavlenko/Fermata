@@ -52,6 +52,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 			StringBuilder sb = Utils.getSharedStringBuilder();
 			BrowsableItemPrefs prefs = requireNonNull(getParent()).getPrefs();
 			boolean nameAppended = false;
+			boolean browsable = (this instanceof BrowsableItem);
 
 			if (prefs.getTitleSeqNumPref()) {
 				if (seqNum == 0) {
@@ -63,12 +64,12 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 				sb.append(seqNum).append(". ");
 			}
 
-			if (prefs.getTitleNamePref()) {
+			if (browsable || prefs.getTitleNamePref()) {
 				sb.append(getName());
 				nameAppended = true;
 			}
 
-			if (prefs.getTitleFileNamePref()) {
+			if (!browsable && prefs.getTitleFileNamePref()) {
 				MediaFile f = getFile();
 
 				if (f != null) {

@@ -18,6 +18,8 @@ import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.pref.SharedPreferenceStore;
 import me.aap.fermata.util.Utils;
 
+import static me.aap.fermata.util.Utils.mapToArray;
+
 /**
  * @author Andrey Pavlenko
  */
@@ -83,6 +85,6 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 
 	@Override
 	void saveChildren(List<PlayableItem> children) {
-		setPlaylistItemsPref(children.stream().map(PlayableItem::getOrigId).toArray(String[]::new));
+		setPlaylistItemsPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
 	}
 }

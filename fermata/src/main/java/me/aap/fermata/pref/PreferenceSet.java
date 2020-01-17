@@ -5,8 +5,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import me.aap.fermata.function.Consumer;
+import me.aap.fermata.function.Supplier;
 
 /**
  * @author Andrey Pavlenko

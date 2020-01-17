@@ -1,7 +1,7 @@
 package me.aap.fermata.ui.activity;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.IntSupplier;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.IntSupplier;
 
 import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.pref.SharedPreferenceStore;

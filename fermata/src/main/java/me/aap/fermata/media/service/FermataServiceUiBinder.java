@@ -21,9 +21,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Objects;
-import java.util.function.BiConsumer;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.function.BiConsumer;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -130,7 +130,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	public void playItem(PlayableItem i, long pos) {
 		MediaControllerCompat mediaController = getMediaController();
 
-		if (i.equals(getCurrentItem())) {
+		if (i.equals(getCurrentItem()) && (pos <= 0)) {
 			PlaybackStateCompat st = mediaController.getPlaybackState();
 			if ((st != null) && (st.getState() == PlaybackStateCompat.STATE_PAUSED)) {
 				mediaController.getTransportControls().play();

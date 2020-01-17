@@ -9,7 +9,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BooleanSupplier;
+import me.aap.fermata.function.BooleanSupplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;

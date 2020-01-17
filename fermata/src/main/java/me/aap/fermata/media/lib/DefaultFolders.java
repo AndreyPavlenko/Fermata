@@ -21,6 +21,7 @@ import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
+import static me.aap.fermata.util.Utils.mapToArray;
 
 /**
  * @author Andrey Pavlenko
@@ -161,7 +162,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	}
 
 	private void saveChildren(List<FolderItem> children) {
-		setFoldersPref(children.stream().map(i -> i.getFile().getUri().toString()).toArray(String[]::new));
+		setFoldersPref(mapToArray(children, i -> i.getFile().getUri().toString(), String[]::new));
 	}
 
 	private FolderItem toFolderItem(Uri u) {

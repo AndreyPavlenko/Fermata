@@ -23,16 +23,21 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.function.Consumer;
+import me.aap.fermata.function.Function;
+import me.aap.fermata.function.IntBiConsumer;
+import me.aap.fermata.function.IntFunction;
+import me.aap.fermata.function.Predicate;
 
 import static android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 import static java.util.Objects.requireNonNull;
@@ -305,6 +310,50 @@ public class Utils {
 
 	public static int toPx(int dp) {
 		return Math.round(dp * Resources.getSystem().getDisplayMetrics().density);
+	}
+
+	public static <T> void forEach(Iterable<T> it, Consumer<? super T> action) {
+		for (T t : it) {
+			action.accept(t);
+		}
+	}
+
+	public static boolean remove(Map<?, ?> m, Object key, Object value) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+			return m.remove(key, value);
+		} else if (Objects.equals(m.get(key), value)) {
+			m.remove(key);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static <T, R> R[] mapToArray(Collection<? extends T> collection,
+																			Function<? super T, ? extends R> mapper,
+																			IntFunction<R[]> generator) {
+		return map(collection, (i, t, a) -> a[i] = mapper.apply(t), generator);
+	}
+
+	public static <T, R> R map(Collection<? extends T> collection,
+														 IntBiConsumer<? super T, R> mapper,
+														 IntFunction<R> generator) {
+		return filterMap(collection, t -> true, mapper, generator);
+	}
+
+	public static <T, R> R filterMap(Collection<? extends T> collection,
+																	 Predicate<? super T> predicate,
+																	 IntBiConsumer<? super T, R> mapper,
+																	 IntFunction<R> generator) {
+		int size = collection.size();
+		R a = generator.apply(size);
+		int i = 0;
+
+		for (T t : collection) {
+			if (predicate.test(t)) mapper.accept(i++, t, a);
+		}
+
+		return a;
 	}
 
 	private static final class HexTable {

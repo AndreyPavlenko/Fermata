@@ -1,13 +1,13 @@
 package me.aap.fermata.ui.fragment;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FavoritesPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.pref.PreferenceStore;
@@ -16,6 +16,7 @@ import me.aap.fermata.ui.menu.AppMenuItem;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.util.Utils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -69,9 +70,9 @@ public class FavoritesFragment extends MediaLibFragment {
 				getAdapter().getListView().select(false);
 				return true;
 			case R.id.nav_favorites_remove:
-				requireNonNull(getLib()).getFavorites().removeItems(getAdapter().getList().stream()
-						.filter(MediaItemWrapper::isSelected).map(w -> (MediaLib.PlayableItem) w.getItem())
-						.collect(Collectors.toList()));
+				requireNonNull(getLib()).getFavorites().removeItems(filterMap(getAdapter().getList(),
+						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
+						ArrayList::new));
 				getAdapter().setParent(getAdapter().getParent());
 				discardSelection();
 				return true;

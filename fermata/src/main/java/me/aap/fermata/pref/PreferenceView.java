@@ -19,16 +19,15 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.IntFunction;
-import java.util.function.IntSupplier;
-import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
-
 import me.aap.fermata.R;
+import me.aap.fermata.function.BiConsumer;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.Consumer;
+import me.aap.fermata.function.DoubleSupplier;
+import me.aap.fermata.function.IntFunction;
+import me.aap.fermata.function.IntSupplier;
+import me.aap.fermata.function.Supplier;
+import me.aap.fermata.function.ToIntFunction;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.menu.AppMenu;
 import me.aap.fermata.ui.menu.AppMenuItem;
