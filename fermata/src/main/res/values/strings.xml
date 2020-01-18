@@ -129,4 +129,5 @@
     <string name="err_unsupported_source_type">Unsupported source type: %s</string>
     <string name="err_playlist_exists">Playlist already exists: %1$s</string>
     <string name="err_invalid_playlist_name">Invalid playlist name: %1$s</string>
+    <string name="err_failed_add_folder">Failed to add folder: %1$s</string>
 </resources>

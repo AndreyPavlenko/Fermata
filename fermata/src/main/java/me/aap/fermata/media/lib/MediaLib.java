@@ -16,10 +16,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
-import me.aap.fermata.function.Consumer;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
+import me.aap.fermata.function.Consumer;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -283,11 +283,12 @@ public interface MediaLib {
 
 		List<? extends Item> getChildren(@Nullable Consumer<List<? extends Item>> onLoadingCompletion);
 
-		default List<PlayableItem> getPlayableChildren(@Nullable Consumer<List<? extends Item>> onLoadingCompletion) {
-			List<? extends Item> children = getChildren(onLoadingCompletion);
+		default List<PlayableItem> getPlayableChildren(boolean recursive) {
+			List<? extends Item> children = getChildren(null);
 			List<PlayableItem> playable = new ArrayList<>(children.size());
 			for (Item c : children) {
 				if (c instanceof PlayableItem) playable.add((PlayableItem) c);
+				else if (recursive) playable.addAll(((BrowsableItem) c).getPlayableChildren(true));
 			}
 			return playable;
 		}

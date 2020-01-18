@@ -1,7 +1,10 @@
 package me.aap.fermata.ui.fragment;
 
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,8 +114,14 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	public void addFolder() {
-		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		getMainActivity().startActivityForResult(this::addFolder, intent);
+		try {
+			Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+			getMainActivity().startActivityForResult(this::addFolder, intent);
+		} catch (ActivityNotFoundException ex) {
+			Context ctx = requireNonNull(getContext());
+			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_failed_add_folder, ex),
+					Toast.LENGTH_LONG).show();
+		}
 	}
 
 	private void addFolder(int result, Intent data) {

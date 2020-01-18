@@ -115,7 +115,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		switch (id) {
 			case R.id.favorites_add:
 				if (item instanceof BrowsableItem) {
-					items = ((BrowsableItem) item).getPlayableChildren(null);
+					items = ((BrowsableItem) item).getPlayableChildren(true);
 					item.getLib().getFavorites().addItems(items);
 				} else {
 					item.getLib().getFavorites().addItem((PlayableItem) item);
@@ -132,7 +132,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			case R.id.playlist_create:
 				String initName = "";
 				if (item instanceof BrowsableItem) {
-					items = ((BrowsableItem) item).getPlayableChildren(null);
+					items = ((BrowsableItem) item).getPlayableChildren(true);
 					initName = item.getName();
 				} else {
 					items = Collections.singletonList((PlayableItem) item);
@@ -146,7 +146,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				break;
 			case R.id.playlist_add_item:
 				items = (item instanceof BrowsableItem) ?
-						((BrowsableItem) item).getPlayableChildren(null) :
+						((BrowsableItem) item).getPlayableChildren(true) :
 						Collections.singletonList((PlayableItem) item);
 				getMainActivity().addToPlaylist(i.getTitle().toString(), items);
 				break;
@@ -164,7 +164,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				menu.addItem(R.id.bookmark_remove_all, R.string.remove_all_bookmarks);
 
 				if (item instanceof BrowsableItem) {
-					items = ((BrowsableItem) item).getPlayableChildren(null);
+					items = ((BrowsableItem) item).getPlayableChildren(true);
 				} else {
 					items = Collections.singletonList((PlayableItem) item);
 					menu.addItem(R.id.create_bookmark, R.string.create_bookmark);
@@ -207,7 +207,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				break;
 			case R.id.bookmark_remove_all_confirm:
 				items = (item instanceof BrowsableItem) ?
-						((BrowsableItem) item).getPlayableChildren(null) :
+						((BrowsableItem) item).getPlayableChildren(true) :
 						Collections.singletonList((PlayableItem) item);
 
 				for (PlayableItem pi : items) {

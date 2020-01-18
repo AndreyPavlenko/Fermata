@@ -123,4 +123,5 @@
     <string name="err_unsupported_source_type">Неподдерживаемый тип источника: %s</string>
     <string name="err_playlist_exists">Плейлист уже существует: %1$s</string>
     <string name="err_invalid_playlist_name">Невалидное имя плейлиста: %1$s</string>
+    <string name="err_failed_add_folder">Не удалось добавить директорию: %1$s</string>
 </resources>
