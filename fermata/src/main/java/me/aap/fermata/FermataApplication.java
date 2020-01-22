@@ -1,8 +1,9 @@
 package me.aap.fermata;
 
-import android.app.Application;
 import android.content.SharedPreferences;
 import android.os.Handler;
+
+import com.google.android.play.core.splitcompat.SplitCompatApplication;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,7 +11,7 @@ import java.util.concurrent.Executors;
 /**
  * @author Andrey Pavlenko
  */
-public class FermataApplication extends Application {
+public class FermataApplication extends SplitCompatApplication {
 	private static FermataApplication app;
 	private Handler handler;
 	private ExecutorService executor;

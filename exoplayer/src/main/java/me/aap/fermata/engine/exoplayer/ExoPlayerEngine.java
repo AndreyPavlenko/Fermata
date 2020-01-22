@@ -1,50 +1,59 @@
 package me.aap.fermata.engine.exoplayer;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 
+import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.pref.MediaPrefs;
+
+import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
 
 /**
  * @author Andrey Pavlenko
  */
-public class ExoPlayerEngine implements MediaEngine, Player.EventListener {
-	public static final String ID = "ExoPlayerEngine";
-	private final SimpleExoPlayer player;
+public class ExoPlayerEngine implements MediaEngine, Player.EventListener, AnalyticsListener {
 	private final Listener listener;
+	private final SimpleExoPlayer player;
 	private final ProgressiveMediaSource.Factory extractor;
+	private AudioEffects audioEffects;
 	private PlayableItem source;
-	private boolean preparing;
-	private boolean buffering;
+	private byte preparingState;
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		this.listener = listener;
-		player = ExoPlayerFactory.newSimpleInstance(ctx);
+		player = new SimpleExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
+				.setExtensionRendererMode(EXTENSION_RENDERER_MODE_PREFER)).build();
 		player.addListener(this);
+		player.addAnalyticsListener(this);
 		DataSource.Factory f = new DefaultDataSourceFactory(ctx, "Fermata");
 		extractor = new ProgressiveMediaSource.Factory(f);
 	}
 
 	@Override
-	public String getId() {
-		return ID;
+	public int getId() {
+		return MediaPrefs.MEDIA_ENG_EXO;
 	}
 
 	@Override
 	public void prepare(PlayableItem source) {
 		this.source = source;
-		preparing = true;
+		preparingState = 1;
 		player.prepare(extractor.createMediaSource(source.getLocation()), false, false);
 	}
 
@@ -67,6 +76,11 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener {
 	@Override
 	public PlayableItem getSource() {
 		return source;
+	}
+
+	@Override
+	public long getDuration() {
+		return (player == null) ? 0 : player.getDuration();
 	}
 
 	@Override
@@ -107,8 +121,8 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener {
 	}
 
 	@Override
-	public boolean canPlay(PlayableItem i) {
-		return true;
+	public AudioEffects getAudioEffects() {
+		return audioEffects;
 	}
 
 	@Override
@@ -120,29 +134,42 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener {
 
 	@Override
 	public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-		switch (playbackState) {
-			case Player.STATE_BUFFERING:
-				buffering = true;
-				listener.onEngineBuffering(this, player.getBufferedPercentage());
-				break;
-			case Player.STATE_READY:
-				if (preparing) {
+		if (playbackState == Player.STATE_READY) {
+			if (preparingState == 1) {
+				if ((audioEffects != null)) {
+					preparingState = 0;
 					listener.onEnginePrepared(this);
-					preparing = false;
-				} else if (buffering) {
-					buffering = false;
-					listener.onEngineBufferingCompleted(this);
+				} else {
+					preparingState = 2;
 				}
-
-				break;
-			case Player.STATE_ENDED:
-				listener.onEngineEnded(this);
-				break;
+			}
+		} else if (playbackState == Player.STATE_ENDED) {
+			listener.onEngineEnded(this);
 		}
 	}
 
 	@Override
-	public void onPlayerError(ExoPlaybackException error) {
+	public void onAudioSessionId(@NonNull EventTime eventTime, int audioSessionId) {
+		try {
+			audioEffects = AudioEffects.create(0, audioSessionId);
+		} catch (Exception ex) {
+			Log.e(getClass().getName(), "Failed to create audio effects", ex);
+		}
+
+		if (preparingState == 2) {
+			preparingState = 0;
+			listener.onEnginePrepared(this);
+		}
+	}
+
+	@Override
+	public void onVideoSizeChanged(@NonNull EventTime eventTime, int width, int height,
+																 int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+		listener.onVideoSizeChanged(this, width, height);
+	}
+
+	@Override
+	public void onPlayerError(@NonNull ExoPlaybackException error) {
 		listener.onEngineError(this, error);
 	}
 }

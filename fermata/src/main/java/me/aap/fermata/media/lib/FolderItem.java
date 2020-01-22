@@ -184,8 +184,9 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 			return true;
 		} else {
 			switch (ext) {
-				case "ape":
+				case "ac3":
 				case "cue":
+				case "flac":
 				case "ogg":
 				case "opus":
 					return true;

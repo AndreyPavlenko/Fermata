@@ -3,6 +3,7 @@ package me.aap.fermata.media.lib;
 import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
@@ -113,7 +114,7 @@ class FileItem extends PlayableItemBase {
 
 		try {
 			mmr = new MediaMetadataRetriever();
-			mmr.setDataSource(FermataApplication.get(), getFile().getUri());
+			mmr.setDataSource(FermataApplication.get(), getLocation());
 
 			String m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
@@ -141,7 +142,17 @@ class FileItem extends PlayableItemBase {
 			if (m != null)
 				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, Long.parseLong(m));
 		} catch (Exception ex) {
-			Log.d(getClass().getName(), "Failed to retrieve media metadata", ex);
+			Log.d(getClass().getName(), "Failed to retrieve media metadata of " + getLocation(), ex);
+
+			MediaPlayer mp = null;
+			try {
+				mp = MediaPlayer.create(FermataApplication.get(), getLocation());
+				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
+			} catch (Exception ex2) {
+				Log.d(getClass().getName(), "Failed to retrieve duration of " + getLocation(), ex);
+			} finally {
+				if (mp != null) mp.release();
+			}
 		} finally {
 			if (mmr != null) mmr.release();
 		}

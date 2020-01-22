@@ -16,6 +16,7 @@ import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
+import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.util.Utils;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
@@ -54,6 +55,12 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	@Override
 	public BrowsableItem getParent() {
 		return null;
+	}
+
+	@NonNull
+	@Override
+	public PreferenceStore getParentPreferenceStore() {
+		return getLib();
 	}
 
 	@NonNull

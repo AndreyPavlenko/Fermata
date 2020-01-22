@@ -96,7 +96,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		lib = new DefaultMediaLib(FermataApplication.get());
 		session = new MediaSessionCompat(this, "FermataMediaService");
 		setSessionToken(session.getSessionToken());
-		callback = new MediaSessionCallback(this, session, lib, new MediaEngineManager(ctx),
+		callback = new MediaSessionCallback(this, session, lib,
 				PlaybackControlPrefs.create(FermataApplication.get().getDefaultSharedPreferences()),
 				FermataApplication.get().getHandler());
 		session.setCallback(callback);

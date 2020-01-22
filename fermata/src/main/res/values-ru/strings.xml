@@ -2,6 +2,7 @@
 <resources>
     <string name="interface_prefs">Интерфейс</string>
     <string name="playback_prefs">Управление воспроизведением</string>
+    <string name="engine_prefs">Медиа движок</string>
 
     <string name="theme">Тема приложения</string>
     <string name="theme_sub">Текущая тема: %1$s</string>
@@ -25,6 +26,10 @@
     <string name="time_unit_second">Секунда</string>
     <string name="time_unit_minute">Минута</string>
     <string name="time_unit_percent">Процент</string>
+
+    <string name="enable_exoplayer">Включить ExoPlayer</string>
+    <string name="preffered_audio_engine">Предпочтительный аудио движок</string>
+    <string name="preffered_video_engine">Предпочтительный видео движок</string>
 
     <string name="speed">Скорость</string>
 

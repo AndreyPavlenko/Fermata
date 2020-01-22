@@ -2,22 +2,16 @@ android {
     defaultConfig {
         versionCode 1
         versionName "1.0"
-    }
-
-    flavorDimensions "version"
-
-    productFlavors {
-        mobile {
-            dimension "version"
-        }
-
-        auto {
-            dimension "version"
-        }
+        missingDimensionStrategy 'version', 'auto'
+        missingDimensionStrategy 'version', 'mobile'
     }
 }
 
 dependencies {
+    implementation 'androidx.core:core:1.1.0'
     implementation project(':fermata')
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.10.0'
+    implementation project(':exoplayer-library-core')
+    implementation project(':exoplayer-extension-ffmpeg')
+    implementation project(':exoplayer-extension-flac')
+    implementation project(':exoplayer-extension-opus')
 }

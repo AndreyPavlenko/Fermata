@@ -4,8 +4,6 @@ import me.aap.fermata.function.BooleanSupplier;
 import me.aap.fermata.function.DoubleSupplier;
 import me.aap.fermata.function.IntSupplier;
 import me.aap.fermata.function.Supplier;
-
-import me.aap.fermata.media.engine.MediaPlayerEngine;
 import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.util.Utils;
 
@@ -15,7 +13,10 @@ import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
  * @author Andrey Pavlenko
  */
 public interface MediaPrefs extends PreferenceStore {
-	Pref<Supplier<String>> MEDIA_ENGINE = Pref.s("MEDIA_ENGINE", MediaPlayerEngine.ID);
+	int MEDIA_ENG_MP = 0;
+	int MEDIA_ENG_EXO = 1;
+	Pref<IntSupplier> AUDIO_ENGINE = Pref.i("AUDIO_ENGINE", MEDIA_ENG_MP);
+	Pref<IntSupplier> VIDEO_ENGINE = Pref.i("VIDEO_ENGINE", MEDIA_ENG_MP);
 	Pref<DoubleSupplier> SPEED = Pref.f("SPEED", 1.0f).withInheritance(false);
 	Pref<BooleanSupplier> AE_ENABLED = Pref.b("AE_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> EQ_ENABLED = Pref.b("EQ_ENABLED", false).withInheritance(false);
@@ -30,8 +31,12 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<IntSupplier> VIRT_STRENGTH = Pref.i("VIRT_STRENGTH", 0).withInheritance(false);
 	Pref<IntSupplier> BASS_STRENGTH = Pref.i("BASS_STRENGTH", 0).withInheritance(false);
 
-	default String getMediaEngineIdPref() {
-		return getStringPref(MEDIA_ENGINE);
+	default int getAudioEnginePref() {
+		return getIntPref(AUDIO_ENGINE);
+	}
+
+	default int getVideoEnginePref() {
+		return getIntPref(VIDEO_ENGINE);
 	}
 
 	static String getUserPresetName(String preset) {
@@ -52,9 +57,9 @@ public interface MediaPrefs extends PreferenceStore {
 	static String toUserPreset(String name, int[] bands) {
 		StringBuilder sb = Utils.getSharedStringBuilder();
 
-		for(int i = 0; i < bands.length; i++) {
+		for (int i = 0; i < bands.length; i++) {
 			sb.append(bands[i]);
-			if(i == (bands.length -1)) sb.append(':');
+			if (i == (bands.length - 1)) sb.append(':');
 			else sb.append(' ');
 		}
 

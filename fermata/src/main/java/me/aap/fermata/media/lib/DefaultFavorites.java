@@ -63,6 +63,12 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 
 	@NonNull
 	@Override
+	public PreferenceStore getParentPreferenceStore() {
+		return getLib();
+	}
+
+	@NonNull
+	@Override
 	public BrowsableItem getRoot() {
 		return this;
 	}

@@ -7,6 +7,7 @@
 
     <string name="interface_prefs">Interface</string>
     <string name="playback_prefs">Playback control</string>
+    <string name="engine_prefs">Media engine</string>
 
     <string name="theme">Application theme</string>
     <string name="theme_sub">Current theme: %1$s</string>
@@ -30,6 +31,10 @@
     <string name="time_unit_second">Second</string>
     <string name="time_unit_minute">Minute</string>
     <string name="time_unit_percent">Percent</string>
+
+    <string name="enable_exoplayer">Enable ExoPlayer</string>
+    <string name="preffered_audio_engine">Preferred audio engine</string>
+    <string name="preffered_video_engine">Preferred video engine</string>
 
     <string name="speed">Speed</string>
 

@@ -4,11 +4,13 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.pref.MediaPrefs;
 
 /**
  * @author Andrey Pavlenko
@@ -17,7 +19,6 @@ public class MediaPlayerEngine implements MediaEngine,
 		MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
 		MediaPlayer.OnVideoSizeChangedListener,
 		MediaPlayer.OnErrorListener {
-	public static final String ID = "MediaPlayerEngine";
 	private final Context ctx;
 	private final Listener listener;
 	private final MediaPlayer player;
@@ -41,8 +42,8 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
-	public String getId() {
-		return ID;
+	public int getId() {
+		return MediaPrefs.MEDIA_ENG_MP;
 	}
 
 	@Override
@@ -82,6 +83,11 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
+	public long getDuration() {
+		return (player == null) ? 0 : player.getDuration();
+	}
+
+	@Override
 	public long getPosition() {
 		return (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0;
 	}
@@ -98,9 +104,13 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void setSpeed(float speed) {
-		PlaybackParams p = player.getPlaybackParams();
-		p.setSpeed(speed);
-		player.setPlaybackParams(p);
+		try {
+			PlaybackParams p = player.getPlaybackParams();
+			p.setSpeed(speed);
+			player.setPlaybackParams(p);
+		} catch (Exception ex) {
+			Log.e(getClass().getName(), "Failed to set speed: " + speed, ex);
+		}
 	}
 
 	@Override
@@ -116,11 +126,6 @@ public class MediaPlayerEngine implements MediaEngine,
 	@Override
 	public float getVideoHeight() {
 		return player.getVideoHeight();
-	}
-
-	@Override
-	public boolean canPlay(PlayableItem i) {
-		return true;
 	}
 
 	@NonNull

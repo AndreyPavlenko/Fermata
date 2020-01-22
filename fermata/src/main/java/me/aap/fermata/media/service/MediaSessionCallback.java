@@ -129,17 +129,17 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private int preBufferingState;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
+	private boolean tryAnotherEngine;
 	@NonNull
 	private PlaybackStateCompat currentState;
 	private List<VideoViewWraper> videoView;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
-															MediaEngineManager engineManager,
 															PlaybackControlPrefs playbackControlPrefs, Handler handler) {
 		this.lib = lib;
 		this.service = service;
 		this.session = session;
-		this.engineManager = engineManager;
+		this.engineManager = new MediaEngineManager(lib);
 		this.playbackControlPrefs = playbackControlPrefs;
 		this.handler = handler;
 		Context ctx = lib.getContext();
@@ -296,6 +296,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
 		listeners.clear();
+		engineManager.close();
 	}
 
 	@Override
@@ -304,14 +305,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if ((st != PlaybackState.STATE_NONE) && (st != PlaybackState.STATE_ERROR)) return;
 
 		PlayableItem i = lib.getLastPlayedItem();
-		if (i == null) return;
+		if ((i == null) || i.isVideo()) return;
 
 		engine = engineManager.createEngine(engine, i, this);
+		Log.i(getClass().getName(), "MediaEngine " + engine + " created for " + i);
 		if (engine == null) return;
 
 		playOnPrepared = false;
 		if (i.isVideo() && (videoView != null))
 			engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+		tryAnotherEngine = true;
 		engine.prepare(i);
 	}
 
@@ -665,8 +668,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (i == null) return;
 
 		long pos = lib.getLastPlayedPosition(i);
+		long dur = engine.getDuration();
 		float speed = getSpeed(i);
-		engine.setPosition(pos);
+		engine.setPosition((pos > dur) ? 0 : pos);
 
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder(i.getMediaData());
@@ -717,16 +721,27 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@Override
 	public void onEngineError(MediaEngine engine, Throwable ex) {
 		String msg;
+		PlayableItem i = engine.getSource();
 
 		if (TextUtils.isEmpty(ex.getLocalizedMessage())) {
-			msg = lib.getContext().getResources().getString(R.string.err_failed_to_play,
-					engine.getSource());
+			msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, i);
 		} else {
 			msg = lib.getContext().getResources().getString(R.string.err_failed_to_play_cause,
-					engine.getSource(), ex.getLocalizedMessage());
+					i, ex.getLocalizedMessage());
 		}
 
 		Log.w(TAG, msg, ex);
+
+		if (tryAnotherEngine) {
+			this.engine = engineManager.createAnotherEngine(engine, this);
+
+			if (this.engine != null) {
+				tryAnotherEngine = false;
+				this.engine.prepare(i);
+				return;
+			}
+		}
+
 		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(PlaybackStateCompat.STATE_ERROR, 0, 1.0f)
 				.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
@@ -773,6 +788,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		engine = engineManager.createEngine(engine, i, this);
+		Log.i(getClass().getName(), "MediaEngine " + engine + " created for " + i);
 
 		if (engine == null) {
 			String msg = lib.getContext().getResources().getString(R.string.err_unsupported_source_type, i);
@@ -787,6 +803,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		playOnPrepared = true;
 		if (i.isVideo() && (videoView != null))
 			engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+		tryAnotherEngine = true;
 		engine.prepare(i);
 	}
 

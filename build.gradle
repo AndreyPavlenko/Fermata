@@ -3,6 +3,7 @@ ext {
     SDK_TARGET_VERSION = 29
     SDK_COMPILE_VERSION = 29
     BUILD_TOOLS_VERSION = "29.0.2"
+    localProps = gradle.ext.localProps
 }
 
 buildscript {
@@ -28,8 +29,10 @@ subprojects {
 
     if (name == 'fermata') {
         apply plugin: 'com.android.application'
-    } else {
+    } else if (name == 'exoplayer') {
         apply plugin: 'com.android.dynamic-feature'
+    } else {
+        apply plugin: 'com.android.library'
     }
 
     android {

@@ -13,7 +13,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
  */
 public interface MediaEngine extends Closeable {
 
-	String getId();
+	int getId();
 
 	void prepare(PlayableItem source);
 
@@ -24,6 +24,8 @@ public interface MediaEngine extends Closeable {
 	void pause();
 
 	PlayableItem getSource();
+
+	long getDuration();
 
 	long getPosition();
 
@@ -38,8 +40,6 @@ public interface MediaEngine extends Closeable {
 	float getVideoWidth();
 
 	float getVideoHeight();
-
-	boolean canPlay(PlayableItem i);
 
 	@Override
 	void close();

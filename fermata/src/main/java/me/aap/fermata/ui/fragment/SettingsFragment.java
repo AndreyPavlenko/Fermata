@@ -13,9 +13,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
-import me.aap.fermata.pref.PreferenceViewAdapter;
 import me.aap.fermata.pref.PreferenceSet;
+import me.aap.fermata.pref.PreferenceViewAdapter;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 
@@ -82,6 +83,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 	}
 
 	private PreferenceViewAdapter createAdapter() {
+		MainActivityDelegate a = getMainActivity();
 		int[] timeUnits = new int[]{R.string.time_unit_second, R.string.time_unit_minute,
 				R.string.time_unit_percent};
 		PreferenceSet set = new PreferenceSet();
@@ -90,7 +92,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 
 		sub1 = set.subSet(o -> o.title = R.string.interface_prefs);
 		sub1.addListPref(o -> {
-			o.store = getMainActivity().getPrefs();
+			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.THEME;
 			o.title = R.string.theme;
 			o.subtitle = R.string.theme_sub;
@@ -98,13 +100,13 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night};
 		});
 		sub1.addBooleanPref(o -> {
-			o.store = getMainActivity().getPrefs();
+			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.HIDE_BARS;
 			o.title = R.string.hide_bars;
 			o.subtitle = R.string.hide_bars_sub;
 		});
 		sub1.addBooleanPref(o -> {
-			o.store = getMainActivity().getPrefs();
+			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.FULLSCREEN;
 			o.title = R.string.fullscreen_mode;
 		});
@@ -113,13 +115,13 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 
 		sub2 = sub1.subSet(o -> o.title = R.string.rw_ff_click);
 		sub2.addIntPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.RW_FF_TIME;
 			o.title = R.string.time;
 			o.seekMax = 60;
 		});
 		sub2.addListPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.RW_FF_TIME_UNIT;
 			o.title = R.string.time_unit;
 			o.subtitle = R.string.time_unit_sub;
@@ -129,13 +131,13 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 
 		sub2 = sub1.subSet(o -> o.title = R.string.rw_ff_long_click);
 		sub2.addIntPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.RW_FF_LONG_TIME;
 			o.title = R.string.time;
 			o.seekMax = 60;
 		});
 		sub2.addListPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.RW_FF_LONG_TIME_UNIT;
 			o.title = R.string.time_unit;
 			o.subtitle = R.string.time_unit_sub;
@@ -145,13 +147,13 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 
 		sub2 = sub1.subSet(o -> o.title = R.string.prev_next_long_click);
 		sub2.addIntPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.PREV_NEXT_LONG_TIME;
 			o.title = R.string.time;
 			o.seekMax = 60;
 		});
 		sub2.addListPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.PREV_NEXT_LONG_TIME_UNIT;
 			o.title = R.string.time_unit;
 			o.subtitle = R.string.time_unit_sub;
@@ -160,16 +162,41 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 		});
 
 		sub1.addBooleanPref(o -> {
-			o.store = getMainActivity().getPlaybackControlPrefs();
+			o.store = a.getPlaybackControlPrefs();
 			o.pref = PlaybackControlPrefs.PLAY_PAUSE_STOP;
 			o.title = R.string.play_pause_stop;
 		});
+
+		if (!a.isCarActivity()) {
+			sub1 = set.subSet(o -> o.title = R.string.engine_prefs);
+			sub1.addBooleanPref(o -> {
+				o.store = a.getMediaServiceBinder().getLib().getPrefs();
+				o.pref = MediaLibPrefs.EXO_ENABLED;
+				o.title = R.string.enable_exoplayer;
+			});
+			sub1.addListPref(o -> {
+				o.store = a.getMediaServiceBinder().getLib().getPrefs();
+				o.pref = MediaLibPrefs.AUDIO_ENGINE;
+				o.title = R.string.preffered_audio_engine;
+				o.subtitle = R.string.string_format;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
+			});
+			sub1.addListPref(o -> {
+				o.store = a.getMediaServiceBinder().getLib().getPrefs();
+				o.pref = MediaLibPrefs.VIDEO_ENGINE;
+				o.title = R.string.preffered_video_engine;
+				o.subtitle = R.string.string_format;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
+			});
+		}
 
 		return new PreferenceViewAdapter(set) {
 			@Override
 			public void setPreferenceSet(PreferenceSet set) {
 				super.setPreferenceSet(set);
-				getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+				a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 			}
 		};
 	}

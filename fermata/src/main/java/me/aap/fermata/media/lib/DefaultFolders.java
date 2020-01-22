@@ -64,6 +64,12 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 
 	@NonNull
 	@Override
+	public PreferenceStore getParentPreferenceStore() {
+		return getLib();
+	}
+
+	@NonNull
+	@Override
 	public BrowsableItem getRoot() {
 		return this;
 	}

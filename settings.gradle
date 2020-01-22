@@ -1,3 +1,15 @@
-rootProject.name='Fermata Music Player'
+rootProject.name = 'Fermata Music Player'
 include ':fermata'
-include ':exoplayer'
+
+def exoRoot = file('depends/ExoPlayer')
+
+if (exoRoot.isDirectory()) {
+    include ':exoplayer'
+    gradle.ext.exoplayerRoot = exoRoot
+    gradle.ext.exoplayerModulePrefix = 'exoplayer-'
+    apply from: new File(exoRoot, 'core_settings.gradle')
+}
+
+gradle.ext.localProps = new Properties()
+def localPropsFile = file('local.properties')
+if (localPropsFile.isFile()) gradle.ext.localProps.load(localPropsFile.newDataInputStream())

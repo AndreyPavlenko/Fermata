@@ -1,0 +1,61 @@
+#!/bin/bash
+set -e
+
+: ${NDK_DIR:="$1"}
+
+if [ ! -d "$NDK_DIR" ];then
+    echo "NDK_DIR is not specified"
+    exit 1
+fi
+
+DEPENDS_DIR="$(cd "$(dirname "$0")" && pwd)"
+EXO_DIR="$DEPENDS_DIR/ExoPlayer"
+EXO_EXT_DIR="$EXO_DIR/extensions"
+
+: ${HOST_PLATFORM:='linux-x86_64'}
+: ${ABI:='armeabi-v7a arm64-v8a x86'}
+
+# Clone or update ExoPlayer
+if [ -d "$EXO_DIR" ]; then
+    cd "$EXO_DIR"
+    git clean -xfd && git reset --hard && git pull
+else
+    git clone 'https://github.com/google/ExoPlayer.git' "$EXO_DIR"
+fi
+
+git checkout release-v2
+
+
+# Build ExoPlayer FFmpeg extension
+FFMPEG_DECODERS=(vorbis alac mp3 aac ac3 eac3 mlp truehd)
+
+cd "$EXO_EXT_DIR/ffmpeg/src/main/jni"
+[ -d ffmpeg ] && cd ffmpeg && git clean -xfd && git reset --hard && cd -
+
+./build_ffmpeg.sh "$(pwd)" "$NDK_DIR" "$HOST_PLATFORM" "${FFMPEG_DECODERS[@]}"
+"$NDK_DIR/ndk-build" APP_ABI="$ABI" -j4
+
+
+# Build ExoPlayer Flac extension
+FLAC_VERSION='1.3.3'
+
+cd "$EXO_EXT_DIR/flac/src/main/jni"
+rm -rf flac
+curl "https://ftp.osuosl.org/pub/xiph/releases/flac/flac-${FLAC_VERSION}.tar.xz" | tar xJ
+mv flac-${FLAC_VERSION} flac
+"$NDK_DIR/ndk-build" APP_ABI="$ABI" -j4
+
+
+# Build ExoPlayer Opus extension
+cd "$EXO_EXT_DIR/opus/src/main/jni"
+
+if [ -d libopus ]; then
+    cd libopus
+    git clean -xfd && git reset --hard && git pull
+    cd -
+else
+    git clone 'https://git.xiph.org/opus.git' libopus
+fi
+
+./convert_android_asm.sh
+"$NDK_DIR/ndk-build" APP_ABI="$ABI" -j4
