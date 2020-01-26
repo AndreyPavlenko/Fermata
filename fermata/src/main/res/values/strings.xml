@@ -93,6 +93,8 @@
     <string name="shuffle_disable">Do not shuffle</string>
     <string name="favorites_add">Add to favorites</string>
     <string name="favorites_remove">Remove from favorites</string>
+    <string name="mark_watched">Mark as watched</string>
+    <string name="mark_unwatched">Mark as unwatched</string>
 
     <string name="playlist_add">Add to playlist</string>
     <string name="playlist_remove">Remove from playlist</string>

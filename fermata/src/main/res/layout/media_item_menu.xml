@@ -66,4 +66,20 @@
         app:icon="@drawable/repeat_filled"
         app:text="@string/repeat_disable" />
 
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/mark_watched"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/watched_video"
+        app:text="@string/mark_watched" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/mark_unwatched"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/video"
+        app:text="@string/mark_unwatched" />
+
 </merge>

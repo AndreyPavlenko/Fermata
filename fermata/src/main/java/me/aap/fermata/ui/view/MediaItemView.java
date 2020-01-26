@@ -154,12 +154,21 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	public void refresh() {
-		setItemWrapper(getItemWrapper());
-		refreshState();
+		MediaItemWrapper w = getItemWrapper();
+		setItemWrapper(w);
+		refreshState(w.getItem());
 	}
 
 	public void refreshState() {
-		Item item = getItem();
+		MediaItemWrapper w = getItemWrapper();
+		Item item = w.getItem();
+		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) {
+			setItemWrapper(w);
+		}
+		refreshState(item);
+	}
+
+	private void refreshState(Item item) {
 		int type = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed()) ?
 				Typeface.BOLD : Typeface.NORMAL;
 		getTitle().setTypeface(null, type);
@@ -195,7 +204,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	public boolean onLongClick(View v) {
 		MainActivityDelegate a = getMainActivity();
 		AppMenu menu = a.getContextMenu();
-		MediaItemMenuHandler handler = new MediaItemMenuHandler(menu, getItem());
+		MediaItemMenuHandler handler = new MediaItemMenuHandler(menu, this);
 		getListView().discardSelection();
 		handler.show(R.layout.media_item_menu);
 		return true;

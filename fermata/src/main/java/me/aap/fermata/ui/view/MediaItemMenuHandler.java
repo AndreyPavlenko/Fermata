@@ -8,10 +8,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Collections;
 import java.util.List;
-import me.aap.fermata.function.IntSupplier;
-import me.aap.fermata.function.Supplier;
 
 import me.aap.fermata.R;
+import me.aap.fermata.function.IntSupplier;
+import me.aap.fermata.function.Supplier;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
@@ -24,6 +24,7 @@ import me.aap.fermata.pref.PreferenceSet;
 import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.pref.PreferenceStore.Pref;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.menu.AppMenu;
 import me.aap.fermata.ui.menu.AppMenuItem;
@@ -38,10 +39,18 @@ import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
 public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 	private final AppMenu menu;
 	private final Item item;
+	private final MediaItemView view;
+
+	public MediaItemMenuHandler(AppMenu menu, MediaItemView view) {
+		this.menu = menu;
+		this.view = view;
+		this.item = view.getItem();
+	}
 
 	public MediaItemMenuHandler(AppMenu menu, Item item) {
 		this.menu = menu;
 		this.item = item;
+		this.view = null;
 	}
 
 	public AppMenu getMenu() {
@@ -80,6 +89,11 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			boolean repeat = pi.isRepeatItemEnabled();
 			menu.findItem(R.id.repeat_enable).setVisible(!repeat);
 			menu.findItem(R.id.repeat_disable).setVisible(repeat);
+		}
+
+		if (pi.isVideo()) {
+			if (pi.getPrefs().getWatchedPref()) menu.findItem(R.id.mark_unwatched).setVisible(true);
+			else menu.findItem(R.id.mark_watched).setVisible(true);
 		}
 
 		if (playlist) menu.findItem(R.id.playlist_remove).setVisible(true);
@@ -218,6 +232,18 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			case R.id.repeat_enable:
 			case R.id.repeat_disable:
 				((PlayableItem) item).setRepeatItemEnabled(id == R.id.repeat_enable);
+				break;
+			case R.id.mark_watched:
+			case R.id.mark_unwatched:
+				((PlayableItem) item).getPrefs().setWatchedPref(id == R.id.mark_watched);
+
+				if (view != null) {
+					view.refresh();
+				} else {
+					MainActivityFragment mf = getMainActivity().getActiveFragment();
+					if (mf instanceof MediaLibFragment) ((MediaLibFragment) mf).getAdapter().refresh();
+				}
+
 				break;
 		}
 

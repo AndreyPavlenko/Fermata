@@ -7,20 +7,22 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
 import me.aap.fermata.function.BooleanSupplier;
 import me.aap.fermata.function.DoubleSupplier;
+import me.aap.fermata.function.IntBiConsumer;
 import me.aap.fermata.function.IntFunction;
 import me.aap.fermata.function.IntSupplier;
 import me.aap.fermata.function.LongSupplier;
 import me.aap.fermata.function.Supplier;
-
-import me.aap.fermata.function.IntBiConsumer;
 import me.aap.fermata.util.Utils;
 
 /**
@@ -251,6 +253,11 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setBooleanPref(Pref<? extends BooleanSupplier> pref, boolean value) {
+			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsBoolean())) {
+				removePref(pref);
+				return;
+			}
+
 			String key = store.getPreferenceKey(pref);
 			edit.putBoolean(key, value);
 			notifyPreferenceChange(pref);
@@ -258,6 +265,11 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setIntPref(Pref<? extends IntSupplier> pref, int value) {
+			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsInt())) {
+				removePref(pref);
+				return;
+			}
+
 			String key = store.getPreferenceKey(pref);
 			edit.putInt(key, value);
 			notifyPreferenceChange(pref);
@@ -265,11 +277,21 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setIntArrayPref(Pref<? extends Supplier<int[]>> pref, int[] value) {
+			if (!pref.isInheritable() && (Arrays.equals(value, pref.getDefaultValue().get()))) {
+				removePref(pref);
+				return;
+			}
+
 			setArrayPref(pref, value, value.length, (i, a, sb) -> sb.append(a[i]));
 		}
 
 		@Override
 		public void setLongPref(Pref<? extends LongSupplier> pref, long value) {
+			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsLong())) {
+				removePref(pref);
+				return;
+			}
+
 			String key = store.getPreferenceKey(pref);
 			edit.putLong(key, value);
 			notifyPreferenceChange(pref);
@@ -277,6 +299,11 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setFloatPref(Pref<? extends DoubleSupplier> pref, float value) {
+			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsDouble())) {
+				removePref(pref);
+				return;
+			}
+
 			String key = store.getPreferenceKey(pref);
 			edit.putFloat(key, value);
 			notifyPreferenceChange(pref);
@@ -284,6 +311,11 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setStringPref(Pref<? extends Supplier<String>> pref, String value) {
+			if (!pref.isInheritable() && (Objects.equals(value, pref.getDefaultValue().get()))) {
+				removePref(pref);
+				return;
+			}
+
 			String key = store.getPreferenceKey(pref);
 			edit.putString(key, value);
 			notifyPreferenceChange(pref);
@@ -291,6 +323,11 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setStringArrayPref(Pref<? extends Supplier<String[]>> pref, String[] value) {
+			if (!pref.isInheritable() && (Arrays.equals(value, pref.getDefaultValue().get()))) {
+				removePref(pref);
+				return;
+			}
+
 			String key = store.getPreferenceKey(pref);
 			Set<String> set = new HashSet<>((int) (value.length * 1.5f));
 			StringBuilder sb = Utils.getSharedStringBuilder();

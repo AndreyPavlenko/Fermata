@@ -701,6 +701,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		if (i != null) {
 			PlayableItem next = i.getNextPlayable();
+			if (i.isVideo()) i.getPrefs().setWatchedPref(true);
 
 			if (next != null) {
 				skipTo(true, next);
@@ -736,6 +737,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			this.engine = engineManager.createAnotherEngine(engine, this);
 
 			if (this.engine != null) {
+				Log.i(getClass().getName(), "Trying another engine: " + this.engine);
 				tryAnotherEngine = false;
 				this.engine.prepare(i);
 				return;

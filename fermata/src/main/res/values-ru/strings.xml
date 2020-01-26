@@ -87,6 +87,8 @@
     <string name="shuffle_disable">Не перемешивать</string>
     <string name="favorites_add">Добавить в избранное</string>
     <string name="favorites_remove">Удалть из избранного</string>
+    <string name="mark_watched">Пометить как просмотренное</string>
+    <string name="mark_unwatched">Пометить как не просмотренное</string>
 
     <string name="playlist_add">Добавить в плейлист</string>
     <string name="playlist_remove">Удалть из плейлиста</string>

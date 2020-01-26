@@ -160,7 +160,11 @@ public interface MediaLib {
 
 		@Override
 		default int getIcon() {
-			return isVideo() ? R.drawable.video : R.drawable.audiotrack;
+			if (isVideo()) {
+				return getPrefs().getWatchedPref() ? R.drawable.watched_video : R.drawable.video;
+			} else {
+				return R.drawable.audiotrack;
+			}
 		}
 
 		default long getOffset() {
