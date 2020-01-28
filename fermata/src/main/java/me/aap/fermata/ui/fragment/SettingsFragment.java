@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import me.aap.fermata.R;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.fermata.pref.PrefCondition;
 import me.aap.fermata.pref.PreferenceSet;
 import me.aap.fermata.pref.PreferenceViewAdapter;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -168,27 +169,30 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 		});
 
 		if (!a.isCarActivity()) {
+			MediaLibPrefs prefs = a.getMediaServiceBinder().getLib().getPrefs();
 			sub1 = set.subSet(o -> o.title = R.string.engine_prefs);
 			sub1.addBooleanPref(o -> {
-				o.store = a.getMediaServiceBinder().getLib().getPrefs();
+				o.store = prefs;
 				o.pref = MediaLibPrefs.EXO_ENABLED;
 				o.title = R.string.enable_exoplayer;
 			});
 			sub1.addListPref(o -> {
-				o.store = a.getMediaServiceBinder().getLib().getPrefs();
+				o.store = prefs;
 				o.pref = MediaLibPrefs.AUDIO_ENGINE;
 				o.title = R.string.preferred_audio_engine;
 				o.subtitle = R.string.string_format;
 				o.formatSubtitle = true;
 				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
+				o.visibility = PrefCondition.create(prefs, MediaLibPrefs.EXO_ENABLED);
 			});
 			sub1.addListPref(o -> {
-				o.store = a.getMediaServiceBinder().getLib().getPrefs();
+				o.store = prefs;
 				o.pref = MediaLibPrefs.VIDEO_ENGINE;
 				o.title = R.string.preferred_video_engine;
 				o.subtitle = R.string.string_format;
 				o.formatSubtitle = true;
 				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
+				o.visibility = PrefCondition.create(prefs, MediaLibPrefs.EXO_ENABLED);
 			});
 		}
 

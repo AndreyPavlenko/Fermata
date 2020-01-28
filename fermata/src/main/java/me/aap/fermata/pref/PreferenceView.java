@@ -31,6 +31,7 @@ import me.aap.fermata.function.ToIntFunction;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.menu.AppMenu;
 import me.aap.fermata.ui.menu.AppMenuItem;
+import me.aap.fermata.util.ChangeableCondition;
 import me.aap.fermata.util.Utils;
 
 import static me.aap.fermata.util.Utils.toPx;
@@ -40,7 +41,8 @@ import static me.aap.fermata.util.Utils.toPx;
  */
 public class PreferenceView extends ConstraintLayout {
 	private Opts opts;
-	private PreferenceStore.Listener listener;
+	private PreferenceStore.Listener prefListener;
+	private ChangeableCondition.Listener condListener;
 
 	public PreferenceView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -48,11 +50,14 @@ public class PreferenceView extends ConstraintLayout {
 
 	public void setPreference(PreferenceViewAdapter adapter,
 														@Nullable Supplier<? extends PreferenceView.Opts> supplier) {
-		if ((this.opts instanceof PrefOpts<?>) && (this.listener != null)) {
-			(((PrefOpts<?>) this.opts).store).removeBroadcastListener(this.listener);
+		if (this.opts != null) {
+			if (opts.visibility != null) opts.visibility.setListener(null);
+			if ((this.opts instanceof PrefOpts<?>) && (this.prefListener != null)) {
+				(((PrefOpts<?>) this.opts).store).removeBroadcastListener(this.prefListener);
+			}
 		}
 
-		this.listener = null;
+		this.prefListener = null;
 		setOnClickListener(null);
 
 		if (supplier == null) {
@@ -60,7 +65,6 @@ public class PreferenceView extends ConstraintLayout {
 			return;
 		}
 
-		this.listener = null;
 		this.opts = supplier.get();
 
 		if (supplier instanceof PreferenceSet) {
@@ -98,7 +102,7 @@ public class PreferenceView extends ConstraintLayout {
 		b.setOnCheckedChangeListener((v, checked) -> o.store.applyBooleanPref(o.pref, checked));
 		setOnClickListener(v -> b.setChecked(!b.isChecked()));
 
-		setListener((s, p) -> {
+		setPrefListener((s, p) -> {
 			if (p.contains(o.pref)) b.setChecked(o.store.getBooleanPref(o.pref));
 		});
 	}
@@ -132,7 +136,7 @@ public class PreferenceView extends ConstraintLayout {
 			if (has) t.requestFocus();
 		});
 
-		setListener((s, p) -> {
+		setPrefListener((s, p) -> {
 			if (!ignoreChange[0] && p.contains(o.pref)) t.setText(o.store.getStringPref(o.pref));
 		});
 	}
@@ -228,7 +232,7 @@ public class PreferenceView extends ConstraintLayout {
 			if (has) sb.requestFocus();
 		});
 
-		setListener((s, p) -> {
+		setPrefListener((s, p) -> {
 			if (!ignoreChange[0] && p.contains(o.pref)) t.setText(get.get());
 		});
 	}
@@ -241,7 +245,7 @@ public class PreferenceView extends ConstraintLayout {
 		if (o.formatTitle) {
 			formatTitle = () -> formatListTitle(o, this::getTitleView, o.title);
 			formatTitle.run();
-			setListener((s, p) -> {
+			setPrefListener((s, p) -> {
 				if (p.contains(o.pref)) formatTitle.run();
 			});
 		} else {
@@ -251,7 +255,7 @@ public class PreferenceView extends ConstraintLayout {
 		if (o.formatSubtitle) {
 			formatSubtitle = () -> formatListTitle(o, this::getSubtitleView, o.subtitle);
 			formatSubtitle.run();
-			setListener((s, p) -> {
+			setPrefListener((s, p) -> {
 				if (p.contains(o.pref)) formatSubtitle.run();
 			});
 		} else {
@@ -304,9 +308,35 @@ public class PreferenceView extends ConstraintLayout {
 		}
 	}
 
-	public void setListener(PreferenceStore.Listener listener) {
-		this.listener = listener;
-		(((PrefOpts<?>) this.opts).store).addBroadcastListener(listener);
+	public void setPrefListener(PreferenceStore.Listener prefListener) {
+		PreferenceStore.Listener current = this.prefListener;
+
+		if (current != null) {
+			this.prefListener = (s, p) -> {
+				current.onPreferenceChanged(s, p);
+				prefListener.onPreferenceChanged(s, p);
+			};
+			(((PrefOpts<?>) this.opts).store).removeBroadcastListener(current);
+		} else {
+			this.prefListener = prefListener;
+		}
+
+		(((PrefOpts<?>) this.opts).store).addBroadcastListener(this.prefListener);
+	}
+
+	public void setCondListener(ChangeableCondition.Listener condListener) {
+		ChangeableCondition.Listener current = this.condListener;
+
+		if (current != null) {
+			this.condListener = (c) -> {
+				current.onConditionChanged(c);
+				condListener.onConditionChanged(c);
+			};
+		} else {
+			this.condListener = condListener;
+		}
+
+		this.opts.visibility.setListener(this.condListener);
 	}
 
 	private void setPreference(@LayoutRes int layout, Opts opts) {
@@ -336,6 +366,13 @@ public class PreferenceView extends ConstraintLayout {
 			subtitleView.setVisibility(VISIBLE);
 			subtitleView.setText(opts.subtitle);
 		}
+
+		if (opts.visibility != null) {
+			setVisibility(opts.visibility.get() ? VISIBLE : GONE);
+			setCondListener(c -> setVisibility(c.get() ? VISIBLE : GONE));
+		} else {
+			setVisibility(VISIBLE);
+		}
 	}
 
 	private ImageView getIconView() {
@@ -360,6 +397,7 @@ public class PreferenceView extends ConstraintLayout {
 		@SuppressLint("InlinedApi")
 		@StringRes
 		public int subtitle = Resources.ID_NULL;
+		public ChangeableCondition visibility;
 	}
 
 	public static class PrefOpts<S> extends Opts {
