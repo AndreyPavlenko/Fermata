@@ -147,7 +147,7 @@ class FileItem extends PlayableItemBase {
 			MediaPlayer mp = null;
 			try {
 				mp = MediaPlayer.create(FermataApplication.get(), getLocation());
-				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
+				if (mp != null) meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
 			} catch (Exception ex2) {
 				Log.d(getClass().getName(), "Failed to retrieve duration of " + getLocation(), ex2);
 			} finally {

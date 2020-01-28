@@ -82,4 +82,12 @@
         app:icon="@drawable/video"
         app:text="@string/mark_unwatched" />
 
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/preferred_media_engine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/media_engine"
+        app:text="@string/preferred_media_engine" />
+
 </merge>

@@ -177,7 +177,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			sub1.addListPref(o -> {
 				o.store = a.getMediaServiceBinder().getLib().getPrefs();
 				o.pref = MediaLibPrefs.AUDIO_ENGINE;
-				o.title = R.string.preffered_audio_engine;
+				o.title = R.string.preferred_audio_engine;
 				o.subtitle = R.string.string_format;
 				o.formatSubtitle = true;
 				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
@@ -185,7 +185,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			sub1.addListPref(o -> {
 				o.store = a.getMediaServiceBinder().getLib().getPrefs();
 				o.pref = MediaLibPrefs.VIDEO_ENGINE;
-				o.title = R.string.preffered_video_engine;
+				o.title = R.string.preferred_video_engine;
 				o.subtitle = R.string.string_format;
 				o.formatSubtitle = true;
 				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};

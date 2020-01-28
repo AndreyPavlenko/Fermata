@@ -28,8 +28,8 @@
     <string name="time_unit_percent">Процент</string>
 
     <string name="enable_exoplayer">Включить ExoPlayer</string>
-    <string name="preffered_audio_engine">Предпочтительный аудио движок</string>
-    <string name="preffered_video_engine">Предпочтительный видео движок</string>
+    <string name="preferred_audio_engine">Предпочтительный аудио движок</string>
+    <string name="preferred_video_engine">Предпочтительный видео движок</string>
 
     <string name="speed">Скорость</string>
 
@@ -89,6 +89,8 @@
     <string name="favorites_remove">Удалть из избранного</string>
     <string name="mark_watched">Пометить как просмотренное</string>
     <string name="mark_unwatched">Пометить как не просмотренное</string>
+    <string name="preferred_media_engine">Предпочтительный медиа движок</string>
+    <string name="default_engine">По умолчанию</string>
 
     <string name="playlist_add">Добавить в плейлист</string>
     <string name="playlist_remove">Удалть из плейлиста</string>

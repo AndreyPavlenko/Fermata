@@ -38,6 +38,7 @@ import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.ui.fragment.AudioEffectsFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
@@ -284,6 +285,10 @@ public class MainActivityDelegate extends Fragment implements
 
 	public FermataServiceUiBinder getMediaServiceBinder() {
 		return mediaServiceBinder;
+	}
+
+	public MediaSessionCallback getMediaSessionCallback() {
+		return getMediaServiceBinder().getMediaSessionCallback();
 	}
 
 	@NonNull

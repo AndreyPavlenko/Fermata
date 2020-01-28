@@ -1,5 +1,7 @@
 package me.aap.fermata.ui.menu;
 
+import androidx.annotation.StringRes;
+
 /**
  * @author Andrey Pavlenko
  */
@@ -12,6 +14,8 @@ public interface AppMenuItem {
 	boolean isLongClick();
 
 	CharSequence getTitle();
+
+	void setTitle(@StringRes int title);
 
 	void setTitle(CharSequence title);
 

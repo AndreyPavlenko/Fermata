@@ -35,8 +35,16 @@ public interface MediaPrefs extends PreferenceStore {
 		return getIntPref(AUDIO_ENGINE);
 	}
 
+	default void setAudioEnginePref(int eng) {
+		applyIntPref(AUDIO_ENGINE, eng);
+	}
+
 	default int getVideoEnginePref() {
 		return getIntPref(VIDEO_ENGINE);
+	}
+
+	default void setVideoEnginePref(int eng) {
+		applyIntPref(VIDEO_ENGINE, eng);
 	}
 
 	static String getUserPresetName(String preset) {

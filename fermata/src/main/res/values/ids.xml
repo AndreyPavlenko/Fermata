@@ -7,4 +7,12 @@
     <item name="bookmark_remove_all" type="id" />
     <item name="bookmark_remove_all_confirm" type="id" />
     <item name="video" type="id" />
+    <item name="preferred_video_engine" type="id" />
+    <item name="preferred_audio_engine" type="id" />
+    <item name="preferred_video_engine_default" type="id" />
+    <item name="preferred_audio_engine_default" type="id" />
+    <item name="preferred_video_engine_mp" type="id" />
+    <item name="preferred_audio_engine_mp" type="id" />
+    <item name="preferred_video_engine_exo" type="id" />
+    <item name="preferred_audio_engine_exo" type="id" />
 </resources>

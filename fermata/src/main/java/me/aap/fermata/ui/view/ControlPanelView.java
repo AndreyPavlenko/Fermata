@@ -18,11 +18,11 @@ import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.DoubleSupplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.DoubleSupplier;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -274,10 +274,11 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 
 		@Override
-		protected void initPlayableMenu(AppMenu menu, PlayableItem pi, boolean initRepeat) {
-			super.initPlayableMenu(menu, pi, false);
+		protected void initPlayableMenu(MainActivityDelegate a, AppMenu menu, PlayableItem pi,
+																		boolean initRepeat) {
+			super.initPlayableMenu(a, menu, pi, false);
 			BrowsableItemPrefs p = pi.getParent().getPrefs();
-			MediaEngine eng = getActivity().getMediaServiceBinder().getMediaSessionCallback().getEngine();
+			MediaEngine eng = a.getMediaServiceBinder().getMediaSessionCallback().getEngine();
 			boolean repeat = pi.isRepeatItemEnabled() || p.getRepeatPref();
 			boolean shuffle = p.getShufflePref();
 			AppMenuItem i;

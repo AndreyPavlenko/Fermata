@@ -18,6 +18,7 @@ import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
+import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.pref.BasicPreferenceStore;
 import me.aap.fermata.pref.PreferenceSet;
@@ -62,20 +63,25 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 	}
 
 	public void show(@LayoutRes int layout) {
+		MainActivityDelegate a = getMainActivity();
 		AppMenu menu = getMenu();
 		menu.inflate(layout);
 
 		if (item instanceof PlayableItem) {
-			initPlayableMenu(menu, (PlayableItem) item, true);
+			initPlayableMenu(a, menu, (PlayableItem) item, true);
 		} else {
-			initBrowsableMenu(menu, (BrowsableItem) item);
+			initBrowsableMenu(a, menu, (BrowsableItem) item);
+		}
+
+		if (a.getMediaSessionCallback().getEngineManager().isExoPlayerSupported()) {
+			menu.findItem(R.id.preferred_media_engine).setVisible(true);
 		}
 
 		menu.show(this);
 	}
 
-	protected void initPlayableMenu(AppMenu menu, PlayableItem pi, boolean initRepeat) {
-		MainActivityDelegate a = getMainActivity();
+	protected void initPlayableMenu(MainActivityDelegate a, AppMenu menu, PlayableItem pi,
+																	boolean initRepeat) {
 		boolean favorite = pi.isFavoriteItem();
 		boolean hasBookmarks = pi.getPrefs().hasPref(BOOKMARKS);
 		boolean playlist = (pi.getParent() instanceof Playlist);
@@ -100,8 +106,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		else a.initPlaylistMenu(menu);
 	}
 
-	protected void initBrowsableMenu(AppMenu menu, BrowsableItem bi) {
-		MainActivityDelegate a = getMainActivity();
+	protected void initBrowsableMenu(MainActivityDelegate a, AppMenu menu, BrowsableItem bi) {
 		boolean playlist = (bi instanceof Playlist);
 		boolean favorite = (bi.getParent() instanceof Favorites);
 		boolean hasBookmarks = false;
@@ -245,9 +250,67 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				}
 
 				break;
+			case R.id.preferred_media_engine:
+				menu = i.getMenu();
+				menu.setTitle(R.string.preferred_media_engine);
+
+				if (item instanceof BrowsableItem) {
+					menu.addItem(R.id.preferred_audio_engine, R.string.preferred_audio_engine);
+					menu.addItem(R.id.preferred_video_engine, R.string.preferred_video_engine);
+				} else {
+					createMediaPrefsMenu(item, menu, ((PlayableItem) item).isVideo());
+				}
+
+				menu.show(this);
+				break;
+			case R.id.preferred_audio_engine:
+			case R.id.preferred_video_engine:
+				menu = i.getMenu();
+				menu.setTitle((id == R.id.preferred_audio_engine) ? R.string.preferred_audio_engine
+						: R.string.preferred_video_engine);
+				createMediaPrefsMenu(item, menu, (id == R.id.preferred_video_engine));
+				menu.show(this);
+				break;
+			case R.id.preferred_audio_engine_default:
+			case R.id.preferred_video_engine_default:
+				item.getPrefs().removePref((id == R.id.preferred_audio_engine_default)
+						? MediaPrefs.AUDIO_ENGINE : MediaPrefs.VIDEO_ENGINE);
+				break;
+			case R.id.preferred_audio_engine_mp:
+			case R.id.preferred_video_engine_mp:
+			case R.id.preferred_audio_engine_exo:
+			case R.id.preferred_video_engine_exo:
+				if ((id == R.id.preferred_audio_engine_mp) || (id == R.id.preferred_audio_engine_exo)) {
+					item.getPrefs().setAudioEnginePref((id == R.id.preferred_audio_engine_mp)
+							? MediaPrefs.MEDIA_ENG_MP : MediaPrefs.MEDIA_ENG_EXO);
+				} else {
+					item.getPrefs().setVideoEnginePref((id == R.id.preferred_video_engine_mp)
+							? MediaPrefs.MEDIA_ENG_MP : MediaPrefs.MEDIA_ENG_EXO);
+				}
+				break;
 		}
 
 		return true;
+	}
+
+	private void createMediaPrefsMenu(Item item, AppMenu menu, boolean video) {
+		MediaPrefs prefs = item.getPrefs();
+		Pref<IntSupplier> p = video ? MediaPrefs.VIDEO_ENGINE.withInheritance(false)
+				: MediaPrefs.AUDIO_ENGINE.withInheritance(false);
+		int eng = prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
+
+		AppMenuItem i = menu.addItem(video ? R.id.preferred_video_engine_default
+				: R.id.preferred_audio_engine_default, true, null, R.string.default_engine);
+		i.setChecked(eng == -1);
+		i = menu.addItem(video ? R.id.preferred_video_engine_mp
+				: R.id.preferred_audio_engine_mp, true, null, R.string.engine_mp_name);
+		i.setChecked(eng == MediaPrefs.MEDIA_ENG_MP);
+
+		if (getMainActivity().getMediaSessionCallback().getEngineManager().isExoPlayerSupported()) {
+			i = menu.addItem(video ? R.id.preferred_video_engine_exo
+					: R.id.preferred_audio_engine_exo, true, null, R.string.engine_exo_name);
+			i.setChecked(eng == MediaPrefs.MEDIA_ENG_EXO);
+		}
 	}
 
 	private MainActivityDelegate getMainActivity() {

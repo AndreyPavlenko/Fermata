@@ -220,6 +220,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		return engine;
 	}
 
+	public MediaEngineManager getEngineManager() {
+		return engineManager;
+	}
+
 	public void addVideoView(VideoView view, int priority) {
 		if (this.videoView == null) {
 			videoView = new ArrayList<>(2);

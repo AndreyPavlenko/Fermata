@@ -33,8 +33,8 @@
     <string name="time_unit_percent">Percent</string>
 
     <string name="enable_exoplayer">Enable ExoPlayer</string>
-    <string name="preffered_audio_engine">Preferred audio engine</string>
-    <string name="preffered_video_engine">Preferred video engine</string>
+    <string name="preferred_audio_engine">Preferred audio engine</string>
+    <string name="preferred_video_engine">Preferred video engine</string>
 
     <string name="speed">Speed</string>
 
@@ -95,6 +95,8 @@
     <string name="favorites_remove">Remove from favorites</string>
     <string name="mark_watched">Mark as watched</string>
     <string name="mark_unwatched">Mark as unwatched</string>
+    <string name="preferred_media_engine">Preferred media engine</string>
+    <string name="default_engine">Default</string>
 
     <string name="playlist_add">Add to playlist</string>
     <string name="playlist_remove">Remove from playlist</string>

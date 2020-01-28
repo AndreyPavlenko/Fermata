@@ -7,6 +7,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.play.core.install.InstallException;
 import com.google.android.play.core.splitinstall.SplitInstallHelper;
 import com.google.android.play.core.splitinstall.SplitInstallManager;
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory;
@@ -42,6 +43,10 @@ public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
 		mediaPlayer.init(lib.getContext());
 		lib.getPrefs().addBroadcastListener(this);
 		setExoPlayer(true);
+	}
+
+	public boolean isExoPlayerSupported() {
+		return exoPlayer != null;
 	}
 
 	public MediaEngine createEngine(MediaEngine current, PlayableItem i, Listener listener) {
@@ -109,12 +114,13 @@ public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
 
 	@SuppressLint("SwitchIntDef")
 	private void installExoPlayer() {
+		exoPlayer = null;
 		SplitInstallManager sm = SplitInstallManagerFactory.create(lib.getContext());
 		SplitInstallRequest req = SplitInstallRequest.newBuilder().addModule(MODULE_EXO).build();
 		int[] sessionId = new int[1];
 		sm.registerListener(st -> {
 			if (st.status() == SplitInstallSessionStatus.FAILED) {
-				Log.e(getClass().getName(), "Failed to install ExoPlayer: " + st);
+				installExoPlayerFailed(new InstallException(st.errorCode()));
 				return;
 			}
 
@@ -148,9 +154,11 @@ public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
 
 		sm.startInstall(req)
 				.addOnSuccessListener(id -> sessionId[0] = id)
-				.addOnFailureListener(ex -> {
-					Log.e(getClass().getName(), "Failed to install ExoPlayer", ex);
-					exoPlayer = null;
-				});
+				.addOnFailureListener(this::installExoPlayerFailed);
+	}
+
+	private void installExoPlayerFailed(Exception ex) {
+		setExoPlayer(false);
+		if (exoPlayer == null) Log.e(getClass().getName(), "Failed to install ExoPlayer", ex);
 	}
 }

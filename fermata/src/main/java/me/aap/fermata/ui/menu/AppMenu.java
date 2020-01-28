@@ -37,6 +37,10 @@ public interface AppMenu {
 
 	AppMenuItem addItem(int id, boolean checkable, Drawable icon, CharSequence title);
 
+	default AppMenuItem addItem(int id, boolean checkable, Drawable icon, @StringRes int title) {
+		return addItem(id, checkable, icon, getContext().getResources().getString(title));
+	}
+
 	default AppMenuItem addItem(int id, @StringRes int title) {
 		return addItem(id, getContext().getResources().getString(title));
 	}

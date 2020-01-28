@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.LayoutRes;
+import androidx.annotation.StringRes;
 import androidx.appcompat.widget.LinearLayoutCompat;
 
 import me.aap.fermata.R;
@@ -69,7 +70,6 @@ public class AppMenuItemView extends LinearLayoutCompat implements AppMenuItem, 
 			inflate(ctx, R.layout.menu_item, this);
 		}
 
-
 		if (icon == null) getIconView().setVisibility(GONE);
 		else getIconView().setImageDrawable(icon);
 
@@ -97,6 +97,11 @@ public class AppMenuItemView extends LinearLayoutCompat implements AppMenuItem, 
 
 	public CharSequence getTitle() {
 		return getTitleView().getText();
+	}
+
+	@Override
+	public void setTitle(@StringRes  int title) {
+		getTitleView().setText(title);
 	}
 
 	public void setTitle(CharSequence title) {
