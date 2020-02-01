@@ -22,6 +22,9 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven {
+            url "https://dl.bintray.com/videolan/Android"
+        }
     }
 }
 
@@ -29,7 +32,7 @@ subprojects {
 
     if (name == 'fermata') {
         apply plugin: 'com.android.application'
-    } else if (name == 'exoplayer') {
+    } else if ((name == 'exoplayer') || (name == 'vlc')) {
         apply plugin: 'com.android.dynamic-feature'
     } else {
         apply plugin: 'com.android.library'
@@ -44,6 +47,7 @@ subprojects {
             targetSdkVersion SDK_TARGET_VERSION
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+            resConfigs "en", "ru"
         }
 
         compileOptions {

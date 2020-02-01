@@ -15,6 +15,7 @@ import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 public interface MediaPrefs extends PreferenceStore {
 	int MEDIA_ENG_MP = 0;
 	int MEDIA_ENG_EXO = 1;
+	int MEDIA_ENG_VLC = 2;
 	Pref<IntSupplier> AUDIO_ENGINE = Pref.i("AUDIO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_ENGINE = Pref.i("VIDEO_ENGINE", MEDIA_ENG_MP);
 	Pref<DoubleSupplier> SPEED = Pref.f("SPEED", 1.0f).withInheritance(false);

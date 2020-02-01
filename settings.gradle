@@ -1,5 +1,6 @@
 rootProject.name = 'Fermata Music Player'
 include ':fermata'
+include ':vlc'
 
 def exoRoot = file('depends/ExoPlayer')
 

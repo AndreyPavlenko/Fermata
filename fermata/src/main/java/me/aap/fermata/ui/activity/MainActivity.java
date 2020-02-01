@@ -11,17 +11,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import me.aap.fermata.function.BiConsumer;
-
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.function.BiConsumer;
 
 public class MainActivity extends AppCompatActivity implements AppActivity {
 	private static final int START_ACTIVITY_REQ = 0;
 	private static final int GRANT_PERM_REQ = 1;
+	private static MainActivity instance;
 	private BiConsumer<Integer, Intent> resultHandler;
 	private MainActivityDelegate delegate;
 	private boolean exitPressed;
+
+	public static MainActivity getInstance() {
+		return instance;
+	}
 
 	@Override
 	public MainActivityDelegate getMainActivityDelegate() {
@@ -38,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 		super.onCreate(savedInstanceState);
 		delegate = MainActivityDelegate.create(this);
 		delegate.onActivityCreate();
+		instance = this;
 	}
 
 	@Override
@@ -49,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		instance = null;
 		getMainActivityDelegate().onActivityDestroy();
 	}
 

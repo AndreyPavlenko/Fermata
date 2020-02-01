@@ -28,6 +28,8 @@ public interface ChangeableCondition {
 			public void setListener(@Nullable Listener listener) {
 				if (listener != null) {
 					this.listener = listener;
+					condition.setListener(this);
+					ChangeableCondition.this.setListener(this);
 				} else {
 					condition.setListener(null);
 					ChangeableCondition.this.setListener(null);
@@ -56,6 +58,8 @@ public interface ChangeableCondition {
 			public void setListener(@Nullable Listener listener) {
 				if (listener != null) {
 					this.listener = listener;
+					condition.setListener(this);
+					ChangeableCondition.this.setListener(this);
 				} else {
 					condition.setListener(null);
 					ChangeableCondition.this.setListener(null);

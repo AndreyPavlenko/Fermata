@@ -3,6 +3,7 @@ package me.aap.fermata.ui.view;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -52,6 +53,10 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			}
 		});
 
+		addTitle(context);
+	}
+
+	private void addTitle(Context context) {
 		TextView text = new TextView(context);
 		text.setPadding(Utils.toPx(10), Utils.toPx(10), Utils.toPx(10), 0);
 		text.setTextSize(20);
@@ -62,12 +67,30 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		setFocusable(true);
 	}
 
-	public SurfaceView getSurface() {
+	public SurfaceView getVideoSurface() {
 		return (SurfaceView) getChildAt(0);
 	}
 
+	public SurfaceView getSubtitleSurface(boolean create) {
+		if (getChildCount() < 3) {
+			if (!create) return null;
+			removeViewAt(1);
+			Context ctx = getContext();
+			SurfaceView v = new SurfaceView(ctx);
+			FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+			lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+			v.setLayoutParams(lp);
+			v.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+			addView(v);
+			addTitle(ctx);
+			return v;
+		}
+
+		return (SurfaceView) getChildAt(1);
+	}
+
 	public TextView getTitle() {
-		return (TextView) getChildAt(1);
+		return (TextView) getChildAt((getChildCount() < 3) ? 1 : 2);
 	}
 
 	public void showVideo() {
@@ -89,7 +112,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	public void setSurfaceSize(MediaEngine eng) {
-		SurfaceView surface = getSurface();
+		SurfaceView surface = getVideoSurface();
 		ViewGroup.LayoutParams lp = surface.getLayoutParams();
 
 		float videoWidth = eng.getVideoWidth();
@@ -115,6 +138,14 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			lp.width = width;
 			lp.height = height;
 			surface.setLayoutParams(lp);
+			surface = getSubtitleSurface(false);
+
+			if (surface != null) {
+				ViewGroup.LayoutParams slp = surface.getLayoutParams();
+				slp.width = lp.width;
+				slp.height = lp.height;
+				surface.setLayoutParams(slp);
+			}
 		}
 	}
 

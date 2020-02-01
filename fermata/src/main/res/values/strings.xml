@@ -4,6 +4,7 @@
     <string name="media_service_name" translatable="false">Fermata</string>
     <string name="engine_mp_name" translatable="false">MediaPlayer</string>
     <string name="engine_exo_name" translatable="false">ExoPlayer</string>
+    <string name="engine_vlc_name" translatable="false">VLC</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="playback_prefs">Playback control</string>
@@ -33,8 +34,12 @@
     <string name="time_unit_percent">Percent</string>
 
     <string name="enable_exoplayer">Enable ExoPlayer</string>
+    <string name="enable_vlcplayer">Enable VLC</string>
     <string name="preferred_audio_engine">Preferred audio engine</string>
     <string name="preferred_video_engine">Preferred video engine</string>
+    <string name="engine_installed">Media engine installed: %1$s</string>
+    <string name="engine_uninstalled">Media engine uninstalled: %1$s</string>
+    <string name="engine_install_failed">Failed to install media engine: %1$s</string>
 
     <string name="speed">Speed</string>
 

@@ -13,6 +13,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.function.IntSupplier;
 import me.aap.fermata.function.Supplier;
 import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -73,7 +74,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			initBrowsableMenu(a, menu, (BrowsableItem) item);
 		}
 
-		if (a.getMediaSessionCallback().getEngineManager().isExoPlayerSupported()) {
+		if (a.getMediaSessionCallback().getEngineManager().isExternalPlayerSupported()) {
 			menu.findItem(R.id.preferred_media_engine).setVisible(true);
 		}
 
@@ -277,16 +278,22 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 						? MediaPrefs.AUDIO_ENGINE : MediaPrefs.VIDEO_ENGINE);
 				break;
 			case R.id.preferred_audio_engine_mp:
+				item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_MP);
+				break;
 			case R.id.preferred_video_engine_mp:
+				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_MP);
+				break;
 			case R.id.preferred_audio_engine_exo:
+				item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_EXO);
+				break;
 			case R.id.preferred_video_engine_exo:
-				if ((id == R.id.preferred_audio_engine_mp) || (id == R.id.preferred_audio_engine_exo)) {
-					item.getPrefs().setAudioEnginePref((id == R.id.preferred_audio_engine_mp)
-							? MediaPrefs.MEDIA_ENG_MP : MediaPrefs.MEDIA_ENG_EXO);
-				} else {
-					item.getPrefs().setVideoEnginePref((id == R.id.preferred_video_engine_mp)
-							? MediaPrefs.MEDIA_ENG_MP : MediaPrefs.MEDIA_ENG_EXO);
-				}
+				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_EXO);
+				break;
+			case R.id.preferred_audio_engine_vlc:
+				item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_VLC);
+				break;
+			case R.id.preferred_video_engine_vlc:
+				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_VLC);
 				break;
 		}
 
@@ -295,6 +302,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 
 	private void createMediaPrefsMenu(Item item, AppMenu menu, boolean video) {
 		MediaPrefs prefs = item.getPrefs();
+		MediaEngineManager mgr = getMainActivity().getMediaSessionCallback().getEngineManager();
 		Pref<IntSupplier> p = video ? MediaPrefs.VIDEO_ENGINE.withInheritance(false)
 				: MediaPrefs.AUDIO_ENGINE.withInheritance(false);
 		int eng = prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
@@ -306,10 +314,16 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				: R.id.preferred_audio_engine_mp, true, null, R.string.engine_mp_name);
 		i.setChecked(eng == MediaPrefs.MEDIA_ENG_MP);
 
-		if (getMainActivity().getMediaSessionCallback().getEngineManager().isExoPlayerSupported()) {
+		if (mgr.isExoPlayerSupported()) {
 			i = menu.addItem(video ? R.id.preferred_video_engine_exo
 					: R.id.preferred_audio_engine_exo, true, null, R.string.engine_exo_name);
 			i.setChecked(eng == MediaPrefs.MEDIA_ENG_EXO);
+		}
+
+		if (mgr.isVlcPlayerSupported()) {
+			i = menu.addItem(video ? R.id.preferred_video_engine_vlc
+					: R.id.preferred_audio_engine_vlc, true, null, R.string.engine_vlc_name);
+			i.setChecked(eng == MediaPrefs.MEDIA_ENG_VLC);
 		}
 	}
 

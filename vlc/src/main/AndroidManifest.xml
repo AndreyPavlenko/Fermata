@@ -1,0 +1,16 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
+    package="me.aap.fermata.engine.vlc"
+    split="vlc"
+    android:isFeatureSplit="true">
+
+    <dist:module
+        dist:instant="false"
+        dist:title="@string/engine_vlc_name">
+        <dist:delivery>
+            <dist:on-demand />
+        </dist:delivery>
+        <dist:fusing dist:include="true" />
+    </dist:module>
+</manifest>
+

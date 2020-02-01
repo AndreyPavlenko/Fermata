@@ -13,14 +13,20 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import me.aap.fermata.R;
+import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.Consumer;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.pref.PrefCondition;
 import me.aap.fermata.pref.PreferenceSet;
+import me.aap.fermata.pref.PreferenceView;
 import me.aap.fermata.pref.PreferenceViewAdapter;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 import static me.aap.fermata.ui.activity.MainActivityListener.Event.FRAGMENT_CONTENT_CHANGED;
 
 /**
@@ -170,11 +176,34 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 
 		if (!a.isCarActivity()) {
 			MediaLibPrefs prefs = a.getMediaServiceBinder().getLib().getPrefs();
+			Consumer<PreferenceView.ListOpts> initList = o -> {
+				PrefCondition<BooleanSupplier> exoCond = PrefCondition.create(prefs, MediaLibPrefs.EXO_ENABLED);
+				PrefCondition<BooleanSupplier> vlcCond = PrefCondition.create(prefs, MediaLibPrefs.VLC_ENABLED);
+				boolean exoEnabled = exoCond.get();
+				boolean vlcEnabled = vlcCond.get();
+				if (o.visibility == null) o.visibility = exoCond.or(vlcCond);
+
+				if (exoEnabled && vlcEnabled) {
+					o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name, R.string.engine_vlc_name};
+					o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_EXO, MEDIA_ENG_VLC};
+				} else if (exoEnabled) {
+					o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
+					o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_EXO};
+				} else {
+					o.values = new int[]{R.string.engine_mp_name, R.string.engine_vlc_name};
+					o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_VLC};
+				}
+			};
 			sub1 = set.subSet(o -> o.title = R.string.engine_prefs);
 			sub1.addBooleanPref(o -> {
 				o.store = prefs;
 				o.pref = MediaLibPrefs.EXO_ENABLED;
 				o.title = R.string.enable_exoplayer;
+			});
+			sub1.addBooleanPref(o -> {
+				o.store = prefs;
+				o.pref = MediaLibPrefs.VLC_ENABLED;
+				o.title = R.string.enable_vlcplayer;
 			});
 			sub1.addListPref(o -> {
 				o.store = prefs;
@@ -182,8 +211,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 				o.title = R.string.preferred_audio_engine;
 				o.subtitle = R.string.string_format;
 				o.formatSubtitle = true;
-				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
-				o.visibility = PrefCondition.create(prefs, MediaLibPrefs.EXO_ENABLED);
+				o.initList = initList;
 			});
 			sub1.addListPref(o -> {
 				o.store = prefs;
@@ -191,8 +219,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 				o.title = R.string.preferred_video_engine;
 				o.subtitle = R.string.string_format;
 				o.formatSubtitle = true;
-				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
-				o.visibility = PrefCondition.create(prefs, MediaLibPrefs.EXO_ENABLED);
+				o.initList = initList;
 			});
 		}
 

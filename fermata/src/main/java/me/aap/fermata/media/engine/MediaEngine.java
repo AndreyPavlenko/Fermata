@@ -1,12 +1,11 @@
 package me.aap.fermata.media.engine;
 
-import android.view.SurfaceHolder;
-
 import androidx.annotation.Nullable;
 
 import java.io.Closeable;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.ui.view.VideoView;
 
 /**
  * @author Andrey Pavlenko
@@ -35,7 +34,7 @@ public interface MediaEngine extends Closeable {
 
 	void setSpeed(float speed);
 
-	void setSurface(SurfaceHolder surface);
+	void setVideoView(VideoView view);
 
 	float getVideoWidth();
 

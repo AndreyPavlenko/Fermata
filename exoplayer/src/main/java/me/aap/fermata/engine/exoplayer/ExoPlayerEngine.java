@@ -2,7 +2,6 @@ package me.aap.fermata.engine.exoplayer;
 
 import android.content.Context;
 import android.util.Log;
-import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
 
@@ -21,6 +20,7 @@ import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.ui.view.VideoView;
 
 import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
 
@@ -104,8 +104,8 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 	}
 
 	@Override
-	public void setSurface(SurfaceHolder surface) {
-		player.setVideoSurfaceHolder(surface);
+	public void setVideoView(VideoView view) {
+		player.setVideoSurfaceHolder(view.getVideoSurface().getHolder());
 	}
 
 	@Override

@@ -1,8 +1,8 @@
 android {
     defaultConfig {
         applicationId "me.aap.fermata"
-        versionCode 19
-        versionName "1.2.2"
+        versionCode 28
+        versionName "1.3.0"
         setProperty("archivesBaseName", "fermata-$versionName")
     }
 
@@ -27,6 +27,7 @@ android {
 
         debug {
             debuggable true
+            applicationIdSuffix '.debug'
         }
     }
 
@@ -46,7 +47,8 @@ android {
         }
     }
 
-    if (findProject(':exoplayer') != null) dynamicFeatures = [':exoplayer']
+    if (findProject(':exoplayer') != null) dynamicFeatures = [':exoplayer', ':vlc']
+    else dynamicFeatures = [':vlc']
 }
 
 dependencies {

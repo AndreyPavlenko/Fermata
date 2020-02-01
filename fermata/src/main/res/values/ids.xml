@@ -15,4 +15,6 @@
     <item name="preferred_audio_engine_mp" type="id" />
     <item name="preferred_video_engine_exo" type="id" />
     <item name="preferred_audio_engine_exo" type="id" />
+    <item name="preferred_video_engine_vlc" type="id" />
+    <item name="preferred_audio_engine_vlc" type="id" />
 </resources>

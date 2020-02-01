@@ -238,6 +238,7 @@ public class PreferenceView extends ConstraintLayout {
 	}
 
 	private void setListPreference(ListOpts o) {
+		if (o.initList != null) o.initList.accept(o);
 		setPreference(R.layout.list_pref_layout, o);
 		Runnable formatTitle;
 		Runnable formatSubtitle;
@@ -263,6 +264,7 @@ public class PreferenceView extends ConstraintLayout {
 		}
 
 		setOnClickListener(v -> {
+			if (o.initList != null) o.initList.accept(o);
 			MainActivityDelegate a = MainActivityDelegate.get(getContext());
 			AppMenu menu = a.getContextMenu();
 			int currentValue = o.store.getIntPref(o.pref);
@@ -301,10 +303,12 @@ public class PreferenceView extends ConstraintLayout {
 		int value = o.store.getIntPref(o.pref);
 		int idx = (o.valuesMap == null) ? value : Utils.indexOf(o.valuesMap, value);
 
-		if (o.values != null) {
-			text.get().setText(res.getString(resId, res.getString(o.values[idx])));
-		} else {
-			text.get().setText(res.getString(resId, o.stringValues[idx]));
+		if (idx != -1) {
+			if (o.values != null) {
+				text.get().setText(res.getString(resId, res.getString(o.values[idx])));
+			} else {
+				text.get().setText(res.getString(resId, o.stringValues[idx]));
+			}
 		}
 	}
 
@@ -434,5 +438,6 @@ public class PreferenceView extends ConstraintLayout {
 		public String[] stringValues;
 		public boolean formatTitle;
 		public boolean formatSubtitle;
+		public Consumer<ListOpts> initList;
 	}
 }

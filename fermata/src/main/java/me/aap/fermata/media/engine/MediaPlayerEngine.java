@@ -5,12 +5,12 @@ import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
 import android.util.Log;
-import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.ui.view.VideoView;
 
 /**
  * @author Andrey Pavlenko
@@ -114,8 +114,8 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
-	public void setSurface(SurfaceHolder surface) {
-		player.setDisplay(surface);
+	public void setVideoView(VideoView view) {
+		player.setDisplay(view.getVideoSurface().getHolder());
 	}
 
 	@Override

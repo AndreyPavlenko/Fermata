@@ -239,7 +239,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		if (engine != null) {
 			PlayableItem i = engine.getSource();
-			if (i.isVideo()) engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+			if (i.isVideo()) engine.setVideoView(videoView.get(0).view);
 		}
 	}
 
@@ -247,9 +247,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if ((videoView != null) && videoView.remove(new VideoViewWraper(view, 0))) {
 			if (videoView.isEmpty()) {
 				videoView = null;
-				if (engine != null) engine.setSurface(null);
+				if (engine != null) engine.setVideoView(null);
 			} else if (engine != null) {
-				engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+				engine.setVideoView(videoView.get(0).view);
 			}
 		}
 	}
@@ -317,7 +317,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		playOnPrepared = false;
 		if (i.isVideo() && (videoView != null))
-			engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+			engine.setVideoView(videoView.get(0).view);
 		tryAnotherEngine = true;
 		engine.prepare(i);
 	}
@@ -808,7 +808,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		playOnPrepared = true;
 		if (i.isVideo() && (videoView != null))
-			engine.setSurface(videoView.get(0).view.getSurface().getHolder());
+			engine.setVideoView(videoView.get(0).view);
 		tryAnotherEngine = true;
 		engine.prepare(i);
 	}
