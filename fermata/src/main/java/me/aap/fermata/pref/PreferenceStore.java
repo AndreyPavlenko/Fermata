@@ -34,7 +34,11 @@ public interface PreferenceStore extends EventBroadcaster<PreferenceStore.Listen
 
 	String[] getStringArrayPref(Pref<? extends Supplier<String[]>> pref);
 
-	boolean hasPref(Pref<?> pref);
+	default boolean hasPref(Pref<?> pref) {
+		return hasPref(pref, true);
+	}
+
+	boolean hasPref(Pref<?> pref, boolean checkParent);
 
 	Edit editPreferenceStore();
 

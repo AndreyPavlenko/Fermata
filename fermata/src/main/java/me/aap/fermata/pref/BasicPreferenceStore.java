@@ -67,7 +67,7 @@ public class BasicPreferenceStore extends BasicEventBroadcaster<PreferenceStore.
 	}
 
 	@Override
-	public boolean hasPref(Pref<?> pref) {
+	public boolean hasPref(Pref<?> pref, boolean checkParent) {
 		return values.containsKey(pref);
 	}
 

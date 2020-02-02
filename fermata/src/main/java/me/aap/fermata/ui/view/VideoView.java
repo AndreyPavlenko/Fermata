@@ -19,22 +19,32 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.circularreveal.CircularRevealFrameLayout;
 
+import java.util.List;
+
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 
 /**
  * @author Andrey Pavlenko
  */
 public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
-		View.OnLayoutChangeListener {
+		View.OnLayoutChangeListener, PreferenceStore.Listener {
 	private boolean surfaceCreated;
+	private boolean prefListenerRegistered;
 
 	public VideoView(Context context) {
 		this(context, null);
@@ -96,7 +106,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	public void showVideo() {
 		if (surfaceCreated) {
 			MainActivityDelegate a = getActivity();
-			MediaSessionCallback cb = a.getMediaServiceBinder().getMediaSessionCallback();
+			MediaSessionCallback cb = a.getMediaSessionCallback();
 			MediaEngine eng = cb.getCurrentEngine();
 			if (eng == null) return;
 
@@ -108,10 +118,18 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			TextView title = getTitle();
 			title.setText(i.getTitle());
 			title.setVisibility(GONE);
+
+			if (!prefListenerRegistered) {
+				i.getLib().getPrefs().addBroadcastListener(this);
+				prefListenerRegistered = true;
+			}
 		}
 	}
 
 	public void setSurfaceSize(MediaEngine eng) {
+		PlayableItem item = eng.getSource();
+		if (item == null) return;
+
 		SurfaceView surface = getVideoSurface();
 		ViewGroup.LayoutParams lp = surface.getLayoutParams();
 
@@ -121,17 +139,42 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 		float screenWidth = getWidth();
 		float screenHeight = getHeight();
-		float screenRatio = screenWidth / screenHeight;
 
 		int width;
 		int height;
+		int scale = item.getPrefs().getVideoScalePref();
 
-		if (videoRatio > screenRatio) {
-			width = (int) screenWidth;
-			height = (int) (screenWidth / videoRatio);
-		} else {
-			width = (int) (screenHeight * videoRatio);
-			height = (int) screenHeight;
+		switch (scale) {
+			case SCALE_4_3:
+			case SCALE_16_9:
+				videoRatio = (scale == SCALE_16_9) ? 16f / 9f : 4f / 3f;
+			default:
+			case SCALE_BEST:
+				float screenRatio = screenWidth / screenHeight;
+
+				if (videoRatio > screenRatio) {
+					width = (int) screenWidth;
+					height = (int) (screenWidth / videoRatio);
+				} else {
+					width = (int) (screenHeight * videoRatio);
+					height = (int) screenHeight;
+				}
+
+				break;
+			case SCALE_FILL:
+				if (videoWidth > videoHeight) {
+					width = (int) screenWidth;
+					height = (int) (screenWidth / videoRatio);
+				} else {
+					width = (int) (screenHeight * videoRatio);
+					height = (int) screenHeight;
+				}
+
+				break;
+			case SCALE_ORIGINAL:
+				width = (int) videoWidth;
+				height = (int) videoHeight;
+				break;
 		}
 
 		if ((lp.width != width) || (lp.height != height)) {
@@ -214,6 +257,17 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			getActivity().getControlPanel().onVideoViewTouch(this);
 		}
 		return true;
+	}
+
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (prefs.contains(MediaPrefs.VIDEO_SCALE)) {
+			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			if (eng == null) return;
+			PlayableItem i = eng.getSource();
+			if ((i == null) || !i.isVideo()) return;
+			setSurfaceSize(eng);
+		}
 	}
 
 	private MainActivityDelegate getActivity() {

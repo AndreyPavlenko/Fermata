@@ -42,7 +42,6 @@
     <string name="engine_install_failed">Failed to install media engine: %1$s</string>
 
     <string name="speed">Speed</string>
-
     <string name="audio_effects">Audio effects</string>
     <string name="equalier">Equalizer</string>
     <string name="preset_name">Preset name</string>
@@ -53,6 +52,14 @@
     <string name="bass_boost">Bass boost</string>
     <string name="strength">Strength</string>
     <string name="apply_to">Apply to</string>
+
+    <string name="video_settings">Video settings</string>
+    <string name="video_scaling">Video scaling</string>
+    <string name="video_scaling_best">Best fit</string>
+    <string name="video_scaling_fill">Fill screen</string>
+    <string name="video_scaling_orig">Original size</string>
+    <string name="video_scaling_4" translatable="false">4x3</string>
+    <string name="video_scaling_16" translatable="false">16x9</string>
 
     <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
@@ -101,7 +108,7 @@
     <string name="mark_watched">Mark as watched</string>
     <string name="mark_unwatched">Mark as unwatched</string>
     <string name="preferred_media_engine">Preferred media engine</string>
-    <string name="default_engine">Default</string>
+    <string name="by_default">Default</string>
 
     <string name="playlist_add">Add to playlist</string>
     <string name="playlist_remove">Remove from playlist</string>

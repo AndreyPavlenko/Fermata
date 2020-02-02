@@ -90,4 +90,12 @@
         app:icon="@drawable/media_engine"
         app:text="@string/preferred_media_engine" />
 
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/video_scaling"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/video_scale"
+        app:text="@string/video_scaling" />
+
 </merge>

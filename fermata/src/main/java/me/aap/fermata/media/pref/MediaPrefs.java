@@ -16,8 +16,14 @@ public interface MediaPrefs extends PreferenceStore {
 	int MEDIA_ENG_MP = 0;
 	int MEDIA_ENG_EXO = 1;
 	int MEDIA_ENG_VLC = 2;
+	int SCALE_BEST = 0;
+	int SCALE_FILL = 1;
+	int SCALE_ORIGINAL = 2;
+	int SCALE_4_3 = 3;
+	int SCALE_16_9 = 4;
 	Pref<IntSupplier> AUDIO_ENGINE = Pref.i("AUDIO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_ENGINE = Pref.i("VIDEO_ENGINE", MEDIA_ENG_MP);
+	Pref<IntSupplier> VIDEO_SCALE = Pref.i("VIDEO_SCALE", SCALE_BEST);
 	Pref<DoubleSupplier> SPEED = Pref.f("SPEED", 1.0f).withInheritance(false);
 	Pref<BooleanSupplier> AE_ENABLED = Pref.b("AE_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> EQ_ENABLED = Pref.b("EQ_ENABLED", false).withInheritance(false);
@@ -46,6 +52,14 @@ public interface MediaPrefs extends PreferenceStore {
 
 	default void setVideoEnginePref(int eng) {
 		applyIntPref(VIDEO_ENGINE, eng);
+	}
+
+	default int getVideoScalePref() {
+		return getIntPref(VIDEO_SCALE);
+	}
+
+	default void setVideoScalePref(int scale) {
+		applyIntPref(VIDEO_SCALE, scale);
 	}
 
 	static String getUserPresetName(String preset) {

@@ -57,8 +57,10 @@ public class VideoFragment extends Fragment implements MainActivityFragment,
 	@Override
 	public void onDestroyView() {
 		MainActivityDelegate a = getMainActivity();
+		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		a.setVideoMode(false);
-		a.getMediaServiceBinder().removeBroadcastListener(this);
+		b.removeBroadcastListener(this);
+		b.getLib().getPrefs().removeBroadcastListener((VideoView) getView());
 		super.onDestroyView();
 	}
 

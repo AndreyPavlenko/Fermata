@@ -36,7 +36,6 @@
     <string name="engine_install_failed">Не удалось установить mедиа движок: %1$s</string>
 
     <string name="speed">Скорость</string>
-
     <string name="audio_effects">Аудио эффекты</string>
     <string name="equalier">Эквалайзер</string>
     <string name="preset_name">Название пресета</string>
@@ -47,6 +46,12 @@
     <string name="bass_boost">Усиление басов</string>
     <string name="strength">Уровень</string>
     <string name="apply_to">Применить к</string>
+
+    <string name="video_settings">Настройки видео</string>
+    <string name="video_scaling">Масштабирование видео</string>
+    <string name="video_scaling_best">Наиболее подходящее</string>
+    <string name="video_scaling_fill">Заполнить экран</string>
+    <string name="video_scaling_orig">Оригинальный размер</string>
 
     <string name="eq_hz">%1$s Гц</string>
     <string name="eq_khz">%1$s кГц</string>
@@ -94,7 +99,7 @@
     <string name="mark_watched">Пометить как просмотренное</string>
     <string name="mark_unwatched">Пометить как не просмотренное</string>
     <string name="preferred_media_engine">Предпочтительный медиа движок</string>
-    <string name="default_engine">По умолчанию</string>
+    <string name="by_default">По умолчанию</string>
 
     <string name="playlist_add">Добавить в плейлист</string>
     <string name="playlist_remove">Удалть из плейлиста</string>

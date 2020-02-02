@@ -218,12 +218,12 @@ public interface SharedPreferenceStore extends PreferenceStore {
 	}
 
 	@Override
-	default boolean hasPref(Pref<?> pref) {
+	default boolean hasPref(Pref<?> pref, boolean checkParent) {
 		SharedPreferences prefs = getSharedPreferences();
 
 		if (prefs.contains(getPreferenceKey(pref))) {
 			return true;
-		} else if (pref.isInheritable()) {
+		} else if (pref.isInheritable() && checkParent) {
 			PreferenceStore parent = getParentPreferenceStore();
 			return (parent != null) && parent.hasPref(pref);
 		} else {

@@ -33,6 +33,12 @@ import me.aap.fermata.ui.menu.AppMenuItem;
 import me.aap.fermata.util.Utils;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_SCALE;
 import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
 
 /**
@@ -101,6 +107,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		if (pi.isVideo()) {
 			if (pi.getPrefs().getWatchedPref()) menu.findItem(R.id.mark_unwatched).setVisible(true);
 			else menu.findItem(R.id.mark_watched).setVisible(true);
+			menu.findItem(R.id.video_scaling).setVisible(true);
 		}
 
 		if (playlist) menu.findItem(R.id.playlist_remove).setVisible(true);
@@ -121,6 +128,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 
 		menu.findItem(R.id.favorites_add).setVisible(!favorite);
 		menu.findItem(R.id.bookmarks).setVisible(hasBookmarks);
+		menu.findItem(R.id.video_scaling).setVisible(true);
 		if (!playlist) a.initPlaylistMenu(menu);
 	}
 
@@ -295,6 +303,36 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			case R.id.preferred_video_engine_vlc:
 				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_VLC);
 				break;
+			case R.id.video_scaling:
+				int scale = item.getPrefs().hasPref(VIDEO_SCALE, false) ? item.getPrefs().getVideoScalePref() : -1;
+				menu = i.getMenu();
+				menu.setTitle(R.string.video_scaling);
+				menu.addItem(R.id.video_scaling_default, true, null, R.string.by_default).setChecked(scale == -1);
+				menu.addItem(R.id.video_scaling_best, true, null, R.string.video_scaling_best).setChecked(scale == SCALE_BEST);
+				menu.addItem(R.id.video_scaling_fill, true, null, R.string.video_scaling_fill).setChecked(scale == SCALE_FILL);
+				menu.addItem(R.id.video_scaling_orig, true, null, R.string.video_scaling_orig).setChecked(scale == SCALE_ORIGINAL);
+				menu.addItem(R.id.video_scaling_4, true, null, R.string.video_scaling_4).setChecked(scale == SCALE_4_3);
+				menu.addItem(R.id.video_scaling_16, true, null, R.string.video_scaling_16).setChecked(scale == SCALE_16_9);
+				menu.show(this);
+				break;
+			case R.id.video_scaling_default:
+				item.getPrefs().removePref(VIDEO_SCALE);
+				break;
+			case R.id.video_scaling_best:
+				item.getPrefs().setVideoScalePref(SCALE_BEST);
+				break;
+			case R.id.video_scaling_fill:
+				item.getPrefs().setVideoScalePref(SCALE_FILL);
+				break;
+			case R.id.video_scaling_orig:
+				item.getPrefs().setVideoScalePref(SCALE_ORIGINAL);
+				break;
+			case R.id.video_scaling_4:
+				item.getPrefs().setVideoScalePref(SCALE_4_3);
+				break;
+			case R.id.video_scaling_16:
+				item.getPrefs().setVideoScalePref(SCALE_16_9);
+				break;
 		}
 
 		return true;
@@ -308,7 +346,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		int eng = prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
 
 		AppMenuItem i = menu.addItem(video ? R.id.preferred_video_engine_default
-				: R.id.preferred_audio_engine_default, true, null, R.string.default_engine);
+				: R.id.preferred_audio_engine_default, true, null, R.string.by_default);
 		i.setChecked(eng == -1);
 		i = menu.addItem(video ? R.id.preferred_video_engine_mp
 				: R.id.preferred_audio_engine_mp, true, null, R.string.engine_mp_name);

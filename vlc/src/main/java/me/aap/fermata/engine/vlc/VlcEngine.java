@@ -33,6 +33,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	private PlayableItem source;
 	private VideoView videoView;
 	private Media media;
+	private long duration;
 	private int videoWidth;
 	private int videoHeight;
 	private boolean playing;
@@ -101,6 +102,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		playing = false;
 		pendingPosition = -1;
 		player.setMedia(media);
+		duration = media.getDuration();
 		media.release();
 		this.media = null;
 		listener.onEnginePrepared(this);
@@ -137,7 +139,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public long getDuration() {
-		return (player == null) ? 0 : player.getLength();
+		return duration;
 	}
 
 	@Override

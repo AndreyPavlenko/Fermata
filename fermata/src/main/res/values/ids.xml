@@ -17,4 +17,10 @@
     <item name="preferred_audio_engine_exo" type="id" />
     <item name="preferred_video_engine_vlc" type="id" />
     <item name="preferred_audio_engine_vlc" type="id" />
+    <item name="video_scaling_default" type="id" />
+    <item name="video_scaling_best" type="id" />
+    <item name="video_scaling_fill" type="id" />
+    <item name="video_scaling_orig" type="id" />
+    <item name="video_scaling_4" type="id" />
+    <item name="video_scaling_16" type="id" />
 </resources>
