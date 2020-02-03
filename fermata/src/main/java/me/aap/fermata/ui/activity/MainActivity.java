@@ -69,6 +69,10 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 			case KeyEvent.KEYCODE_BACK:
 				onBackPressed();
 				return true;
+			case KeyEvent.KEYCODE_M:
+				if (event.isShiftPressed()) delegate.getNavBar().showMenu();
+				else delegate.getControlPanel().showMenu();
+				break;
 			case KeyEvent.KEYCODE_P:
 				delegate.getMediaServiceBinder().onPlayPauseButtonClick();
 				if (delegate.isVideoMode()) delegate.getControlPanel().onVideoSeek();

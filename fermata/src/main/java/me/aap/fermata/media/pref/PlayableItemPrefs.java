@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import me.aap.fermata.function.BooleanSupplier;
+import me.aap.fermata.function.IntSupplier;
 import me.aap.fermata.function.LongSupplier;
 import me.aap.fermata.function.Supplier;
 
@@ -15,6 +16,8 @@ public interface PlayableItemPrefs extends MediaPrefs {
 	Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS", new String[0]).withInheritance(false);
 	Pref<BooleanSupplier> WATCHED = Pref.b("WATCHED", false).withInheritance(false);
 	Pref<LongSupplier> POSITION = Pref.l("POSITION", 0).withInheritance(false);
+	Pref<IntSupplier> SUB_ID = Pref.i("SUB_ID", -1).withInheritance(false);
+	Pref<IntSupplier> AUDIO_ID = Pref.i("AUDIO_ID", -1).withInheritance(false);
 
 	default String[] getBookmarks() {
 		return getStringArrayPref(BOOKMARKS);
@@ -60,6 +63,24 @@ public interface PlayableItemPrefs extends MediaPrefs {
 			if (bookmarks.isEmpty()) removePref(BOOKMARKS);
 			else setBookmarks(bookmarks.toArray(new String[0]));
 		}
+	}
+
+	default Integer getSubIdPref() {
+		return hasPref(SUB_ID) ? getIntPref(SUB_ID) : null;
+	}
+
+	default void setSubIdPref(Integer id) {
+		if (id == null) removePref(SUB_ID);
+		else applyIntPref(SUB_ID, id);
+	}
+
+	default Integer getAudioIdPref() {
+		return hasPref(AUDIO_ID) ? getIntPref(AUDIO_ID) : null;
+	}
+
+	default void setAudioIdPref(Integer id) {
+		if (id == null) removePref(AUDIO_ID);
+		else applyIntPref(AUDIO_ID, id);
 	}
 
 	static String bookmarkName(String bookmark) {

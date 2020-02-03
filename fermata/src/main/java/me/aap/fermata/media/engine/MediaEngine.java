@@ -3,6 +3,8 @@ package me.aap.fermata.media.engine;
 import androidx.annotation.Nullable;
 
 import java.io.Closeable;
+import java.util.Collections;
+import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.view.VideoView;
@@ -23,6 +25,28 @@ public interface MediaEngine extends Closeable {
 	void pause();
 
 	PlayableItem getSource();
+
+	default List<AudioStreamInfo> getAudioStreamInfo() {
+		return Collections.emptyList();
+	}
+
+	default List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+		return Collections.emptyList();
+	}
+
+	default AudioStreamInfo getCurrentAudioStreamInfo() {
+		return null;
+	}
+
+	default void setCurrentAudioStream(AudioStreamInfo i) {
+	}
+
+	default SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
+		return null;
+	}
+
+	default void setCurrentSubtitleStream(SubtitleStreamInfo i) {
+	}
 
 	long getDuration();
 

@@ -33,4 +33,20 @@
         android:layout_height="wrap_content"
         app:icon="@drawable/speed"
         app:text="@string/speed" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/select_audio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/audio_stream"
+        app:text="@string/select_audio" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/select_subtitles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/subtitles"
+        app:text="@string/select_subtitles" />
 </merge>

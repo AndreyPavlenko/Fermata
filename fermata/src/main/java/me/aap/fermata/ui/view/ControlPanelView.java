@@ -23,7 +23,9 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.function.BooleanSupplier;
 import me.aap.fermata.function.DoubleSupplier;
+import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -107,6 +109,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		b.bindProgressTime(findViewById(R.id.seek_time));
 		b.bindProgressTotal(findViewById(R.id.seek_total));
 		b.bound();
+	}
+
+	public boolean isActive() {
+		return mask != 0;
 	}
 
 	@Override
@@ -244,6 +250,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		setShowHideBarsIcon(a);
 	}
 
+	public void showMenu() {
+		if (isActive()) showMenu(this);
+	}
+
 	private void showMenu(View v) {
 		MainActivityDelegate a = getActivity();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
@@ -278,7 +288,9 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 																		boolean initRepeat) {
 			super.initPlayableMenu(a, menu, pi, false);
 			BrowsableItemPrefs p = pi.getParent().getPrefs();
-			MediaEngine eng = a.getMediaServiceBinder().getMediaSessionCallback().getEngine();
+			MediaEngine eng = a.getMediaSessionCallback().getEngine();
+			if (eng == null) return;
+
 			boolean repeat = pi.isRepeatItemEnabled() || p.getRepeatPref();
 			boolean shuffle = p.getShufflePref();
 			AppMenuItem i;
@@ -291,7 +303,13 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 			menu.findItem(R.id.shuffle).setVisible(!shuffle);
 			menu.findItem(R.id.shuffle_disable).setVisible(shuffle);
-			menu.findItem(R.id.audio_effects).setVisible((eng != null) && (eng.getAudioEffects() != null));
+			menu.findItem(R.id.audio_effects).setVisible(eng.getAudioEffects() != null);
+
+			if (pi.isVideo()) {
+				if (eng.getAudioStreamInfo().size() > 1) menu.findItem(R.id.select_audio).setVisible(true);
+				if (!eng.getSubtitleStreamInfo().isEmpty())
+					menu.findItem(R.id.select_subtitles).setVisible(true);
+			}
 		}
 
 		@Override
@@ -299,10 +317,11 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			int id = i.getItemId();
 			AppMenu menu;
 			PlayableItem pi;
+			MediaEngine eng;
 
 			switch (id) {
 				case R.id.audio_effects:
-					MediaEngine eng = getActivity().getMediaServiceBinder().getMediaSessionCallback().getEngine();
+					eng = getActivity().getMediaSessionCallback().getEngine();
 					if ((eng != null) && (eng.getAudioEffects() != null))
 						getActivity().showFragment(R.id.audio_effects);
 					return true;
@@ -328,6 +347,60 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				case R.id.shuffle_disable:
 					pi = (PlayableItem) getItem();
 					pi.getParent().getPrefs().setShufflePref(id == R.id.shuffle);
+					return true;
+				case R.id.select_audio:
+					eng = getActivity().getMediaSessionCallback().getEngine();
+					if (eng == null) return true;
+					AudioStreamInfo ai = eng.getCurrentAudioStreamInfo();
+					menu = i.getMenu();
+					menu.setTitle(R.string.select_audio);
+					for (AudioStreamInfo s : eng.getAudioStreamInfo()) {
+						menu.addItem(R.id.select_audio_stream, true, null, s.toString())
+								.setData(s).setChecked(s.equals(ai));
+					}
+					menu.show(this);
+					return true;
+				case R.id.select_subtitles:
+					eng = getActivity().getMediaSessionCallback().getEngine();
+					if (eng == null) return true;
+					SubtitleStreamInfo si = eng.getCurrentSubtitleStreamInfo();
+					menu = i.getMenu();
+					menu.setTitle(R.string.select_subtitles);
+					for (SubtitleStreamInfo s : eng.getSubtitleStreamInfo()) {
+						menu.addItem(R.id.select_subtitle_stream, true, null, s.toString())
+								.setData(s).setChecked(s.equals(si));
+					}
+					menu.show(this);
+					return true;
+				case R.id.select_audio_stream:
+					eng = getActivity().getMediaSessionCallback().getEngine();
+					if (eng != null) {
+						ai = i.getData();
+						pi = (PlayableItem) getItem();
+
+						if (ai.equals(eng.getCurrentAudioStreamInfo())) {
+							pi.getPrefs().setAudioIdPref(null);
+							eng.setCurrentAudioStream(null);
+						} else {
+							eng.setCurrentAudioStream(ai);
+							pi.getPrefs().setSubIdPref(ai.getId());
+						}
+					}
+					return true;
+				case R.id.select_subtitle_stream:
+					eng = getActivity().getMediaSessionCallback().getEngine();
+					if (eng != null) {
+						si = i.getData();
+						pi = (PlayableItem) getItem();
+
+						if (si.equals(eng.getCurrentSubtitleStreamInfo())) {
+							pi.getPrefs().setSubIdPref(null);
+							eng.setCurrentSubtitleStream(null);
+						} else {
+							eng.setCurrentSubtitleStream(si);
+							pi.getPrefs().setSubIdPref(si.getId());
+						}
+					}
 					return true;
 				default:
 					return super.menuItemSelected(i);

@@ -90,6 +90,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
 			lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
 			v.setLayoutParams(lp);
+			v.setZOrderMediaOverlay(true);
 			v.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 			addView(v);
 			addTitle(ctx);
@@ -181,13 +182,15 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			lp.width = width;
 			lp.height = height;
 			surface.setLayoutParams(lp);
-			surface = getSubtitleSurface(false);
+		}
 
-			if (surface != null) {
-				ViewGroup.LayoutParams slp = surface.getLayoutParams();
-				slp.width = lp.width;
-				slp.height = lp.height;
-				surface.setLayoutParams(slp);
+		if ((surface = getSubtitleSurface(false)) != null) {
+			lp = surface.getLayoutParams();
+
+			if ((lp.width != width) || (lp.height != height)) {
+				lp.width = width;
+				lp.height = height;
+				surface.setLayoutParams(lp);
 			}
 		}
 	}

@@ -23,4 +23,6 @@
     <item name="video_scaling_orig" type="id" />
     <item name="video_scaling_4" type="id" />
     <item name="video_scaling_16" type="id" />
+    <item name="select_audio_stream" type="id" />
+    <item name="select_subtitle_stream" type="id" />
 </resources>

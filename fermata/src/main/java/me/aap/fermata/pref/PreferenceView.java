@@ -115,7 +115,7 @@ public class PreferenceView extends ConstraintLayout {
 		t.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if (!ignoreChange[0] && (s.length() != 0)) {
+				if (!ignoreChange[0]) {
 					ignoreChange[0] = true;
 					o.store.applyStringPref(o.pref, s.toString());
 					ignoreChange[0] = false;
@@ -131,6 +131,9 @@ public class PreferenceView extends ConstraintLayout {
 			public void afterTextChanged(Editable s) {
 			}
 		});
+
+		if (o.hint != Resources.ID_NULL) t.setHint(o.hint);
+		else if (o.stringHint != null) t.setHint(o.stringHint);
 
 		setOnFocusChangeListener((v, has) -> {
 			if (has) t.requestFocus();
@@ -413,6 +416,10 @@ public class PreferenceView extends ConstraintLayout {
 	}
 
 	public static class StringOpts extends PrefOpts<Supplier<String>> {
+		@SuppressLint("InlinedApi")
+		@StringRes
+		public int hint = Resources.ID_NULL;
+		public String stringHint;
 	}
 
 	public static class NumberOpts<S> extends PrefOpts<S> {

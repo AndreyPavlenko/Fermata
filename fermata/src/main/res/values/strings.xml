@@ -61,6 +61,14 @@
     <string name="video_scaling_4" translatable="false">4x3</string>
     <string name="video_scaling_16" translatable="false">16x9</string>
 
+    <string name="display_subtitles">Display subtitles</string>
+    <string name="preferred_sub_lang">Preferred subtitles languages</string>
+    <string name="preferred_sub_key">Prefer subtitles with keywords</string>
+    <string name="preferred_audio_lang">Preferred audio stream languages</string>
+    <string name="preferred_audio_key">Prefer audio stream with keywords</string>
+    <string name="select_subtitles">Select subtitles</string>
+    <string name="select_audio">Select audio stream</string>
+
     <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>

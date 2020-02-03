@@ -15,15 +15,15 @@ public interface AppMenuItem {
 
 	CharSequence getTitle();
 
-	void setTitle(@StringRes int title);
+	AppMenuItem setTitle(@StringRes int title);
 
-	void setTitle(CharSequence title);
+	AppMenuItem setTitle(CharSequence title);
 
-	<T> void setData(T data);
+	<T> AppMenuItem setData(T data);
 
 	<T> T getData();
 
-	void setChecked(boolean checked);
+	AppMenuItem setChecked(boolean checked);
 
-	void setVisible(boolean visible);
+	AppMenuItem setVisible(boolean visible);
 }

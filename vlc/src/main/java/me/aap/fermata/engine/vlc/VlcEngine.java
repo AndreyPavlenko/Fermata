@@ -5,19 +5,35 @@ import android.media.AudioManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+import androidx.annotation.NonNull;
+
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
+import org.videolan.libvlc.MediaPlayer.TrackDescription;
 import org.videolan.libvlc.interfaces.IMedia;
+import org.videolan.libvlc.interfaces.IMedia.AudioTrack;
+import org.videolan.libvlc.interfaces.IMedia.SubtitleTrack;
 import org.videolan.libvlc.interfaces.IMedia.VideoTrack;
 import org.videolan.libvlc.interfaces.IVLCVout;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import me.aap.fermata.function.Supplier;
 import me.aap.fermata.media.engine.AudioEffects;
+import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineException;
+import me.aap.fermata.media.engine.MediaStreamInfo;
+import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.fermata.util.Utils;
 
 /**
  * @author Andrey Pavlenko
@@ -30,12 +46,9 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	private final MediaPlayer player;
 	private final AudioEffects effects;
 	private final Listener listener;
-	private PlayableItem source;
+	@NonNull
+	private Source source = Source.NULL;
 	private VideoView videoView;
-	private Media media;
-	private long duration;
-	private int videoWidth;
-	private int videoHeight;
 	private boolean playing;
 	private long pendingPosition = -1;
 
@@ -57,54 +70,41 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public void prepare(PlayableItem source) {
-		this.source = source;
+		Media media = null;
 
 		try {
 			Media m = media = new Media(vlc, source.getLocation());
+			PendingSource pending = new PendingSource(source, m);
+			this.source = pending;
 			m.addOption(":input-fast-seek");
 
 			if (m.isParsed()) {
-				prepared(source, m);
+				prepared(pending);
 			} else {
 				if (source.isVideo()) m.addOption(":video-paused");
 				m.setEventListener(e -> {
-					if (m.isParsed()) prepared(source, m);
+					if (m.isParsed()) prepared(pending);
 				});
 				m.parseAsync();
 			}
 		} catch (Throwable ex) {
-			if (media != null) {
-				media.release();
-				media = null;
-			}
-
+			if (media != null) media.release();
 			listener.onEngineError(this, ex);
 		}
 	}
 
-	private void prepared(PlayableItem source, Media media) {
-		if (media != this.media) {
-			media.release();
+	private void prepared(PendingSource source) {
+		if (source != this.source) {
+			source.getMedia().release();
 			return;
 		}
 
-		if (source.isVideo()) {
-			for (int i = 0, n = media.getTrackCount(); i < n; i++) {
-				IMedia.Track t = media.getTrack(i);
-				if (t instanceof VideoTrack) {
-					VideoTrack v = (VideoTrack) t;
-					videoWidth = v.width;
-					videoHeight = v.height;
-				}
-			}
-		}
-
+		Media media = source.getMedia();
+		this.source = source.prepare();
 		playing = false;
 		pendingPosition = -1;
 		player.setMedia(media);
-		duration = media.getDuration();
 		media.release();
-		this.media = null;
 		listener.onEnginePrepared(this);
 	}
 
@@ -119,12 +119,12 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		pendingPosition = -1;
 		player.stop();
 		player.detachViews();
-		source = null;
 
-		if (media != null) {
-			media.release();
-			media = null;
+		if (source instanceof PendingSource) {
+			((PendingSource) source).getMedia().release();
 		}
+
+		source = Source.NULL;
 	}
 
 	@Override
@@ -134,18 +134,52 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public PlayableItem getSource() {
-		return source;
+		return source.getItem();
+	}
+
+	@Override
+	public List<AudioStreamInfo> getAudioStreamInfo() {
+		return source.getAudioStreamInfo();
+	}
+
+	@Override
+	public List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+		return source.getSubtitleStreamInfo();
+	}
+
+	@Override
+	public AudioStreamInfo getCurrentAudioStreamInfo() {
+		int id = player.getAudioTrack();
+		return Utils.find(getAudioStreamInfo(), s -> s.getId() == id);
+	}
+
+	@Override
+	public void setCurrentAudioStream(AudioStreamInfo i) {
+		player.setAudioTrack((i != null) ? i.getId() : -1);
+	}
+
+	@Override
+	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
+		int id = player.getSpuTrack();
+		return Utils.find(getSubtitleStreamInfo(), s -> s.getId() == id);
+	}
+
+	@Override
+	public void setCurrentSubtitleStream(SubtitleStreamInfo i) {
+		player.setSpuTrack((i != null) ? i.getId() : -1);
 	}
 
 	@Override
 	public long getDuration() {
-		return duration;
+		return source.getDuration();
 	}
 
 	@Override
 	public long getPosition() {
-		if (source != null) {
-			return (pendingPosition == -1) ? (player.getTime() - source.getOffset()) : pendingPosition;
+		Source src = source;
+
+		if (src != Source.NULL) {
+			return (pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition;
 		} else {
 			return 0;
 		}
@@ -153,8 +187,10 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public void setPosition(long position) {
-		if (source != null) {
-			if (playing) player.setTime(source.getOffset() + position);
+		Source src = source;
+
+		if (src != Source.NULL) {
+			if (playing) player.setTime(src.getItem().getOffset() + position);
 			else pendingPosition = position;
 		}
 	}
@@ -193,12 +229,12 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public float getVideoWidth() {
-		return videoWidth;
+		return source.getVideoWidth();
 	}
 
 	@Override
 	public float getVideoHeight() {
-		return videoHeight;
+		return source.getVideoHeight();
 	}
 
 	@Override
@@ -223,11 +259,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	public void onEvent(MediaPlayer.Event event) {
 		switch (event.type) {
 			case MediaPlayer.Event.Playing:
-				playing = true;
-				if (pendingPosition != -1) {
-					setPosition(pendingPosition);
-					pendingPosition = -1;
-				}
+				startPlaying();
 				break;
 			case MediaPlayer.Event.EndReached:
 				listener.onEngineEnded(this);
@@ -264,6 +296,249 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			holder.removeCallback(this);
 			videoView = null;
 			player.getVLCVout().detachViews();
+		}
+	}
+
+	private void startPlaying() {
+		playing = true;
+
+		if (this.source instanceof VideoSource) {
+			VideoSource vs = (VideoSource) this.source;
+			PlayableItemPrefs prefs = vs.getItem().getPrefs();
+			AudioStreamInfo ai = vs.selectAudioStream(prefs);
+			if (ai != null) player.setAudioTrack(ai.getId());
+			vs.addSubtitles(player.getSpuTracks());
+
+			if (prefs.getSubEnabledPref()) {
+				SubtitleStreamInfo si = vs.selectSubtitleStream(prefs);
+				if (si != null) player.setSpuTrack(si.getId());
+			} else {
+				player.setSpuTrack(-1);
+			}
+		}
+
+		if (pendingPosition != -1) {
+			setPosition(pendingPosition);
+			pendingPosition = -1;
+		}
+	}
+
+	private static class Source {
+		private static final Source NULL = new Source(null);
+		private final PlayableItem item;
+
+		Source(PlayableItem item) {
+			this.item = item;
+		}
+
+		PlayableItem getItem() {
+			return item;
+		}
+
+		long getDuration() {
+			return 0;
+		}
+
+		int getVideoWidth() {
+			return 0;
+		}
+
+		int getVideoHeight() {
+			return 0;
+		}
+
+		List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+			return Collections.emptyList();
+		}
+
+		List<AudioStreamInfo> getAudioStreamInfo() {
+			return Collections.emptyList();
+		}
+
+		@NonNull
+		@Override
+		public String toString() {
+			return getItem().toString();
+		}
+	}
+
+	private static class PendingSource extends Source {
+		private final Media media;
+
+		PendingSource(PlayableItem item, Media media) {
+			super(item);
+			this.media = media;
+		}
+
+		Media getMedia() {
+			return media;
+		}
+
+		PreparedSource prepare() {
+			PlayableItem pi = getItem();
+
+			if (pi.isVideo()) {
+				int w = 0, h = 0;
+				ArrayList<AudioStreamInfo> audio = new ArrayList<>();
+				ArrayList<SubtitleStreamInfo> subtitle = new ArrayList<>();
+
+				for (int i = 0, n = media.getTrackCount(); i < n; i++) {
+					IMedia.Track t = media.getTrack(i);
+
+					if (t instanceof VideoTrack) {
+						VideoTrack v = (VideoTrack) t;
+						w = v.width;
+						h = v.height;
+					} else if (t instanceof AudioTrack) {
+						AudioTrack a = (AudioTrack) t;
+						audio.add(new AudioStreamInfo(a.id, a.language, a.description));
+					} else if (t instanceof SubtitleTrack) {
+						SubtitleTrack s = (SubtitleTrack) t;
+						subtitle.add(new SubtitleStreamInfo(s.id, s.language, s.description));
+					}
+				}
+
+				audio.trimToSize();
+				subtitle.trimToSize();
+				return new VideoSource(pi, media.getDuration(), w, h,
+						audio.isEmpty() ? Collections.emptyList() : audio,
+						subtitle.isEmpty() ? Collections.emptyList() : subtitle);
+			} else {
+				return new PreparedSource(pi, media.getDuration());
+			}
+		}
+	}
+
+	private static class PreparedSource extends Source {
+		private final long duration;
+
+		PreparedSource(PlayableItem item, long duration) {
+			super(item);
+			this.duration = duration;
+		}
+
+		@Override
+		long getDuration() {
+			return duration;
+		}
+	}
+
+	private static final class VideoSource extends PreparedSource {
+		private final int videoWidth;
+		private final int videoHeight;
+		private final List<AudioStreamInfo> audioStreamInfo;
+		private List<SubtitleStreamInfo> subtitleStreamInfo;
+
+		VideoSource(PlayableItem item, long duration, int videoWidth, int videoHeight,
+								List<AudioStreamInfo> audioStreamInfo,
+								List<SubtitleStreamInfo> subtitleStreamInfo) {
+			super(item, duration);
+			this.videoWidth = videoWidth;
+			this.videoHeight = videoHeight;
+			this.subtitleStreamInfo = subtitleStreamInfo;
+			this.audioStreamInfo = audioStreamInfo;
+		}
+
+		@Override
+		int getVideoWidth() {
+			return videoWidth;
+		}
+
+		@Override
+		int getVideoHeight() {
+			return videoHeight;
+		}
+
+		@Override
+		List<AudioStreamInfo> getAudioStreamInfo() {
+			return audioStreamInfo;
+		}
+
+		@Override
+		List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+			return subtitleStreamInfo;
+		}
+
+		void addSubtitles(TrackDescription... tracks) {
+			if (tracks != null) {
+				for (TrackDescription t : tracks) {
+					if (t.id != -1) {
+						SubtitleStreamInfo info = new SubtitleStreamInfo(t.id, null, t.name);
+
+						if (!subtitleStreamInfo.contains(info)) {
+							if (subtitleStreamInfo.isEmpty()) subtitleStreamInfo = new ArrayList<>();
+							subtitleStreamInfo.add(info);
+						}
+					}
+				}
+			}
+		}
+
+		AudioStreamInfo selectAudioStream(PlayableItemPrefs prefs) {
+			return selectMediaStream(getAudioStreamInfo(), prefs::getAudioIdPref,
+					prefs::getAudioLangPref, prefs::getAudioKeyPref);
+		}
+
+		SubtitleStreamInfo selectSubtitleStream(PlayableItemPrefs prefs) {
+			return selectMediaStream(getSubtitleStreamInfo(), prefs::getSubIdPref,
+					prefs::getSubLangPref, prefs::getSubKeyPref);
+		}
+
+		private static <I extends MediaStreamInfo> I selectMediaStream(List<I> streams,
+																																	 Supplier<Integer> idSupplier,
+																																	 Supplier<String> langSupplier,
+																																	 Supplier<String> keySupplier) {
+			if (streams.isEmpty()) return null;
+
+			Integer id = idSupplier.get();
+
+			if (id != null) {
+				for (I i : streams) {
+					if (id == i.getId()) return i;
+				}
+			}
+
+			String lang = langSupplier.get().trim();
+			boolean hasMatching = false;
+
+			if (!lang.isEmpty()) {
+				List<I> filtered = null;
+
+				for (StringTokenizer st = new StringTokenizer(lang, ", "); st.hasMoreTokens(); ) {
+					String l = st.nextToken();
+
+					if (!l.isEmpty()) {
+						for (I i : streams) {
+							if (l.equalsIgnoreCase(i.getLanguage())) {
+								hasMatching = true;
+								if (filtered == null) filtered = new ArrayList<>(streams.size());
+								if (!filtered.contains(i)) filtered.add(i);
+							}
+						}
+					}
+				}
+
+				if (filtered != null) streams = filtered;
+			}
+
+			String key = keySupplier.get().trim();
+
+			if (!key.isEmpty()) {
+				for (StringTokenizer st = new StringTokenizer(key, ", "); st.hasMoreTokens(); ) {
+					String k = st.nextToken();
+
+					if (!k.isEmpty()) {
+						k = k.toLowerCase();
+
+						for (I i : streams) {
+							String dsc = i.getDescription();
+							if ((dsc != null) && Utils.containsWord(dsc.toLowerCase(), k)) return i;
+						}
+					}
+				}
+			}
+
+			return hasMatching ? streams.get(0) : null;
 		}
 	}
 }

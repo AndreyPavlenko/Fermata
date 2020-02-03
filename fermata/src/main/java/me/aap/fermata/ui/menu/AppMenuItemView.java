@@ -100,12 +100,14 @@ public class AppMenuItemView extends LinearLayoutCompat implements AppMenuItem, 
 	}
 
 	@Override
-	public void setTitle(@StringRes  int title) {
+	public AppMenuItem setTitle(@StringRes int title) {
 		getTitleView().setText(title);
+		return this;
 	}
 
-	public void setTitle(CharSequence title) {
+	public AppMenuItem setTitle(CharSequence title) {
 		getTitleView().setText(title);
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -115,17 +117,20 @@ public class AppMenuItemView extends LinearLayoutCompat implements AppMenuItem, 
 	}
 
 	@Override
-	public <T> void setData(T data) {
+	public <T> AppMenuItem setData(T data) {
 		this.data = data;
+		return this;
 	}
 
 	@Override
-	public void setChecked(boolean checked) {
+	public AppMenuItem setChecked(boolean checked) {
 		getCheckBox().setChecked(checked);
+		return this;
 	}
 
-	public void setVisible(boolean visible) {
+	public AppMenuItem setVisible(boolean visible) {
 		setVisibility(visible ? VISIBLE : GONE);
+		return this;
 	}
 
 	@Override

@@ -12,6 +12,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Locale;
+
 import me.aap.fermata.R;
 import me.aap.fermata.function.BooleanSupplier;
 import me.aap.fermata.function.Consumer;
@@ -233,6 +235,40 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			o.values = new int[]{R.string.video_scaling_best, R.string.video_scaling_fill,
 					R.string.video_scaling_orig, R.string.video_scaling_4, R.string.video_scaling_16};
 		});
+		sub1.addBooleanPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = MediaLibPrefs.SUB_ENABLED;
+			o.title = R.string.display_subtitles;
+		});
+
+		if (!a.isCarActivity()) {
+			Locale locale = Locale.getDefault();
+			String langHint = locale.getLanguage() + ' ' + locale.getISO3Language();
+			sub1.addStringPref(o -> {
+				o.store = mediaPrefs;
+				o.pref = MediaLibPrefs.SUB_LANG;
+				o.title = R.string.preferred_sub_lang;
+				o.stringHint = langHint;
+			});
+			sub1.addStringPref(o -> {
+				o.store = mediaPrefs;
+				o.pref = MediaLibPrefs.SUB_KEY;
+				o.title = R.string.preferred_sub_key;
+				o.stringHint = "full forced";
+			});
+			sub1.addStringPref(o -> {
+				o.store = mediaPrefs;
+				o.pref = MediaLibPrefs.AUDIO_LANG;
+				o.title = R.string.preferred_audio_lang;
+				o.stringHint = langHint;
+			});
+			sub1.addStringPref(o -> {
+				o.store = mediaPrefs;
+				o.pref = MediaLibPrefs.AUDIO_KEY;
+				o.title = R.string.preferred_audio_key;
+				o.stringHint = "studio1 studio2 default";
+			});
+		}
 
 		return new PreferenceViewAdapter(set) {
 			@Override

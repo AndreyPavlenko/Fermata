@@ -38,6 +38,12 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<IntSupplier> VIRT_STRENGTH = Pref.i("VIRT_STRENGTH", 0).withInheritance(false);
 	Pref<IntSupplier> BASS_STRENGTH = Pref.i("BASS_STRENGTH", 0).withInheritance(false);
 
+	Pref<BooleanSupplier> SUB_ENABLED = Pref.b("SUB_ENABLED", true);
+	Pref<Supplier<String>> SUB_LANG = Pref.s("SUB_LANG", "");
+	Pref<Supplier<String>> SUB_KEY = Pref.s("SUB_KEY", "");
+	Pref<Supplier<String>> AUDIO_LANG = Pref.s("AUDIO_LANG", "");
+	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
+
 	default int getAudioEnginePref() {
 		return getIntPref(AUDIO_ENGINE);
 	}
@@ -60,6 +66,26 @@ public interface MediaPrefs extends PreferenceStore {
 
 	default void setVideoScalePref(int scale) {
 		applyIntPref(VIDEO_SCALE, scale);
+	}
+
+	default boolean getSubEnabledPref() {
+		return getBooleanPref(SUB_ENABLED);
+	}
+
+	default String getSubLangPref() {
+		return getStringPref(SUB_LANG);
+	}
+
+	default String getSubKeyPref() {
+		return getStringPref(SUB_KEY);
+	}
+
+	default String getAudioLangPref() {
+		return getStringPref(AUDIO_LANG);
+	}
+
+	default String getAudioKeyPref() {
+		return getStringPref(AUDIO_KEY);
 	}
 
 	static String getUserPresetName(String preset) {

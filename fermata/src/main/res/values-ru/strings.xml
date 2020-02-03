@@ -53,6 +53,14 @@
     <string name="video_scaling_fill">Заполнить экран</string>
     <string name="video_scaling_orig">Оригинальный размер</string>
 
+    <string name="display_subtitles">Показывать субтитры</string>
+    <string name="preferred_sub_lang">Предпочитаемые языки субтитров</string>
+    <string name="preferred_sub_key">Предпочитать субтитры с ключевыми словами</string>
+    <string name="preferred_audio_lang">Предпочитаемые языки аудио</string>
+    <string name="preferred_audio_key">Предпочитать аудио дорожку с ключевыми словами</string>
+    <string name="select_subtitles">Выбрать субтитры</string>
+    <string name="select_audio">Выбрать аудио дорожку</string>
+
     <string name="eq_hz">%1$s Гц</string>
     <string name="eq_khz">%1$s кГц</string>
 

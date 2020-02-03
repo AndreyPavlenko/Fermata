@@ -199,6 +199,13 @@ public class Utils {
 		return false;
 	}
 
+	public static <T> T find(Iterable<T> i, Predicate<T> predicate) {
+		for (T t : i) {
+			if (predicate.test(t)) return t;
+		}
+		return null;
+	}
+
 	public static <T> boolean remove(Iterable<T> i, Predicate<T> predicate) {
 		for (Iterator<T> it = i.iterator(); it.hasNext(); ) {
 			if (predicate.test(it.next())) {
@@ -354,6 +361,34 @@ public class Utils {
 		}
 
 		return a;
+	}
+
+	public static boolean containsWord(String s, String word) {
+		int idx = s.indexOf(word);
+
+		if (idx != -1) {
+			if ((idx == 0) || isSepChar(s.charAt(idx - 1))) {
+				idx += word.length();
+				return (idx == s.length()) || ((idx < s.length()) && isSepChar(s.charAt(idx)));
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean isSepChar(char c) {
+		switch (c) {
+			case '.':
+			case ',':
+			case '\'':
+			case ';':
+			case ':':
+			case ')':
+			case '(':
+				return true;
+			default:
+				return c <= '"';
+		}
 	}
 
 	private static final class HexTable {
