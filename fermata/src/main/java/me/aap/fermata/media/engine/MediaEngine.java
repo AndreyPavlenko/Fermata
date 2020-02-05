@@ -26,28 +26,6 @@ public interface MediaEngine extends Closeable {
 
 	PlayableItem getSource();
 
-	default List<AudioStreamInfo> getAudioStreamInfo() {
-		return Collections.emptyList();
-	}
-
-	default List<SubtitleStreamInfo> getSubtitleStreamInfo() {
-		return Collections.emptyList();
-	}
-
-	default AudioStreamInfo getCurrentAudioStreamInfo() {
-		return null;
-	}
-
-	default void setCurrentAudioStream(AudioStreamInfo i) {
-	}
-
-	default SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
-		return null;
-	}
-
-	default void setCurrentSubtitleStream(SubtitleStreamInfo i) {
-	}
-
 	long getDuration();
 
 	long getPosition();
@@ -70,6 +48,50 @@ public interface MediaEngine extends Closeable {
 	@Nullable
 	default AudioEffects getAudioEffects() {
 		return null;
+	}
+
+	default List<AudioStreamInfo> getAudioStreamInfo() {
+		return Collections.emptyList();
+	}
+
+	default List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+		return Collections.emptyList();
+	}
+
+	default AudioStreamInfo getCurrentAudioStreamInfo() {
+		return null;
+	}
+
+	default void setCurrentAudioStream(AudioStreamInfo i) {
+	}
+
+	default SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
+		return null;
+	}
+
+	default void setCurrentSubtitleStream(SubtitleStreamInfo i) {
+	}
+
+	default boolean isAudioDelaySupported() {
+		return false;
+	}
+
+	default int getAudioDelay() {
+		return 0;
+	}
+
+	default void setAudioDelay(int milliseconds) {
+	}
+
+	default boolean isSubtitleDelaySupported() {
+		return false;
+	}
+
+	default int getSubtitleDelay() {
+		return 0;
+	}
+
+	default void setSubtitleDelay(int milliseconds) {
 	}
 
 	interface Listener {

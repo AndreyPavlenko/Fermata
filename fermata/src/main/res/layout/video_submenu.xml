@@ -3,86 +3,72 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/favorites_add"
+        android:id="@+id/mark_watched"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:icon="@drawable/favorite"
-        app:text="@string/favorites_add" />
+        app:text="@string/mark_watched" />
 
     <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/favorites_remove"
+        android:id="@+id/mark_unwatched"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:icon="@drawable/favorite_filled"
-        app:text="@string/favorites_remove" />
+        app:text="@string/mark_unwatched" />
 
     <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/playlist_add"
+        android:id="@+id/video_scaling"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:icon="@drawable/playlist_add"
-        app:text="@string/playlist_add" />
-
-    <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/playlist_remove"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:icon="@drawable/playlist_remove"
-        app:text="@string/playlist_remove" />
-
-    <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/repeat_enable"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:icon="@drawable/repeat"
-        app:text="@string/repeat" />
-
-    <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/repeat_disable"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:icon="@drawable/repeat_filled"
-        app:text="@string/repeat_disable" />
-
-    <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/bookmarks"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:icon="@drawable/bookmark_filled"
         app:submenu="@layout/dynamic"
-        app:text="@string/bookmarks" />
+        app:text="@string/video_scaling" />
 
     <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/create_bookmark"
+        android:id="@+id/audio_delay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:icon="@drawable/bookmark"
-        app:text="@string/create_bookmark" />
-
-    <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/preferred_media_engine"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:icon="@drawable/media_engine"
         app:submenu="@layout/dynamic"
-        app:text="@string/preferred_media_engine" />
+        app:text="@string/audio_delay" />
 
     <me.aap.fermata.ui.menu.AppMenuItemView
-        android:id="@+id/video_menu"
+        android:id="@+id/subtitle_delay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:icon="@drawable/video"
-        app:submenu="@layout/video_submenu"
-        app:text="@string/video" />
+        app:submenu="@layout/dynamic"
+        app:text="@string/subtitle_delay" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/select_audio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:submenu="@layout/dynamic"
+        app:text="@string/select_audio_stream" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/select_subtitles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:submenu="@layout/dynamic"
+        app:text="@string/select_subtitles" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/audio_prefs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:submenu="@layout/dynamic"
+        app:text="@string/audio" />
+
+    <me.aap.fermata.ui.menu.AppMenuItemView
+        android:id="@+id/subtitle_prefs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:submenu="@layout/dynamic"
+        app:text="@string/subtitles" />
 
 </merge>

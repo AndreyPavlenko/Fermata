@@ -155,7 +155,7 @@ public class AppMenuView extends ScrollView implements AppMenu {
 		if (handler == null) return;
 		SelectionHandler h = handler;
 
-		if (item.submenu == Resources.ID_NULL) {
+		if ((item.submenu == Resources.ID_NULL) || (item.submenu == R.layout.dynamic)) {
 			hide();
 			h.menuItemSelected(item);
 		} else {

@@ -47,19 +47,25 @@
     <string name="strength">Уровень</string>
     <string name="apply_to">Применить к</string>
 
+    <string name="video">Видео</string>
     <string name="video_settings">Настройки видео</string>
     <string name="video_scaling">Масштабирование видео</string>
     <string name="video_scaling_best">Наиболее подходящее</string>
     <string name="video_scaling_fill">Заполнить экран</string>
     <string name="video_scaling_orig">Оригинальный размер</string>
 
+    <string name="audio">Аудио</string>
+    <string name="audio_delay">Задержка аудио</string>
+    <string name="preferred_audio_lang">Предпочитаемые языки аудио</string>
+    <string name="preferred_audio_key">Предпочитать аудио дорожку с ключевыми словами</string>
+    <string name="select_audio_stream">Выбрать аудио дорожку</string>
+
+    <string name="subtitles">Субтитры</string>
+    <string name="subtitle_delay">Задержка субтитров</string>
     <string name="display_subtitles">Показывать субтитры</string>
     <string name="preferred_sub_lang">Предпочитаемые языки субтитров</string>
     <string name="preferred_sub_key">Предпочитать субтитры с ключевыми словами</string>
-    <string name="preferred_audio_lang">Предпочитаемые языки аудио</string>
-    <string name="preferred_audio_key">Предпочитать аудио дорожку с ключевыми словами</string>
     <string name="select_subtitles">Выбрать субтитры</string>
-    <string name="select_audio">Выбрать аудио дорожку</string>
 
     <string name="eq_hz">%1$s Гц</string>
     <string name="eq_khz">%1$s кГц</string>

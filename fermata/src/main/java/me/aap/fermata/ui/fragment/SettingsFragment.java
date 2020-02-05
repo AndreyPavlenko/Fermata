@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,14 +18,17 @@ import java.util.Locale;
 import me.aap.fermata.R;
 import me.aap.fermata.function.BooleanSupplier;
 import me.aap.fermata.function.Consumer;
+import me.aap.fermata.function.IntSupplier;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.pref.PrefCondition;
 import me.aap.fermata.pref.PreferenceSet;
+import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.pref.PreferenceView;
 import me.aap.fermata.pref.PreferenceViewAdapter;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.util.ChangeableCondition;
 
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
@@ -87,6 +91,70 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 		return true;
 	}
 
+	public static void addDelayPrefs(PreferenceSet set, PreferenceStore store,
+																	 PreferenceStore.Pref<IntSupplier> pref, @StringRes int title,
+																	 ChangeableCondition visibility) {
+		set.addIntPref(o -> {
+			o.store = store;
+			o.pref = pref;
+			o.title = title;
+			o.seekMin = -5000;
+			o.seekMax = 5000;
+			o.seekScale = 50;
+			o.ems = 3;
+			o.visibility = visibility;
+		});
+	}
+
+	public static void addAudioPrefs(PreferenceSet set, PreferenceStore store, boolean isCar) {
+		addDelayPrefs(set, store, MediaLibPrefs.AUDIO_DELAY, R.string.audio_delay, null);
+
+		if (!isCar) {
+			set.addStringPref(o -> {
+				Locale locale = Locale.getDefault();
+				o.store = store;
+				o.pref = MediaLibPrefs.AUDIO_LANG;
+				o.title = R.string.preferred_audio_lang;
+				o.stringHint = locale.getLanguage() + ' ' + locale.getISO3Language();
+			});
+			set.addStringPref(o -> {
+				o.store = store;
+				o.pref = MediaLibPrefs.AUDIO_KEY;
+				o.title = R.string.preferred_audio_key;
+				o.stringHint = "studio1 studio2 default";
+			});
+		}
+	}
+
+	public static void addSubtitlePrefs(PreferenceSet set, PreferenceStore store, boolean isCar) {
+		set.addBooleanPref(o -> {
+			o.store = store;
+			o.pref = MediaLibPrefs.SUB_ENABLED;
+			o.title = R.string.display_subtitles;
+		});
+
+		addDelayPrefs(set, store, MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay,
+				PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED));
+
+		if (!isCar) {
+			set.addStringPref(o -> {
+				Locale locale = Locale.getDefault();
+				o.store = store;
+				o.pref = MediaLibPrefs.SUB_LANG;
+				o.title = R.string.preferred_sub_lang;
+				o.stringHint = locale.getLanguage() + ' ' + locale.getISO3Language();
+				o.visibility = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
+			});
+			set.addStringPref(o -> {
+				o.store = store;
+				o.pref = MediaLibPrefs.SUB_KEY;
+				o.title = R.string.preferred_sub_key;
+				o.stringHint = "full forced";
+				o.visibility = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
+			});
+		}
+	}
+
 	private MainActivityDelegate getMainActivity() {
 		return MainActivityDelegate.get(getContext());
 	}
@@ -96,6 +164,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 		MediaLibPrefs mediaPrefs = a.getMediaServiceBinder().getLib().getPrefs();
 		int[] timeUnits = new int[]{R.string.time_unit_second, R.string.time_unit_minute,
 				R.string.time_unit_percent};
+		boolean isCar = a.isCarActivity();
 		PreferenceSet set = new PreferenceSet();
 		PreferenceSet sub1;
 		PreferenceSet sub2;
@@ -177,7 +246,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			o.title = R.string.play_pause_stop;
 		});
 
-		if (!a.isCarActivity()) {
+		if (!isCar) {
 			Consumer<PreferenceView.ListOpts> initList = o -> {
 				PrefCondition<BooleanSupplier> exoCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.EXO_ENABLED);
 				PrefCondition<BooleanSupplier> vlcCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
@@ -235,40 +304,18 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			o.values = new int[]{R.string.video_scaling_best, R.string.video_scaling_fill,
 					R.string.video_scaling_orig, R.string.video_scaling_4, R.string.video_scaling_16};
 		});
-		sub1.addBooleanPref(o -> {
-			o.store = mediaPrefs;
-			o.pref = MediaLibPrefs.SUB_ENABLED;
-			o.title = R.string.display_subtitles;
-		});
 
-		if (!a.isCarActivity()) {
-			Locale locale = Locale.getDefault();
-			String langHint = locale.getLanguage() + ' ' + locale.getISO3Language();
-			sub1.addStringPref(o -> {
-				o.store = mediaPrefs;
-				o.pref = MediaLibPrefs.SUB_LANG;
-				o.title = R.string.preferred_sub_lang;
-				o.stringHint = langHint;
-			});
-			sub1.addStringPref(o -> {
-				o.store = mediaPrefs;
-				o.pref = MediaLibPrefs.SUB_KEY;
-				o.title = R.string.preferred_sub_key;
-				o.stringHint = "full forced";
-			});
-			sub1.addStringPref(o -> {
-				o.store = mediaPrefs;
-				o.pref = MediaLibPrefs.AUDIO_LANG;
-				o.title = R.string.preferred_audio_lang;
-				o.stringHint = langHint;
-			});
-			sub1.addStringPref(o -> {
-				o.store = mediaPrefs;
-				o.pref = MediaLibPrefs.AUDIO_KEY;
-				o.title = R.string.preferred_audio_key;
-				o.stringHint = "studio1 studio2 default";
-			});
-		}
+		sub2 = sub1.subSet(o -> {
+			o.title = R.string.audio;
+			o.visibility = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
+		});
+		addAudioPrefs(sub2, mediaPrefs, isCar);
+
+		sub2 = sub1.subSet(o -> {
+			o.title = R.string.subtitles;
+			o.visibility = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
+		});
+		addSubtitlePrefs(sub2, mediaPrefs, isCar);
 
 		return new PreferenceViewAdapter(set) {
 			@Override

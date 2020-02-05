@@ -1,10 +1,6 @@
 package me.aap.fermata.ui.view;
 
-import android.content.res.Resources;
-import android.view.View;
-
 import androidx.annotation.LayoutRes;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +15,7 @@ import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
+import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.pref.BasicPreferenceStore;
@@ -40,6 +37,9 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_SCALE;
 import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addAudioPrefs;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addDelayPrefs;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
 
 /**
  * @author Andrey Pavlenko
@@ -105,9 +105,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		}
 
 		if (pi.isVideo()) {
-			if (pi.getPrefs().getWatchedPref()) menu.findItem(R.id.mark_unwatched).setVisible(true);
-			else menu.findItem(R.id.mark_watched).setVisible(true);
-			menu.findItem(R.id.video_scaling).setVisible(true);
+			menu.findItem(R.id.video_menu).setVisible(true);
 		}
 
 		if (playlist) menu.findItem(R.id.playlist_remove).setVisible(true);
@@ -128,8 +126,31 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 
 		menu.findItem(R.id.favorites_add).setVisible(!favorite);
 		menu.findItem(R.id.bookmarks).setVisible(hasBookmarks);
-		menu.findItem(R.id.video_scaling).setVisible(true);
+		menu.findItem(R.id.video_menu).setVisible(true);
 		if (!playlist) a.initPlaylistMenu(menu);
+	}
+
+	protected void initVideoMenu(AppMenu menu, Item item) {
+		menu.findItem(R.id.video_scaling).setVisible(true);
+
+		if ((item instanceof PlayableItem)) {
+			PlayableItem pi = (PlayableItem) item;
+			if (pi.getPrefs().getWatchedPref()) menu.findItem(R.id.mark_unwatched).setVisible(true);
+			else menu.findItem(R.id.mark_watched).setVisible(true);
+		}
+
+		if (item.getLib().getPrefs().getVlcEnabledPref()) {
+			if ((item instanceof PlayableItem)) {
+				menu.findItem(R.id.audio_delay).setVisible(true);
+
+				if (((PlayableItem) item).getPrefs().getSubEnabledPref()) {
+					menu.findItem(R.id.subtitle_delay).setVisible(true);
+				}
+			} else if ((item instanceof BrowsableItem)) {
+				menu.findItem(R.id.audio_prefs).setVisible(true);
+				menu.findItem(R.id.subtitle_prefs).setVisible(true);
+			}
+		}
 	}
 
 	@Override
@@ -303,6 +324,9 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			case R.id.preferred_video_engine_vlc:
 				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_VLC);
 				break;
+			case R.id.video_menu:
+				initVideoMenu(i.getMenu(), item);
+				break;
 			case R.id.video_scaling:
 				int scale = item.getPrefs().hasPref(VIDEO_SCALE, false) ? item.getPrefs().getVideoScalePref() : -1;
 				menu = i.getMenu();
@@ -332,6 +356,36 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				break;
 			case R.id.video_scaling_16:
 				item.getPrefs().setVideoScalePref(SCALE_16_9);
+				break;
+			case R.id.audio_delay:
+				PreferenceSet prefSet = new PreferenceSet();
+				menu = i.getMenu();
+				addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.AUDIO_DELAY, R.string.audio_delay, null);
+				prefSet.addToMenu(menu, true);
+				menu.show();
+				break;
+			case R.id.subtitle_delay:
+				prefSet = new PreferenceSet();
+				menu = i.getMenu();
+				addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay, null);
+				prefSet.addToMenu(menu, true);
+				menu.show();
+				break;
+			case R.id.audio_prefs:
+				prefSet = new PreferenceSet();
+				menu = i.getMenu();
+				addAudioPrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivity());
+				menu.setTitle(R.string.audio);
+				prefSet.addToMenu(menu, true);
+				menu.show();
+				break;
+			case R.id.subtitle_prefs:
+				prefSet = new PreferenceSet();
+				menu = i.getMenu();
+				addSubtitlePrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivity());
+				menu.setTitle(R.string.subtitles);
+				prefSet.addToMenu(menu, true);
+				menu.show();
 				break;
 		}
 
@@ -391,10 +445,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 			o.seekMax = (int) (((PlayableItem) item).getDuration() / 1000);
 		});
 
-		View v = menu.inflate(R.layout.pref_list_view);
-		RecyclerView prefsView = v.findViewById(R.id.prefs_list_view);
-		set.addToView(prefsView);
-		prefsView.setMinimumWidth(Resources.getSystem().getDisplayMetrics().widthPixels * 2 / 3);
+		set.addToMenu(menu, true);
 		menu.show(m -> true, m -> {
 			PlayableItemPrefs prefs = ((PlayableItem) item).getPrefs();
 			prefs.addBookmark(store.getStringPref(name), store.getIntPref(time));

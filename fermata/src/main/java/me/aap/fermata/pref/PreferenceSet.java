@@ -1,12 +1,18 @@
 package me.aap.fermata.pref;
 
+import android.content.res.Resources;
+import android.view.View;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import me.aap.fermata.R;
 import me.aap.fermata.function.Consumer;
 import me.aap.fermata.function.Supplier;
+import me.aap.fermata.ui.menu.AppMenu;
 
 /**
  * @author Andrey Pavlenko
@@ -94,5 +100,15 @@ public class PreferenceSet implements Supplier<PreferenceView.Opts> {
 		v.setHasFixedSize(true);
 		v.setLayoutManager(new LinearLayoutManager(v.getContext()));
 		v.setAdapter(new PreferenceViewAdapter(this));
+	}
+
+	public void addToMenu(AppMenu menu, boolean setMinWidth) {
+		View v = menu.inflate(R.layout.pref_list_view);
+		RecyclerView prefsView = v.findViewById(R.id.prefs_list_view);
+		addToView(prefsView);
+
+		if (setMinWidth) {
+			prefsView.setMinimumWidth(Resources.getSystem().getDisplayMetrics().widthPixels * 2 / 3);
+		}
 	}
 }

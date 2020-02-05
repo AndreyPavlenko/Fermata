@@ -18,6 +18,10 @@ public interface AppMenu {
 
 	void show(SelectionHandler handler, CloseHandler closeHandler);
 
+	default void show() {
+		show(i -> true, null);
+	}
+
 	default void show(SelectionHandler handler) {
 		show(handler, null);
 	}

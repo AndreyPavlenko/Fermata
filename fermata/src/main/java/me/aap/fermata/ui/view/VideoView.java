@@ -19,7 +19,11 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.circularreveal.CircularRevealFrameLayout;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -43,6 +47,9 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
  */
 public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		View.OnLayoutChangeListener, PreferenceStore.Listener {
+	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(Arrays.asList(
+			MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.SUB_DELAY
+	));
 	private boolean surfaceCreated;
 	private boolean prefListenerRegistered;
 
@@ -264,12 +271,19 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MediaPrefs.VIDEO_SCALE)) {
+		if (!Collections.disjoint(prefChange, prefs)) {
 			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 			PlayableItem i = eng.getSource();
 			if ((i == null) || !i.isVideo()) return;
-			setSurfaceSize(eng);
+
+			if (prefs.contains(MediaPrefs.VIDEO_SCALE)) {
+				setSurfaceSize(eng);
+			} else if (prefs.contains(MediaPrefs.AUDIO_DELAY)) {
+				eng.setAudioDelay(i.getPrefs().getAudioDelayPref());
+			} else if (prefs.contains(MediaPrefs.SUB_DELAY)) {
+				eng.setSubtitleDelay(i.getPrefs().getSubDelayPref());
+			}
 		}
 	}
 

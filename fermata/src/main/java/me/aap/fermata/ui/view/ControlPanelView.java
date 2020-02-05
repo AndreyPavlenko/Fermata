@@ -15,7 +15,6 @@ import android.view.View;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.LinearLayoutCompat;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
@@ -304,8 +303,19 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			menu.findItem(R.id.shuffle).setVisible(!shuffle);
 			menu.findItem(R.id.shuffle_disable).setVisible(shuffle);
 			menu.findItem(R.id.audio_effects).setVisible(eng.getAudioEffects() != null);
+		}
+
+		@Override
+		protected void initVideoMenu(AppMenu menu, Item item) {
+			super.initVideoMenu(menu, item);
+
+			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			if (eng == null) return;
+			PlayableItem pi = (PlayableItem) item;
 
 			if (pi.isVideo()) {
+				if (eng.isAudioDelaySupported()) menu.findItem(R.id.audio_delay).setVisible(true);
+				if (eng.isSubtitleDelaySupported()) menu.findItem(R.id.subtitle_delay).setVisible(true);
 				if (eng.getAudioStreamInfo().size() > 1) menu.findItem(R.id.select_audio).setVisible(true);
 				if (!eng.getSubtitleStreamInfo().isEmpty())
 					menu.findItem(R.id.select_subtitles).setVisible(true);
@@ -353,7 +363,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 					if (eng == null) return true;
 					AudioStreamInfo ai = eng.getCurrentAudioStreamInfo();
 					menu = i.getMenu();
-					menu.setTitle(R.string.select_audio);
+					menu.setTitle(R.string.select_audio_stream);
 					for (AudioStreamInfo s : eng.getAudioStreamInfo()) {
 						menu.addItem(R.id.select_audio_stream, true, null, s.toString())
 								.setData(s).setChecked(s.equals(ai));
@@ -434,10 +444,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				o.pref = store.FOLDER;
 			});
 
-			View v = menu.inflate(R.layout.pref_list_view);
-			RecyclerView prefsView = v.findViewById(R.id.prefs_list_view);
-			set.addToView(prefsView);
-			prefsView.setMinimumWidth(Resources.getSystem().getDisplayMetrics().widthPixels * 2 / 3);
+			set.addToMenu(menu, true);
 			menu.show(this, this);
 		}
 

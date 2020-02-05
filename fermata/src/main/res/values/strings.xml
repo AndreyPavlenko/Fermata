@@ -53,6 +53,7 @@
     <string name="strength">Strength</string>
     <string name="apply_to">Apply to</string>
 
+    <string name="video">Video</string>
     <string name="video_settings">Video settings</string>
     <string name="video_scaling">Video scaling</string>
     <string name="video_scaling_best">Best fit</string>
@@ -61,13 +62,19 @@
     <string name="video_scaling_4" translatable="false">4x3</string>
     <string name="video_scaling_16" translatable="false">16x9</string>
 
+
+    <string name="audio">Audio</string>
+    <string name="audio_delay">Audio delay</string>
+    <string name="preferred_audio_lang">Preferred audio stream languages</string>
+    <string name="preferred_audio_key">Prefer audio stream with keywords</string>
+    <string name="select_audio_stream">Select audio stream</string>
+
+    <string name="subtitles">Subtitles</string>
+    <string name="subtitle_delay">Subtitles delay</string>
     <string name="display_subtitles">Display subtitles</string>
     <string name="preferred_sub_lang">Preferred subtitles languages</string>
     <string name="preferred_sub_key">Prefer subtitles with keywords</string>
-    <string name="preferred_audio_lang">Preferred audio stream languages</string>
-    <string name="preferred_audio_key">Prefer audio stream with keywords</string>
     <string name="select_subtitles">Select subtitles</string>
-    <string name="select_audio">Select audio stream</string>
 
     <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>

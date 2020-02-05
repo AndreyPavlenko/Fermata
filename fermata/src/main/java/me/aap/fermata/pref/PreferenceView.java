@@ -192,7 +192,7 @@ public class PreferenceView extends ConstraintLayout {
 						ignoreChange[0] = true;
 						String value = s.toString();
 						set.accept(value);
-						sb.setProgress(toInt.applyAsInt(value));
+						sb.setProgress(Math.max(0, toInt.applyAsInt(value) - o.seekMin) / o.seekScale);
 					} catch (NumberFormatException ignore) {
 					} finally {
 						ignoreChange[0] = false;
@@ -210,15 +210,14 @@ public class PreferenceView extends ConstraintLayout {
 			}
 		});
 
-		if (o.seekMin != -1) sb.setMax(o.seekMin);
-		if (o.seekMax != -1) sb.setMax(o.seekMax);
-		sb.setProgress(toInt.applyAsInt(initValue));
+		sb.setMax((o.seekMax - o.seekMin) / o.seekScale);
+		sb.setProgress(Math.max(0, toInt.applyAsInt(initValue) - o.seekMin) / o.seekScale);
 
 		sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 				if (fromUser) {
-					t.setText(fromInt.apply(progress));
+					t.setText(fromInt.apply(progress * o.seekScale + o.seekMin));
 				}
 			}
 
@@ -423,8 +422,9 @@ public class PreferenceView extends ConstraintLayout {
 	}
 
 	public static class NumberOpts<S> extends PrefOpts<S> {
-		public int seekMin = -1;
-		public int seekMax = -1;
+		public int seekMin = 0;
+		public int seekMax = 100;
+		public int seekScale = 1;
 		public int ems = 2;
 	}
 

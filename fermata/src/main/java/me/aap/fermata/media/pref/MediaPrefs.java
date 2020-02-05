@@ -39,8 +39,10 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<IntSupplier> BASS_STRENGTH = Pref.i("BASS_STRENGTH", 0).withInheritance(false);
 
 	Pref<BooleanSupplier> SUB_ENABLED = Pref.b("SUB_ENABLED", true);
+	Pref<IntSupplier> SUB_DELAY = Pref.i("SUB_DELAY", 0);
 	Pref<Supplier<String>> SUB_LANG = Pref.s("SUB_LANG", "");
 	Pref<Supplier<String>> SUB_KEY = Pref.s("SUB_KEY", "");
+	Pref<IntSupplier> AUDIO_DELAY = Pref.i("AUDIO_DELAY", 0);
 	Pref<Supplier<String>> AUDIO_LANG = Pref.s("AUDIO_LANG", "");
 	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
 
@@ -72,12 +74,20 @@ public interface MediaPrefs extends PreferenceStore {
 		return getBooleanPref(SUB_ENABLED);
 	}
 
+	default int getSubDelayPref() {
+		return getIntPref(SUB_DELAY);
+	}
+
 	default String getSubLangPref() {
 		return getStringPref(SUB_LANG);
 	}
 
 	default String getSubKeyPref() {
 		return getStringPref(SUB_KEY);
+	}
+
+	default int getAudioDelayPref() {
+		return getIntPref(AUDIO_DELAY);
 	}
 
 	default String getAudioLangPref() {

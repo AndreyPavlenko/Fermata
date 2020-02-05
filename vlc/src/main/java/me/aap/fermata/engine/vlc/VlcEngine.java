@@ -138,38 +138,6 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	}
 
 	@Override
-	public List<AudioStreamInfo> getAudioStreamInfo() {
-		return source.getAudioStreamInfo();
-	}
-
-	@Override
-	public List<SubtitleStreamInfo> getSubtitleStreamInfo() {
-		return source.getSubtitleStreamInfo();
-	}
-
-	@Override
-	public AudioStreamInfo getCurrentAudioStreamInfo() {
-		int id = player.getAudioTrack();
-		return Utils.find(getAudioStreamInfo(), s -> s.getId() == id);
-	}
-
-	@Override
-	public void setCurrentAudioStream(AudioStreamInfo i) {
-		player.setAudioTrack((i != null) ? i.getId() : -1);
-	}
-
-	@Override
-	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
-		int id = player.getSpuTrack();
-		return Utils.find(getSubtitleStreamInfo(), s -> s.getId() == id);
-	}
-
-	@Override
-	public void setCurrentSubtitleStream(SubtitleStreamInfo i) {
-		player.setSpuTrack((i != null) ? i.getId() : -1);
-	}
-
-	@Override
 	public long getDuration() {
 		return source.getDuration();
 	}
@@ -243,6 +211,68 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	}
 
 	@Override
+	public List<AudioStreamInfo> getAudioStreamInfo() {
+		return source.getAudioStreamInfo();
+	}
+
+	@Override
+	public List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+		return source.getSubtitleStreamInfo();
+	}
+
+	@Override
+	public AudioStreamInfo getCurrentAudioStreamInfo() {
+		int id = player.getAudioTrack();
+		return Utils.find(getAudioStreamInfo(), s -> s.getId() == id);
+	}
+
+	@Override
+	public void setCurrentAudioStream(AudioStreamInfo i) {
+		player.setAudioTrack((i != null) ? i.getId() : -1);
+	}
+
+	@Override
+	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
+		int id = player.getSpuTrack();
+		return Utils.find(getSubtitleStreamInfo(), s -> s.getId() == id);
+	}
+
+	@Override
+	public void setCurrentSubtitleStream(SubtitleStreamInfo i) {
+		player.setSpuTrack((i != null) ? i.getId() : -1);
+	}
+
+	@Override
+	public boolean isAudioDelaySupported() {
+		return true;
+	}
+
+	@Override
+	public int getAudioDelay() {
+		return (int) (player.getAudioDelay() / 1000);
+	}
+
+	@Override
+	public void setAudioDelay(int milliseconds) {
+		player.setAudioDelay(milliseconds * 1000);
+	}
+
+	@Override
+	public boolean isSubtitleDelaySupported() {
+		return true;
+	}
+
+	@Override
+	public int getSubtitleDelay() {
+		return (int) (player.getSpuDelay() / 1000);
+	}
+
+	@Override
+	public void setSubtitleDelay(int milliseconds) {
+		player.setSpuDelay(milliseconds * 1000);
+	}
+
+	@Override
 	public void close() {
 		stop();
 
@@ -305,13 +335,20 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		if (this.source instanceof VideoSource) {
 			VideoSource vs = (VideoSource) this.source;
 			PlayableItemPrefs prefs = vs.getItem().getPrefs();
+			int delay = prefs.getAudioDelayPref();
 			AudioStreamInfo ai = vs.selectAudioStream(prefs);
 			if (ai != null) player.setAudioTrack(ai.getId());
+			if (delay != 0) player.setAudioDelay(delay * 1000);
 			vs.addSubtitles(player.getSpuTracks());
 
 			if (prefs.getSubEnabledPref()) {
 				SubtitleStreamInfo si = vs.selectSubtitleStream(prefs);
-				if (si != null) player.setSpuTrack(si.getId());
+
+				if (si != null) {
+					player.setSpuTrack(si.getId());
+					delay = prefs.getSubDelayPref();
+					if (delay != 0) player.setSpuDelay(delay * 1000);
+				}
 			} else {
 				player.setSpuTrack(-1);
 			}
