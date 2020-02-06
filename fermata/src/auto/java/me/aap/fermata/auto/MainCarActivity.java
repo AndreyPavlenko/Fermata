@@ -77,6 +77,11 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 		return super.getSupportFragmentManager();
 	}
 
+	@Override
+	public View getCurrentFocus() {
+		return null;
+	}
+
 	public boolean isCarActivity() {
 		return true;
 	}

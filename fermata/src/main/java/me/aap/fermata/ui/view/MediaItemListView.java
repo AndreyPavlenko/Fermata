@@ -2,9 +2,12 @@ package me.aap.fermata.ui.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -56,5 +59,14 @@ public class MediaItemListView extends RecyclerView {
 			MediaItemViewHolder h = (MediaItemViewHolder) getChildViewHolder(getChildAt(i));
 			h.getItemView().refreshState();
 		}
+	}
+
+	@Override
+	public void smoothScrollToPosition(int position) {
+		super.smoothScrollToPosition(position);
+		List<MediaItemWrapper> list = getAdapter().getList();
+		if ((position < 0) || (position >= list.size())) return;
+		View v = list.get(position).getView();
+		if (v != null) v.requestFocus();
 	}
 }

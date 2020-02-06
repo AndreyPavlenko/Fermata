@@ -211,6 +211,10 @@ public class MainActivityDelegate extends Fragment implements
 		return activity;
 	}
 
+	public View getCurrentFocus() {
+		return getAppActivity().getCurrentFocus();
+	}
+
 	public boolean isCarActivity() {
 		return getAppActivity().isCarActivity();
 	}

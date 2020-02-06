@@ -36,6 +36,7 @@ public class AppMenuView extends ScrollView implements AppMenu {
 	@ColorInt
 	private final int headerColor;
 	private final LinearLayoutCompat childGroup;
+	private View focus;
 
 	public AppMenuView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -81,7 +82,9 @@ public class AppMenuView extends ScrollView implements AppMenu {
 	public void show(SelectionHandler handler, CloseHandler closeHandler) {
 		this.handler = handler;
 		this.closeHandler = closeHandler;
-		MainActivityDelegate.get(getContext()).setActiveMenu(this);
+		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+		focus = a.getCurrentFocus();
+		a.setActiveMenu(this);
 		setVisibility(VISIBLE);
 		ViewGroup g = getChildGroup();
 
@@ -89,14 +92,22 @@ public class AppMenuView extends ScrollView implements AppMenu {
 			selectedItem.setSelected(true);
 			selectedItem.requestFocus();
 		} else {
+			View select = null;
+
 			for (int i = 0, count = g.getChildCount(); i < count; i++) {
 				View c = g.getChildAt(i);
 
-				if ((c instanceof AppMenuItemView) && (c.getVisibility() == VISIBLE)) {
+				if (c.getVisibility() != VISIBLE) continue;
+				if ((select == null) && c.isFocusable()) select = c;
+
+				if (c instanceof AppMenuItemView) {
 					c.requestFocus();
+					select = null;
 					break;
 				}
 			}
+
+			if (select != null) select.requestFocus();
 		}
 	}
 
@@ -105,13 +116,16 @@ public class AppMenuView extends ScrollView implements AppMenu {
 		if (handler == null) return;
 
 		CloseHandler ch = closeHandler;
+		View f = focus;
 		handler = null;
 		closeHandler = null;
 		selectedItem = null;
+		focus = null;
 		getChildGroup().removeAllViews();
 		setVisibility(GONE);
 		MainActivityDelegate.get(getContext()).setActiveMenu(null);
 		if (ch != null) ch.menuClosed(this);
+		if (f != null) f.requestFocus();
 	}
 
 	@Override
@@ -129,6 +143,10 @@ public class AppMenuView extends ScrollView implements AppMenu {
 	@Override
 	public void setSelectedItem(AppMenuItem item) {
 		selectedItem = (AppMenuItemView) item;
+	}
+
+	public AppMenuItemView getSelectedItem() {
+		return selectedItem;
 	}
 
 	@Override

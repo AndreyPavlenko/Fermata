@@ -53,7 +53,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		opts.add("--freetype-background-opacity=0");
 		opts.add("--no-sout-chromecast-audio-passthrough");
 		opts.add("--sout-chromecast-conversion-quality=2");
-		opts.add("--aout=opensles,android_audiotrack");
+//		opts.add("--aout=opensles,android_audiotrack");
 //		opts.add("--vout=android_display");
 //		opts.add("--vout=opengles2");
 

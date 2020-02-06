@@ -202,6 +202,8 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 					a.setParent(newParent);
 					scrollPosition = indexOf(a.getList(), newItem);
 				}
+			} else {
+				scrollPosition = indexOf(list, oldItem);
 			}
 		}
 

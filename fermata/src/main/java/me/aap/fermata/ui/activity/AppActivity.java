@@ -34,6 +34,8 @@ public interface AppActivity {
 	@NonNull
 	FragmentManager getSupportFragmentManager();
 
+	View getCurrentFocus();
+
 	boolean isCarActivity();
 
 	void recreate();

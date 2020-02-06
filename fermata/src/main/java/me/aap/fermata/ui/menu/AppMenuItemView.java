@@ -124,7 +124,12 @@ public class AppMenuItemView extends LinearLayoutCompat implements AppMenuItem, 
 
 	@Override
 	public AppMenuItem setChecked(boolean checked) {
-		getCheckBox().setChecked(checked);
+		if (checked) {
+			getCheckBox().setChecked(true);
+			if ((parent != null) && (parent.getSelectedItem() == null)) parent.setSelectedItem(this);
+		} else {
+			getCheckBox().setChecked(false);
+		}
 		return this;
 	}
 

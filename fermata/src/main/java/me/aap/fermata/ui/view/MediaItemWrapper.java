@@ -28,6 +28,10 @@ public class MediaItemWrapper {
 		view.getCheckBox().setSelected(isSelected());
 	}
 
+	public MediaItemView getView() {
+		return view;
+	}
+
 	public void refreshViewCheckbox() {
 		if (view != null) view.refreshCheckbox();
 	}
