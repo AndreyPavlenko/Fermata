@@ -7,6 +7,7 @@
 
         <item name="appBgColor">#182532</item>
         <item name="appTextColor">#bec2c8</item>
+        <item name="appTextColorHint">#504E4E</item>
         <item name="appIconColor">#095381</item>
 
         <item name="appPopupMenuColor">#182532</item>

@@ -176,7 +176,7 @@ public class SettingsFragment extends Fragment implements MainActivityFragment {
 			o.title = R.string.theme;
 			o.subtitle = R.string.theme_sub;
 			o.formatSubtitle = true;
-			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night};
+			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night, R.string.theme_black};
 		});
 		sub1.addBooleanPref(o -> {
 			o.store = a.getPrefs();

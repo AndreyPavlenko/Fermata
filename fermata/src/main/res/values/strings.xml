@@ -15,6 +15,7 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_day_night">Day/Night</string>
+    <string name="theme_black">Black</string>
 
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>

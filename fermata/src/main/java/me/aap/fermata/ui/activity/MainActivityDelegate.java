@@ -263,6 +263,7 @@ public class MainActivityDelegate extends Fragment implements
 	@SuppressWarnings("deprecation")
 	private void setTheme() {
 		switch (getPrefs().getThemePref()) {
+			default:
 			case MainActivityPrefs.THEME_DARK:
 				getAppActivity().setTheme(R.style.AppTheme_Dark);
 				break;
@@ -270,9 +271,11 @@ public class MainActivityDelegate extends Fragment implements
 				getAppActivity().setTheme(R.style.AppTheme_Light);
 				break;
 			case MainActivityPrefs.THEME_DAY_NIGHT:
-			default:
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_TIME);
 				getAppActivity().setTheme(R.style.AppTheme_DayNight);
+				break;
+			case MainActivityPrefs.THEME_BLACK:
+				getAppActivity().setTheme(R.style.AppTheme_Black);
 				break;
 		}
 	}

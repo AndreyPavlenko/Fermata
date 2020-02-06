@@ -7,6 +7,7 @@
     <attr name="appBgColor" format="reference|color" />
     <attr name="appIconColor" format="reference|color" />
     <attr name="appTextColor" format="reference|color" />
+    <attr name="appTextColorHint" format="reference|color" />
     <attr name="appTitleTextSize" format="reference|dimension" />
     <attr name="appSubtitleTextSize" format="reference|dimension" />
 
@@ -81,6 +82,7 @@
         <item name="android:statusBarColor">?attr/appStatusBarColor</item>
         <item name="android:textColor">?attr/appTextColor</item>
         <item name="android:editTextColor">?attr/appTextColor</item>
+        <item name="android:textColorHint">?attr/appTextColorHint</item>
         <item name="android:textCursorDrawable">?attr/appTextColor</item>
 
         <item name="appTitleTextSize">18dp</item>
