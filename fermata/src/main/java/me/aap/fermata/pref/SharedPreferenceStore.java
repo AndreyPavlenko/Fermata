@@ -18,6 +18,7 @@ import java.util.Set;
 
 import me.aap.fermata.function.BooleanSupplier;
 import me.aap.fermata.function.DoubleSupplier;
+import me.aap.fermata.function.Function;
 import me.aap.fermata.function.IntBiConsumer;
 import me.aap.fermata.function.IntFunction;
 import me.aap.fermata.function.IntSupplier;
@@ -223,9 +224,9 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		if (prefs.contains(getPreferenceKey(pref))) {
 			return true;
-		} else if (pref.isInheritable() && checkParent) {
+		} else if (checkParent && pref.isInheritable()) {
 			PreferenceStore parent = getParentPreferenceStore();
-			return (parent != null) && parent.hasPref(pref);
+			return (parent != null) && parent.hasPref(pref, true);
 		} else {
 			return false;
 		}
@@ -253,93 +254,79 @@ public interface SharedPreferenceStore extends PreferenceStore {
 
 		@Override
 		public void setBooleanPref(Pref<? extends BooleanSupplier> pref, boolean value) {
-			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsBoolean())) {
-				removePref(pref);
-				return;
+			if ((pref.getDefaultValue().getAsBoolean() != value) ||
+					!removeDefault(pref, p -> p.getBooleanPref(pref) == value)) {
+				String key = store.getPreferenceKey(pref);
+				edit.putBoolean(key, value);
+				notifyPreferenceChange(pref);
 			}
-
-			String key = store.getPreferenceKey(pref);
-			edit.putBoolean(key, value);
-			notifyPreferenceChange(pref);
 		}
 
 		@Override
 		public void setIntPref(Pref<? extends IntSupplier> pref, int value) {
-			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsInt())) {
-				removePref(pref);
-				return;
+			if ((pref.getDefaultValue().getAsInt() != value) ||
+					!removeDefault(pref, p -> p.getIntPref(pref) == value)) {
+				String key = store.getPreferenceKey(pref);
+				edit.putInt(key, value);
+				notifyPreferenceChange(pref);
 			}
-
-			String key = store.getPreferenceKey(pref);
-			edit.putInt(key, value);
-			notifyPreferenceChange(pref);
 		}
 
 		@Override
 		public void setIntArrayPref(Pref<? extends Supplier<int[]>> pref, int[] value) {
-			if (!pref.isInheritable() && (Arrays.equals(value, pref.getDefaultValue().get()))) {
-				removePref(pref);
-				return;
+			if (!Arrays.equals(pref.getDefaultValue().get(), value) ||
+					!removeDefault(pref, p -> Arrays.equals(p.getIntArrayPref(pref), value))) {
+				setArrayPref(pref, value, value.length, (i, a, sb) -> sb.append(a[i]));
 			}
-
-			setArrayPref(pref, value, value.length, (i, a, sb) -> sb.append(a[i]));
 		}
 
 		@Override
 		public void setLongPref(Pref<? extends LongSupplier> pref, long value) {
-			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsLong())) {
-				removePref(pref);
-				return;
+			if ((pref.getDefaultValue().getAsLong() != value) ||
+					!removeDefault(pref, p -> p.getLongPref(pref) == value)) {
+				String key = store.getPreferenceKey(pref);
+				edit.putLong(key, value);
+				notifyPreferenceChange(pref);
 			}
-
-			String key = store.getPreferenceKey(pref);
-			edit.putLong(key, value);
-			notifyPreferenceChange(pref);
 		}
 
 		@Override
 		public void setFloatPref(Pref<? extends DoubleSupplier> pref, float value) {
-			if (!pref.isInheritable() && (value == pref.getDefaultValue().getAsDouble())) {
-				removePref(pref);
-				return;
+			if ((pref.getDefaultValue().getAsDouble() != value) ||
+					!removeDefault(pref, p -> p.getFloatPref(pref) == value)) {
+				String key = store.getPreferenceKey(pref);
+				edit.putFloat(key, value);
+				notifyPreferenceChange(pref);
 			}
-
-			String key = store.getPreferenceKey(pref);
-			edit.putFloat(key, value);
-			notifyPreferenceChange(pref);
 		}
 
 		@Override
 		public void setStringPref(Pref<? extends Supplier<String>> pref, String value) {
-			if (!pref.isInheritable() && (Objects.equals(value, pref.getDefaultValue().get()))) {
-				removePref(pref);
-				return;
+			if (!Objects.equals(pref.getDefaultValue().get(), value) ||
+					!removeDefault(pref, p -> Objects.equals(p.getStringPref(pref), value))) {
+				String key = store.getPreferenceKey(pref);
+				edit.putString(key, value);
+				notifyPreferenceChange(pref);
 			}
-
-			String key = store.getPreferenceKey(pref);
-			edit.putString(key, value);
-			notifyPreferenceChange(pref);
 		}
 
 		@Override
 		public void setStringArrayPref(Pref<? extends Supplier<String[]>> pref, String[] value) {
-			if (!pref.isInheritable() && (Arrays.equals(value, pref.getDefaultValue().get()))) {
-				removePref(pref);
-				return;
+			if (!Arrays.equals(pref.getDefaultValue().get(), value) ||
+					!removeDefault(pref, p -> Arrays.equals(p.getStringArrayPref(pref), value))) {
+				String key = store.getPreferenceKey(pref);
+				Set<String> set = new HashSet<>((int) (value.length * 1.5f));
+				StringBuilder sb = Utils.getSharedStringBuilder();
+
+				for (int i = 0; i < value.length; i++) {
+					sb.setLength(0);
+					sb.append(i).append(' ').append(value[i]);
+					set.add(sb.toString());
+				}
+
+				edit.putStringSet(key, set);
+				notifyPreferenceChange(pref);
 			}
-
-			String key = store.getPreferenceKey(pref);
-			Set<String> set = new HashSet<>((int) (value.length * 1.5f));
-			StringBuilder sb = Utils.getSharedStringBuilder();
-
-			for (int i = 0; i < value.length; i++) {
-				sb.setLength(0);
-				sb.append(i).append(' ').append(value[i]);
-				set.add(sb.toString());
-			}
-
-			edit.putStringSet(key, set);
-			notifyPreferenceChange(pref);
 		}
 
 		public <A> void setArrayPref(Pref<? extends Supplier<A>> pref, A value, int len,
@@ -369,6 +356,22 @@ public interface SharedPreferenceStore extends PreferenceStore {
 				store.notifyPreferenceChange(store, changed);
 				changed = null;
 			}
+		}
+
+		private <S> boolean removeDefault(Pref<S> pref, Function<PreferenceStore, Boolean> compare) {
+			if (!pref.isInheritable()) {
+				removePref(pref);
+				return true;
+			}
+
+			PreferenceStore parent = store.getParentPreferenceStore();
+
+			if ((parent == null) || compare.apply(parent)) {
+				removePref(pref);
+				return true;
+			}
+
+			return false;
 		}
 
 		private void notifyPreferenceChange(Pref<?> pref) {

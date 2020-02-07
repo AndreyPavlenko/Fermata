@@ -1,8 +1,8 @@
 android {
     defaultConfig {
         applicationId "me.aap.fermata"
-        versionCode 33
-        versionName "1.3.4"
+        versionCode 35
+        versionName "1.3.5"
         setProperty("archivesBaseName", "fermata-$versionName")
     }
 
@@ -36,10 +36,13 @@ android {
     productFlavors {
         mobile {
             dimension "version"
+            resValue "string", "app_name", "@string/app_name_mobile"
         }
 
         auto {
             dimension "version"
+            applicationIdSuffix '.auto'
+            resValue "string", "app_name", "@string/app_name_auto"
 
             dependencies {
                 implementation fileTree(dir: 'lib/auto', include: ['*.aar'])
@@ -55,7 +58,6 @@ dependencies {
     implementation 'androidx.core:core:1.2.0'
     implementation 'androidx.media:media:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.android.support:support-core-utils:28.0.0'
     implementation 'com.google.android.material:material:1.2.0-alpha04'
     implementation "androidx.constraintlayout:constraintlayout:2.0.0-beta4"
     implementation 'com.google.android.play:core:1.6.4'

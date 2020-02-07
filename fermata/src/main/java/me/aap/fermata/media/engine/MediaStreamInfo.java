@@ -1,5 +1,6 @@
 package me.aap.fermata.media.engine;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
@@ -39,6 +40,8 @@ public class MediaStreamInfo {
 				&& ((MediaStreamInfo) obj).getId() == getId());
 	}
 
+	@NonNull
+	@Override
 	public String toString() {
 		String lang = getLanguage();
 		String desc = getDescription();
@@ -49,6 +52,8 @@ public class MediaStreamInfo {
 			return String.valueOf(getId());
 		} else if (langEmpty) {
 			return desc;
+		} else if (descEmpty) {
+			return lang;
 		} else {
 			return lang + ": " + desc;
 		}

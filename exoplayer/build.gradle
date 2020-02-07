@@ -4,11 +4,16 @@ android {
         versionName "1.0"
         missingDimensionStrategy 'version', 'auto'
         missingDimensionStrategy 'version', 'mobile'
+
+        ndk {
+            abiFilters=[]
+            abiFilters.addAll(ABI)
+        }
     }
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.1.0'
+    implementation 'androidx.core:core:1.2.0'
     implementation project(':fermata')
     implementation project(':exoplayer-library-core')
     implementation project(':exoplayer-extension-ffmpeg')
