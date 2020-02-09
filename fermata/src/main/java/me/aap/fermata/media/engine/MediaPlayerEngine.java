@@ -115,7 +115,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void setVideoView(VideoView view) {
-		player.setDisplay(view.getVideoSurface().getHolder());
+		player.setDisplay((view == null) ? null : view.getVideoSurface().getHolder());
 	}
 
 	@Override

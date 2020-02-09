@@ -105,7 +105,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 
 	@Override
 	public void setVideoView(VideoView view) {
-		player.setVideoSurfaceHolder(view.getVideoSurface().getHolder());
+		player.setVideoSurfaceHolder((view == null) ? null : view.getVideoSurface().getHolder());
 	}
 
 	@Override

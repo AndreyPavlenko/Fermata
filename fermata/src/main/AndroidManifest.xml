@@ -14,7 +14,7 @@
         tools:node="remove" />
 
     <application
-        android:name=".FermataApplication"
+        android:name="me.aap.fermata.FermataApplication"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
@@ -36,7 +36,7 @@
             android:resource="@style/AppTheme.Dark" />
 
         <activity
-            android:name=".ui.activity.MainActivity"
+            android:name="me.aap.fermata.ui.activity.MainActivity"
             android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -45,7 +45,7 @@
         </activity>
 
         <service
-            android:name=".media.service.FermataMediaService"
+            android:name="me.aap.fermata.media.service.FermataMediaService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
