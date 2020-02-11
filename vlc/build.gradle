@@ -2,12 +2,22 @@ android {
     defaultConfig {
         versionCode 1
         versionName "1.0"
-        missingDimensionStrategy 'version', 'auto'
-        missingDimensionStrategy 'version', 'mobile'
 
         ndk {
             abiFilters=[]
             abiFilters.addAll(ABI)
+        }
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        mobile {
+            dimension "version"
+        }
+        auto {
+            dimension "version"
+            applicationIdSuffix '.auto'
         }
     }
 }
