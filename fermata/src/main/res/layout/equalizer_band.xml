@@ -14,7 +14,7 @@
         android:ems="4"
         android:gravity="center_vertical"
         android:lines="1"
-        android:textSize="?attr/appTitleTextSize"
+        android:textAppearance="?attr/textAppearanceBody1"
         app:layout_constraintBottom_toBottomOf="@id/eq_band_seek"
         app:layout_constraintEnd_toStartOf="@id/eq_band_seek"
         app:layout_constraintStart_toStartOf="parent"
@@ -27,7 +27,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:lines="1"
-        android:textSize="?attr/appSubtitleTextSize"
+        android:textAppearance="?attr/textAppearanceBody2"
         app:layout_constraintBottom_toTopOf="@id/eq_band_seek"
         app:layout_constraintStart_toStartOf="@id/eq_band_seek" />
 
@@ -37,7 +37,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="0"
-        android:textSize="?attr/appSubtitleTextSize"
+        android:textAppearance="?attr/textAppearanceBody2"
         app:layout_constraintBottom_toTopOf="@id/eq_band_seek"
         app:layout_constraintEnd_toEndOf="@id/eq_band_seek"
         app:layout_constraintStart_toStartOf="@id/eq_band_seek"
@@ -50,7 +50,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:lines="1"
-        android:textSize="?attr/appSubtitleTextSize"
+        android:textAppearance="?attr/textAppearanceBody2"
         app:layout_constraintBottom_toTopOf="@id/eq_band_seek"
         app:layout_constraintEnd_toEndOf="@id/eq_band_seek" />
 
@@ -59,7 +59,7 @@
         style="?attr/appEqualizerStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/focusable"
+        android:background="@drawable/focusable_shape_transparent"
         android:gravity="center_vertical"
         android:saveEnabled="false"
         app:layout_constraintBottom_toBottomOf="parent"

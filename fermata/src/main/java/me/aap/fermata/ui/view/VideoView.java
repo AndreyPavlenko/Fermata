@@ -30,9 +30,8 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
-import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.pref.PreferenceStore;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -41,6 +40,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.utils.ui.UiUtils.toPx;
 
 /**
  * @author Andrey Pavlenko
@@ -75,7 +75,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	private void addTitle(Context context) {
 		TextView text = new TextView(context);
-		text.setPadding(Utils.toPx(10), Utils.toPx(10), Utils.toPx(10), 0);
+		text.setPadding(toPx(10), toPx(10), toPx(10), 0);
 		text.setTextSize(20);
 		text.setTextColor(Color.WHITE);
 		text.setVisibility(GONE);

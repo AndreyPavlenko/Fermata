@@ -6,8 +6,6 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
-import me.aap.fermata.function.IntSupplier;
-import me.aap.fermata.function.Supplier;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -18,16 +16,18 @@ import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
-import me.aap.fermata.pref.BasicPreferenceStore;
-import me.aap.fermata.pref.PreferenceSet;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.PreferenceStore.Pref;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
-import me.aap.fermata.ui.menu.AppMenu;
-import me.aap.fermata.ui.menu.AppMenuItem;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.Supplier;
+import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PreferenceSet;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.text.TextUtils;
+import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.menu.OverlayMenuItem;
 
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
@@ -44,24 +44,24 @@ import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
 /**
  * @author Andrey Pavlenko
  */
-public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
-	private final AppMenu menu;
+public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
+	private final OverlayMenu menu;
 	private final Item item;
 	private final MediaItemView view;
 
-	public MediaItemMenuHandler(AppMenu menu, MediaItemView view) {
+	public MediaItemMenuHandler(OverlayMenu menu, MediaItemView view) {
 		this.menu = menu;
 		this.view = view;
 		this.item = view.getItem();
 	}
 
-	public MediaItemMenuHandler(AppMenu menu, Item item) {
+	public MediaItemMenuHandler(OverlayMenu menu, Item item) {
 		this.menu = menu;
 		this.item = item;
 		this.view = null;
 	}
 
-	public AppMenu getMenu() {
+	public OverlayMenu getMenu() {
 		return menu;
 	}
 
@@ -71,7 +71,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 
 	public void show(@LayoutRes int layout) {
 		MainActivityDelegate a = getMainActivity();
-		AppMenu menu = getMenu();
+		OverlayMenu menu = getMenu();
 		menu.inflate(layout);
 
 		if (item instanceof PlayableItem) {
@@ -87,7 +87,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		menu.show(this);
 	}
 
-	protected void initPlayableMenu(MainActivityDelegate a, AppMenu menu, PlayableItem pi,
+	protected void initPlayableMenu(MainActivityDelegate a, OverlayMenu menu, PlayableItem pi,
 																	boolean initRepeat) {
 		boolean favorite = pi.isFavoriteItem();
 		boolean hasBookmarks = pi.getPrefs().hasPref(BOOKMARKS);
@@ -112,7 +112,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		else a.initPlaylistMenu(menu);
 	}
 
-	protected void initBrowsableMenu(MainActivityDelegate a, AppMenu menu, BrowsableItem bi) {
+	protected void initBrowsableMenu(MainActivityDelegate a, OverlayMenu menu, BrowsableItem bi) {
 		boolean playlist = (bi instanceof Playlist);
 		boolean favorite = (bi.getParent() instanceof Favorites);
 		boolean hasBookmarks = false;
@@ -130,7 +130,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		if (!playlist) a.initPlaylistMenu(menu);
 	}
 
-	protected void initVideoMenu(AppMenu menu, Item item) {
+	protected void initVideoMenu(OverlayMenu menu, Item item) {
 		menu.findItem(R.id.video_scaling).setVisible(true);
 
 		if ((item instanceof PlayableItem)) {
@@ -154,11 +154,11 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 	}
 
 	@Override
-	public boolean menuItemSelected(AppMenuItem i) {
+	public boolean menuItemSelected(OverlayMenuItem i) {
 		int id = i.getItemId();
 		MediaLibFragment f;
 		Item item = getItem();
-		AppMenu menu;
+		OverlayMenu menu;
 		List<PlayableItem> items;
 
 		switch (id) {
@@ -275,7 +275,7 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 				if (view != null) {
 					view.refresh();
 				} else {
-					MainActivityFragment mf = getMainActivity().getActiveFragment();
+					ActivityFragment mf = getMainActivity().getActiveFragment();
 					if (mf instanceof MediaLibFragment) ((MediaLibFragment) mf).getAdapter().refresh();
 				}
 
@@ -392,14 +392,14 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		return true;
 	}
 
-	private void createMediaPrefsMenu(Item item, AppMenu menu, boolean video) {
+	private void createMediaPrefsMenu(Item item, OverlayMenu menu, boolean video) {
 		MediaPrefs prefs = item.getPrefs();
 		MediaEngineManager mgr = getMainActivity().getMediaSessionCallback().getEngineManager();
 		Pref<IntSupplier> p = video ? MediaPrefs.VIDEO_ENGINE.withInheritance(false)
 				: MediaPrefs.AUDIO_ENGINE.withInheritance(false);
 		int eng = prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
 
-		AppMenuItem i = menu.addItem(video ? R.id.preferred_video_engine_default
+		OverlayMenuItem i = menu.addItem(video ? R.id.preferred_video_engine_default
 				: R.id.preferred_audio_engine_default, true, null, R.string.by_default);
 		i.setChecked(eng == -1);
 		i = menu.addItem(video ? R.id.preferred_video_engine_mp
@@ -423,11 +423,11 @@ public class MediaItemMenuHandler implements AppMenu.SelectionHandler {
 		return MainActivityDelegate.get(getMenu().getContext());
 	}
 
-	private void showCreateBookmarkMenu(AppMenu menu) {
+	private void showCreateBookmarkMenu(OverlayMenu menu) {
 		MediaEngine eng = getMainActivity().getMediaServiceBinder().getCurrentEngine();
 		int pos = ((eng == null) || !item.equals(eng.getSource())) ? 0 : (int) (eng.getPosition() / 1000);
 		PreferenceStore store = new BasicPreferenceStore();
-		Pref<Supplier<String>> name = Pref.s("name", Utils.timeToString(pos));
+		Pref<Supplier<String>> name = Pref.s("name", TextUtils.timeToString(pos));
 		Pref<IntSupplier> time = Pref.i("time", pos);
 
 		PreferenceSet set = new PreferenceSet();

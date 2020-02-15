@@ -9,13 +9,14 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import me.aap.fermata.function.BooleanSupplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.text.TextUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -150,7 +151,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 
 	static CueItem create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
 		FileItem file = (FileItem) lib.getItem(sb);
 		if (file == null) return null;
@@ -195,7 +196,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 		}
 
 		int trackNum = tracks.size() + 1;
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(CueTrackItem.SCHEME).append(':').append(trackNum)
 				.append(id, SCHEME.length(), id.length());
 		CueTrackItem t = new CueTrackItem(sb.toString(), this, trackNum, file, title,

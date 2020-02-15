@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <item name="tool_bar_view" type="id" />
+    <item name="tool_bar_sort" type="id" />
+    <item name="nav_folders" type="id" />
+    <item name="nav_favorites" type="id" />
+    <item name="nav_playlist" type="id" />
     <item name="playlist_create" type="id" />
     <item name="playlist_add_item" type="id" />
     <item name="bookmark_select" type="id" />

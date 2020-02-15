@@ -14,6 +14,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.text.TextUtils;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
 
@@ -66,7 +67,7 @@ class FileItem extends PlayableItemBase {
 		if ((idx == -1) || (idx == (id.length() - 1))) return null;
 
 		String name = id.substring(idx + 1);
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(FolderItem.SCHEME).append(id, SCHEME.length(), idx);
 		FolderItem parent = (FolderItem) lib.getItem(sb);
 		if (parent == null) return null;

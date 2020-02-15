@@ -1,11 +1,11 @@
 package me.aap.fermata.media.pref;
 
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.DoubleSupplier;
-import me.aap.fermata.function.IntSupplier;
-import me.aap.fermata.function.Supplier;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.DoubleSupplier;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.Supplier;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.text.TextUtils;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 
@@ -114,7 +114,7 @@ public interface MediaPrefs extends PreferenceStore {
 	}
 
 	static String toUserPreset(String name, int[] bands) {
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 
 		for (int i = 0; i < bands.length; i++) {
 			sb.append(bands[i]);

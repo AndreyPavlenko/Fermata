@@ -2,21 +2,21 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sort_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:checkable="true"
         app:text="@string/track_name" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sort_file_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:checkable="true"
         app:text="@string/file_name" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sort_none"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

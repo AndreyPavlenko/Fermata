@@ -1,27 +1,17 @@
 package me.aap.fermata.ui.activity;
 
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
-import android.view.View;
 import android.widget.Toast;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.function.BiConsumer;
+import me.aap.fermata.ui.fragment.NavBarMediator;
+import me.aap.utils.function.Supplier;
+import me.aap.utils.ui.activity.ActivityBase;
 
-public class MainActivity extends AppCompatActivity implements AppActivity {
-	private static final int START_ACTIVITY_REQ = 0;
-	private static final int GRANT_PERM_REQ = 1;
+public class MainActivity extends ActivityBase implements AppActivity {
 	private static MainActivity instance;
-	private BiConsumer<Integer, Intent> resultHandler;
-	private MainActivityDelegate delegate;
 	private boolean exitPressed;
 
 	public static MainActivity getInstance() {
@@ -29,57 +19,47 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 	}
 
 	@Override
-	public MainActivityDelegate getMainActivityDelegate() {
-		return delegate;
-	}
-
-	@Override
-	public int getContentView() {
-		return R.layout.main_activity;
+	protected Supplier<MainActivityDelegate> getConstructor() {
+		return MainActivityDelegate::new;
 	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		delegate = MainActivityDelegate.create(this);
-		delegate.onActivityCreate();
 		instance = this;
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		getMainActivityDelegate().onActivityResume();
+		super.onCreate(savedInstanceState);
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		instance = null;
-		getMainActivityDelegate().onActivityDestroy();
 	}
 
 	@Override
 	public void onBackPressed() {
-		getMainActivityDelegate().onBackPressed();
+		getActivityDelegate().onBackPressed();
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		MainActivityDelegate d;
+
 		switch (keyCode) {
 			case KeyEvent.KEYCODE_BACK:
+			case KeyEvent.KEYCODE_ESCAPE:
 				onBackPressed();
 				return true;
 			case KeyEvent.KEYCODE_M:
-				if (event.isShiftPressed()) delegate.getNavBar().showMenu();
-				else delegate.getControlPanel().showMenu();
+				if (event.isShiftPressed()) NavBarMediator.instance.showMenu(getActivityDelegate());
+				else getActivityDelegate().getControlPanel().showMenu();
 				break;
 			case KeyEvent.KEYCODE_P:
-				delegate.getMediaServiceBinder().onPlayPauseButtonClick();
-				if (delegate.isVideoMode()) delegate.getControlPanel().onVideoSeek();
+				d = getActivityDelegate();
+				d.getMediaServiceBinder().onPlayPauseButtonClick();
+				if (d.isVideoMode()) d.getControlPanel().onVideoSeek();
 				return true;
 			case KeyEvent.KEYCODE_S:
-				delegate.getMediaServiceBinder().getMediaSessionCallback().onStop();
+				getActivityDelegate().getMediaServiceBinder().getMediaSessionCallback().onStop();
 				return true;
 			case KeyEvent.KEYCODE_X:
 				if (exitPressed) {
@@ -97,45 +77,12 @@ public class MainActivity extends AppCompatActivity implements AppActivity {
 	}
 
 	@Override
-	public void finish() {
-		getMainActivityDelegate().onActivityFinish();
-		super.finish();
-	}
-
-	@Nullable
-	@Override
-	public View getCurrentFocus() {
-		return super.getCurrentFocus();
-	}
-
-	@Override
 	public boolean isCarActivity() {
 		return false;
 	}
 
-	public void startActivityForResult(BiConsumer<Integer, Intent> resultHandler, Intent intent) {
-		assert this.resultHandler == null;
-		this.resultHandler = resultHandler;
-		super.startActivityForResult(intent, START_ACTIVITY_REQ, null);
-	}
-
 	@Override
-	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-		if ((requestCode == START_ACTIVITY_REQ) && (resultHandler != null)) {
-			BiConsumer<Integer, Intent> h = resultHandler;
-			resultHandler = null;
-			h.accept(resultCode, data);
-		} else {
-			super.onActivityResult(requestCode, resultCode, data);
-		}
-	}
-
-	public void checkPermissions(String... perms) {
-		for (String perm : perms) {
-			if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
-				ActivityCompat.requestPermissions(this, perms, GRANT_PERM_REQ);
-				return;
-			}
-		}
+	public MainActivityDelegate getActivityDelegate() {
+		return (MainActivityDelegate) super.getActivityDelegate();
 	}
 }

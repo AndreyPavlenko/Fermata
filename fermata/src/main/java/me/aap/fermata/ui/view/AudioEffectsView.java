@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.view;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
@@ -20,9 +21,6 @@ import androidx.appcompat.widget.AppCompatSeekBar;
 
 import java.util.Arrays;
 import java.util.List;
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.IntSupplier;
-import me.aap.fermata.function.Supplier;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -30,15 +28,19 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.MediaSessionCallback;
-import me.aap.fermata.pref.BasicPreferenceStore;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.PreferenceStore.Pref;
-import me.aap.fermata.pref.PreferenceView;
-import me.aap.fermata.pref.PreferenceView.BooleanOpts;
-import me.aap.fermata.pref.PreferenceView.ListOpts;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.function.ShortConsumer;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.ShortConsumer;
+import me.aap.utils.function.Supplier;
+import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.pref.PreferenceView;
+import me.aap.utils.pref.PreferenceView.BooleanOpts;
+import me.aap.utils.pref.PreferenceView.ListOpts;
+import me.aap.utils.ui.UiUtils;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_BINAURAL;
@@ -69,6 +71,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 
 	public AudioEffectsView(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		setBackgroundColor(Color.TRANSPARENT);
 	}
 
 	@Nullable
@@ -386,7 +389,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			userPresets[p - numPresets - 1] = MediaPrefs.toUserPreset(opts.stringValues[p], bands);
 			ctrlPrefs.applyStringArrayPref(MediaPrefs.EQ_USER_PRESETS, userPresets);
 		} else {
-			Utils.queryText(getContext(), R.string.preset_name, name -> {
+			UiUtils.queryText(getContext(), R.string.preset_name, name -> {
 				if (name == null) return;
 
 				String presetName = name.toString();
@@ -410,8 +413,8 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 		short numPresets = eq.getNumberOfPresets();
 		PreferenceStore ctrlPrefs = requireNonNull(this.ctrlPrefs);
 		String[] userPresets = ctrlPrefs.getStringArrayPref(MediaPrefs.EQ_USER_PRESETS);
-		userPresets = Utils.remove(userPresets, (p - numPresets - 1));
-		opts.stringValues = Utils.remove(opts.stringValues, p);
+		userPresets = CollectionUtils.remove(userPresets, (p - numPresets - 1));
+		opts.stringValues = CollectionUtils.remove(opts.stringValues, p);
 		ctrlPrefs.applyStringArrayPref(MediaPrefs.EQ_USER_PRESETS, userPresets);
 		opts.store.applyIntPref(MediaPrefs.EQ_PRESET, 0);
 	}
@@ -432,10 +435,10 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 	}
 
 	private void show(boolean checkCar, @IdRes int... ids) {
-		if (checkCar && MainActivityDelegate.get(getContext()).isCarActivity()) return;
-
-		for (int id : ids) {
-			findViewById(id).setVisibility(VISIBLE);
+		if (!checkCar || !MainActivityDelegate.get(getContext()).isCarActivity()) {
+			for (int id : ids) {
+				findViewById(id).setVisibility(VISIBLE);
+			}
 		}
 	}
 

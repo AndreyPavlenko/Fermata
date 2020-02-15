@@ -19,12 +19,12 @@ import java.util.regex.Pattern;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.SharedPreferenceStore;
-import me.aap.fermata.util.BasicEventBroadcaster;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
 
-import static me.aap.fermata.util.Utils.forEach;
+import static me.aap.utils.collection.CollectionUtils.forEach;
 
 /**
  * @author Andrey Pavlenko
@@ -249,7 +249,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		if (r != null) {
 			Item cached = r.get();
 			if (cached != null) return cached;
-			else Utils.remove(cache, id, r);
+			else CollectionUtils.remove(cache, id, r);
 		}
 
 		return null;
@@ -257,7 +257,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	private void clearRefs() {
 		for (ItemRef r = (ItemRef) refQueue.poll(); r != null; r = (ItemRef) refQueue.poll()) {
-			Utils.remove(cache, r.id, r);
+			CollectionUtils.remove(cache, r.id, r);
 		}
 	}
 

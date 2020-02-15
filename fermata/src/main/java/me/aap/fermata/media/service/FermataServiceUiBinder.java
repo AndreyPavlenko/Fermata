@@ -23,14 +23,14 @@ import androidx.annotation.Nullable;
 import java.util.Objects;
 
 import me.aap.fermata.FermataApplication;
-import me.aap.fermata.function.BiConsumer;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataMediaService.ServiceBinder;
-import me.aap.fermata.util.BasicEventBroadcaster;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.function.BiConsumer;
+import me.aap.utils.text.TextUtils;
 
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
 import static android.view.View.GONE;
@@ -257,7 +257,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	public void unbind() {
 		bound = false;
 		currentItem = null;
-		removeBroadcastListeners();
 		callback.stopProgressUpdate();
 		if (progressBar != null) progressBar.setOnSeekBarChangeListener(null);
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
@@ -413,7 +412,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 		private StringBuilder timeToString(int seconds) {
 			timeBuilder.setLength(0);
-			Utils.timeToString(timeBuilder, seconds);
+			TextUtils.timeToString(timeBuilder, seconds);
 			return timeBuilder;
 		}
 

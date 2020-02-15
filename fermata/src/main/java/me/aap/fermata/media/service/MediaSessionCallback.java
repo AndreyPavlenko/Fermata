@@ -43,10 +43,10 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
-import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.ui.view.VideoView;
-import me.aap.fermata.util.EventBroadcaster;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.event.EventBroadcaster;
+import me.aap.utils.pref.PreferenceStore;
 
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
 import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
@@ -554,9 +554,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		i.setRepeatItemEnabled(enable);
 
 		if (enable) {
-			Utils.replace(actions, customRepeatEnable, customRepeatDisable);
+			CollectionUtils.replace(actions, customRepeatEnable, customRepeatDisable);
 		} else {
-			Utils.replace(actions, customRepeatDisable, customRepeatEnable);
+			CollectionUtils.replace(actions, customRepeatDisable, customRepeatEnable);
 		}
 
 		setPlaybackState(new PlaybackStateCompat.Builder(state).build());
@@ -570,8 +570,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		PlaybackStateCompat state = getPlaybackState();
 		List<PlaybackStateCompat.CustomAction> actions = state.getCustomActions();
 
-		if (add) Utils.replace(actions, customFavoritesAdd, customFavoritesRemove);
-		else Utils.replace(actions, customFavoritesRemove, customFavoritesAdd);
+		if (add) CollectionUtils.replace(actions, customFavoritesAdd, customFavoritesRemove);
+		else CollectionUtils.replace(actions, customFavoritesRemove, customFavoritesAdd);
 
 		if (add) favorites.addItem(i);
 		else favorites.removeItem(i);

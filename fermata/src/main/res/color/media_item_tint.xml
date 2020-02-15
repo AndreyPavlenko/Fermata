@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="?attr/appMediaItemIconColor" android:state_selected="false" />
-    <item android:color="?attr/appPlayingMediaItemIconColor" android:state_selected="true" />
+    <item android:alpha="?attr/alpha" android:color="?attr/colorOnSecondary" android:state_selected="true" />
+    <item android:color="?attr/colorOnSecondary" android:state_selected="false" />
 </selector>

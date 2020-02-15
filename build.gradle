@@ -15,7 +15,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.0-rc02'
+        classpath 'com.android.tools.build:gradle:3.6.0'
     }
 }
 
@@ -31,12 +31,17 @@ allprojects {
 
 subprojects {
 
-    if (name == 'fermata') {
-        apply plugin: 'com.android.application'
-    } else if ((name == 'exoplayer') || (name == 'vlc')) {
-        apply plugin: 'com.android.dynamic-feature'
-    } else {
-        apply plugin: 'com.android.library'
+    switch (name) {
+        case 'fermata':
+            apply plugin: 'com.android.application'
+            break
+        case 'vlc':
+        case 'exoplayer':
+            apply plugin: 'com.android.dynamic-feature'
+            break
+        default:
+            apply plugin: 'com.android.library'
+            break
     }
 
     android {

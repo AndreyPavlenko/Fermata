@@ -1,6 +1,9 @@
 rootProject.name = 'Fermata Music Player'
+
 include ':fermata'
 include ':vlc'
+include ':utils'
+project(':utils').projectDir = new File('depends/utils')
 
 def exoRoot = file('depends/ExoPlayer')
 

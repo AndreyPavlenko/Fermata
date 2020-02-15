@@ -14,12 +14,12 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FavoritesPrefs;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.SharedPreferenceStore;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
-import static me.aap.fermata.util.Utils.mapToArray;
+import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 
 /**
@@ -98,7 +98,7 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	@Override
 	public boolean isFavoriteItem(PlayableItem i) {
 		String id = toChildItemId(i.getOrigId());
-		return Utils.contains(getChildren(null), c -> id.equals(c.getId()));
+		return CollectionUtils.contains(getChildren(null), c -> id.equals(c.getId()));
 	}
 
 	@Override

@@ -12,10 +12,11 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.SharedPreferenceStore;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.misc.MiscUtils;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.text.TextUtils;
 
 import static java.util.Objects.requireNonNull;
 
@@ -49,7 +50,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@Override
 	public String getTitle() {
 		if (title == null) {
-			StringBuilder sb = Utils.getSharedStringBuilder();
+			StringBuilder sb = TextUtils.getSharedStringBuilder();
 			BrowsableItemPrefs prefs = requireNonNull(getParent()).getPrefs();
 			boolean nameAppended = false;
 			boolean browsable = (this instanceof BrowsableItem);
@@ -57,7 +58,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 			if (prefs.getTitleSeqNumPref()) {
 				if (seqNum == 0) {
 					getParent().getChildren();
-					Utils.assertTrue(seqNum != 0);
+					MiscUtils.assertTrue(seqNum != 0);
 					sb.setLength(0);
 				}
 

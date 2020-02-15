@@ -25,13 +25,13 @@ import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.function.Consumer;
+import me.aap.utils.function.Consumer;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
-import me.aap.fermata.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.fermata.ui.activity.MainActivity;
 
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;

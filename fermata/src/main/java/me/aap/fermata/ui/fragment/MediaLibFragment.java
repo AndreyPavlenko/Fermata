@@ -4,10 +4,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -25,31 +25,39 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
-import me.aap.fermata.pref.PreferenceStore;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
-import me.aap.fermata.util.Utils;
-
-import static me.aap.fermata.ui.activity.MainActivityListener.Event.FRAGMENT_CONTENT_CHANGED;
+import me.aap.utils.misc.MiscUtils;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.view.FloatingButton;
+import me.aap.utils.ui.view.ToolBarView;
 
 /**
  * @author Andrey Pavlenko
  */
-public abstract class MediaLibFragment extends Fragment implements MainActivityFragment,
-		MainActivityListener, PreferenceStore.Listener, FermataServiceUiBinder.Listener {
+public abstract class MediaLibFragment extends MainActivityFragment implements MainActivityListener,
+		PreferenceStore.Listener, FermataServiceUiBinder.Listener {
 	private ListAdapter adapter;
 	private MediaItemListView listView;
 	private int scrollPosition;
 
 	abstract ListAdapter createAdapter(FermataServiceUiBinder b);
 
-	public abstract int getFragmentId();
-
 	public abstract CharSequence getFragmentTitle();
+
+	@Override
+	public ToolBarView.Mediator getToolBarMediator() {
+		return ToolBarMediator.instance;
+	}
+
+	@Override
+	public FloatingButton.Mediator getFloatingButtonMediator() {
+		return FloatingButtonMediator.instance;
+	}
 
 	@Override
 	public CharSequence getTitle() {
@@ -89,11 +97,17 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 
 			if (b != null) {
 				bind(b);
-				a.addBroadcastListener(this, Event.FILTER_CHANGED);
+				a.addBroadcastListener(this, FILTER_CHANGED | ACTIVITY_FINISH);
 			} else {
-				a.addBroadcastListener(this, Event.SERVICE_BOUND, Event.FILTER_CHANGED);
+				a.addBroadcastListener(this, SERVICE_BOUND | FILTER_CHANGED | ACTIVITY_FINISH);
 			}
 		}
+	}
+
+	@Override
+	public void onDestroyView() {
+		super.onDestroyView();
+		listView = null;
 	}
 
 	@Override
@@ -113,7 +127,7 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 	}
 
 	private void bind(FermataServiceUiBinder b) {
-		Utils.assertTrue(adapter == null);
+		MiscUtils.assertTrue(adapter == null);
 		adapter = createAdapter(b);
 		b.addBroadcastListener(this);
 		b.getLib().getPrefs().addBroadcastListener(this);
@@ -122,8 +136,8 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 	}
 
 	private void attachTouchHelper() {
-		Utils.assertTrue(adapter != null);
-		Utils.assertTrue(listView != null);
+		MiscUtils.assertTrue(adapter != null);
+		MiscUtils.assertTrue(listView != null);
 		adapter.setListView(listView);
 		listView.setAdapter(adapter);
 		ItemTouchHelper touchHelper = new ItemTouchHelper(adapter.getItemTouchCallback());
@@ -253,11 +267,16 @@ public abstract class MediaLibFragment extends Fragment implements MainActivityF
 	));
 
 	@Override
-	public void onMainActivityEvent(MainActivityDelegate a, Event e) {
-		if (e == Event.FILTER_CHANGED) {
-			if (adapter != null) adapter.setFilter(a.getToolBar().getFilter());
-		} else if (e == Event.SERVICE_BOUND) {
-			bind(a.getMediaServiceBinder());
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (!handleActivityFinishEvent(a, e)) {
+			if (e == FILTER_CHANGED) {
+				if (adapter != null) {
+					EditText t = a.getToolBar().findViewById(R.id.tool_bar_filter);
+					adapter.setFilter(t.getText().toString());
+				}
+			} else if (e == SERVICE_BOUND) {
+				bind(a.getMediaServiceBinder());
+			}
 		}
 	}
 

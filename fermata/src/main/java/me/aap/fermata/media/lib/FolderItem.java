@@ -21,6 +21,8 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FolderItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.io.FileUtils;
+import me.aap.utils.text.TextUtils;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
 
@@ -119,10 +121,10 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 			Item i;
 
 			if (!f.isDirectory()) {
-				String ext = Utils.getFileExtension(name);
+				String ext = FileUtils.getFileExtension(name);
 				if (ext == null) continue;
 
-				String mime = Utils.getMimeTypeFromExtension(ext);
+				String mime = FileUtils.getMimeTypeFromExtension(ext);
 				if (!isSupportedFile(ext, mime)) continue;
 
 				if (CueItem.isCueFile(name)) {
@@ -138,7 +140,7 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 					i = CueItem.create(cueBuf.toString(), this, getFile(), f, lib);
 				} else {
 					if (fileBuf == null) {
-						fileBuf = Utils.getSharedStringBuilder();
+						fileBuf = TextUtils.getSharedStringBuilder();
 						fileBuf.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length()).append('/');
 						fileBufLen = fileBuf.length();
 					} else {
@@ -197,15 +199,11 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 	}
 
 	private static Bitmap getBitmap(MediaFile f) {
-		ParcelFileDescriptor fd = null;
-		try {
-			fd = FermataApplication.get().getContentResolver().openFileDescriptor(f.getUri(), "r");
+		try (ParcelFileDescriptor fd = FermataApplication.get().getContentResolver().openFileDescriptor(f.getUri(), "r")) {
 			return (fd != null) ? BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor()) : null;
 		} catch (FileNotFoundException ignore) {
 		} catch (Exception ex) {
 			Log.d("SafFolderItem", "Failed to read bitmap", ex);
-		} finally {
-			Utils.close(fd);
 		}
 		return null;
 	}

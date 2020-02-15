@@ -14,11 +14,11 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistPrefs;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.SharedPreferenceStore;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.text.TextUtils;
 
-import static me.aap.fermata.util.Utils.mapToArray;
+import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 /**
  * @author Andrey Pavlenko
@@ -79,7 +79,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	@Override
 	public String toChildItemId(String id) {
 		if (isChildItemId(id)) return id;
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		return sb.append(getScheme()).append(id).toString();
 	}
 

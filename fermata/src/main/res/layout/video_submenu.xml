@@ -2,28 +2,28 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/mark_watched"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:text="@string/mark_watched" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/mark_unwatched"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:text="@string/mark_unwatched" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/video_scaling"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:submenu="@layout/dynamic"
         app:text="@string/video_scaling" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/audio_delay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -31,7 +31,7 @@
         app:submenu="@layout/dynamic"
         app:text="@string/audio_delay" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/subtitle_delay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -39,7 +39,7 @@
         app:submenu="@layout/dynamic"
         app:text="@string/subtitle_delay" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/select_audio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -47,7 +47,7 @@
         app:submenu="@layout/dynamic"
         app:text="@string/select_audio_stream" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/select_subtitles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -55,7 +55,7 @@
         app:submenu="@layout/dynamic"
         app:text="@string/select_subtitles" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/audio_prefs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -63,7 +63,7 @@
         app:submenu="@layout/dynamic"
         app:text="@string/audio" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/subtitle_prefs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

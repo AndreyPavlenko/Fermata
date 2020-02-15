@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -20,8 +19,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author Andrey Pavlenko
  */
-public class VideoFragment extends Fragment implements MainActivityFragment,
-		FermataServiceUiBinder.Listener {
+public class VideoFragment extends MainActivityFragment implements FermataServiceUiBinder.Listener {
 
 	@Nullable
 	@Override
@@ -43,6 +41,7 @@ public class VideoFragment extends Fragment implements MainActivityFragment,
 
 	@Override
 	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
 		VideoView v = (VideoView) getView();
 		if (v == null) return;
 

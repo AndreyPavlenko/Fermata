@@ -2,10 +2,10 @@ package me.aap.fermata.media.pref;
 
 import androidx.annotation.NonNull;
 
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.Supplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.Supplier;
 
-import me.aap.fermata.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore;
 
 /**
  * @author Andrey Pavlenko

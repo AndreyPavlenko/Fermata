@@ -4,11 +4,11 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.IntSupplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
 
-import me.aap.fermata.pref.SharedPreferenceStore;
-import me.aap.fermata.util.BasicEventBroadcaster;
+import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.event.BasicEventBroadcaster;
 
 /**
  * @author Andrey Pavlenko

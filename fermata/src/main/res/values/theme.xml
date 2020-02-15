@@ -1,207 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <attr name="appStatusBarColor" format="reference|color" />
-    <attr name="appNotificationColor" format="reference|color" />
-
-    <attr name="appBgColor" format="reference|color" />
-    <attr name="appIconColor" format="reference|color" />
-    <attr name="appTextColor" format="reference|color" />
-    <attr name="appTextColorHint" format="reference|color" />
-    <attr name="appTitleTextSize" format="reference|dimension" />
-    <attr name="appSubtitleTextSize" format="reference|dimension" />
-
-    <attr name="appPopupMenuColor" format="reference|color" />
-    <attr name="appPopupMenuHeaderColor" format="reference|color" />
-    <attr name="appPopupMenuTextColor" format="reference|color" />
-    <attr name="appPopupMenuTint" format="reference|color" />
-    <attr name="appPopupMenuStyle" format="reference" />
-
-    <attr name="appFocusableBgColor" format="reference|color" />
-    <attr name="appFocusableBorderColor" format="reference|color" />
-
-    <attr name="appToolBarColor" format="reference|color" />
-    <attr name="appToolBarTextColor" format="reference|color" />
-    <attr name="appToolBarIconColor" format="reference|color" />
-    <attr name="appToolBarFilterBgColor" format="reference|color" />
-    <attr name="appToolBarStyle" format="reference" />
-    <attr name="appToolBarMenuStyle" format="reference" />
-
-    <attr name="appNavBarColor" format="reference|color" />
-    <attr name="appNavBarTextColor" format="reference|color" />
-    <attr name="appNavBarIconColor" format="reference|color" />
-    <attr name="appNavBarStyle" format="reference" />
-    <attr name="appNavBarMenuStyle" format="reference" />
-
-    <attr name="appControlBarColor" format="reference|color" />
-    <attr name="appControlBarTextColor" format="reference|color" />
-    <attr name="appControlBarIconColor" format="reference|color" />
-    <attr name="appControlBarStyle" format="reference" />
-
-    <attr name="appSeekBarColor" format="reference|color" />
-    <attr name="appSeekBarTextColor" format="reference|color" />
-    <attr name="appSeekBarTint" format="reference|color" />
-    <attr name="appSeekBarBgTint" format="reference|color" />
-    <attr name="appSeekBarThumbTint" format="reference|color" />
-    <attr name="appSeekBarStyle" format="reference" />
-
-    <attr name="appBarsOutlineColor" format="reference|color" />
-
-    <attr name="appMediaItemColor" format="reference|color" />
-    <attr name="appMediaItemTextColor" format="reference|color" />
-    <attr name="appMediaItemIconColor" format="reference|color" />
-    <attr name="appMediaItemBorderColor" format="reference|color" />
-    <attr name="appMediaItemFocusBorderColor" format="reference|color" />
-    <attr name="appPlayingMediaItemColor" format="reference|color" />
-    <attr name="appPlayingMediaItemTextColor" format="reference|color" />
-    <attr name="appPlayingMediaItemIconColor" format="reference|color" />
-    <attr name="appPlayingMediaItemBorderColor" format="reference|color" />
-    <attr name="appMediaItemBackground" format="reference" />
     <attr name="appMediaItemStyle" format="reference" />
-
-    <attr name="appPreferenceBackground" format="reference" />
-    <attr name="appPreferenceStyle" format="reference" />
-
-    <attr name="appFloatingButtonColor" format="reference|color" />
-    <attr name="appFloatingButtonIconColor" format="reference|color" />
-    <attr name="appFloatingButtonStyle" format="reference" />
-
-    <attr name="appGroupBgColor" format="reference|color" />
-    <attr name="appGroupOutlineColor" format="reference|color" />
-    <attr name="appGroupOutlineTextSize" format="reference|dimension" />
-
+    <attr name="appControlPanelStyle" format="reference" />
+    <attr name="appSeekBarStyle" format="reference" />
     <attr name="appEqualizerStyle" format="reference" />
 
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">?attr/appToolBarColor</item>
-        <item name="colorPrimaryDark">?attr/appStatusBarColor</item>
-        <item name="colorOnPrimary">?attr/appToolBarTextColor</item>
-        <item name="colorSurface">?attr/appBgColor</item>
-        <item name="colorOnSurface">?attr/appTextColor</item>
-        <item name="colorAccent">?attr/appMediaItemIconColor</item>
-        <item name="android:statusBarColor">?attr/appStatusBarColor</item>
-        <item name="android:textColor">?attr/appTextColor</item>
-        <item name="android:editTextColor">?attr/appTextColor</item>
-        <item name="android:textColorHint">?attr/appTextColorHint</item>
-        <item name="android:textCursorDrawable">?attr/appTextColor</item>
-
-        <item name="appTitleTextSize">18dp</item>
-        <item name="appSubtitleTextSize">12dp</item>
-        <item name="appGroupOutlineTextSize">18dp</item>
-        <item name="appGroupBgColor">@android:color/transparent</item>
-        <item name="appGroupOutlineColor">?attr/appMediaItemFocusBorderColor</item>
-
-        <item name="appPopupMenuColor">?attr/appBgColor</item>
-        <item name="appPopupMenuHeaderColor">?attr/appPopupMenuColor</item>
-        <item name="appPopupMenuTextColor">?attr/appTextColor</item>
-        <item name="appPopupMenuTint">?attr/appMediaItemIconColor</item>
-
-        <item name="appNotificationColor">?attr/appStatusBarColor</item>
-        <item name="appFocusableBorderColor">@android:color/darker_gray</item>
-        <item name="appToolBarFilterBgColor">?attr/appToolBarColor</item>
-        <item name="appNavBarColor">?attr/appToolBarColor</item>
-        <item name="appNavBarTextColor">?attr/appToolBarTextColor</item>
-        <item name="appNavBarIconColor">?attr/appToolBarIconColor</item>
-        <item name="appControlBarColor">?attr/appToolBarColor</item>
-        <item name="appControlBarTextColor">?attr/appToolBarTextColor</item>
-        <item name="appControlBarIconColor">?attr/appToolBarIconColor</item>
-        <item name="appSeekBarColor">?attr/appToolBarColor</item>
-        <item name="appSeekBarTextColor">?attr/appToolBarTextColor</item>
-        <item name="appSeekBarTint">?attr/appToolBarIconColor</item>
-        <item name="appSeekBarBgTint">@android:color/darker_gray</item>
-        <item name="appSeekBarThumbTint">?attr/appToolBarIconColor</item>
-        <item name="appBarsOutlineColor">#14000000</item>
-        <item name="appMediaItemColor">?attr/appBgColor</item>
-        <item name="appMediaItemTextColor">?attr/appTextColor</item>
-        <item name="appMediaItemIconColor">?attr/appIconColor</item>
-        <item name="appMediaItemBorderColor">@android:color/darker_gray</item>
-        <item name="appPlayingMediaItemColor">?attr/appMediaItemColor</item>
-        <item name="appPlayingMediaItemTextColor">?attr/appMediaItemTextColor</item>
-        <item name="appPlayingMediaItemIconColor">?attr/appMediaItemIconColor</item>
-        <item name="appPlayingMediaItemBorderColor">?attr/appMediaItemBorderColor</item>
-        <item name="appMediaItemBackground">@drawable/media_item_bg</item>
-        <item name="appMediaItemFocusBorderColor">?attr/appFocusableBorderColor</item>
-        <item name="appPreferenceBackground">?attr/appMediaItemBackground</item>
-        <item name="appFloatingButtonColor">?attr/appNavBarColor</item>
-        <item name="appFloatingButtonIconColor">?attr/appNavBarIconColor</item>
-        <item name="backgroundColor">@drawable/app_background</item>
-        <item name="android:colorBackground">?attr/appBgColor</item>
+    <style name="AppTheme" parent="Theme.Utils.Base">
         <item name="android:windowBackground">@drawable/app_background</item>
 
-        <item name="appPopupMenuStyle">@style/AppTheme.PopupMenuStyle</item>
-        <item name="appToolBarStyle">@style/AppTheme.ToolBarStyle</item>
-        <item name="appToolBarMenuStyle">?attr/appPopupMenuStyle</item>
-        <item name="appControlBarStyle">@style/AppTheme.ControlBarStyle</item>
-        <item name="appSeekBarStyle">@style/AppTheme.SeekBarStyle</item>
-        <item name="appNavBarStyle">@style/AppTheme.NavBarStyle</item>
-        <item name="appNavBarMenuStyle">?attr/appPopupMenuStyle</item>
         <item name="appMediaItemStyle">@style/AppTheme.MediaItemStyle</item>
-        <item name="appPreferenceStyle">@style/AppTheme.PreferenceStyle</item>
-        <item name="appFloatingButtonStyle">@style/AppTheme.FloatingButtonStyle</item>
+        <item name="appControlPanelStyle">@style/AppTheme.ControlPanelStyle</item>
+        <item name="appSeekBarStyle">@style/AppTheme.SeekBarStyle</item>
         <item name="appEqualizerStyle">@style/AppTheme.EqualizerStyle</item>
     </style>
 
-    <style name="AppTheme.ToolBarStyle">
-        <item name="appFocusableBgColor">?attr/appToolBarColor</item>
-        <item name="android:tint">?attr/appToolBarIconColor</item>
-        <item name="android:background">?attr/appToolBarColor</item>
-        <item name="android:textColor">?attr/appToolBarTextColor</item>
+    <style name="AppTheme.MediaItemStyle">
+        <item name="android:textColor">@color/media_item_text_color</item>
+        <item name="tint">@color/media_item_tint</item>
     </style>
 
-    <style name="AppTheme.ControlBarStyle">
-        <item name="appFocusableBgColor">?attr/appControlBarColor</item>
-        <item name="android:background">?attr/appControlBarColor</item>
-        <item name="itemTextColor">?attr/appControlBarTextColor</item>
-        <item name="android:textColor">?attr/appControlBarTextColor</item>
-        <item name="tint">?attr/appControlBarIconColor</item>
-        <item name="itemIconTint">?attr/appControlBarIconColor</item>
-        <item name="android:tint">?attr/appControlBarIconColor</item>
+    <style name="AppTheme.ControlPanelStyle">
+        <item name="android:colorBackground">?attr/colorPrimary</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="tint">?attr/colorOnPrimary</item>
     </style>
 
     <style name="AppTheme.SeekBarStyle">
-        <item name="appFocusableBgColor">?attr/appSeekBarColor</item>
-        <item name="android:background">?attr/appSeekBarColor</item>
-        <item name="android:textColor">?attr/appSeekBarTextColor</item>
-        <item name="android:tint">?attr/appSeekBarTint</item>
-        <item name="android:progressTint">?attr/appSeekBarTint</item>
-        <item name="android:progressBackgroundTint">?attr/appSeekBarBgTint</item>
-        <item name="android:thumbTint">?attr/appSeekBarThumbTint</item>
-    </style>
-
-    <style name="AppTheme.NavBarStyle">
-        <item name="appFocusableBgColor">?attr/appNavBarColor</item>
-        <item name="android:background">?attr/appNavBarColor</item>
-        <item name="android:textColor">?attr/appNavBarTextColor</item>
-        <item name="android:tint">?attr/appNavBarIconColor</item>
-    </style>
-
-    <style name="AppTheme.MediaItemStyle">
-        <item name="android:textColor">?attr/appMediaItemTextColor</item>
-        <item name="android:tint">@color/media_item_tint</item>
-        <item name="android:buttonTint">@color/media_item_tint</item>
-    </style>
-
-    <style name="AppTheme.PreferenceStyle" parent="AppTheme.MediaItemStyle" />
-
-    <style name="AppTheme.FloatingButtonStyle">
-        <item name="backgroundTint">?attr/appFloatingButtonColor</item>
-        <item name="tint">?attr/appFloatingButtonIconColor</item>
-        <item name="iconTint">?attr/appFloatingButtonIconColor</item>
-    </style>
-
-    <style name="AppTheme.PopupMenuStyle">
-        <item name="android:background">?attr/appPopupMenuColor</item>
-        <item name="android:textColor">?attr/appPopupMenuTextColor</item>
-        <item name="android:tint">?attr/appPopupMenuTint</item>
-        <item name="android:buttonTint">?attr/appPopupMenuTint</item>
+        <item name="android:thumbTint">?attr/colorOnPrimary</item>
+        <item name="android:progressTint">?attr/colorOnPrimary</item>
     </style>
 
     <style name="AppTheme.EqualizerStyle">
-        <item name="android:textColor">?attr/appTextColor</item>
-        <item name="android:background">?attr/appBgColor</item>
-        <item name="android:tint">?attr/appMediaItemIconColor</item>
-        <item name="android:buttonTint">?attr/appMediaItemIconColor</item>
-        <item name="colorSwitchThumbNormal">?attr/appTextColor</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+        <item name="tint">?attr/colorOnSecondary</item>
     </style>
 
 </resources>

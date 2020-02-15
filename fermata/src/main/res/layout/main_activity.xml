@@ -3,12 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/appBgColor">
+    android:layout_height="match_parent">
 
-    <me.aap.fermata.ui.menu.AppMenuView
+    <me.aap.utils.ui.menu.OverlayMenuView
         android:id="@+id/tool_menu"
-        style="?attr/appPopupMenuStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="10dp"
@@ -18,9 +16,8 @@
         app:layout_constraintTop_toBottomOf="@id/tool_bar"
         app:layout_constraintVertical_bias="0" />
 
-    <me.aap.fermata.ui.menu.AppMenuView
+    <me.aap.utils.ui.menu.OverlayMenuView
         android:id="@+id/context_menu"
-        style="?attr/appPopupMenuStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="10dp"
@@ -30,9 +27,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tool_bar" />
 
-    <me.aap.fermata.ui.menu.AppMenuView
+    <me.aap.utils.ui.menu.OverlayMenuView
         android:id="@+id/control_menu"
-        style="?attr/appPopupMenuStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="10dp"
@@ -42,9 +38,8 @@
         app:layout_constraintTop_toBottomOf="@id/tool_bar"
         app:layout_constraintVertical_bias="1" />
 
-    <me.aap.fermata.ui.view.ToolBarView
+    <me.aap.utils.ui.view.ToolBarView
         android:id="@+id/tool_bar"
-        style="?attr/appToolBarStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="12dp"
@@ -66,9 +61,8 @@
         app:layout_constraintVertical_weight="1"
         tools:context=".ui.activity.MainActivity" />
 
-    <me.aap.fermata.ui.view.FloatingButton
+    <me.aap.utils.ui.view.FloatingButton
         android:id="@+id/floating_button"
-        style="?attr/appFloatingButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="5dp"
@@ -87,9 +81,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/frame_layout" />
 
-    <me.aap.fermata.ui.menu.AppMenuView
+    <me.aap.utils.ui.menu.OverlayMenuView
         android:id="@+id/nav_menu_view"
-        style="?attr/appPopupMenuStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="10dp"
@@ -99,12 +92,10 @@
         app:layout_constraintTop_toBottomOf="@id/tool_bar"
         app:layout_constraintVertical_bias="1" />
 
-    <me.aap.fermata.ui.view.NavBarView
+    <me.aap.utils.ui.view.NavBarView
         android:id="@+id/nav_bar"
-        style="?attr/appNavBarStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:itemBackground="@drawable/focusable"
         app:labelVisibilityMode="selected"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

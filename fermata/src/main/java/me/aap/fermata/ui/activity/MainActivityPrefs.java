@@ -1,11 +1,11 @@
 package me.aap.fermata.ui.activity;
 
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.IntSupplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
 
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.SharedPreferenceStore;
-import me.aap.fermata.util.EventBroadcaster;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.event.EventBroadcaster;
 
 /**
  * @author Andrey Pavlenko

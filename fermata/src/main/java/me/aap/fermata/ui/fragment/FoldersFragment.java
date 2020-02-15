@@ -17,14 +17,14 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.ui.menu.AppMenu;
-import me.aap.fermata.ui.menu.AppMenuItem;
 import me.aap.fermata.ui.view.MediaItemWrapper;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.menu.OverlayMenuItem;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.util.Utils.filterMap;
+import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -47,7 +47,7 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	@Override
-	public void initNavBarMenu(AppMenu menu) {
+	public void initNavBarMenu(OverlayMenu menu) {
 		if (isRootFolder()) {
 			if (!getMainActivity().isCarActivity()) menu.findItem(R.id.nav_add_folder).setVisible(true);
 		} else {
@@ -72,7 +72,7 @@ public class FoldersFragment extends MediaLibFragment {
 		super.initNavBarMenu(menu);
 	}
 
-	public boolean navBarMenuItemSelected(AppMenuItem item) {
+	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.nav_add_folder:
 				addFolder();
@@ -93,7 +93,7 @@ public class FoldersFragment extends MediaLibFragment {
 				if (f != null) f.reload();
 				return true;
 			case R.id.playlist_add:
-				AppMenu menu = item.getMenu();
+				OverlayMenu menu = item.getMenu();
 				getMainActivity().createPlaylistMenu(menu);
 				menu.show(this::navBarMenuItemSelected);
 				return true;

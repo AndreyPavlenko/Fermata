@@ -19,13 +19,13 @@ import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
-import me.aap.fermata.function.Consumer;
+import me.aap.utils.function.Consumer;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.fermata.util.NaturalOrderComparator;
+import me.aap.utils.collection.NaturalOrderComparator;
 
 /**
  * @author Andrey Pavlenko

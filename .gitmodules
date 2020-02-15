@@ -1,0 +1,3 @@
+[submodule "utils"]
+    path = depends/utils
+    url = https://github.com/AndreyPavlenko/android-utils.git

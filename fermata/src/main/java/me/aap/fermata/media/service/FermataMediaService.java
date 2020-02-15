@@ -35,7 +35,6 @@ import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;

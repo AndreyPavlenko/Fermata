@@ -1,35 +1,37 @@
 package me.aap.fermata.ui.fragment;
 
-import me.aap.fermata.ui.menu.AppMenu;
-import me.aap.fermata.ui.menu.AppMenuItem;
+import androidx.annotation.CallSuper;
+
+import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.view.FloatingButton;
 
 /**
  * @author Andrey Pavlenko
  */
-public interface MainActivityFragment {
+public abstract class MainActivityFragment extends ActivityFragment {
 
-	int getFragmentId();
-
-	CharSequence getTitle();
-
-	default boolean isRootPage() {
-		return true;
+	@Override
+	public NavBarMediator getNavBarMediator() {
+		return NavBarMediator.instance;
 	}
 
-	default boolean onBackPressed() {
-		return false;
+	public FloatingButton.Mediator getFloatingButtonMediator() {
+		return FloatingButton.Mediator.BackMenu.instance;
 	}
 
-	default void discardSelection() {
+	@CallSuper
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (hidden) discardSelection();
 	}
 
-	default void initNavBarMenu(AppMenu menu) {
+	@Override
+	public boolean onBackPressed() {
+		discardSelection();
+		return super.onBackPressed();
 	}
 
-	default void navBarItemReselected(int itemId) {
-	}
-
-	default boolean navBarMenuItemSelected(AppMenuItem item) {
-		return false;
+	public void discardSelection() {
 	}
 }

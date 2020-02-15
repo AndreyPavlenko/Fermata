@@ -4,7 +4,7 @@
 
     <include layout="@layout/media_item_menu" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/shuffle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -12,7 +12,7 @@
         app:icon="@drawable/shuffle"
         app:text="@string/shuffle" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/shuffle_disable"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -20,14 +20,14 @@
         app:icon="@drawable/shuffle_filled"
         app:text="@string/shuffle_disable" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/audio_effects"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:icon="@drawable/equalizer"
         app:text="@string/audio_effects" />
 
-    <me.aap.fermata.ui.menu.AppMenuItemView
+    <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/speed"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

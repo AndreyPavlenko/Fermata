@@ -9,7 +9,8 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.text.TextUtils;
 
 
 /**
@@ -110,7 +111,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 	public void moveItem(int fromPosition, int toPosition) {
 		List<C> newChildren = new ArrayList<>(getChildren(null));
-		Utils.move(newChildren, fromPosition, toPosition);
+		CollectionUtils.move(newChildren, fromPosition, toPosition);
 		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
@@ -126,7 +127,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 	public String toChildItemId(String id) {
 		if (isChildItemId(id)) return id;
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		return sb.append(getScheme()).append(':').append(id).toString();
 	}
 

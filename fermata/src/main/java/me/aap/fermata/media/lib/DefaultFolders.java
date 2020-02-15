@@ -15,13 +15,14 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Folders;
 import me.aap.fermata.media.pref.FoldersPrefs;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.SharedPreferenceStore;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.text.TextUtils;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
-import static me.aap.fermata.util.Utils.mapToArray;
+import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 /**
  * @author Andrey Pavlenko
@@ -101,7 +102,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		String[] pref = getFoldersPref();
 		boolean preferFile = getPreferFileApiPref();
 		List<FolderItem> children = new ArrayList<>(pref.length);
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(FolderItem.SCHEME).append(':');
 		int len = sb.length();
 
@@ -136,7 +137,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	@Override
 	public void addItem(Uri uri) {
 		List<FolderItem> children = getChildren(null);
-		if (Utils.contains(children, u -> uri.equals(u.getFile().getUri()))) return;
+		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getUri()))) return;
 
 		List<FolderItem> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
@@ -156,7 +157,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	@Override
 	public void moveItem(int fromPosition, int toPosition) {
 		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
-		Utils.move(newChildren, fromPosition, toPosition);
+		CollectionUtils.move(newChildren, fromPosition, toPosition);
 		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
@@ -173,7 +174,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 
 	private FolderItem toFolderItem(Uri u) {
 		MediaFile folder = MediaFile.create(u, getPreferFileApiPref());
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(FolderItem.SCHEME).append(':').append(folder.getName());
 		return FolderItem.create(sb.toString(), this, folder, getLib());
 	}

@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -24,7 +23,7 @@ import me.aap.fermata.ui.view.AudioEffectsView;
 /**
  * @author Andrey Pavlenko
  */
-public class AudioEffectsFragment extends Fragment implements MainActivityFragment,
+public class AudioEffectsFragment extends MainActivityFragment implements
 		MediaSessionCallback.Listener, MainActivityListener {
 
 	@Override
@@ -49,9 +48,9 @@ public class AudioEffectsFragment extends Fragment implements MainActivityFragme
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 
 		if (b == null) {
-			a.addBroadcastListener(this, Event.SERVICE_BOUND, Event.ACTIVITY_FINISH);
+			a.addBroadcastListener(this, SERVICE_BOUND | ACTIVITY_FINISH);
 		} else {
-			a.addBroadcastListener(this, Event.ACTIVITY_FINISH);
+			a.addBroadcastListener(this, ACTIVITY_FINISH);
 			b.getMediaSessionCallback().addBroadcastListener(this);
 		}
 	}
@@ -215,8 +214,8 @@ public class AudioEffectsFragment extends Fragment implements MainActivityFragme
 	}
 
 	@Override
-	public void onMainActivityEvent(MainActivityDelegate a, Event e) {
-		if (e == Event.SERVICE_BOUND) {
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (e == SERVICE_BOUND) {
 			a.getMediaServiceBinder().getMediaSessionCallback().addBroadcastListener(this);
 		} else if (handleActivityFinishEvent(a, e)) {
 			applyAndCleanup(a);

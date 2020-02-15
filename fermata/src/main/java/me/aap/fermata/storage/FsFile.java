@@ -14,6 +14,8 @@ import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.io.FileUtils;
+import me.aap.utils.text.TextUtils;
 
 import static android.provider.DocumentsContract.buildDocumentUriUsingTree;
 
@@ -41,7 +43,7 @@ class FsFile implements MediaFile {
 		MediaStoreFile msFile = msDir.findAnyFile();
 		if (msFile == null) return null;
 
-		File f = Utils.getFileFromUri(msFile.getUri());
+		File f = FileUtils.getFileFromUri(msFile.getUri());
 		if (f == null) return null;
 
 		f = f.getParentFile();
@@ -74,7 +76,7 @@ class FsFile implements MediaFile {
 		List<FsFile> parents = new ArrayList<>();
 		RootFsFile root = getRoot(parents);
 		String rootId = root.msDir.getId();
-		StringBuilder sb = Utils.getSharedStringBuilder().append(rootId);
+		StringBuilder sb = TextUtils.getSharedStringBuilder().append(rootId);
 		if (!rootId.endsWith(":")) sb.append('/');
 
 		for (int i = parents.size() - 2; i >= 0; i--) {

@@ -2,17 +2,15 @@ package me.aap.fermata.ui.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.Canvas;
-import android.graphics.Paint;
+import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 
-import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.LinearLayoutCompat;
 
@@ -20,8 +18,6 @@ import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.DoubleSupplier;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
@@ -32,48 +28,52 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
-import me.aap.fermata.pref.BasicPreferenceStore;
-import me.aap.fermata.pref.PreferenceSet;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.PreferenceStore.Pref;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.ui.menu.AppMenu;
-import me.aap.fermata.ui.menu.AppMenuItem;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.DoubleSupplier;
+import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PreferenceSet;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.ui.view.ImageButton;
 
 /**
  * @author Andrey Pavlenko
  */
 public class ControlPanelView extends LinearLayoutCompat implements MainActivityListener,
-		PreferenceStore.Listener, AppMenu.SelectionHandler {
+		PreferenceStore.Listener, OverlayMenu.SelectionHandler {
 	private static final byte MASK_VISIBLE = 1;
 	private static final byte MASK_VIDEO_MODE = 2;
-	@ColorInt
-	private final int outlineColor;
 	private final ImageButton showHideBars;
 	private HideTimer hideTimer;
 	private byte mask;
 
 	@SuppressLint("PrivateResource")
 	public ControlPanelView(Context context, AttributeSet attrs) {
-		super(context, attrs, R.attr.appControlBarStyle);
+		super(context, attrs, R.attr.appControlPanelStyle);
 		setOrientation(VERTICAL);
 		inflate(context, R.layout.control_panel_view, this);
 
-		TypedValue typedValue = new TypedValue();
-		context.getTheme().resolveAttribute(R.attr.appBarsOutlineColor, typedValue, true);
-		outlineColor = typedValue.data;
+		TypedArray ta = context.obtainStyledAttributes(attrs, new int[]{android.R.attr.colorBackground},
+				R.attr.appControlPanelStyle, R.style.AppTheme_ControlPanelStyle);
+		setBackgroundColor(ta.getColor(0, Color.TRANSPARENT));
+		ta.recycle();
 
 		MainActivityDelegate a = getActivity();
-		a.addBroadcastListener(this, Event.ACTIVITY_FINISH);
+		a.addBroadcastListener(this, ACTIVITY_DESTROY);
 		a.getPrefs().addBroadcastListener(this);
 
-		showHideBars = findViewById(R.id.show_hode_bars);
+		ViewGroup g = findViewById(R.id.show_hide_bars);
+		showHideBars = (ImageButton) g.getChildAt(0);
+		g.setOnClickListener(this::showHideBars);
 		showHideBars.setOnClickListener(this::showHideBars);
-		findViewById(R.id.seek_time).setOnClickListener(this::showHideBars);
-		findViewById(R.id.seek_menu).setOnClickListener(this::showMenu);
-		findViewById(R.id.seek_total).setOnClickListener(this::showMenu);
+		g = findViewById(R.id.control_menu_button);
+		g.setOnClickListener(this::showMenu);
+		g.getChildAt(1).setOnClickListener(this::showMenu);
 		setShowHideBarsIcon(a);
 	}
 
@@ -112,17 +112,6 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 	public boolean isActive() {
 		return mask != 0;
-	}
-
-	@Override
-	public void draw(Canvas canvas) {
-		super.draw(canvas);
-		float outlineWidth = Resources.getSystem().getDisplayMetrics().density;
-		Paint p = new Paint();
-		p.setColor(outlineColor);
-		p.setStrokeWidth(outlineWidth);
-		float y = findViewById(R.id.seek_panel).getHeight();
-		canvas.drawLine(0, y, getWidth(), y, p);
 	}
 
 	@Override
@@ -224,8 +213,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	}
 
 	@Override
-	public void onMainActivityEvent(MainActivityDelegate a, Event e) {
-		if (handleActivityFinishEvent(a, e)) {
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (handleActivityDestroyEvent(a, e)) {
 			a.getMediaServiceBinder().unbind();
 			a.getPrefs().removeBroadcastListener(this);
 		}
@@ -272,18 +261,18 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	}
 
 	@Override
-	public boolean menuItemSelected(AppMenuItem item) {
+	public boolean menuItemSelected(OverlayMenuItem item) {
 		return true;
 	}
 
 	private final class MenuHandler extends MediaItemMenuHandler {
 
-		public MenuHandler(AppMenu menu, Item item) {
+		public MenuHandler(OverlayMenu menu, Item item) {
 			super(menu, item);
 		}
 
 		@Override
-		protected void initPlayableMenu(MainActivityDelegate a, AppMenu menu, PlayableItem pi,
+		protected void initPlayableMenu(MainActivityDelegate a, OverlayMenu menu, PlayableItem pi,
 																		boolean initRepeat) {
 			super.initPlayableMenu(a, menu, pi, false);
 			BrowsableItemPrefs p = pi.getParent().getPrefs();
@@ -292,7 +281,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 			boolean repeat = pi.isRepeatItemEnabled() || p.getRepeatPref();
 			boolean shuffle = p.getShufflePref();
-			AppMenuItem i;
+			OverlayMenuItem i;
 
 			if (repeat) i = menu.findItem(R.id.repeat_disable);
 			else i = menu.findItem(R.id.repeat_enable);
@@ -306,7 +295,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 
 		@Override
-		protected void initVideoMenu(AppMenu menu, Item item) {
+		protected void initVideoMenu(OverlayMenu menu, Item item) {
 			super.initVideoMenu(menu, item);
 
 			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
@@ -323,9 +312,9 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 
 		@Override
-		public boolean menuItemSelected(AppMenuItem i) {
+		public boolean menuItemSelected(OverlayMenuItem i) {
 			int id = i.getItemId();
-			AppMenu menu;
+			OverlayMenu menu;
 			PlayableItem pi;
 			MediaEngine eng;
 
@@ -418,10 +407,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	private final class SpeedMenuHandler implements AppMenu.SelectionHandler, AppMenu.CloseHandler {
+	private final class SpeedMenuHandler implements OverlayMenu.SelectionHandler, OverlayMenu.CloseHandler {
 		private PrefStore store;
 
-		void show(AppMenu menu, Item item) {
+		void show(OverlayMenu menu, Item item) {
 			store = new PrefStore(item);
 			PreferenceSet set = new PreferenceSet();
 
@@ -449,12 +438,12 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 
 		@Override
-		public boolean menuItemSelected(AppMenuItem item) {
+		public boolean menuItemSelected(OverlayMenuItem item) {
 			return true;
 		}
 
 		@Override
-		public void menuClosed(AppMenu menu) {
+		public void menuClosed(OverlayMenu menu) {
 			store.apply();
 		}
 

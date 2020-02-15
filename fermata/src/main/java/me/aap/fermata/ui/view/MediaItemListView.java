@@ -9,6 +9,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import me.aap.fermata.R;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -68,5 +71,24 @@ public class MediaItemListView extends RecyclerView {
 		if ((position < 0) || (position >= list.size())) return;
 		View v = list.get(position).getView();
 		if (v != null) v.requestFocus();
+	}
+
+	@Override
+	public View focusSearch(View focused, int direction) {
+		if ((direction == FOCUS_UP) && (focused instanceof MediaItemView)) {
+			List<MediaItemWrapper> list = getAdapter().getList();
+
+			if ((list != null) && !list.isEmpty()) {
+				MediaItemView i = (MediaItemView) focused;
+
+				if (list.get(0) == i.getItemWrapper()) {
+					View v = MainActivityDelegate.get(getContext()).getToolBar()
+							.findViewById(R.id.tool_bar_back_button);
+					if (v.getVisibility() == VISIBLE) return v;
+				}
+			}
+		}
+
+		return super.focusSearch(focused, direction);
 	}
 }

@@ -10,13 +10,13 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FavoritesPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.ui.menu.AppMenu;
-import me.aap.fermata.ui.menu.AppMenuItem;
 import me.aap.fermata.ui.view.MediaItemWrapper;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.menu.OverlayMenuItem;
 
 import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.util.Utils.filterMap;
+import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -39,7 +39,7 @@ public class FavoritesFragment extends MediaLibFragment {
 	}
 
 	@Override
-	public void initNavBarMenu(AppMenu menu) {
+	public void initNavBarMenu(OverlayMenu menu) {
 		FavoritesAdapter a = getAdapter();
 		if (!a.hasSelectable()) return;
 
@@ -60,7 +60,7 @@ public class FavoritesFragment extends MediaLibFragment {
 		super.initNavBarMenu(menu);
 	}
 
-	public boolean navBarMenuItemSelected(AppMenuItem item) {
+	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.nav_select:
 			case R.id.nav_select_all:
@@ -77,7 +77,7 @@ public class FavoritesFragment extends MediaLibFragment {
 				discardSelection();
 				return true;
 			case R.id.playlist_add:
-				AppMenu menu = item.getMenu();
+				OverlayMenu menu = item.getMenu();
 				getMainActivity().createPlaylistMenu(menu);
 				menu.show(this::navBarMenuItemSelected);
 				return true;

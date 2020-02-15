@@ -2,33 +2,41 @@
 <resources>
 
     <style name="AppTheme.Dark">
-        <item name="appStatusBarColor">#304D70</item>
-        <item name="appNotificationColor">#182532</item>
 
-        <item name="appBgColor">#182532</item>
-        <item name="appTextColor">#bec2c8</item>
-        <item name="appTextColorHint">#504E4E</item>
-        <item name="appIconColor">#095381</item>
+        <item name="android:colorBackground">#182532</item>
 
-        <item name="appPopupMenuColor">#182532</item>
-        <item name="appPopupMenuHeaderColor">#27394A</item>
+        <!-- Status bar-->
+        <item name="colorPrimaryDark">#304D70</item>
 
-        <item name="appToolBarColor">#121E29</item>
-        <item name="appToolBarTextColor">#a1a5a9</item>
-        <item name="appToolBarIconColor">#a1a5a9</item>
-        <item name="appToolBarFilterBgColor">#243647</item>
+        <!-- Tool/Nav bars -->
+        <item name="colorPrimary">#121E29</item>
+        <item name="colorOnPrimary">#a1a5a9</item>
+        <item name="android:textColorPrimary">#a1a5a9</item>
 
-        <item name="appMediaItemColor">#243447</item>
-        <item name="appMediaItemTextColor">?attr/appTextColor</item>
-        <item name="appMediaItemIconColor">#095381</item>
-        <item name="appMediaItemBorderColor">#243447</item>
-        <item name="appMediaItemFocusBorderColor">#4B78AF</item>
-        <item name="appPlayingMediaItemColor">#365070</item>
-        <item name="appPlayingMediaItemTextColor">#a1a5a9</item>
-        <item name="appPlayingMediaItemIconColor">#0768A5</item>
-        <item name="appPlayingMediaItemBorderColor">#365070</item>
+        <!-- List/Media items -->
+        <item name="colorSecondary">#243447</item>
+        <item name="colorOnSecondary">#095381</item>
+        <item name="android:textColorSecondary">#bec2c8</item>
 
-        <item name="appSeekBarBgTint">#696f75</item>
+        <!-- Active media item -->
+        <item name="alpha">0.7</item>
+        <item name="colorSecondaryVariant">#2C486A</item>
+        <item name="android:textColorTertiary">#ffffff</item>
+
+        <!-- Popup menu -->
+        <item name="colorSurface">#182532</item>
+        <item name="colorOnSurface">#095381</item>
+        <item name="colorPrimarySurface">#27394A</item>
+        <item name="colorOnPrimarySurface">#095381</item>
+
+        <item name="colorAccent">#4B78AF</item>
+        <item name="rippleColor">#83A5CF</item>
+
+        <item name="android:textColorHint">#504E4E</item>
+
+        <item name="colorControlNormal">#999CA1</item>
+        <item name="colorControlActivated">#095381</item>
+
     </style>
 
 </resources>

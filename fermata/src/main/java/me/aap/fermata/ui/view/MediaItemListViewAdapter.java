@@ -17,9 +17,10 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
-import static me.aap.fermata.util.Utils.filterMap;
+import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -27,6 +28,7 @@ import static me.aap.fermata.util.Utils.filterMap;
 public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaItemViewHolder>
 		implements OnClickListener {
 	private BrowsableItem parent;
+	private String filterText = "";
 	private Pattern filter;
 	private MediaItemListView listView;
 	private List<MediaItemWrapper> list = Collections.emptyList();
@@ -70,9 +72,10 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		notifyDataSetChanged();
 	}
 
-	public void setFilter(Pattern filter) {
-		if (filter != this.filter) {
-			this.filter = filter;
+	public void setFilter(String filter) {
+		if (!filter.equals(filterText)) {
+			filterText = filter;
+			this.filter = filter.isEmpty() ? null : Pattern.compile(Pattern.quote(filter), Pattern.CASE_INSENSITIVE);
 			setParent(getParent());
 		}
 	}
@@ -104,7 +107,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		MediaItemListView listView = getListView();
 		MediaItemViewHolder h = (MediaItemViewHolder) listView.getChildViewHolder(listView.getChildAt(fromPosition));
 		h.getItemView().hideMenu();
-		Utils.move(list, fromPosition, toPosition);
+		CollectionUtils.move(list, fromPosition, toPosition);
 		getParent().updateTitles();
 		refresh();
 		return true;

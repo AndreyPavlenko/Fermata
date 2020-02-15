@@ -27,7 +27,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.menu.AppMenu;
+import me.aap.utils.ui.menu.OverlayMenu;
 
 /**
  * @author Andrey Pavlenko
@@ -42,12 +42,15 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	private MediaItemListView listView;
 
 	public MediaItemView(Context context, AttributeSet attrs) {
-		super(context, attrs);
+		super(context, attrs, R.attr.appMediaItemStyle);
 		inflate(getContext(), R.layout.media_item_layout, this);
 		iconTint = getIcon().getImageTintList();
 		setLongClickable(true);
 		setOnLongClickListener(this);
 		getCheckBox().setOnCheckedChangeListener(this);
+		setBackgroundResource(R.drawable.media_item_bg);
+		setPadding(5, 5, 5, 5);
+		setFocusable(true);
 	}
 
 	public MediaItemWrapper getItemWrapper() {
@@ -169,10 +172,15 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	private void refreshState(Item item) {
-		int type = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed()) ?
-				Typeface.BOLD : Typeface.NORMAL;
-		getTitle().setTypeface(null, type);
-		getSubtitle().setTypeface(null, type);
+		boolean last = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed());
+		int type = last ? Typeface.BOLD : Typeface.NORMAL;
+
+		TextView t = getTitle();
+		t.setTypeface(null, type);
+		t.setActivated(last);
+		t = getSubtitle();
+		t.setTypeface(null, type);
+		t.setActivated(last);
 		refreshCheckbox();
 
 		if (item.equals(getMainActivity().getCurrentPlayable())) {
@@ -203,7 +211,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	@Override
 	public boolean onLongClick(View v) {
 		MainActivityDelegate a = getMainActivity();
-		AppMenu menu = a.getContextMenu();
+		OverlayMenu menu = a.getContextMenu();
 		MediaItemMenuHandler handler = new MediaItemMenuHandler(menu, this);
 		getListView().discardSelection();
 		handler.show(R.layout.media_item_menu);
@@ -211,7 +219,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	void hideMenu() {
-		AppMenu menu = getMainActivity().findViewById(R.id.context_menu);
+		OverlayMenu menu = getMainActivity().findViewById(R.id.context_menu);
 		menu.hide();
 	}
 

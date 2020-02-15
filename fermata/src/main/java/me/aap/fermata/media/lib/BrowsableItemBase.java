@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import me.aap.fermata.function.Consumer;
+import me.aap.utils.function.Consumer;
 
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -16,7 +16,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 
-import static me.aap.fermata.util.NaturalOrderComparator.compareNatural;
+import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 
 /**
  * @author Andrey Pavlenko

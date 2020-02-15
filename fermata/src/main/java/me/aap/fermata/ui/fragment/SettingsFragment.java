@@ -9,36 +9,35 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
-import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Locale;
 
 import me.aap.fermata.R;
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.Consumer;
-import me.aap.fermata.function.IntSupplier;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
-import me.aap.fermata.pref.PrefCondition;
-import me.aap.fermata.pref.PreferenceSet;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.pref.PreferenceView;
-import me.aap.fermata.pref.PreferenceViewAdapter;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.util.ChangeableCondition;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.Consumer;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.misc.ChangeableCondition;
+import me.aap.utils.pref.PrefCondition;
+import me.aap.utils.pref.PreferenceSet;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceView;
+import me.aap.utils.pref.PreferenceViewAdapter;
 
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
-import static me.aap.fermata.ui.activity.MainActivityListener.Event.FRAGMENT_CONTENT_CHANGED;
+import static me.aap.fermata.ui.activity.MainActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 /**
  * @author Andrey Pavlenko
  */
-public class SettingsFragment extends Fragment implements MainActivityFragment {
+public class SettingsFragment extends MainActivityFragment {
 	private PreferenceViewAdapter adapter;
 
 	@Override

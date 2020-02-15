@@ -7,14 +7,14 @@ import androidx.annotation.NonNull;
 import java.util.concurrent.Future;
 
 import me.aap.fermata.FermataApplication;
-import me.aap.fermata.function.Consumer;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.fermata.util.CompletedFuture;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.concurrent.CompletedFuture;
+import me.aap.utils.function.Consumer;
+import me.aap.utils.text.TextUtils;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,7 +34,7 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	public String getSubtitle() {
 		if (subtitle == null) {
 			MediaMetadataCompat md = getMediaData();
-			StringBuilder sb = Utils.getSharedStringBuilder();
+			StringBuilder sb = TextUtils.getSharedStringBuilder();
 			BrowsableItemPrefs prefs = requireNonNull(getParent()).getPrefs();
 			String s;
 
@@ -68,7 +68,7 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 			if (prefs.getSubtitleDurationPref()) {
 				long dur = getDuration();
 				if (sb.length() != 0) sb.append(" - ");
-				Utils.timeToString(sb, (int) (dur / 1000));
+				TextUtils.timeToString(sb, (int) (dur / 1000));
 			}
 
 			subtitle = sb.toString();

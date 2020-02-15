@@ -16,8 +16,9 @@ import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
-import me.aap.fermata.pref.PreferenceStore;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.text.TextUtils;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
 
@@ -83,7 +84,7 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	public List<Playlist> listChildren() {
 		int[] ids = getPlaylistIdsPref();
 		List<Playlist> children = new ArrayList<>(ids.length);
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(SCHEME).append(':');
 		int len = sb.length();
 
@@ -127,7 +128,7 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 			return null;
 		}
 
-		if (Utils.contains(getChildren(null), c -> n.equals(c.getName()))) {
+		if (CollectionUtils.contains(getChildren(null), c -> n.equals(c.getName()))) {
 			Context ctx = getLib().getContext();
 			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_playlist_exists, n),
 					Toast.LENGTH_LONG).show();
@@ -135,7 +136,7 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		}
 
 		int playlistId = getPlaylistsCounterPref() + 1;
-		StringBuilder sb = Utils.getSharedStringBuilder();
+		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		sb.append(SCHEME).append(':').append(playlistId).append(':');
 		DefaultPlaylist pl = new DefaultPlaylist(sb.toString(), this, playlistId);
 		setPlaylistsCounterPref(playlistId);
@@ -161,6 +162,6 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 
 	@Override
 	void saveChildren(List<Playlist> children) {
-		setPlaylistIdsPref(Utils.map(children, (i, t, a) -> a[i] = ((DefaultPlaylist) t).getPlaylistId(), int[]::new));
+		setPlaylistIdsPref(CollectionUtils.map(children, (i, t, a) -> a[i] = ((DefaultPlaylist) t).getPlaylistId(), int[]::new));
 	}
 }

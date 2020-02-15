@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import me.aap.fermata.function.BooleanSupplier;
-import me.aap.fermata.function.IntSupplier;
-import me.aap.fermata.function.LongSupplier;
-import me.aap.fermata.function.Supplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.LongSupplier;
+import me.aap.utils.function.Supplier;
 
 /**
  * @author Andrey Pavlenko

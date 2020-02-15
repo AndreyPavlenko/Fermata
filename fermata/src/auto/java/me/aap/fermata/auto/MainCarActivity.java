@@ -11,35 +11,34 @@ import androidx.fragment.app.FragmentManager;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
-import me.aap.fermata.function.BiConsumer;
-
 import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.AppActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.menu.AppMenu;
+import me.aap.utils.function.BiConsumer;
+import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.menu.OverlayMenu;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MainCarActivity extends CarActivity implements AppActivity {
-	private MainActivityDelegate delegate;
+	private static MainActivityDelegate delegate;
 
-	@Override
-	public MainActivityDelegate getMainActivityDelegate() {
-		return delegate;
+	static {
+		ActivityDelegate.setContextToDelegate(c -> delegate);
 	}
 
 	@Override
-	public int getContentView() {
-		return R.layout.main_activity;
+	public MainActivityDelegate getActivityDelegate() {
+		return delegate;
 	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		delegate = MainActivityDelegate.create(this);
-		delegate.onActivityCreate();
+		delegate = ActivityDelegate.create(MainActivityDelegate::new, this);
+		delegate.onActivityCreate(savedInstanceState);
 
 		CarUiController ctrl = getCarUiController();
 		ctrl.getStatusBarController().hideAppHeader();
@@ -49,19 +48,18 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
-		getMainActivityDelegate().onActivityResume();
+		getActivityDelegate().onActivityResume();
 	}
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 
-		MainActivityDelegate a = getMainActivityDelegate();
+		MainActivityDelegate a = getActivityDelegate();
 
 		if (a != null) {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			if (b != null) b.getMediaSessionCallback().onPause();
-			a.onActivityDestroy();
 		}
 	}
 
@@ -88,14 +86,14 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 
 
 	public void recreate() {
-		AppMenu menu = getMainActivityDelegate().getContextMenu();
+		OverlayMenu menu = getActivityDelegate().getContextMenu();
 		menu.hide();
 		menu.addItem(1, getResources().getString(R.string.please_restart_app));
 		menu.show(i -> true);
 	}
 
 	public void finish() {
-		getMainActivityDelegate().onActivityFinish();
+		getActivityDelegate().onActivityFinish();
 	}
 
 	public void startActivityForResult(BiConsumer<Integer, Intent> resultHandler, Intent intent) {

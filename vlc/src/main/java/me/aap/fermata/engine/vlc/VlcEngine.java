@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import me.aap.fermata.function.Supplier;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -34,6 +33,9 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.Supplier;
+import me.aap.utils.text.TextUtils;
 
 /**
  * @author Andrey Pavlenko
@@ -223,7 +225,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	@Override
 	public AudioStreamInfo getCurrentAudioStreamInfo() {
 		int id = player.getAudioTrack();
-		return Utils.find(getAudioStreamInfo(), s -> s.getId() == id);
+		return CollectionUtils.find(getAudioStreamInfo(), s -> s.getId() == id);
 	}
 
 	@Override
@@ -234,7 +236,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	@Override
 	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
 		int id = player.getSpuTrack();
-		return Utils.find(getSubtitleStreamInfo(), s -> s.getId() == id);
+		return CollectionUtils.find(getSubtitleStreamInfo(), s -> s.getId() == id);
 	}
 
 	@Override
@@ -569,7 +571,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 						for (I i : streams) {
 							String dsc = i.getDescription();
-							if ((dsc != null) && Utils.containsWord(dsc.toLowerCase(), k)) return i;
+							if ((dsc != null) && TextUtils.containsWord(dsc.toLowerCase(), k)) return i;
 						}
 					}
 				}
