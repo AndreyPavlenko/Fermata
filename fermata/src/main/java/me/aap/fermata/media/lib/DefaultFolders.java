@@ -149,7 +149,8 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	@Override
 	public void removeItem(int idx) {
 		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
-		newChildren.remove(idx);
+		FolderItem i = newChildren.remove(idx);
+		getLib().removeFromCache(i);
 		setChildren(newChildren);
 		saveChildren(newChildren);
 	}

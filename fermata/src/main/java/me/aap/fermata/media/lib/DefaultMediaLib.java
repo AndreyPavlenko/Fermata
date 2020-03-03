@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.media.MediaBrowserServiceCompat;
 
 import java.lang.ref.ReferenceQueue;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
@@ -242,6 +244,12 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		cache.put(i.getId(), new ItemRef(i, refQueue));
 	}
 
+	void removeFromCache(Item i) {
+		clearRefs();
+		if (i == null) return;
+		CollectionUtils.remove(cache, i.getId(), new ItemRef(i, refQueue));
+	}
+
 	Item getFromCache(String id) {
 		clearRefs();
 		ItemRef r = cache.get(id);
@@ -267,6 +275,22 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		public ItemRef(Item item, ReferenceQueue<? super Item> q) {
 			super(item, q);
 			id = item.getId();
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(get());
+		}
+
+		@Override
+		public boolean equals(@Nullable Object obj) {
+			if (obj == this) {
+				return true;
+			} else if (obj instanceof ItemRef) {
+				return Objects.equals(get(), ((ItemRef) obj).get());
+			} else {
+				return false;
+			}
 		}
 	}
 }

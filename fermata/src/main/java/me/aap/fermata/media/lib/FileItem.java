@@ -125,7 +125,9 @@ class FileItem extends PlayableItemBase {
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 			uri = getFile().getAudioUri();
-		} else {
+		}
+
+		if (uri == null) {
 			String path = getFile().getPath();
 
 			if (path != null) {

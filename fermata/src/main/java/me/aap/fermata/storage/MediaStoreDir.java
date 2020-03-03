@@ -12,19 +12,19 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.utils.app.App;
 
 import static android.provider.DocumentsContract.Document.MIME_TYPE_DIR;
+import static android.provider.MediaStore.Files.FileColumns.MIME_TYPE;
+import static android.provider.MediaStore.MediaColumns.DISPLAY_NAME;
+import static android.provider.MediaStore.MediaColumns.DOCUMENT_ID;
 
 
 /**
  * @author Andrey Pavlenko
  */
 class MediaStoreDir extends MediaStoreFile {
-	private static final String[] queryFields = new String[]{
-			MediaStore.Files.FileColumns.DISPLAY_NAME,
-			MediaStore.Files.FileColumns.DOCUMENT_ID,
-			MediaStore.Files.FileColumns.MIME_TYPE,
-	};
+	private static final String[] queryFields = new String[]{DISPLAY_NAME, DOCUMENT_ID, MIME_TYPE};
 	private List<MediaFile> children;
 
 	MediaStoreDir(MediaStoreDir parent, String name, String id) {
@@ -37,8 +37,7 @@ class MediaStoreDir extends MediaStoreFile {
 		String name = null;
 		String id = DocumentsContract.getTreeDocumentId(rootUri);
 
-		try (Cursor c = FermataApplication.get().getContentResolver().query(uri,
-				new String[]{MediaStore.Files.FileColumns.DISPLAY_NAME}, null, null, null)) {
+		try (Cursor c = App.get().getContentResolver().query(uri, new String[]{DISPLAY_NAME}, null, null, null)) {
 			if ((c != null) && c.moveToNext()) name = c.getString(0);
 		}
 

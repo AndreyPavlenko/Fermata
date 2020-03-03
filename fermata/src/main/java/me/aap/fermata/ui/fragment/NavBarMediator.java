@@ -42,7 +42,7 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 		if (a.isCarActivity()) menu.findItem(R.id.nav_exit).setVisible(false);
 
 		ActivityFragment f = a.getActiveFragment();
-		if (f != null) f.initNavBarMenu(menu);
+		if (f instanceof MainActivityFragment) ((MainActivityFragment) f).initNavBarMenu(menu);
 
 		menu.show(this);
 	}
@@ -63,6 +63,6 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 		}
 
 		ActivityFragment f = MainActivityDelegate.get(item.getContext()).getActiveFragment();
-		return (f != null) && f.navBarMenuItemSelected(item);
+		return (f instanceof MainActivityFragment) && ((MainActivityFragment) f).navBarMenuItemSelected(item);
 	}
 }

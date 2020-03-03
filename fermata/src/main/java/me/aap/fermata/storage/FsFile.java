@@ -34,11 +34,15 @@ class FsFile implements MediaFile {
 		this.name = name;
 	}
 
+	static FsFile create(Uri fileUri) {
+		return new FileRoot(fileUri, fileUri.getPath());
+	}
+
 	static FsFile create(MediaStoreDir msDir) {
 		SharedPreferences map = FermataApplication.get().getUriToPathMap();
 		String uriStr = msDir.getRootUri().toString();
 		String path = map.getString(uriStr, null);
-		if (path != null) return new RootFsFile(msDir, path);
+		if (path != null) return new MediaRoot(msDir, path);
 
 		MediaStoreFile msFile = msDir.findAnyFile();
 		if (msFile == null) return null;
@@ -57,7 +61,7 @@ class FsFile implements MediaFile {
 				}
 
 				map.edit().putString(uriStr, path).apply();
-				return new RootFsFile(msDir, path);
+				return new MediaRoot(msDir, path);
 			}
 		}
 
@@ -74,8 +78,11 @@ class FsFile implements MediaFile {
 	@Override
 	public Uri getAudioUri() {
 		List<FsFile> parents = new ArrayList<>();
-		RootFsFile root = getRoot(parents);
-		String rootId = root.msDir.getId();
+		FsFile root = getRoot(parents);
+		if (!(root instanceof MediaRoot)) return null;
+
+		MediaRoot mediaRoot = (MediaRoot) root;
+		String rootId = mediaRoot.msDir.getId();
 		StringBuilder sb = TextUtils.getSharedStringBuilder().append(rootId);
 		if (!rootId.endsWith(":")) sb.append('/');
 
@@ -85,7 +92,7 @@ class FsFile implements MediaFile {
 		}
 
 		sb.append(getName());
-		return Utils.getAudioUri(buildDocumentUriUsingTree(root.msDir.getRootUri(), sb.toString()));
+		return Utils.getAudioUri(buildDocumentUriUsingTree(mediaRoot.msDir.getRootUri(), sb.toString()));
 	}
 
 	@NonNull
@@ -151,7 +158,7 @@ class FsFile implements MediaFile {
 	}
 
 	@NonNull
-	RootFsFile getRoot(List<FsFile> parents) {
+	FsFile getRoot(List<FsFile> parents) {
 		FsFile p = getParent();
 		assert p != null;
 		parents.add(p);
@@ -170,17 +177,43 @@ class FsFile implements MediaFile {
 	}
 
 
-	private static final class RootFsFile extends FsFile {
+	private static final class FileRoot extends FsFile {
+		private final Uri uri;
+
+		public FileRoot(Uri uri, String path) {
+			super(null, path, name(path));
+			this.uri = uri;
+		}
+
+		@NonNull
+		@Override
+		FsFile getRoot(List<FsFile> parents) {
+			return this;
+		}
+
+		@Override
+		public FsFile getParent() {
+			return null;
+		}
+
+		@NonNull
+		@Override
+		public Uri getUri() {
+			return uri;
+		}
+	}
+
+	private static final class MediaRoot extends FsFile {
 		final MediaStoreDir msDir;
 
-		public RootFsFile(MediaStoreDir msDir, String path) {
+		public MediaRoot(MediaStoreDir msDir, String path) {
 			super(null, path, name(path));
 			this.msDir = msDir;
 		}
 
 		@NonNull
 		@Override
-		RootFsFile getRoot(List<FsFile> parents) {
+		FsFile getRoot(List<FsFile> parents) {
 			return this;
 		}
 
@@ -194,10 +227,10 @@ class FsFile implements MediaFile {
 		public Uri getUri() {
 			return msDir.getUri();
 		}
+	}
 
-		private static String name(String path) {
-			int i = path.lastIndexOf(File.separatorChar);
-			return ((i <= 0) || (i == (path.length() - 1))) ? path : path.substring(i + 1);
-		}
+	private static String name(String path) {
+		int i = path.lastIndexOf(File.separatorChar);
+		return ((i <= 0) || (i == (path.length() - 1))) ? path : path.substring(i + 1);
 	}
 }

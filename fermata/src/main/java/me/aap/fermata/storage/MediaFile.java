@@ -14,6 +14,8 @@ import java.util.List;
 public interface MediaFile {
 
 	static MediaFile create(Uri rootUri, boolean preferFs) {
+		if ("file".equals(rootUri.getScheme())) return FsFile.create(rootUri);
+
 		MediaStoreDir msDir = MediaStoreDir.create(rootUri);
 
 		if (preferFs) {

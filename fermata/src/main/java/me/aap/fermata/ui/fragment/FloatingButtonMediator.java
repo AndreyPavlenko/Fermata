@@ -4,6 +4,7 @@ import android.view.View;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.FloatingButton;
 
@@ -16,27 +17,34 @@ public class FloatingButtonMediator implements FloatingButton.Mediator.BackMenu 
 	@Override
 	public int getIcon(FloatingButton fb) {
 		MainActivityDelegate a = MainActivityDelegate.get(fb.getContext());
-		return isAddFolderEnabled(a) ? R.drawable.add_folder :
+		return isAddFolderEnabled(a.getActiveFragment()) ? R.drawable.add_folder :
 				FloatingButton.Mediator.BackMenu.super.getIcon(fb);
 	}
 
 	@Override
 	public void onClick(View v) {
-		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
+		ActivityFragment f = ActivityDelegate.get(v.getContext()).getActiveFragment();
 
-		if (isAddFolderEnabled(a)) {
-			((FoldersFragment) a.getActiveFragment()).addFolder();
+		if (isAddFolderEnabled(f)) {
+			((FoldersFragment) f).addFolder();
 		} else {
 			FloatingButton.Mediator.BackMenu.super.onClick(v);
 		}
 	}
 
-	private boolean isAddFolderEnabled(MainActivityDelegate a) {
-		if (!a.getAppActivity().isCarActivity()) {
-			ActivityFragment f = a.getActiveFragment();
-			return ((f instanceof FoldersFragment) && f.isRootPage());
+	@Override
+	public boolean onLongClick(View v) {
+		ActivityFragment f = ActivityDelegate.get(v.getContext()).getActiveFragment();
+
+		if (isAddFolderEnabled(f)) {
+			((FoldersFragment) f).addFolderPicker();
+			return true;
 		} else {
-			return false;
+			return FloatingButton.Mediator.BackMenu.super.onLongClick(v);
 		}
+	}
+
+	private boolean isAddFolderEnabled(ActivityFragment f) {
+		return ((f instanceof FoldersFragment) && f.isRootPage());
 	}
 }

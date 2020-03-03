@@ -1,15 +1,12 @@
 package me.aap.fermata.ui.fragment;
 
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Folders;
@@ -17,8 +14,10 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 
@@ -115,26 +114,45 @@ public class FoldersFragment extends MediaLibFragment {
 
 	public void addFolder() {
 		try {
-			Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-			getMainActivity().startActivityForResult(this::addFolder, intent);
+			addFolderIntent();
 		} catch (ActivityNotFoundException ex) {
-			Context ctx = requireNonNull(getContext());
-			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_failed_add_folder, ex),
-					Toast.LENGTH_LONG).show();
+			addFolderPicker();
 		}
 	}
 
-	private void addFolder(int result, Intent data) {
+	public void addFolderIntent() throws ActivityNotFoundException {
+		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+		getMainActivity().startActivityForResult(this::addFolderResult, intent);
+	}
+
+	public void addFolderPicker() {
+		FilePickerFragment f = getMainActivity().showFragment(R.id.file_picker);
+		f.init(this::addFolderResult, FilePickerFragment.FOLDER);
+	}
+
+	private void addFolderResult(int result, Intent data) {
 		if (data == null) return;
 
 		Uri uri = data.getData();
 		if (uri == null) return;
 
-		FermataApplication.get().getContentResolver()
+		requireNonNull(getMainActivity().getContext()).getContentResolver()
 				.takePersistableUriPermission(uri, FLAG_GRANT_READ_URI_PERMISSION);
 		Folders folders = getLib().getFolders();
 		folders.addItem(uri);
 		getAdapter().setParent(folders);
+	}
+
+	private void addFolderResult(Uri uri) {
+		MainActivityDelegate a = getMainActivity();
+
+		if (uri != null) {
+			Folders folders = a.getLib().getFolders();
+			folders.addItem(uri);
+			getAdapter().setParent(folders);
+		}
+
+		a.showFragment(getFragmentId());
 	}
 
 	@Override
