@@ -331,12 +331,12 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				int scale = item.getPrefs().hasPref(VIDEO_SCALE, false) ? item.getPrefs().getVideoScalePref() : -1;
 				menu = i.getMenu();
 				menu.setTitle(R.string.video_scaling);
-				menu.addItem(R.id.video_scaling_default, true, null, R.string.by_default).setChecked(scale == -1);
-				menu.addItem(R.id.video_scaling_best, true, null, R.string.video_scaling_best).setChecked(scale == SCALE_BEST);
-				menu.addItem(R.id.video_scaling_fill, true, null, R.string.video_scaling_fill).setChecked(scale == SCALE_FILL);
-				menu.addItem(R.id.video_scaling_orig, true, null, R.string.video_scaling_orig).setChecked(scale == SCALE_ORIGINAL);
-				menu.addItem(R.id.video_scaling_4, true, null, R.string.video_scaling_4).setChecked(scale == SCALE_4_3);
-				menu.addItem(R.id.video_scaling_16, true, null, R.string.video_scaling_16).setChecked(scale == SCALE_16_9);
+				menu.addItem(R.id.video_scaling_default, null, R.string.by_default).setChecked(scale == -1);
+				menu.addItem(R.id.video_scaling_best, null, R.string.video_scaling_best).setChecked(scale == SCALE_BEST);
+				menu.addItem(R.id.video_scaling_fill, null, R.string.video_scaling_fill).setChecked(scale == SCALE_FILL);
+				menu.addItem(R.id.video_scaling_orig, null, R.string.video_scaling_orig).setChecked(scale == SCALE_ORIGINAL);
+				menu.addItem(R.id.video_scaling_4, null, R.string.video_scaling_4).setChecked(scale == SCALE_4_3);
+				menu.addItem(R.id.video_scaling_16, null, R.string.video_scaling_16).setChecked(scale == SCALE_16_9);
 				menu.show(this);
 				break;
 			case R.id.video_scaling_default:
@@ -400,21 +400,21 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		int eng = prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
 
 		OverlayMenuItem i = menu.addItem(video ? R.id.preferred_video_engine_default
-				: R.id.preferred_audio_engine_default, true, null, R.string.by_default);
+				: R.id.preferred_audio_engine_default, null, R.string.by_default);
 		i.setChecked(eng == -1);
 		i = menu.addItem(video ? R.id.preferred_video_engine_mp
-				: R.id.preferred_audio_engine_mp, true, null, R.string.engine_mp_name);
+				: R.id.preferred_audio_engine_mp, null, R.string.engine_mp_name);
 		i.setChecked(eng == MediaPrefs.MEDIA_ENG_MP);
 
 		if (mgr.isExoPlayerSupported()) {
 			i = menu.addItem(video ? R.id.preferred_video_engine_exo
-					: R.id.preferred_audio_engine_exo, true, null, R.string.engine_exo_name);
+					: R.id.preferred_audio_engine_exo, null, R.string.engine_exo_name);
 			i.setChecked(eng == MediaPrefs.MEDIA_ENG_EXO);
 		}
 
 		if (mgr.isVlcPlayerSupported()) {
 			i = menu.addItem(video ? R.id.preferred_video_engine_vlc
-					: R.id.preferred_audio_engine_vlc, true, null, R.string.engine_vlc_name);
+					: R.id.preferred_audio_engine_vlc, null, R.string.engine_vlc_name);
 			i.setChecked(eng == MediaPrefs.MEDIA_ENG_VLC);
 		}
 	}

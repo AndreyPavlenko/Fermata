@@ -53,12 +53,16 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if (parent != null) {
 			if (filter == null) {
 				list = Collections.emptyList();
-				List<? extends Item> children = parent.getChildren(this::setChildren);
+				List<? extends Item> children = parent.getChildren(c -> {
+					if (parent == this.parent) setChildren(c);
+				});
 				if (list == Collections.EMPTY_LIST) setChildren(children);
 			} else {
 				list = Collections.emptyList();
 				notifyDataSetChanged();
-				parent.getChildren(this::setChildren);
+				parent.getChildren(c -> {
+					if (parent == this.parent) setChildren(c);
+				});
 			}
 		} else {
 			list = Collections.emptyList();
@@ -127,6 +131,12 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	public void onBindViewHolder(@NonNull MediaItemViewHolder holder, int position) {
 		List<MediaItemWrapper> list = getList();
 		if (position < list.size()) holder.getItemView().setItemWrapper(list.get(position));
+	}
+
+	@Override
+	public void onViewRecycled(@NonNull MediaItemViewHolder holder) {
+		MediaItemView i = holder.getItemView();
+		if (i != null) i.cancelLoading();
 	}
 
 	@Override

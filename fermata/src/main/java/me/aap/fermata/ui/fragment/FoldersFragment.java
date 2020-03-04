@@ -3,6 +3,7 @@ package me.aap.fermata.ui.fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class FoldersFragment extends MediaLibFragment {
 	@Override
 	public void initNavBarMenu(OverlayMenu menu) {
 		if (isRootFolder()) {
-			if (!getMainActivity().isCarActivity()) menu.findItem(R.id.nav_add_folder).setVisible(true);
+			menu.findItem(R.id.nav_add_folder).setVisible(true);
 		} else {
 			FoldersAdapter a = getAdapter();
 			if (!a.hasSelectable()) return;
@@ -113,20 +114,27 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	public void addFolder() {
-		try {
-			addFolderIntent();
-		} catch (ActivityNotFoundException ex) {
-			addFolderPicker();
+		MainActivityDelegate a = getMainActivity();
+
+		if (!a.isCarActivity()) {
+			try {
+				addFolderIntent(a);
+				return;
+			} catch (ActivityNotFoundException ex) {
+				Log.d(getClass().getName(), "Failed to start activity", ex);
+			}
 		}
+
+		addFolderPicker(a);
 	}
 
-	public void addFolderIntent() throws ActivityNotFoundException {
+	public void addFolderIntent(MainActivityDelegate a) throws ActivityNotFoundException {
 		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		getMainActivity().startActivityForResult(this::addFolderResult, intent);
+		a.startActivityForResult(this::addFolderResult, intent);
 	}
 
-	public void addFolderPicker() {
-		FilePickerFragment f = getMainActivity().showFragment(R.id.file_picker);
+	public void addFolderPicker(MainActivityDelegate a) {
+		FilePickerFragment f = a.showFragment(R.id.file_picker);
 		f.init(this::addFolderResult, FilePickerFragment.FOLDER);
 	}
 

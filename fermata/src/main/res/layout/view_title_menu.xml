@@ -6,21 +6,18 @@
         android:id="@+id/tool_seq_num"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/seq_num" />
 
     <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_track_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/track_name" />
 
     <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_file_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/file_name" />
 
 </merge>

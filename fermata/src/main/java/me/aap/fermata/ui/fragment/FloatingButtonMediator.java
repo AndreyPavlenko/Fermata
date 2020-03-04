@@ -37,7 +37,8 @@ public class FloatingButtonMediator implements FloatingButton.Mediator.BackMenu 
 		ActivityFragment f = ActivityDelegate.get(v.getContext()).getActiveFragment();
 
 		if (isAddFolderEnabled(f)) {
-			((FoldersFragment) f).addFolderPicker();
+			FoldersFragment ff = (FoldersFragment) f;
+			ff.addFolderPicker(ff.getMainActivity());
 			return true;
 		} else {
 			return FloatingButton.Mediator.BackMenu.super.onLongClick(v);

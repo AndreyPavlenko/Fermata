@@ -62,11 +62,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	public void setItemWrapper(MediaItemWrapper wrapper) {
-		if (loading != null) {
-			loading.cancel(false);
-			loading = null;
-		}
-
+		cancelLoading();
 		itemWrapper = wrapper;
 		wrapper.setView(this);
 		Item i = wrapper.getItem();
@@ -90,6 +86,13 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			}
 		} else {
 			setDescription(i, i.getMediaDescription());
+		}
+	}
+
+	public void cancelLoading() {
+		if (loading != null) {
+			loading.cancel(false);
+			loading = null;
 		}
 	}
 

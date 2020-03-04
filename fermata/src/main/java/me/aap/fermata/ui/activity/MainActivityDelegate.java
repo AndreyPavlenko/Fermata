@@ -340,13 +340,12 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		Resources res = getResources();
 
 		if (!isCarActivity()) {
-			menu.addItem(R.id.playlist_create, false, res.getDrawable(R.drawable.playlist_add, null),
+			menu.addItem(R.id.playlist_create, res.getDrawable(R.drawable.playlist_add, null),
 					res.getString(R.string.playlist_create));
 		}
 
 		for (MediaLib.Item pl : getLib().getPlaylists().getChildren()) {
-			menu.addItem(R.id.playlist_add_item, false, res.getDrawable(R.drawable.playlist, null),
-					pl.getName());
+			menu.addItem(R.id.playlist_add_item, res.getDrawable(R.drawable.playlist, null), pl.getName());
 		}
 	}
 

@@ -6,35 +6,30 @@
         android:id="@+id/tool_sub_track_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/track_name" />
 
     <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sub_file_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/file_name" />
 
     <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sub_album"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/album" />
 
     <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sub_artist"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/artist" />
 
     <me.aap.utils.ui.menu.OverlayMenuItemView
         android:id="@+id/tool_sub_dur"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:checkable="true"
         app:text="@string/duration" />
 
 </merge>

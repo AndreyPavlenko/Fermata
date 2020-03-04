@@ -354,8 +354,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 					menu = i.getMenu();
 					menu.setTitle(R.string.select_audio_stream);
 					for (AudioStreamInfo s : eng.getAudioStreamInfo()) {
-						menu.addItem(R.id.select_audio_stream, true, null, s.toString())
-								.setData(s).setChecked(s.equals(ai));
+						menu.addItem(R.id.select_audio_stream, null, s.toString()).setData(s).setChecked(s.equals(ai));
 					}
 					menu.show(this);
 					return true;
@@ -366,8 +365,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 					menu = i.getMenu();
 					menu.setTitle(R.string.select_subtitles);
 					for (SubtitleStreamInfo s : eng.getSubtitleStreamInfo()) {
-						menu.addItem(R.id.select_subtitle_stream, true, null, s.toString())
-								.setData(s).setChecked(s.equals(si));
+						menu.addItem(R.id.select_subtitle_stream, null, s.toString()).setData(s).setChecked(s.equals(si));
 					}
 					menu.show(this);
 					return true;
