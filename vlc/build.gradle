@@ -28,5 +28,5 @@ dependencies {
     implementation 'androidx.core:core:1.2.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'org.videolan.android:libvlc-all:3.3.0-eap02'
+    implementation 'org.videolan.android:libvlc-all:3.3.0-eap03'
 }
