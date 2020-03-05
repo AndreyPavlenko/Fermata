@@ -39,28 +39,28 @@ public class FavoritesFragment extends MediaLibFragment {
 	}
 
 	@Override
-	public void initNavBarMenu(OverlayMenu menu) {
+	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
 		FavoritesAdapter a = getAdapter();
 		if (!a.hasSelectable()) return;
 
+		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+
 		if (a.getListView().isSelectionActive()) {
-			boolean hasSelected = a.hasSelected();
+			b.addItem(R.id.nav_select_all, R.drawable.check_box, R.string.select_all);
+			b.addItem(R.id.nav_unselect_all, R.drawable.check_box_blank, R.string.unselect_all);
 
-			menu.findItem(R.id.nav_select_all).setVisible(true);
-			menu.findItem(R.id.nav_unselect_all).setVisible(true);
-
-			if (hasSelected) {
-				menu.findItem(R.id.nav_favorites_remove).setVisible(true);
-				getMainActivity().initPlaylistMenu(menu);
+			if (a.hasSelected()) {
+				b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
+				getMainActivity().addPlaylistMenu(b, a::getSelectedItems);
 			}
 		} else {
-			menu.findItem(R.id.nav_select).setVisible(true);
+			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
 		}
 
-		super.initNavBarMenu(menu);
+		super.contributeToNavBarMenu(builder);
 	}
 
-	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
+	private boolean navBarMenuItemSelected(OverlayMenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.nav_select:
 			case R.id.nav_select_all:
@@ -69,23 +69,12 @@ public class FavoritesFragment extends MediaLibFragment {
 			case R.id.nav_unselect_all:
 				getAdapter().getListView().select(false);
 				return true;
-			case R.id.nav_favorites_remove:
+			case R.id.favorites_remove:
 				requireNonNull(getLib()).getFavorites().removeItems(filterMap(getAdapter().getList(),
 						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
 						ArrayList::new));
 				getAdapter().setParent(getAdapter().getParent());
 				discardSelection();
-				return true;
-			case R.id.playlist_add:
-				OverlayMenu menu = item.getMenu();
-				getMainActivity().createPlaylistMenu(menu);
-				menu.show(this::navBarMenuItemSelected);
-				return true;
-			case R.id.playlist_create:
-				getMainActivity().createPlaylist(getAdapter().getSelectedItems(), "");
-				return true;
-			case R.id.playlist_add_item:
-				getMainActivity().addToPlaylist(item.getTitle().toString(), getAdapter().getSelectedItems());
 				return true;
 		}
 

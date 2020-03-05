@@ -47,34 +47,37 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	@Override
-	public void initNavBarMenu(OverlayMenu menu) {
+	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
 		if (isRootFolder()) {
-			menu.findItem(R.id.nav_add_folder).setVisible(true);
+			builder.addItem(R.id.folders_add, R.drawable.add_folder, R.string.add_folder)
+					.setHandler(this::navBarMenuItemSelected);
 		} else {
 			FoldersAdapter a = getAdapter();
 			if (!a.hasSelectable()) return;
 
+			OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+
 			if (a.getListView().isSelectionActive()) {
 				boolean hasSelected = a.hasSelected();
 
-				menu.findItem(R.id.nav_select_all).setVisible(true);
-				menu.findItem(R.id.nav_unselect_all).setVisible(true);
+				b.addItem(R.id.nav_select_all, R.drawable.check_box, R.string.select_all);
+				b.addItem(R.id.nav_unselect_all, R.drawable.check_box_blank, R.string.unselect_all);
 
 				if (hasSelected) {
-					menu.findItem(R.id.nav_favorites_add).setVisible(true);
-					getMainActivity().initPlaylistMenu(menu);
+					b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+					getMainActivity().addPlaylistMenu(b, a::getSelectedItems);
 				}
 			} else {
-				menu.findItem(R.id.nav_select).setVisible(true);
+				b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
 			}
 		}
 
-		super.initNavBarMenu(menu);
+		super.contributeToNavBarMenu(builder);
 	}
 
-	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
+	private boolean navBarMenuItemSelected(OverlayMenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.nav_add_folder:
+			case R.id.folders_add:
 				addFolder();
 				return true;
 			case R.id.nav_select:
@@ -84,25 +87,13 @@ public class FoldersFragment extends MediaLibFragment {
 			case R.id.nav_unselect_all:
 				getAdapter().getListView().select(false);
 				return true;
-			case R.id.nav_favorites_add:
+			case R.id.favorites_add:
 				requireNonNull(getLib()).getFavorites().addItems(filterMap(getAdapter().getList(),
 						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
 						ArrayList::new));
 				discardSelection();
 				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
 				if (f != null) f.reload();
-				return true;
-			case R.id.playlist_add:
-				OverlayMenu menu = item.getMenu();
-				getMainActivity().createPlaylistMenu(menu);
-				menu.show(this::navBarMenuItemSelected);
-				return true;
-			case R.id.playlist_create:
-				getMainActivity().createPlaylist(getAdapter().getSelectedItems(),
-						getAdapter().getParent().getName());
-				return true;
-			case R.id.playlist_add_item:
-				getMainActivity().addToPlaylist(item.getTitle().toString(), getAdapter().getSelectedItems());
 				return true;
 		}
 

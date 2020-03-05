@@ -376,6 +376,8 @@ public interface MediaLib {
 
 		void removeItem(int idx);
 
+		void removeItem(Item item);
+
 		void moveItem(int fromPosition, int toPosition);
 	}
 

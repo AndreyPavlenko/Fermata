@@ -7,6 +7,7 @@ import android.widget.Toast;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.fragment.NavBarMediator;
+import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.ui.activity.ActivityBase;
 
@@ -50,8 +51,14 @@ public class MainActivity extends ActivityBase implements AppActivity {
 				onBackPressed();
 				return true;
 			case KeyEvent.KEYCODE_M:
-				if (event.isShiftPressed()) NavBarMediator.instance.showMenu(getActivityDelegate());
-				else getActivityDelegate().getControlPanel().showMenu();
+			case KeyEvent.KEYCODE_MENU:
+				if (event.isShiftPressed()) {
+					NavBarMediator.instance.showMenu(getActivityDelegate());
+				} else {
+					ControlPanelView cp = getActivityDelegate().getControlPanel();
+					if (cp.isActive()) cp.showMenu();
+					else NavBarMediator.instance.showMenu(getActivityDelegate());
+				}
 				break;
 			case KeyEvent.KEYCODE_P:
 				d = getActivityDelegate();
@@ -59,6 +66,7 @@ public class MainActivity extends ActivityBase implements AppActivity {
 				if (d.isVideoMode()) d.getControlPanel().onVideoSeek();
 				return true;
 			case KeyEvent.KEYCODE_S:
+			case KeyEvent.KEYCODE_DEL:
 				getActivityDelegate().getMediaServiceBinder().getMediaSessionCallback().onStop();
 				return true;
 			case KeyEvent.KEYCODE_X:

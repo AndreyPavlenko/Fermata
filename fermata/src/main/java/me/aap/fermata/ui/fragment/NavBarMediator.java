@@ -37,14 +37,17 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 
 	public void showMenu(MainActivityDelegate a) {
 		OverlayMenu menu = a.findViewById(R.id.nav_menu_view);
-		menu.inflate(R.layout.nav_menu);
-		menu.findItem(R.id.nav_got_to_current).setVisible(a.hasCurrent());
-		if (a.isCarActivity()) menu.findItem(R.id.nav_exit).setVisible(false);
+		menu.show(b -> {
+			b.setSelectionHandler(this);
 
-		ActivityFragment f = a.getActiveFragment();
-		if (f instanceof MainActivityFragment) ((MainActivityFragment) f).initNavBarMenu(menu);
+			if (a.hasCurrent())
+				b.addItem(R.id.nav_got_to_current, R.drawable.go_to_current, R.string.got_to_current);
+			b.addItem(R.id.nav_settings, R.drawable.settings, R.string.settings);
+			if (!a.isCarActivity()) b.addItem(R.id.nav_exit, R.drawable.exit, R.string.exit);
 
-		menu.show(this);
+			ActivityFragment f = a.getActiveFragment();
+			if (f instanceof MainActivityFragment) ((MainActivityFragment) f).contributeToNavBarMenu(b);
+		});
 	}
 
 	@Override
@@ -60,9 +63,8 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 			case R.id.nav_exit:
 				MainActivityDelegate.get(item.getContext()).finish();
 				return true;
+			default:
+				return false;
 		}
-
-		ActivityFragment f = MainActivityDelegate.get(item.getContext()).getActiveFragment();
-		return (f instanceof MainActivityFragment) && ((MainActivityFragment) f).navBarMenuItemSelected(item);
 	}
 }

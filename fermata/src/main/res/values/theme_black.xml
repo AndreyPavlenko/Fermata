@@ -33,7 +33,7 @@
         <item name="colorAccent">#5A6C83</item>
         <item name="rippleColor">#A6B4C6</item>
 
-        <item name="android:textColorHint">#777575</item>
+        <item name="android:textColorHint">#404040</item>
 
         <item name="colorControlNormal">#999CA1</item>
         <item name="colorControlActivated">?attr/colorOnSecondary</item>

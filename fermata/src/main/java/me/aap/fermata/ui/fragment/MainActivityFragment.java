@@ -34,11 +34,7 @@ public abstract class MainActivityFragment extends ActivityFragment {
 		return super.onBackPressed();
 	}
 
-	public void initNavBarMenu(OverlayMenu menu) {
-	}
-
-	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
-		return false;
+	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
 	}
 
 	public void discardSelection() {

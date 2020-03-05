@@ -1,17 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="tool_bar_view" type="id" />
-    <item name="tool_bar_sort" type="id" />
+    <item name="tool_view" type="id" />
+    <item name="tool_view_title" type="id" />
+    <item name="tool_view_subtitle" type="id" />
+    <item name="tool_seq_num" type="id" />
+    <item name="tool_track_name" type="id" />
+    <item name="tool_file_name" type="id" />
+    <item name="tool_sub_track_name" type="id" />
+    <item name="tool_sub_file_name" type="id" />
+    <item name="tool_sub_album" type="id" />
+    <item name="tool_sub_artist" type="id" />
+    <item name="tool_sub_dur" type="id" />
+    <item name="tool_sort" type="id" />
+    <item name="tool_sort_name" type="id" />
+    <item name="tool_sort_file_name" type="id" />
+    <item name="tool_sort_none" type="id" />
+
     <item name="nav_folders" type="id" />
     <item name="nav_favorites" type="id" />
     <item name="nav_playlist" type="id" />
+    <item name="nav_got_to_current" type="id" />
+    <item name="nav_settings" type="id" />
+    <item name="nav_exit" type="id" />
+    <item name="nav_select" type="id" />
+    <item name="nav_select_all" type="id" />
+    <item name="nav_unselect_all" type="id" />
+
+    <item name="folders_add" type="id" />
+    <item name="folders_remove" type="id" />
+
+    <item name="favorites_add" type="id" />
+    <item name="favorites_remove" type="id" />
+
+    <item name="playlist_add" type="id" />
     <item name="playlist_create" type="id" />
-    <item name="playlist_add_item" type="id" />
-    <item name="bookmark_select" type="id" />
-    <item name="bookmark_remove" type="id" />
-    <item name="bookmark_remove_all" type="id" />
-    <item name="bookmark_remove_all_confirm" type="id" />
+    <item name="playlist_remove" type="id" />
+
     <item name="video" type="id" />
+    <item name="video_scaling" type="id" />
+    <item name="video_scaling_default" type="id" />
+    <item name="video_scaling_best" type="id" />
+    <item name="video_scaling_fill" type="id" />
+    <item name="video_scaling_orig" type="id" />
+    <item name="video_scaling_4" type="id" />
+    <item name="video_scaling_16" type="id" />
+    <item name="preferred_media_engine" type="id" />
     <item name="preferred_video_engine" type="id" />
     <item name="preferred_audio_engine" type="id" />
     <item name="preferred_video_engine_default" type="id" />
@@ -22,12 +55,36 @@
     <item name="preferred_audio_engine_exo" type="id" />
     <item name="preferred_video_engine_vlc" type="id" />
     <item name="preferred_audio_engine_vlc" type="id" />
-    <item name="video_scaling_default" type="id" />
-    <item name="video_scaling_best" type="id" />
-    <item name="video_scaling_fill" type="id" />
-    <item name="video_scaling_orig" type="id" />
-    <item name="video_scaling_4" type="id" />
-    <item name="video_scaling_16" type="id" />
+    <item name="mark_watched" type="id" />
+    <item name="mark_unwatched" type="id" />
+
+    <item name="audio_delay" type="id" />
+    <item name="audio_prefs" type="id" />
+    <item name="audio_effects" type="id" />
     <item name="select_audio_stream" type="id" />
+
+    <item name="subtitle_delay" type="id" />
+    <item name="subtitle_prefs" type="id" />
+    <item name="select_subtitles" type="id" />
     <item name="select_subtitle_stream" type="id" />
+
+    <item name="repeat" type="id" />
+    <item name="repeat_enable" type="id" />
+    <item name="repeat_disable" type="id" />
+    <item name="repeat_disable_all" type="id" />
+    <item name="repeat_track" type="id" />
+    <item name="repeat_folder" type="id" />
+
+    <item name="bookmarks" type="id" />
+    <item name="bookmark_select" type="id" />
+    <item name="bookmark_create" type="id" />
+    <item name="bookmark_remove" type="id" />
+    <item name="bookmark_remove_all" type="id" />
+    <item name="bookmark_remove_all_confirm" type="id" />
+
+    <item name="shuffle_enable" type="id" />
+    <item name="shuffle_disable" type="id" />
+
+    <item name="speed" type="id" />
+
 </resources>

@@ -295,8 +295,21 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		@Override
 		public void setParent(BrowsableItem parent) {
+			BrowsableItem prev = super.getParent();
 			super.setParent(parent);
-			if (!isHidden()) getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+
+			if (!isHidden()) {
+				if (parent != null) {
+					int idx = indexOf(getList(), prev);
+
+					if (idx != -1) {
+						scrollPosition = idx;
+						scrollToPosition();
+					}
+				}
+
+				getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			}
 		}
 
 		@Override

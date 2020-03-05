@@ -10,6 +10,10 @@ import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NONE;
+
 /**
  * @author Andrey Pavlenko
  */
@@ -21,8 +25,8 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 
 	@Override
 	public void enable(ToolBarView tb, ActivityFragment f) {
-		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_bar_view);
-		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_bar_sort);
+		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
+		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
 	}
 
 	private static void onViewButtonClick(View v) {
@@ -30,28 +34,50 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 		MediaLibFragment f = a.getActiveMediaLibFragment();
 		if (f == null) return;
 
-		OverlayMenu m = a.getToolBarMenu();
 		f.discardSelection();
-		m.show(R.layout.view_menu, ToolBarMediator::onViewMenuItemClick);
+		a.getToolBarMenu().show(b -> {
+			b.addItem(R.id.tool_view_title, R.string.title).setSubmenu(ToolBarMediator::buildViewTitleMenu);
+			b.addItem(R.id.tool_view_subtitle, R.string.subtitle).setSubmenu(ToolBarMediator::buildViewSubtitleMenu);
+		});
 	}
 
-	private static boolean onViewMenuItemClick(OverlayMenuItem item) {
+	private static void buildViewTitleMenu(OverlayMenu.Builder b) {
+		MainActivityDelegate a = MainActivityDelegate.get(b.getMenu().getContext());
+		MediaLibFragment f = a.getActiveMediaLibFragment();
+		if (f == null) return;
+
+		MediaLibFragment.ListAdapter adapter = f.getAdapter();
+		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
+		b.addItem(R.id.tool_seq_num, R.string.seq_num).setChecked(prefs.getTitleSeqNumPref());
+		b.addItem(R.id.tool_track_name, R.string.track_name).setChecked(prefs.getTitleNamePref());
+		b.addItem(R.id.tool_file_name, R.string.file_name).setChecked(prefs.getTitleFileNamePref());
+		b.setSelectionHandler(ToolBarMediator::viewMenuHandler);
+	}
+
+	private static void buildViewSubtitleMenu(OverlayMenu.Builder b) {
+		MainActivityDelegate a = MainActivityDelegate.get(b.getMenu().getContext());
+		MediaLibFragment f = a.getActiveMediaLibFragment();
+		if (f == null) return;
+
+		MediaLibFragment.ListAdapter adapter = f.getAdapter();
+		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
+		b.addItem(R.id.tool_sub_track_name, R.string.track_name).setChecked(prefs.getSubtitleNamePref());
+		b.addItem(R.id.tool_sub_file_name, R.string.file_name).setChecked(prefs.getSubtitleFileNamePref());
+		b.addItem(R.id.tool_sub_album, R.string.album).setChecked(prefs.getSubtitleAlbumPref());
+		b.addItem(R.id.tool_sub_artist, R.string.artist).setChecked(prefs.getSubtitleArtistPref());
+		b.addItem(R.id.tool_sub_dur, R.string.duration).setChecked(prefs.getSubtitleDurationPref());
+		b.setSelectionHandler(ToolBarMediator::viewMenuHandler);
+	}
+
+	private static boolean viewMenuHandler(OverlayMenuItem item) {
 		MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
 		MediaLibFragment f = a.getActiveMediaLibFragment();
 		if (f == null) return false;
 
 		MediaLibFragment.ListAdapter adapter = f.getAdapter();
 		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
-		f.discardSelection();
-		OverlayMenu menu;
 
 		switch (item.getItemId()) {
-			case R.id.tool_view_title:
-				menu = item.getMenu();
-				menu.findItem(R.id.tool_seq_num).setChecked(prefs.getTitleSeqNumPref());
-				menu.findItem(R.id.tool_track_name).setChecked(prefs.getTitleNamePref());
-				menu.findItem(R.id.tool_file_name).setChecked(prefs.getTitleFileNamePref());
-				return true;
 			case R.id.tool_seq_num:
 				prefs.setTitleSeqNumPref(!prefs.getTitleSeqNumPref());
 				titlePrefChanged(adapter);
@@ -63,14 +89,6 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 			case R.id.tool_file_name:
 				prefs.setTitleFileNamePref(!prefs.getTitleFileNamePref());
 				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_view_subtitle:
-				menu = item.getMenu();
-				menu.findItem(R.id.tool_sub_track_name).setChecked(prefs.getSubtitleNamePref());
-				menu.findItem(R.id.tool_sub_file_name).setChecked(prefs.getSubtitleFileNamePref());
-				menu.findItem(R.id.tool_sub_album).setChecked(prefs.getSubtitleAlbumPref());
-				menu.findItem(R.id.tool_sub_artist).setChecked(prefs.getSubtitleArtistPref());
-				menu.findItem(R.id.tool_sub_dur).setChecked(prefs.getSubtitleDurationPref());
 				return true;
 			case R.id.tool_sub_track_name:
 				prefs.setSubtitleNamePref(!prefs.getSubtitleNamePref());
@@ -107,41 +125,38 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 		MediaLibFragment f = a.getActiveMediaLibFragment();
 		if (f == null) return;
 
-		MediaLibFragment.ListAdapter adapter = f.getAdapter();
-		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
 		f.discardSelection();
-
-		int sort = prefs.getSortByPref();
-		OverlayMenu menu = a.getToolBarMenu();
-		menu.inflate(R.layout.sort_menu);
-		menu.findItem(R.id.tool_sort_name).setChecked(sort == BrowsableItemPrefs.SORT_BY_NAME);
-		menu.findItem(R.id.tool_sort_file_name).setChecked(sort == BrowsableItemPrefs.SORT_BY_FILE_NAME);
-		menu.findItem(R.id.tool_sort_none).setChecked(sort == BrowsableItemPrefs.SORT_BY_NONE);
-		menu.show(ToolBarMediator::onSortMenuItemClick);
+		a.getToolBarMenu().show(b -> {
+			MediaLibFragment.ListAdapter adapter = f.getAdapter();
+			BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
+			int sort = prefs.getSortByPref();
+			b.setSelectionHandler(ToolBarMediator::sortMenuHandler);
+			b.addItem(R.id.tool_sort_name, R.string.track_name).setChecked(sort == SORT_BY_NAME, true);
+			b.addItem(R.id.tool_sort_file_name, R.string.file_name).setChecked(sort == SORT_BY_FILE_NAME, true);
+			b.addItem(R.id.tool_sort_none, R.string.do_not_sort).setChecked(sort == SORT_BY_NONE, true);
+		});
 	}
 
-	private static boolean onSortMenuItemClick(OverlayMenuItem item) {
+	private static boolean sortMenuHandler(OverlayMenuItem item) {
 		MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
 		ActivityFragment mf = a.getActiveFragment();
 		if (!(mf instanceof MediaLibFragment)) return false;
 
 		MediaLibFragment f = (MediaLibFragment) mf;
-
-		f.discardSelection();
 		MediaLibFragment.ListAdapter adapter = f.getAdapter();
 		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
 
 		switch (item.getItemId()) {
 			case R.id.tool_sort_name:
-				prefs.setSortByPref(BrowsableItemPrefs.SORT_BY_NAME);
+				prefs.setSortByPref(SORT_BY_NAME);
 				sortPrefChanged(adapter);
 				return true;
 			case R.id.tool_sort_file_name:
-				prefs.setSortByPref(BrowsableItemPrefs.SORT_BY_FILE_NAME);
+				prefs.setSortByPref(SORT_BY_FILE_NAME);
 				sortPrefChanged(adapter);
 				return true;
 			case R.id.tool_sort_none:
-				prefs.setSortByPref(BrowsableItemPrefs.SORT_BY_NONE);
+				prefs.setSortByPref(SORT_BY_NONE);
 				sortPrefChanged(adapter);
 				return true;
 			default:

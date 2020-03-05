@@ -142,6 +142,7 @@
     <string name="folder_subtitle">Files: %1$d. Folders: %2$d.</string>
     <string name="browsable_subtitle">Tracks: %1$d.</string>
     <string name="add_folder">Add folder</string>
+    <string name="remove_folder">Remove folder</string>
     <string name="select">Select</string>
     <string name="select_all">Select all</string>
     <string name="unselect_all">Unselect all</string>
@@ -149,6 +150,7 @@
     <string name="press_back_again">Press back button again to exit</string>
     <string name="press_x_again">Press X button again to exit</string>
     <string name="please_restart_app">Please restart the application</string>
+    <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions</string>
 
     <string name="eq_manual">Manual</string>
     <string name="eq_normal">Normal</string>

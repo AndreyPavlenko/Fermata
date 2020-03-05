@@ -131,6 +131,7 @@
     <string name="folder_subtitle">Файлов: %1$d. Папок: %2$d.</string>
     <string name="browsable_subtitle">Треков: %1$d.</string>
     <string name="add_folder">Добавить папку</string>
+    <string name="remove_folder">Удалить папку</string>
     <string name="select">Выбрать</string>
     <string name="select_all">Выбрать все</string>
     <string name="unselect_all">Отменить выбор</string>
@@ -138,6 +139,7 @@
     <string name="press_back_again">Нажмите кнопку назад еще раз, чтобы выйти</string>
     <string name="press_x_again">Нажмите кнопку X еще раз, чтобы выйти</string>
     <string name="please_restart_app">Пожалуйста, перезапустите приложение</string>
+    <string name="use_phone_to_grant_perm">Пожалуйста, воспользуйтесь телефоном, чтобы предоставить необходимые разрешения</string>
 
     <string name="eq_manual">Ручные</string>
     <string name="eq_normal">Номальные</string>

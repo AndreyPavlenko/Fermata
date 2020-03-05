@@ -51,7 +51,9 @@ public interface MediaPrefs extends PreferenceStore {
 	}
 
 	default void setAudioEnginePref(int eng) {
-		applyIntPref(AUDIO_ENGINE, eng);
+		try (Edit e = editPreferenceStore(false)) {
+			e.setIntPref(AUDIO_ENGINE, eng);
+		}
 	}
 
 	default int getVideoEnginePref() {
@@ -59,7 +61,9 @@ public interface MediaPrefs extends PreferenceStore {
 	}
 
 	default void setVideoEnginePref(int eng) {
-		applyIntPref(VIDEO_ENGINE, eng);
+		try (Edit e = editPreferenceStore(false)) {
+			e.setIntPref(VIDEO_ENGINE, eng);
+		}
 	}
 
 	default int getVideoScalePref() {
@@ -67,7 +71,9 @@ public interface MediaPrefs extends PreferenceStore {
 	}
 
 	default void setVideoScalePref(int scale) {
-		applyIntPref(VIDEO_SCALE, scale);
+		try (Edit e = editPreferenceStore(false)) {
+			e.setIntPref(VIDEO_SCALE, scale);
+		}
 	}
 
 	default boolean getSubEnabledPref() {

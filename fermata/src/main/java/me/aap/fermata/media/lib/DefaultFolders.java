@@ -14,6 +14,7 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Folders;
+import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.CollectionUtils;
@@ -151,6 +152,17 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
 		FolderItem i = newChildren.remove(idx);
 		getLib().removeFromCache(i);
+		setChildren(newChildren);
+		saveChildren(newChildren);
+	}
+
+	@Override
+	public void removeItem(Item item) {
+		Uri uri = item.getFile().getUri();
+		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
+		if (!CollectionUtils.remove(newChildren, u -> uri.equals(u.getFile().getUri()))) return;
+
+		getLib().removeFromCache(item);
 		setChildren(newChildren);
 		saveChildren(newChildren);
 	}

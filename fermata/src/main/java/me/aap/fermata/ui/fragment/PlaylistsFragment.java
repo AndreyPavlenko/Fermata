@@ -45,25 +45,25 @@ public class PlaylistsFragment extends MediaLibFragment {
 	}
 
 	@Override
-	public void initNavBarMenu(OverlayMenu menu) {
+	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
 		PlaylistsAdapter a = getAdapter();
 		if (!a.hasSelectable()) return;
 
+		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+
 		if (a.getListView().isSelectionActive()) {
-			boolean hasSelected = a.hasSelected();
+			b.addItem(R.id.nav_select_all, R.drawable.check_box, R.string.select_all);
+			b.addItem(R.id.nav_unselect_all, R.drawable.check_box_blank, R.string.unselect_all);
 
-			menu.findItem(R.id.nav_select_all).setVisible(true);
-			menu.findItem(R.id.nav_unselect_all).setVisible(true);
-
-			if (hasSelected) {
-				menu.findItem(R.id.nav_favorites_add).setVisible(true);
-				menu.findItem(R.id.nav_playlist_remove).setVisible(true);
+			if (a.hasSelected()) {
+				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+				b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove);
 			}
 		} else {
-			menu.findItem(R.id.nav_select).setVisible(true);
+			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
 		}
 
-		super.initNavBarMenu(menu);
+		super.contributeToNavBarMenu(builder);
 	}
 
 	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
@@ -75,7 +75,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 			case R.id.nav_unselect_all:
 				getAdapter().getListView().select(false);
 				return true;
-			case R.id.nav_favorites_add:
+			case R.id.favorites_add:
 				requireNonNull(getLib()).getFavorites().addItems(filterMap(getAdapter().getList(),
 						MediaItemWrapper::isSelected, (i, w, l) -> l.add((MediaLib.PlayableItem) w.getItem()),
 						ArrayList::new));
@@ -83,7 +83,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
 				if (f != null) f.reload();
 				return true;
-			case R.id.nav_playlist_remove:
+			case R.id.playlist_remove:
 				getMainActivity().removeFromPlaylist((Playlist) getAdapter().getParent(), getAdapter().getSelectedItems());
 				return true;
 		}

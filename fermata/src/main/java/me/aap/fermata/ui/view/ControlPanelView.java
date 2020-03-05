@@ -37,6 +37,7 @@ import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ImageButton;
@@ -249,7 +250,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		if (i == null) return;
 
 		MenuHandler h = new MenuHandler(a.findViewById(R.id.control_menu), i);
-		h.show(R.layout.control_menu);
+		h.show();
 	}
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
@@ -272,49 +273,122 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 
 		@Override
-		protected void initPlayableMenu(MainActivityDelegate a, OverlayMenu menu, PlayableItem pi,
-																		boolean initRepeat) {
-			super.initPlayableMenu(a, menu, pi, false);
+		protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
+																		 boolean initRepeat) {
+			super.buildPlayableMenu(a, b, pi, false);
 			BrowsableItemPrefs p = pi.getParent().getPrefs();
 			MediaEngine eng = a.getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 
-			boolean repeat = pi.isRepeatItemEnabled() || p.getRepeatPref();
-			boolean shuffle = p.getShufflePref();
-			OverlayMenuItem i;
+			if (pi.isRepeatItemEnabled() || p.getRepeatPref()) {
+				b.addItem(R.id.repeat, R.drawable.repeat_filled, R.string.repeat)
+						.setSubmenu(s -> {
+							buildRepeatMenu(s);
+							s.addItem(R.id.repeat_disable_all, R.string.repeat_disable);
+						});
+			} else {
+				b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat).setSubmenu(this::buildRepeatMenu);
+			}
 
-			if (repeat) i = menu.findItem(R.id.repeat_disable);
-			else i = menu.findItem(R.id.repeat_enable);
+			if (p.getShufflePref()) {
+				b.addItem(R.id.shuffle_disable, R.drawable.shuffle_filled, R.string.shuffle_disable);
+			} else {
+				b.addItem(R.id.shuffle_enable, R.drawable.shuffle, R.string.shuffle);
+			}
 
-			i.setVisible(true);
-			i.setTitle(getContext().getResources().getString(R.string.repeat));
-
-			menu.findItem(R.id.shuffle).setVisible(!shuffle);
-			menu.findItem(R.id.shuffle_disable).setVisible(shuffle);
-			menu.findItem(R.id.audio_effects).setVisible(eng.getAudioEffects() != null);
+			b.addItem(R.id.audio_effects, R.drawable.equalizer, R.string.audio_effects);
+			b.addItem(R.id.speed, R.drawable.speed, R.string.speed).setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
 		}
 
 		@Override
-		protected void initVideoMenu(OverlayMenu menu, Item item) {
-			super.initVideoMenu(menu, item);
+		protected void buildVideoMenu(OverlayMenu.Builder b) {
+			super.buildVideoMenu(b);
 
 			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
 			if (eng == null) return;
-			PlayableItem pi = (PlayableItem) item;
+			PlayableItem pi = (PlayableItem) getItem();
 
 			if (pi.isVideo()) {
-				if (eng.isAudioDelaySupported()) menu.findItem(R.id.audio_delay).setVisible(true);
-				if (eng.isSubtitleDelaySupported()) menu.findItem(R.id.subtitle_delay).setVisible(true);
-				if (eng.getAudioStreamInfo().size() > 1) menu.findItem(R.id.select_audio).setVisible(true);
-				if (!eng.getSubtitleStreamInfo().isEmpty())
-					menu.findItem(R.id.select_subtitles).setVisible(true);
+				if (eng.getAudioStreamInfo().size() > 1) {
+					b.addItem(R.id.select_audio_stream, R.string.select_audio_stream)
+							.setSubmenu(this::buildAudioStreamMenu);
+				}
+				if (!eng.getSubtitleStreamInfo().isEmpty()) {
+					b.addItem(R.id.select_subtitles, R.string.select_subtitles)
+							.setSubmenu(this::buildSubtitleStreamMenu);
+				}
 			}
+		}
+
+		private void buildRepeatMenu(OverlayMenu.Builder b) {
+			b.setSelectionHandler(this);
+			b.addItem(R.id.repeat_track, R.string.current_track);
+			b.addItem(R.id.repeat_folder, R.string.current_folder);
+		}
+
+		private void buildAudioStreamMenu(OverlayMenu.Builder b) {
+			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			if (eng == null) return;
+			AudioStreamInfo ai = eng.getCurrentAudioStreamInfo();
+			List<AudioStreamInfo> streams = eng.getAudioStreamInfo();
+			b.setSelectionHandler(this::audioStreamSelected);
+
+			for (int i = 0; i < streams.size(); i++) {
+				AudioStreamInfo s = streams.get(i);
+				b.addItem(UiUtils.getArrayItemId(i), s.toString()).setData(s).setChecked(s.equals(ai));
+			}
+		}
+
+		private boolean audioStreamSelected(OverlayMenuItem i) {
+			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			if (eng != null) {
+				AudioStreamInfo ai = i.getData();
+				PlayableItem pi = (PlayableItem) getItem();
+
+				if (ai.equals(eng.getCurrentAudioStreamInfo())) {
+					pi.getPrefs().setAudioIdPref(null);
+					eng.setCurrentAudioStream(null);
+				} else {
+					eng.setCurrentAudioStream(ai);
+					pi.getPrefs().setSubIdPref(ai.getId());
+				}
+			}
+			return true;
+		}
+
+		private void buildSubtitleStreamMenu(OverlayMenu.Builder b) {
+			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			if (eng == null) return;
+			SubtitleStreamInfo si = eng.getCurrentSubtitleStreamInfo();
+			List<SubtitleStreamInfo> streams = eng.getSubtitleStreamInfo();
+			b.setSelectionHandler(this::subtitleStreamSelected);
+
+			for (int i = 0; i < streams.size(); i++) {
+				SubtitleStreamInfo s = streams.get(i);
+				b.addItem(UiUtils.getArrayItemId(i), s.toString()).setData(s).setChecked(s.equals(si));
+			}
+		}
+
+		private boolean subtitleStreamSelected(OverlayMenuItem i) {
+			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			if (eng != null) {
+				SubtitleStreamInfo si = i.getData();
+				PlayableItem pi = (PlayableItem) getItem();
+
+				if (si.equals(eng.getCurrentSubtitleStreamInfo())) {
+					pi.getPrefs().setSubIdPref(null);
+					eng.setCurrentSubtitleStream(null);
+				} else {
+					eng.setCurrentSubtitleStream(si);
+					pi.getPrefs().setSubIdPref(si.getId());
+				}
+			}
+			return true;
 		}
 
 		@Override
 		public boolean menuItemSelected(OverlayMenuItem i) {
 			int id = i.getItemId();
-			OverlayMenu menu;
 			PlayableItem pi;
 			MediaEngine eng;
 
@@ -324,17 +398,6 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 					if ((eng != null) && (eng.getAudioEffects() != null))
 						getActivity().showFragment(R.id.audio_effects);
 					return true;
-				case R.id.speed:
-					new SpeedMenuHandler().show(getActivity().getContextMenu(), getItem());
-					return true;
-				case R.id.repeat_enable:
-				case R.id.repeat_disable:
-					menu = i.getMenu();
-					menu.setTitle(R.string.repeat);
-					menu.inflate(R.layout.repeat_menu);
-					menu.findItem(R.id.repeat_disable_all).setVisible(id == R.id.repeat_disable);
-					menu.show(this);
-					return true;
 				case R.id.repeat_track:
 				case R.id.repeat_folder:
 				case R.id.repeat_disable_all:
@@ -342,62 +405,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 					pi.setRepeatItemEnabled(id == R.id.repeat_track);
 					pi.getParent().getPrefs().setRepeatPref(id == R.id.repeat_folder);
 					return true;
-				case R.id.shuffle:
+				case R.id.shuffle_enable:
 				case R.id.shuffle_disable:
 					pi = (PlayableItem) getItem();
-					pi.getParent().getPrefs().setShufflePref(id == R.id.shuffle);
-					return true;
-				case R.id.select_audio:
-					eng = getActivity().getMediaSessionCallback().getEngine();
-					if (eng == null) return true;
-					AudioStreamInfo ai = eng.getCurrentAudioStreamInfo();
-					menu = i.getMenu();
-					menu.setTitle(R.string.select_audio_stream);
-					for (AudioStreamInfo s : eng.getAudioStreamInfo()) {
-						menu.addItem(R.id.select_audio_stream, null, s.toString()).setData(s).setChecked(s.equals(ai));
-					}
-					menu.show(this);
-					return true;
-				case R.id.select_subtitles:
-					eng = getActivity().getMediaSessionCallback().getEngine();
-					if (eng == null) return true;
-					SubtitleStreamInfo si = eng.getCurrentSubtitleStreamInfo();
-					menu = i.getMenu();
-					menu.setTitle(R.string.select_subtitles);
-					for (SubtitleStreamInfo s : eng.getSubtitleStreamInfo()) {
-						menu.addItem(R.id.select_subtitle_stream, null, s.toString()).setData(s).setChecked(s.equals(si));
-					}
-					menu.show(this);
-					return true;
-				case R.id.select_audio_stream:
-					eng = getActivity().getMediaSessionCallback().getEngine();
-					if (eng != null) {
-						ai = i.getData();
-						pi = (PlayableItem) getItem();
-
-						if (ai.equals(eng.getCurrentAudioStreamInfo())) {
-							pi.getPrefs().setAudioIdPref(null);
-							eng.setCurrentAudioStream(null);
-						} else {
-							eng.setCurrentAudioStream(ai);
-							pi.getPrefs().setSubIdPref(ai.getId());
-						}
-					}
-					return true;
-				case R.id.select_subtitle_stream:
-					eng = getActivity().getMediaSessionCallback().getEngine();
-					if (eng != null) {
-						si = i.getData();
-						pi = (PlayableItem) getItem();
-
-						if (si.equals(eng.getCurrentSubtitleStreamInfo())) {
-							pi.getPrefs().setSubIdPref(null);
-							eng.setCurrentSubtitleStream(null);
-						} else {
-							eng.setCurrentSubtitleStream(si);
-							pi.getPrefs().setSubIdPref(si.getId());
-						}
-					}
+					pi.getParent().getPrefs().setShufflePref(id == R.id.shuffle_enable);
 					return true;
 				default:
 					return super.menuItemSelected(i);
@@ -405,10 +416,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	private final class SpeedMenuHandler implements OverlayMenu.SelectionHandler, OverlayMenu.CloseHandler {
+	private final class SpeedMenuHandler implements OverlayMenu.CloseHandler {
 		private PrefStore store;
 
-		void show(OverlayMenu menu, Item item) {
+		void build(OverlayMenu.Builder b, Item item) {
 			store = new PrefStore(item);
 			PreferenceSet set = new PreferenceSet();
 
@@ -431,13 +442,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				o.pref = store.FOLDER;
 			});
 
-			set.addToMenu(menu, true);
-			menu.show(this, this);
-		}
-
-		@Override
-		public boolean menuItemSelected(OverlayMenuItem item) {
-			return true;
+			set.addToMenu(b, true);
+			b.setCloseHandlerHandler(this);
 		}
 
 		@Override

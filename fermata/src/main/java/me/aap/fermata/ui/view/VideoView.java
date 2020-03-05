@@ -75,7 +75,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	private void addTitle(Context context) {
 		TextView text = new TextView(context);
-		text.setPadding(toPx(10), toPx(10), toPx(10), 0);
+		int padding = (int) toPx(context, 10);
+		text.setPadding(padding, padding, padding, 0);
 		text.setTextSize(20);
 		text.setTextColor(Color.WHITE);
 		text.setVisibility(GONE);

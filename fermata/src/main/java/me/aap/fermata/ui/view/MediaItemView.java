@@ -217,7 +217,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		OverlayMenu menu = a.getContextMenu();
 		MediaItemMenuHandler handler = new MediaItemMenuHandler(menu, this);
 		getListView().discardSelection();
-		handler.show(R.layout.media_item_menu);
+		handler.show();
 		return true;
 	}
 

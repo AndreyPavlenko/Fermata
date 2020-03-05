@@ -1,11 +1,13 @@
 package me.aap.fermata.auto;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.apps.auto.sdk.CarActivity;
@@ -87,9 +89,7 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 
 	public void recreate() {
 		OverlayMenu menu = getActivityDelegate().getContextMenu();
-		menu.hide();
-		menu.addItem(1, getResources().getString(R.string.please_restart_app));
-		menu.show(i -> true);
+		menu.show(b -> b.addItem(1, getResources().getString(R.string.please_restart_app)));
 	}
 
 	public void finish() {
@@ -100,6 +100,13 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 	}
 
 	public void checkPermissions(String... perms) {
+		for (String perm : perms) {
+			if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+				OverlayMenu menu = getActivityDelegate().getContextMenu();
+				menu.show(b -> b.addItem(1, getResources().getString(R.string.use_phone_to_grant_perm)));
+				return;
+			}
+		}
 	}
 
 	@Override

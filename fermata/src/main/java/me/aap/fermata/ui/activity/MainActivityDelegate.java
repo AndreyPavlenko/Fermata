@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Build;
@@ -42,6 +41,7 @@ import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.VideoFragment;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.utils.function.BiConsumer;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -329,28 +329,39 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return findViewById(R.id.tool_menu);
 	}
 
-	public void initPlaylistMenu(OverlayMenu menu) {
+	public void addPlaylistMenu(OverlayMenu.Builder builder, Supplier<List<PlayableItem>> selection) {
+		addPlaylistMenu(builder, selection, () -> "");
+	}
+
+	public void addPlaylistMenu(OverlayMenu.Builder builder, Supplier<List<PlayableItem>> selection,
+															Supplier<? extends CharSequence> initName) {
 		boolean visible = !isCarActivity() || !getMediaServiceBinder().getLib().getPlaylists()
 				.getChildren().isEmpty();
-		menu.findItem(R.id.playlist_add).setVisible(visible);
+		if (!visible) return;
+
+		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
+				.setSubmenu(b -> createPlaylistMenu(b, selection, initName));
 	}
 
-	public void createPlaylistMenu(OverlayMenu menu) {
-		menu.hide();
-		Resources res = getResources();
+	private void createPlaylistMenu(OverlayMenu.Builder b, Supplier<List<PlayableItem>> selection,
+																	Supplier<? extends CharSequence> initName) {
+		List<? extends MediaLib.Item> playlists = getLib().getPlaylists().getChildren();
 
 		if (!isCarActivity()) {
-			menu.addItem(R.id.playlist_create, res.getDrawable(R.drawable.playlist_add, null),
-					res.getString(R.string.playlist_create));
+			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
+					.setHandler(i -> createPlaylist(selection.get(), initName));
 		}
 
-		for (MediaLib.Item pl : getLib().getPlaylists().getChildren()) {
-			menu.addItem(R.id.playlist_add_item, res.getDrawable(R.drawable.playlist, null), pl.getName());
+		for (int i = 0; i < playlists.size(); i++) {
+			MediaLib.Item pl = playlists.get(i);
+			String name = pl.getName();
+			b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name)
+					.setHandler(item -> addToPlaylist(name, selection.get()));
 		}
 	}
 
-	public void createPlaylist(List<PlayableItem> selection, String initName) {
-		UiUtils.queryText(getContext(), R.string.playlist_name, initName, name -> {
+	private boolean createPlaylist(List<PlayableItem> selection, Supplier<? extends CharSequence> initName) {
+		UiUtils.queryText(getContext(), R.string.playlist_name, initName.get(), name -> {
 			discardSelection();
 			if (name == null) return;
 
@@ -361,9 +372,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				if (f != null) f.getAdapter().reload();
 			}
 		});
+		return true;
 	}
 
-	public void addToPlaylist(String name, List<PlayableItem> selection) {
+	private boolean addToPlaylist(String name, List<PlayableItem> selection) {
 		discardSelection();
 		for (MediaLib.Item pl : getLib().getPlaylists().getChildren()) {
 			if (name.equals(pl.getName())) {
@@ -373,6 +385,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				break;
 			}
 		}
+		return true;
 	}
 
 	public void removeFromPlaylist(MediaLib.Playlist pl, List<PlayableItem> selection) {
