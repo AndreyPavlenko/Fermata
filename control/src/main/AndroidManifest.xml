@@ -1,9 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="me.aap.fermata">
+    package="me.aap.fermata.auto.control">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <uses-permission
@@ -14,16 +12,11 @@
         tools:node="remove" />
 
     <application
-        android:name="me.aap.fermata.FermataApplication"
-        android:allowBackup="true"
-        android:fullBackupContent="@xml/backup_descriptor"
+        android:name="android.app.Application"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:launchMode="singleTop"
-        android:requestLegacyExternalStorage="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme.Dark">
+        android:supportsRtl="true">
 
         <meta-data
             android:name="com.google.android.gms.car.application"
@@ -31,29 +24,15 @@
         <meta-data
             android:name="com.google.android.gms.car.notification.SmallIcon"
             android:resource="@drawable/ic_notification" />
-        <meta-data
-            android:name="com.google.android.gms.car.application.theme"
-            android:resource="@style/AppTheme.Dark" />
-
-        <activity
-            android:name="me.aap.fermata.ui.activity.MainActivity"
-            android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
 
         <service
-            android:name="me.aap.fermata.media.service.FermataMediaService"
+            android:name="me.aap.fermata.auto.control.FermataMediaServiceControl"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
-                <action android:name="me.aap.fermata.action.MediaService" />
-                <action android:name="me.aap.fermata.action.CarMediaService" />
                 <action android:name="me.aap.fermata.action.ControlService" />
             </intent-filter>
         </service>

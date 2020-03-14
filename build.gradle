@@ -1,4 +1,6 @@
 ext {
+    VERSION_CODE = 46
+    VERSION_NAME = "1.5.0"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 29
     SDK_COMPILE_VERSION = 29
@@ -33,6 +35,7 @@ subprojects {
 
     switch (name) {
         case 'fermata':
+        case 'control':
             apply plugin: 'com.android.application'
             break
         case 'vlc':

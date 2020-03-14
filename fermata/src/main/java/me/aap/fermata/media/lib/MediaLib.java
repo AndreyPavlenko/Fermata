@@ -19,13 +19,13 @@ import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
-import me.aap.utils.function.Consumer;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.NaturalOrderComparator;
+import me.aap.utils.function.Consumer;
 
 /**
  * @author Andrey Pavlenko
@@ -57,9 +57,17 @@ public interface MediaLib {
 
 	void setLastPlayed(PlayableItem i, long position);
 
-	void getChildren(String parentMediaId, MediaBrowserServiceCompat.Result<List<MediaItem>> result);
+	void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result);
 
-	void search(String query, MediaBrowserServiceCompat.Result<List<MediaItem>> result);
+	default void getChildren(String parentMediaId, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
+		getChildren(parentMediaId, new MediaLibResult.Wrapper(result));
+	}
+
+	void search(String query, MediaLibResult<List<MediaItem>> result);
+
+	default void search(String query, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
+		search(query, new MediaLibResult.Wrapper(result));
+	}
 
 	default void clearCache() {
 	}

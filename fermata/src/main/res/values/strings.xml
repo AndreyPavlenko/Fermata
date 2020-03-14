@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name_mobile" translatable="false">Fermata</string>
     <string name="app_name_auto" translatable="false">Fermata Auto</string>
+    <string name="app_name_control" translatable="false">Fermata Control</string>
     <string name="media_service_name" translatable="false">Fermata</string>
     <string name="engine_mp_name" translatable="false">MediaPlayer</string>
     <string name="engine_exo_name" translatable="false">ExoPlayer</string>

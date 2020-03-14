@@ -10,6 +10,7 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.utils.io.FileUtils;
 
@@ -56,5 +57,10 @@ public class Utils {
 
 	public static boolean isVideoMimeType(String mime) {
 		return (mime != null) && mime.startsWith("video/");
+	}
+
+	@SuppressWarnings("ConstantConditions")
+	public static boolean isAutoFlavor() {
+		return BuildConfig.AUTO;
 	}
 }

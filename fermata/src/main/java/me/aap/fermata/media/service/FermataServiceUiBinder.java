@@ -36,8 +36,9 @@ import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING
 import static android.view.View.GONE;
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
+import static me.aap.fermata.media.service.FermataMediaService.ACTION_CAR_MEDIA_SERVICE;
+import static me.aap.fermata.media.service.FermataMediaService.ACTION_MEDIA_SERVICE;
 import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_NOTIF_COLOR;
-import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_SERVICE_BINDER;
 
 /**
  * @author Andrey Pavlenko
@@ -81,11 +82,11 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		this.resultHandler = resultHandler;
 	}
 
-	public static void bind(@NonNull Context ctx, int notifColor,
+	public static void bind(@NonNull Context ctx, int notifColor, boolean isAuto,
 													@NonNull BiConsumer<FermataServiceUiBinder, Throwable> resultHandler) {
 		FermataServiceUiBinder con = new FermataServiceUiBinder(ctx, resultHandler);
 		Intent i = new Intent(ctx, FermataMediaService.class);
-		i.putExtra(INTENT_ATTR_SERVICE_BINDER, true);
+		i.setAction(isAuto ? ACTION_CAR_MEDIA_SERVICE : ACTION_MEDIA_SERVICE);
 		i.putExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
 
 		if (!ctx.bindService(i, con, Context.BIND_AUTO_CREATE)) {

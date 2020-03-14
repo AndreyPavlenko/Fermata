@@ -67,9 +67,11 @@ import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_T
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_STOP;
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ALL;
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_GROUP;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_NONE;
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ONE;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_ALL;
+import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_NONE;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_FAST_FORWARDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
@@ -92,15 +94,9 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
 /**
  * @author Andrey Pavlenko
  */
-public class MediaSessionCallback extends MediaSessionCompat.Callback implements
+public class MediaSessionCallback extends MediaSessionCompat.Callback implements SharedConstants,
 		MediaEngine.Listener, AudioManager.OnAudioFocusChangeListener,
 		EventBroadcaster<MediaSessionCallback.Listener>, Closeable {
-	public static final String CUSTOM_ACTION_RW = "me.aap.fermata.action.rewind";
-	public static final String CUSTOM_ACTION_FF = "me.aap.fermata.action.fastForward";
-	public static final String CUSTOM_ACTION_REPEAT_ENABLE = "me.aap.fermata.action.repeat.enable";
-	public static final String CUSTOM_ACTION_REPEAT_DISABLE = "me.aap.fermata.action.repeat.disable";
-	public static final String CUSTOM_ACTION_FAVORITES_ADD = "me.aap.fermata.action.favorites.add";
-	public static final String CUSTOM_ACTION_FAVORITES_REMOVE = "me.aap.fermata.action.favorites.remove";
 	public static final String EXTRA_POS = "me.aap.fermata.extra.pos";
 	private static final String TAG = "MediaSessionCallback";
 	private static final long SUPPORTED_ACTIONS = ACTION_PLAY | ACTION_STOP | ACTION_PAUSE | ACTION_PLAY_PAUSE
@@ -153,7 +149,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				ctx.getString(R.string.repeat), R.drawable.repeat).build();
 		customRepeatDisable = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_REPEAT_DISABLE,
 				ctx.getString(R.string.repeat_disable), R.drawable.repeat_filled).build();
-
 		customFavoritesAdd = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_FAVORITES_ADD,
 				ctx.getString(R.string.favorites_add), R.drawable.favorite).build();
 		customFavoritesRemove = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_FAVORITES_REMOVE,
@@ -261,38 +256,40 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@Override
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
 		KeyEvent ke = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+		if ((ke != null) && onMediaButtonEvent(ke)) return true;
+		else return super.onMediaButtonEvent(mediaButtonEvent);
+	}
 
-		if (ke != null) {
-			if (ke.getAction() == KeyEvent.ACTION_DOWN) {
-				switch (ke.getKeyCode()) {
-					case KeyEvent.KEYCODE_MEDIA_NEXT:
-					case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-						long time = keyPressTime = System.currentTimeMillis();
-						boolean ff = ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT;
-						handler.postDelayed(() -> delayedNextPrev(time, ff), 1000);
-						return true;
-				}
-			} else if (ke.getAction() == KeyEvent.ACTION_UP) {
-				switch (ke.getKeyCode()) {
-					case KeyEvent.KEYCODE_MEDIA_NEXT:
-					case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-						long holdTime = System.currentTimeMillis() - keyPressTime;
-						keyPressTime = 0;
+	public boolean onMediaButtonEvent(KeyEvent ke) {
+		if (ke.getAction() == KeyEvent.ACTION_DOWN) {
+			switch (ke.getKeyCode()) {
+				case KeyEvent.KEYCODE_MEDIA_NEXT:
+				case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+					long time = keyPressTime = System.currentTimeMillis();
+					boolean ff = ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT;
+					handler.postDelayed(() -> delayedNextPrev(time, ff), 1000);
+					return true;
+			}
+		} else if (ke.getAction() == KeyEvent.ACTION_UP) {
+			switch (ke.getKeyCode()) {
+				case KeyEvent.KEYCODE_MEDIA_NEXT:
+				case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+					long holdTime = System.currentTimeMillis() - keyPressTime;
+					keyPressTime = 0;
 
-						if (holdTime <= 1000) {
-							if (ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT) {
-								onSkipToNext();
-							} else {
-								onSkipToPrevious();
-							}
+					if (holdTime <= 1000) {
+						if (ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT) {
+							onSkipToNext();
+						} else {
+							onSkipToPrevious();
 						}
+					}
 
-						return true;
-				}
+					return true;
 			}
 		}
 
-		return super.onMediaButtonEvent(mediaButtonEvent);
+		return false;
 	}
 
 	public void close() {
@@ -415,7 +412,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (getPlaybackState().getState() != PlaybackStateCompat.STATE_STOPPED) {
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 					.setState(PlaybackStateCompat.STATE_STOPPED, 0, 1.0f).build();
-			setPlaybackState(state);
+			setPlaybackState(state, null, Collections.emptyList(), REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
 		}
 
 		if (engine != null) {
@@ -545,13 +542,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 	}
 
-	void repeatEnableDisable(boolean enable) {
+	private void repeatEnableDisable(boolean enable) {
 		PlayableItem i = getCurrentItem();
 		if (i == null) return;
 
 		PlaybackStateCompat state = getPlaybackState();
 		List<PlaybackStateCompat.CustomAction> actions = state.getCustomActions();
-		i.setRepeatItemEnabled(enable);
+		i.getParent().getPrefs().setRepeatPref(enable);
 
 		if (enable) {
 			CollectionUtils.replace(actions, customRepeatEnable, customRepeatDisable);
@@ -577,13 +574,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		else favorites.removeItem(i);
 
 		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
+		List<MediaSessionCompat.QueueItem> queue = null;
 
 		if (i.getParent() == favorites) {
-			session.setQueue(favorites.getQueue());
+			session.setQueue(queue = favorites.getQueue());
 			b.setActiveQueueItemId(i.getQueueId()).build();
 		}
 
-		setPlaybackState(b.build());
+		setPlaybackState(b.build(), queue);
 	}
 
 	@Override
@@ -677,21 +675,27 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		engine.setPosition((pos > dur) ? 0 : pos);
 
 		BrowsableItemPrefs p = i.getParent().getPrefs();
-		MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder(i.getMediaData());
-		meta.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getTitle());
-		meta.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, i.getSubtitle());
-		session.setMetadata(meta.build());
-		session.setShuffleMode(p.getShufflePref() ? SHUFFLE_MODE_ALL : SHUFFLE_MODE_NONE);
-		setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
-		setPlaybackState(createPlayingState(i, !playOnPrepared, pos, speed).build());
+		int shuffle = p.getShufflePref() ? SHUFFLE_MODE_ALL : SHUFFLE_MODE_NONE;
+		int repeat;
 
 		if (p.getRepeatPref()) {
-			session.setRepeatMode(REPEAT_MODE_ALL);
+			repeat = REPEAT_MODE_ALL;
 		} else if (i.getId().equals(p.getRepeatItemPref())) {
-			session.setRepeatMode(REPEAT_MODE_ONE);
+			repeat = REPEAT_MODE_ONE;
 		} else {
-			session.setRepeatMode(REPEAT_MODE_NONE);
+			repeat = REPEAT_MODE_NONE;
 		}
+
+		MediaMetadataCompat.Builder mb = new MediaMetadataCompat.Builder(i.getMediaData());
+		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getTitle());
+		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, i.getSubtitle());
+		MediaMetadataCompat meta = mb.build();
+
+		session.setMetadata(meta);
+		session.setRepeatMode(repeat);
+		session.setShuffleMode(shuffle);
+		setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
+		setPlaybackState(createPlayingState(i, !playOnPrepared, pos, speed).build(), meta, null, repeat, shuffle);
 
 		if (playOnPrepared) {
 			lib.setLastPlayed(i, pos);
@@ -779,31 +783,36 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private void playItem(PlayableItem i, long pos) {
-		BrowsableItem p = i.getParent();
 		PlayableItem current = getCurrentItem();
-
-		if (current != null) {
-			if (!p.equals(current.getParent())) {
-				lib.setLastPlayed(current, engine.getPosition());
-				session.setQueue(p.getQueue());
-			} else {
-				lib.setLastPlayed(i, pos);
-			}
-		} else {
-			session.setQueue(p.getQueue());
-		}
-
+		long currentPos = (current != null) ? engine.getPosition() : 0;
 		engine = engineManager.createEngine(engine, i, this);
-		Log.i(getClass().getName(), "MediaEngine " + engine + " created for " + i);
 
 		if (engine == null) {
+			if (current != null) lib.setLastPlayed(current, currentPos);
 			String msg = lib.getContext().getResources().getString(R.string.err_unsupported_source_type, i);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder()
 					.setActions(SUPPORTED_ACTIONS)
 					.setState(PlaybackStateCompat.STATE_ERROR, 0, 1.0f)
 					.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
-			setPlaybackState(state);
+			setPlaybackState(state, Collections.emptyList());
 			return;
+		}
+
+		BrowsableItem p = i.getParent();
+
+		if (current != null) {
+			if (!p.equals(current.getParent())) {
+				lib.setLastPlayed(current, currentPos);
+				List<MediaSessionCompat.QueueItem> queue = p.getQueue();
+				session.setQueue(queue);
+				service.updateSessionState(null, null, queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
+			} else {
+				lib.setLastPlayed(i, pos);
+			}
+		} else {
+			List<MediaSessionCompat.QueueItem> queue = p.getQueue();
+			session.setQueue(queue);
+			service.updateSessionState(null, null, queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
 		}
 
 		playOnPrepared = true;
@@ -817,8 +826,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 																												 long position, float speed) {
 		int state = pause ? PlaybackStateCompat.STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING;
 		BrowsableItemPrefs p = i.getParent().getPrefs();
-		String repeatItem = p.getRepeatItemPref();
-		boolean repeat = (repeatItem != null) && repeatItem.equals(i.getId());
+		boolean repeat = p.getRepeatPref();
 		return new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(state, position, speed)
 				.setActiveQueueItemId(i.getQueueId())
@@ -828,8 +836,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state) {
+		setPlaybackState(state, null);
+	}
+
+	private void setPlaybackState(PlaybackStateCompat state, List<MediaSessionCompat.QueueItem> queue) {
+		setPlaybackState(state, null, queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
+	}
+
+	private void setPlaybackState(PlaybackStateCompat state, MediaMetadataCompat meta,
+																List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
 		currentState = state;
 		session.setPlaybackState(state);
+		service.updateSessionState(state, meta, queue, repeat, shuffle);
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 
@@ -843,7 +861,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	@NonNull
-	private PlaybackStateCompat getPlaybackState() {
+	PlaybackStateCompat getPlaybackState() {
 		return currentState;
 	}
 

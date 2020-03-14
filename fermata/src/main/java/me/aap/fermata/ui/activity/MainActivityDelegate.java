@@ -90,7 +90,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			TypedArray typedArray = getTheme().obtainStyledAttributes(new int[]{android.R.attr.statusBarColor});
 			int notifColor = typedArray.getColor(0, Color.parseColor(DEFAULT_NOTIF_COLOR));
 			typedArray.recycle();
-			FermataServiceUiBinder.bind(FermataApplication.get(), notifColor, this::onMediaServiceBind);
+			FermataServiceUiBinder.bind(FermataApplication.get(), notifColor, isCarActivity(),
+					this::onMediaServiceBind);
 		} else {
 			if (mediaServiceBinder != null) init();
 		}

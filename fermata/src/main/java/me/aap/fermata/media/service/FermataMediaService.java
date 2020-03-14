@@ -1,5 +1,6 @@
 package me.aap.fermata.media.service;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -40,13 +41,18 @@ import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 
+import static me.aap.fermata.media.service.ControlServiceConnection.ACTION_CONTROL_SERVICE;
+import static me.aap.fermata.util.Utils.isAutoFlavor;
+import static me.aap.utils.misc.MiscUtils.isPackageInstalled;
+
 
 /**
  * @author Andrey Pavlenko
  */
-public class FermataMediaService extends MediaBrowserServiceCompat {
+public class FermataMediaService extends MediaBrowserServiceCompat implements SharedConstants {
+	public static final String ACTION_MEDIA_SERVICE = "me.aap.fermata.action.MediaService";
+	public static final String ACTION_CAR_MEDIA_SERVICE = "me.aap.fermata.action.CarMediaService";
 	public static final String INTENT_ATTR_NOTIF_COLOR = "me.aap.fermata.notif.color";
-	public static final String INTENT_ATTR_SERVICE_BINDER = "me.aap.fermata.service.binder";
 	public static final String DEFAULT_NOTIF_COLOR = "#546e7a";
 	private static final int INTENT_CODE = 1;
 	private static final String INTENT_PREV = "me.aap.fermata.action.prev";
@@ -59,17 +65,12 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private static final String INTENT_FAVORITE_ADD = "me.aap.fermata.action.favorite.add";
 	private static final String INTENT_FAVORITE_REMOVE = "me.aap.fermata.action.favorite.remove";
 	private static final String EXTRA_MEDIA_SEARCH_SUPPORTED = "android.media.browse.SEARCH_SUPPORTED";
-	private static final String CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTED";
-	private static final String CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT";
-	private static final String CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT";
-	private static final int CONTENT_STYLE_LIST_ITEM_HINT_VALUE = 1;
-	@SuppressWarnings("unused")
-	private static final int CONTENT_STYLE_GRID_ITEM_HINT_VALUE = 2;
 	private static final int NOTIF_ID = 1;
 	private static final String NOTIF_CHANNEL_ID = "Fermata";
 	private MediaLib lib;
 	private MediaSessionCompat session;
-	private MediaSessionCallback callback;
+	MediaSessionCallback callback;
+	FermataToControlConnection controlConnection;
 
 	private BroadcastReceiver intentReceiver;
 	private int notifColor;
@@ -111,7 +112,9 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		super.onDestroy();
 		NotificationManagerCompat.from(this).cancel(NOTIF_ID);
 		if (intentReceiver != null) unregisterReceiver(intentReceiver);
+		if (controlConnection != null) controlConnection.disconnect(true);
 		intentReceiver = null;
+		controlConnection = null;
 		callback.close();
 		session.release();
 	}
@@ -124,12 +127,31 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		if (intent.getBooleanExtra(INTENT_ATTR_SERVICE_BINDER, false)) {
-			notifColor = intent.getIntExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
-			return new ServiceBinder();
-		} else {
-			return super.onBind(intent);
+		String action = intent.getAction();
+		if (action == null) return super.onBind(intent);
+
+		switch (action) {
+			case ACTION_CAR_MEDIA_SERVICE:
+				if (isAutoFlavor()) connectToControl();
+			case ACTION_MEDIA_SERVICE:
+				notifColor = intent.getIntExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
+				return new ServiceBinder();
+			case ACTION_CONTROL_SERVICE:
+				return connectToControl();
 		}
+
+		return super.onBind(intent);
+	}
+
+	private IBinder connectToControl() {
+		if (!isPackageInstalled(this, FermataToControlConnection.PKG_ID)) return null;
+
+		if (controlConnection == null) {
+			controlConnection = new FermataToControlConnection(this);
+			controlConnection.connect();
+		}
+
+		return controlConnection.getBinder();
 	}
 
 	@Override
@@ -162,6 +184,15 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		if (lib != null) lib.clearCache();
 	}
 
+	void updateSessionState(PlaybackStateCompat playbackState, MediaMetadataCompat meta,
+													List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
+		if (isAutoFlavor() && (controlConnection != null)) {
+			MediaSessionState st = new MediaSessionState(playbackState, meta, queue, repeat, shuffle);
+			controlConnection.sendPlaybackState(st);
+		}
+	}
+
+	@SuppressLint("SwitchIntDef")
 	void updateNotification(int st, PlayableItem currentItem) {
 		switch (st) {
 			case PlaybackStateCompat.STATE_NONE:
@@ -313,8 +344,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		return PendingIntent.getBroadcast(this, INTENT_CODE, intent, 0);
 	}
 
-	public class ServiceBinder extends Binder {
-
+	public final class ServiceBinder extends Binder {
 		public MediaSessionCallback getMediaSessionCallback() {
 			return callback;
 		}

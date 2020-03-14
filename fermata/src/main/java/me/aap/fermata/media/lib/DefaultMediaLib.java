@@ -6,7 +6,6 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.media.MediaBrowserServiceCompat;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -120,7 +119,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	}
 
 	@Override
-	public void getChildren(String parentMediaId, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
+	public void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result) {
 		if (getRootId().equals(parentMediaId)) {
 			List<MediaItem> items = new ArrayList<>(3);
 			Item i = getLastPlayedItem();
@@ -128,29 +127,29 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			items.add(getFolders().asMediaItem());
 			items.add(getFavorites().asMediaItem());
 			items.add(getPlaylists().asMediaItem());
-			result.sendResult(items);
+			result.sendResult(items, null);
 		} else {
 			Item i = getItem(parentMediaId);
 
 			if (i instanceof BrowsableItem) {
 				result.detach();
-				((BrowsableItem) i).getChildren(c -> result.sendResult(toMediaItems(c)));
+				((BrowsableItem) i).getChildren(c -> result.sendResult(toMediaItems(c), null));
 			} else {
-				result.sendResult(Collections.emptyList());
+				result.sendResult(Collections.emptyList(), null);
 			}
 		}
 	}
 
-	public void search(String query, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
+	public void search(String query, MediaLibResult<List<MediaItem>> result) {
 		if ((query == null) || (query.length() < 3)) {
-			result.sendResult(Collections.emptyList());
+			result.sendResult(Collections.emptyList(), null);
 			return;
 		}
 
 		Pattern q = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE);
 		List<MediaItem> r = new ArrayList<>();
 		forEach(getFolders().getChildren(), i -> i.search(q, r));
-		result.sendResult(r);
+		result.sendResult(r, null);
 	}
 
 	@Override

@@ -1,0 +1,44 @@
+android {
+    defaultConfig {
+        applicationId "me.aap.fermata.auto.control"
+        versionCode VERSION_CODE
+        versionName VERSION_NAME
+        setProperty("archivesBaseName", "fermata-auto-control-$versionName")
+    }
+
+    if (localProps['storeFile'] != null) {
+        signingConfigs {
+            release {
+                storeFile file(localProps["storeFile"])
+                storePassword localProps["storePassword"]
+                keyAlias localProps["keyAlias"]
+                keyPassword localProps["keyPassword"]
+            }
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java', '../fermata/src/share/java']
+            res.srcDirs = ['src/main/res', '../fermata/src/share/res']
+        }
+    }
+
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), '../proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+
+        debug {
+            debuggable true
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.media:media:1.1.0'
+}
