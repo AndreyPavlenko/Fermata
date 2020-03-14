@@ -42,11 +42,12 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 
 			if (a.hasCurrent())
 				b.addItem(R.id.nav_got_to_current, R.drawable.go_to_current, R.string.got_to_current);
-			b.addItem(R.id.nav_settings, R.drawable.settings, R.string.settings);
-			if (!a.isCarActivity()) b.addItem(R.id.nav_exit, R.drawable.exit, R.string.exit);
 
 			ActivityFragment f = a.getActiveFragment();
 			if (f instanceof MainActivityFragment) ((MainActivityFragment) f).contributeToNavBarMenu(b);
+
+			b.addItem(R.id.nav_settings, R.drawable.settings, R.string.settings);
+			if (!a.isCarActivity()) b.addItem(R.id.nav_exit, R.drawable.exit, R.string.exit);
 		});
 	}
 

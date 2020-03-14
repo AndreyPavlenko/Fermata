@@ -6,7 +6,6 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
-import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Folders;
@@ -141,7 +140,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setSubmenu(this::buildBookmarksMenu);
 		}
 		if (!(bi instanceof Playlist)) {
-			a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true));
+			a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true), () -> bi.getName());
 		}
 		if (parent instanceof Folders) {
 			b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
