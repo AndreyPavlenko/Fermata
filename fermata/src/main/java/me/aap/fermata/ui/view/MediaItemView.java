@@ -24,6 +24,7 @@ import com.google.android.material.checkbox.MaterialCheckBox;
 import java.util.concurrent.Future;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -126,23 +127,32 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	private void setDescription(Item item, MediaDescriptionCompat dsc) {
-		Bitmap img = dsc.getIconBitmap();
+		boolean setIcon = true;
 		ImageView icon = getIcon();
 		icon.clearAnimation();
 
-		if (img != null) {
-			icon.setImageBitmap(img);
-			icon.setImageTintList(null);
-		} else {
-			Uri uri = dsc.getIconUri();
+		if (item instanceof BrowsableItem) {
+			Bitmap img = dsc.getIconBitmap();
+			icon.clearAnimation();
 
-			if (uri != null) {
-				icon.setImageURI(uri);
+			if (img != null) {
+				icon.setImageBitmap(img);
 				icon.setImageTintList(null);
+				setIcon = false;
 			} else {
-				icon.setImageTintList(iconTint);
-				icon.setImageResource(item.getIcon());
+				Uri uri = dsc.getIconUri();
+
+				if (uri != null) {
+					icon.setImageURI(uri);
+					icon.setImageTintList(null);
+					setIcon = false;
+				}
 			}
+		}
+
+		if (setIcon) {
+			icon.setImageTintList(iconTint);
+			icon.setImageResource(item.getIcon());
 		}
 
 		getTitle().setText(item.getTitle());

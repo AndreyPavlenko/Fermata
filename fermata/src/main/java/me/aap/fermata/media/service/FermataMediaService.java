@@ -229,18 +229,15 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 				.setShowWhen(false)
 				.setOnlyAlertOnce(true);
 
-		Bitmap largeIcon = null;
 
 		if (mediaMetadata != null) {
 			MediaDescriptionCompat description = mediaMetadata.getDescription();
-			largeIcon = description.getIconBitmap();
+			Bitmap largeIcon = description.getIconBitmap();
 			builder.setContentTitle(description.getTitle())
 					.setContentText(description.getSubtitle())
 					.setSubText(description.getDescription());
+			if (!callback.isDefaultIcon(largeIcon)) builder.setLargeIcon(largeIcon);
 		}
-
-		if (largeIcon == null) largeIcon = i.getParent().getMediaDescription().getIconBitmap();
-		builder.setLargeIcon(largeIcon);
 
 		builder
 				.addAction(actionPrev)

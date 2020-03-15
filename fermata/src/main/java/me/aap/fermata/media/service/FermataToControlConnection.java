@@ -21,6 +21,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andrey Pavlenko
@@ -92,7 +93,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 				break;
 			case MSG_CUSTOM_ACTION:
 				b = msg.getData();
-				getService().callback.onCustomAction(b.getString(KEY), null);
+				getService().callback.onCustomAction(requireNonNull(b.getString(KEY)), null);
 				break;
 			default:
 				Log.e(getClass().getName(), "Unknown message received: " + msg.what);
@@ -141,10 +142,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 			PlayableItem i = cb.getCurrentItem();
 
 			if (i != null) {
-				MediaMetadataCompat.Builder mb = new MediaMetadataCompat.Builder(i.getMediaData());
-				mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getTitle());
-				mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, i.getSubtitle());
-				meta = mb.build();
+				meta = cb.getMetadata(i);
 				queue = i.getParent().getQueue();
 			}
 

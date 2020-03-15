@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
@@ -31,6 +33,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -47,9 +50,11 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.UiUtils;
 
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
 import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
@@ -686,11 +691,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			repeat = REPEAT_MODE_NONE;
 		}
 
-		MediaMetadataCompat.Builder mb = new MediaMetadataCompat.Builder(i.getMediaData());
-		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getTitle());
-		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, i.getSubtitle());
-		MediaMetadataCompat meta = mb.build();
-
+		MediaMetadataCompat meta = getMetadata(i);
 		session.setMetadata(meta);
 		session.setRepeatMode(repeat);
 		session.setShuffleMode(shuffle);
@@ -701,6 +702,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			lib.setLastPlayed(i, pos);
 			start(engine, speed);
 		}
+	}
+
+	MediaMetadataCompat getMetadata(PlayableItem i) {
+		MediaMetadataCompat meta = i.getMediaData();
+		MediaMetadataCompat.Builder mb = new MediaMetadataCompat.Builder(meta);
+		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getTitle());
+		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, i.getSubtitle());
+
+		if (meta.getBitmap(METADATA_KEY_ALBUM_ART) == null) {
+			mb.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultIcon());
+		}
+
+		return mb.build();
 	}
 
 	@Override
@@ -997,6 +1011,25 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	private void stopTimer() {
 		timer = null;
+	}
+
+	private Bitmap defaultIcon;
+
+	private Bitmap getDefaultIcon() {
+		if (defaultIcon == null) {
+			try {
+				FermataApplication app = FermataApplication.get();
+				Drawable d = app.getPackageManager().getApplicationIcon(app.getPackageName());
+				defaultIcon = UiUtils.getBitmap(d);
+			} catch (Exception ex) {
+				Log.e(getClass().getName(), "Failed to get application icon", ex);
+			}
+		}
+		return defaultIcon;
+	}
+
+	boolean isDefaultIcon(Bitmap icon) {
+		return (icon != null) && (defaultIcon != null) && (icon.sameAs(defaultIcon));
 	}
 
 	public interface Listener {

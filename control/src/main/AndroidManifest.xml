@@ -21,9 +21,6 @@
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
-        <meta-data
-            android:name="com.google.android.gms.car.notification.SmallIcon"
-            android:resource="@drawable/ic_notification" />
 
         <service
             android:name="me.aap.fermata.auto.control.FermataMediaServiceControl"

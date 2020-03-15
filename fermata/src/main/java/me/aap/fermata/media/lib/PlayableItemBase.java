@@ -1,5 +1,6 @@
 package me.aap.fermata.media.lib;
 
+import android.graphics.Bitmap;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
@@ -16,6 +17,7 @@ import me.aap.utils.concurrent.CompletedFuture;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.text.TextUtils;
 
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -91,8 +93,16 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 
 	public MediaMetadataCompat getMediaData() {
 		if (mediaData == null) {
+			String id = getOrigId();
+
+			if (!id.equals(getId())) {
+				PlayableItem i = (PlayableItem) getLib().getItem(id);
+				if (i != null) return mediaData = i.getMediaData();
+			}
+
 			mediaData = getMediaMetadataBuilder().build();
 		}
+
 		return mediaData;
 	}
 
@@ -100,22 +110,38 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	public Future<Void> getMediaData(Consumer<MediaMetadataCompat> consumer) {
 		MediaMetadataCompat meta = mediaData;
 
-		if (meta == null) {
-			return (Future<Void>) FermataApplication.get().getExecutor().submit(() -> {
-				MediaMetadataCompat m = getMediaMetadataBuilder().build();
-				FermataApplication.get().getHandler().post(() -> {
-					if (mediaData == null) mediaData = m;
-					consumer.accept(mediaData);
-				});
-			});
-		} else {
+		if (meta != null) {
 			consumer.accept(meta);
 			return CompletedFuture.nullResult();
 		}
+
+		String id = getOrigId();
+
+		if (!id.equals(getId())) {
+			PlayableItem i = (PlayableItem) getLib().getItem(id);
+
+			if (i != null) {
+				return i.getMediaData(m -> {
+					mediaData = m;
+					consumer.accept(m);
+				});
+			}
+		}
+
+		return (Future<Void>) FermataApplication.get().getExecutor().submit(() -> {
+			MediaMetadataCompat m = getMediaMetadataBuilder().build();
+			FermataApplication.get().getHandler().post(() -> {
+				if (mediaData == null) mediaData = m;
+				consumer.accept(mediaData);
+			});
+		});
 	}
 
 	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
-		return new MediaMetadataCompat.Builder();
+		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
+		Bitmap bm = getParent().getMediaDescription().getIconBitmap();
+		if (bm != null) b.putBitmap(METADATA_KEY_ALBUM_ART, bm);
+		return b;
 	}
 
 	@Override

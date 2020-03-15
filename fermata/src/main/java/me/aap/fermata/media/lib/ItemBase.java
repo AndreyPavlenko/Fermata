@@ -137,9 +137,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 
 	@Override
 	public MediaDescriptionCompat getMediaDescription() {
-		if (mediaDescr == null) {
-			mediaDescr = getMediaDescriptionBuilder().build();
-		}
+		if (mediaDescr == null) mediaDescr = getMediaDescriptionBuilder().build();
 		return mediaDescr;
 	}
 
