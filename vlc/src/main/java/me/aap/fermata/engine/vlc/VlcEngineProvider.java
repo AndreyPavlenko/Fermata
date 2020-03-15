@@ -1,7 +1,10 @@
 package me.aap.fermata.engine.vlc;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.media.AudioManager;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
 import android.util.Log;
 
@@ -16,6 +19,12 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineProvider;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.utils.io.IoUtils;
+
+import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseNetwork;
 
 /**
  * @author Andrey Pavlenko
@@ -68,11 +77,23 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	@Override
 	public boolean getMediaMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
 		Media media = null;
+		ParcelFileDescriptor fd = null;
 
 		try {
-			media = new Media(getVlc(), item.getLocation());
-			media.parse();
+			Uri uri = item.getLocation();
+
+			if ("content".equals(uri.getScheme())) {
+				ContentResolver cr = getVlc().getAppContext().getContentResolver();
+				fd = cr.openFileDescriptor(uri, "r");
+				media = (fd != null) ? new Media(getVlc(), fd.getFileDescriptor()) : new Media(getVlc(), uri);
+			} else {
+				media = new Media(getVlc(), uri);
+			}
+
+			media.parse(ParseLocal | ParseNetwork | FetchLocal | FetchNetwork);
+
 			String m = media.getMeta(IMedia.Meta.Title);
+			if ((m != null) && (fd != null) && m.startsWith("fd://")) m = null;
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
 			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
 
@@ -95,6 +116,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			return false;
 		} finally {
 			if (media != null) media.release();
+			IoUtils.close(fd);
 		}
 	}
 

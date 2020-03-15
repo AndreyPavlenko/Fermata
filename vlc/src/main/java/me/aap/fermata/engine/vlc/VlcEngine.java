@@ -1,10 +1,14 @@
 package me.aap.fermata.engine.vlc;
 
+import android.content.ContentResolver;
 import android.graphics.Rect;
 import android.media.AudioManager;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 
 import org.videolan.libvlc.LibVLC;
@@ -17,6 +21,7 @@ import org.videolan.libvlc.interfaces.IMedia.SubtitleTrack;
 import org.videolan.libvlc.interfaces.IMedia.VideoTrack;
 import org.videolan.libvlc.interfaces.IVLCVout;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,9 +37,9 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
-import me.aap.fermata.util.Utils;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.io.IoUtils;
 import me.aap.utils.text.TextUtils;
 
 /**
@@ -72,32 +77,50 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public void prepare(PlayableItem source) {
+		this.source.close();
+		this.source = Source.NULL;
 		Media media = null;
+		ParcelFileDescriptor fd = null;
 
 		try {
-			Media m = media = new Media(vlc, source.getLocation());
-			PendingSource pending = new PendingSource(source, m);
-			this.source = pending;
-			m.addOption(":input-fast-seek");
+			Uri uri = source.getLocation();
 
-			if (m.isParsed()) {
+			if ("content".equals(uri.getScheme())) {
+				ContentResolver cr = vlc.getAppContext().getContentResolver();
+				fd = cr.openFileDescriptor(uri, "r");
+				media = (fd != null) ? new Media(vlc, fd.getFileDescriptor()) : new Media(vlc, uri);
+			} else {
+				media = new Media(vlc, uri);
+			}
+
+			PendingSource pending = new PendingSource(source, media, fd);
+			this.source = pending;
+			media.addOption(":input-fast-seek");
+
+			if (media.isParsed()) {
 				prepared(pending);
 			} else {
-				if (source.isVideo()) m.addOption(":video-paused");
+				Media m = media;
 				m.setEventListener(e -> {
-					if (m.isParsed()) prepared(pending);
+					if (m.isParsed()) {
+						m.setEventListener(null);
+						prepared(pending);
+					}
 				});
 				m.parseAsync();
 			}
 		} catch (Throwable ex) {
+			IoUtils.close(fd);
 			if (media != null) media.release();
+			if (this.source == Source.NULL) this.source = new Source(source, null);
+			else this.source.close();
 			listener.onEngineError(this, ex);
 		}
 	}
 
 	private void prepared(PendingSource source) {
 		if (source != this.source) {
-			source.getMedia().release();
+			source.close();
 			return;
 		}
 
@@ -106,7 +129,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		playing = false;
 		pendingPosition = -1;
 		player.setMedia(media);
-		media.release();
+		source.release();
 		listener.onEnginePrepared(this);
 	}
 
@@ -121,11 +144,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		pendingPosition = -1;
 		player.stop();
 		player.detachViews();
-
-		if (source instanceof PendingSource) {
-			((PendingSource) source).getMedia().release();
-		}
-
+		source.close();
 		source = Source.NULL;
 	}
 
@@ -141,7 +160,18 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public long getDuration() {
-		return source.getDuration();
+		long dur = source.getDuration();
+
+		if (dur <= 0) {
+			if ((dur = player.getLength()) > 0) {
+				source.setDuration(dur);
+				return dur;
+			} else {
+				return 0;
+			}
+		}
+
+		return dur;
 	}
 
 	@Override
@@ -362,12 +392,14 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		}
 	}
 
-	private static class Source {
-		private static final Source NULL = new Source(null);
+	private static class Source implements Closeable {
+		private static final Source NULL = new Source(null, null);
 		private final PlayableItem item;
+		ParcelFileDescriptor fd;
 
-		Source(PlayableItem item) {
+		Source(PlayableItem item, ParcelFileDescriptor fd) {
 			this.item = item;
+			this.fd = fd;
 		}
 
 		PlayableItem getItem() {
@@ -376,6 +408,9 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 		long getDuration() {
 			return 0;
+		}
+
+		void setDuration(long duration) {
 		}
 
 		int getVideoWidth() {
@@ -394,18 +429,27 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			return Collections.emptyList();
 		}
 
+		@Override
+		@CallSuper
+		public void close() {
+			if (fd != null) {
+				IoUtils.close(fd);
+				fd = null;
+			}
+		}
+
 		@NonNull
 		@Override
 		public String toString() {
-			return getItem().toString();
+			return String.valueOf(getItem());
 		}
 	}
 
 	private static class PendingSource extends Source {
-		private final Media media;
+		Media media;
 
-		PendingSource(PlayableItem item, Media media) {
-			super(item);
+		public PendingSource(PlayableItem item, Media media, ParcelFileDescriptor fd) {
+			super(item, fd);
 			this.media = media;
 		}
 
@@ -439,26 +483,43 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 				audio.trimToSize();
 				subtitle.trimToSize();
-				return new VideoSource(pi, media.getDuration(), w, h,
+				return new VideoSource(pi, fd, media.getDuration(), w, h,
 						audio.isEmpty() ? Collections.emptyList() : audio,
 						subtitle.isEmpty() ? Collections.emptyList() : subtitle);
 			} else {
-				return new PreparedSource(pi, media.getDuration());
+				return new PreparedSource(pi, fd, media.getDuration());
+			}
+		}
+
+		public void close() {
+			super.close();
+			release();
+		}
+
+		void release() {
+			if (media != null) {
+				media.release();
+				media = null;
 			}
 		}
 	}
 
 	private static class PreparedSource extends Source {
-		private final long duration;
+		private long duration;
 
-		PreparedSource(PlayableItem item, long duration) {
-			super(item);
+		PreparedSource(PlayableItem item, ParcelFileDescriptor fd, long duration) {
+			super(item, fd);
 			this.duration = duration;
 		}
 
 		@Override
 		long getDuration() {
 			return duration;
+		}
+
+		@Override
+		void setDuration(long duration) {
+			this.duration = duration;
 		}
 	}
 
@@ -468,10 +529,10 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		private final List<AudioStreamInfo> audioStreamInfo;
 		private List<SubtitleStreamInfo> subtitleStreamInfo;
 
-		VideoSource(PlayableItem item, long duration, int videoWidth, int videoHeight,
+		VideoSource(PlayableItem item, ParcelFileDescriptor fd, long duration, int videoWidth, int videoHeight,
 								List<AudioStreamInfo> audioStreamInfo,
 								List<SubtitleStreamInfo> subtitleStreamInfo) {
-			super(item, duration);
+			super(item, fd, duration);
 			this.videoWidth = videoWidth;
 			this.videoHeight = videoHeight;
 			this.subtitleStreamInfo = subtitleStreamInfo;

@@ -227,6 +227,19 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		}
 	}
 
+	@Override
+	public void durationChanged(PlayableItem i) {
+		ListAdapter a = getAdapter();
+		if (a == null) return;
+
+		for (MediaItemWrapper w : a.getList()) {
+			if (i.equals(w.getItem())) {
+				w.getView().refresh();
+				break;
+			}
+		}
+	}
+
 	boolean isSupportedItem(Item i) {
 		return false;
 	}

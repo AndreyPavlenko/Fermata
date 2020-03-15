@@ -65,7 +65,10 @@ public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
 	}
 
 	public void getMediaMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
-		if ((vlcPlayer != null) && vlcPlayer.getMediaMetadata(meta, item)) return;
+		if ((vlcPlayer != null) && (!"content".equals(item.getLocation().getScheme()))) {
+			if (vlcPlayer.getMediaMetadata(meta, item)) return;
+		}
+
 		mediaPlayer.getMediaMetadata(meta, item);
 	}
 

@@ -173,8 +173,19 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	public void setLastPlayed(PlayableItem i, long position) {
 		String id;
 		BrowsableItemPrefs p;
+		long dur = i.getDuration();
 
-		if ((i.getDuration() - position) <= 1000) {
+		if (dur <= 0) {
+			id = i.getId();
+			p = i.getParent().getPrefs();
+			setLastPlayedItemPref(id);
+			setLastPlayedPosPref(0);
+			p.setLastPlayedItemPref(id);
+			p.setLastPlayedPosPref(0);
+			return;
+		}
+
+		if ((dur - position) <= 1000) {
 			PlayableItem next = i.getNextPlayable();
 			position = 0;
 
@@ -191,7 +202,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 
 		if (i.isVideo()) {
-			if (position > (i.getDuration() * 0.9f)) {
+			if (position > (dur * 0.9f)) {
 				i.getPrefs().setWatchedPref(true);
 			} else {
 				i.getPrefs().setPositionPref(position);

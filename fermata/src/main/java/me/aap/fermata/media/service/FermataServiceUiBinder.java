@@ -328,6 +328,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		private final StringBuilder timeBuilder = new StringBuilder(10);
 		private Object progressUpdateStamp;
 		boolean pauseProgressUpdate;
+		boolean updateDuration;
 
 		public MediaControllerCallback(MediaSessionCallback sessionCallback) {
 			this.sessionCallback = sessionCallback;
@@ -403,7 +404,24 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 				if ((eng != null) && (eng.getSource() != null)) {
 					int pos = (int) (eng.getPosition() / 1000);
-					if (progressBar != null) progressBar.setProgress(pos);
+					if (progressBar != null) {
+						progressBar.setProgress(pos);
+
+						if (updateDuration) {
+							long dur = eng.getDuration();
+
+							if (dur > 0) {
+								updateDuration = false;
+								int max = (int) (dur / 1000);
+								PlayableItem i = eng.getSource();
+								i.setDuration(dur);
+								progressBar.setMax(max);
+								if (progressTotal != null) progressTotal.setText(timeToString(max));
+								fireBroadcastEvent(l -> l.durationChanged(i));
+							}
+						}
+					}
+
 					setProgressTime(pos);
 				}
 			}
@@ -439,6 +457,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				}
 
 				if (st == STATE_PLAYING) {
+					updateDuration = (dur <= 0);
 					startProgressUpdate();
 					if (playPauseButton != null) playPauseButton.setSelected(true);
 				} else {
@@ -470,6 +489,10 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public interface Listener {
+
 		void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem);
+
+		default void durationChanged(PlayableItem i) {
+		}
 	}
 }

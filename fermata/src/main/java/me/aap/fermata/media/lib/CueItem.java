@@ -120,7 +120,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 				mmr.setDataSource(app, last.getFile().getUri());
 				String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
 				if (dur != null) {
-					last.setDuration(Long.parseLong(dur) - last.getOffset());
+					last.setTrackDuration(Long.parseLong(dur) - last.getOffset());
 				}
 			}
 		} catch (Exception ex) {
@@ -205,7 +205,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 
 		if (trackNum > 1) {
 			CueTrackItem prev = tracks.get(trackNum - 2);
-			prev.setDuration(offset - prev.getOffset());
+			prev.setTrackDuration(offset - prev.getOffset());
 		}
 	}
 

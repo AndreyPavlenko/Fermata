@@ -92,6 +92,14 @@ class FileItem extends PlayableItemBase {
 	}
 
 	@Override
+	public void setDuration(long duration) {
+		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(getMediaData());
+		b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+		clearCache();
+		mediaData = b.build();
+	}
+
+	@Override
 	public FileItem export(String exportId, BrowsableItem parent) {
 		FileItem f = create(exportId, parent, getFile(), (DefaultMediaLib) parent.getLib(), isVideo());
 		if (f.mediaData == null) f.mediaData = this.mediaData;

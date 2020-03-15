@@ -157,6 +157,9 @@ public interface MediaLib {
 
 		long getDuration();
 
+		default void setDuration(long duration) {
+		}
+
 		default boolean isTimerRequired() {
 			return false;
 		}

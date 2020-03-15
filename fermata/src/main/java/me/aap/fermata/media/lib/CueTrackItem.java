@@ -116,20 +116,20 @@ class CueTrackItem extends PlayableItemBase {
 		return duration;
 	}
 
+	 void setTrackDuration(long duration) {
+		this.duration = duration;
+	}
+
 	@Override
 	public boolean isTimerRequired() {
 		return true;
-	}
-
-	void setDuration(long duration) {
-		this.duration = duration;
 	}
 
 	@Override
 	public CueTrackItem export(String exportId, BrowsableItem parent) {
 		CueTrackItem i = CueTrackItem.create(exportId, parent, trackNumber, getFile(), name,
 				performer, writer, albumTitle, offset, isVideo);
-		i.setDuration(getDuration());
+		i.setTrackDuration(getDuration());
 		return i;
 	}
 
