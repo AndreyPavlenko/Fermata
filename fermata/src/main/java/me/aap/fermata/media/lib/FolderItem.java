@@ -1,19 +1,13 @@
 package me.aap.fermata.media.lib;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaDescriptionCompat;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -92,9 +86,9 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		MediaFile cover = file.getChild("cover.jpg");
 
 		if (cover != null) {
-			b.setIconBitmap(getBitmap(cover));
+			b.setIconBitmap(getLib().getBitmap(cover.getUri().toString()));
 		} else if ((cover = file.getChild("folder.jpg")) != null) {
-			b.setIconBitmap(getBitmap(cover));
+			b.setIconBitmap(getLib().getBitmap(cover.getUri().toString()));
 		}
 
 		return b;
@@ -196,15 +190,5 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 					return false;
 			}
 		}
-	}
-
-	private static Bitmap getBitmap(MediaFile f) {
-		try (ParcelFileDescriptor fd = FermataApplication.get().getContentResolver().openFileDescriptor(f.getUri(), "r")) {
-			return (fd != null) ? BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor()) : null;
-		} catch (FileNotFoundException ignore) {
-		} catch (Exception ex) {
-			Log.d("SafFolderItem", "Failed to read bitmap", ex);
-		}
-		return null;
 	}
 }

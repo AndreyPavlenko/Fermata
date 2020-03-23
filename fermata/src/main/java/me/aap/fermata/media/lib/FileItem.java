@@ -1,7 +1,10 @@
 package me.aap.fermata.media.lib;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
@@ -23,6 +26,7 @@ import static me.aap.fermata.BuildConfig.DEBUG;
  */
 @SuppressLint("InlinedApi")
 class FileItem extends PlayableItemBase {
+	static final Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
 	public static final String SCHEME = "file";
 	private static final String[] QUERY;
 	private final boolean isVideo;
@@ -33,8 +37,9 @@ class FileItem extends PlayableItemBase {
 					MediaStore.Audio.Media.DURATION,
 					MediaStore.Audio.Media.TITLE,
 					MediaStore.Audio.Media.ARTIST,
-					MediaStore.Audio.Media.ALBUM,
 					MediaStore.Audio.Media.COMPOSER,
+					MediaStore.Audio.Media.ALBUM,
+					MediaStore.Audio.Albums.ALBUM_ID
 			};
 		} else {
 			QUERY = null;
@@ -147,8 +152,8 @@ class FileItem extends PlayableItemBase {
 
 		if (uri == null) return false;
 
-		try (Cursor c = FermataApplication.get().getContentResolver().query(
-				uri, QUERY, selection, selectionArgs, null)) {
+		ContentResolver cr = FermataApplication.get().getContentResolver();
+		try (Cursor c = cr.query(uri, QUERY, selection, selectionArgs, null)) {
 			if ((c == null) || !c.moveToNext()) return false;
 
 			long dur = c.getLong(0);
@@ -163,10 +168,14 @@ class FileItem extends PlayableItemBase {
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, m);
 
 			m = c.getString(3);
-			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
+			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_COMPOSER, m);
 
 			m = c.getString(4);
-			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_COMPOSER, m);
+			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
+
+			Uri artUri = ContentUris.withAppendedId(albumArtUri, c.getLong(5));
+			Bitmap bm = getLib().getBitmap(artUri.toString());
+			if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 
 			return true;
 		} catch (Exception ex) {

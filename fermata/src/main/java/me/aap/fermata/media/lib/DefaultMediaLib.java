@@ -1,8 +1,14 @@
 package me.aap.fermata.media.lib;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
@@ -39,6 +46,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final DefaultFavorites favorites;
 	private final DefaultPlaylists playlists;
 	private final Map<String, ItemRef> cache = new HashMap<>();
+	private final Map<String, Bitmap> bitmapCache = new WeakHashMap<>();
 	private final ReferenceQueue<Item> refQueue = new ReferenceQueue<>();
 
 	public DefaultMediaLib(Context ctx) {
@@ -241,6 +249,25 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return playlists;
 	}
 
+	@Override
+	public Bitmap getBitmap(String uri) {
+		Bitmap bm = bitmapCache.get(uri);
+		if (bm != null) return bm;
+
+		ContentResolver cr = getContext().getContentResolver();
+		try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
+			if (fd != null) {
+				bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
+				if (bm != null) bitmapCache.put(uri, bm);
+			}
+		} catch (Exception ex) {
+			if (!uri.startsWith(FileItem.albumArtUri.toString())) {
+				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+			}
+		}
+
+		return bm;
+	}
 
 	private static List<MediaItem> toMediaItems(List<? extends DefaultMediaLib.Item> items) {
 		List<MediaItem> media = new ArrayList<>(items.size());

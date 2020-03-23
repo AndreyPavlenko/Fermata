@@ -111,9 +111,11 @@ class FsFile implements MediaFile {
 		return parent;
 	}
 
+	@Nullable
 	@Override
 	public MediaFile getChild(String name) {
-		return createChild(name);
+		FsFile f = createChild(name);
+		return (f.getFile().exists()) ? f : null;
 	}
 
 	@Override
@@ -169,7 +171,7 @@ class FsFile implements MediaFile {
 		return new File(getPath());
 	}
 
-	private MediaFile createChild(String name) {
+	private FsFile createChild(String name) {
 		String path = getPath();
 		int len = path.length();
 		path = path + '/' + name;

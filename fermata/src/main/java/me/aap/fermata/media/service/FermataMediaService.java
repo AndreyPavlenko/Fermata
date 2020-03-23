@@ -34,6 +34,7 @@ import androidx.media.session.MediaButtonReceiver;
 
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.DefaultMediaLib;
@@ -42,7 +43,6 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 
 import static me.aap.fermata.media.service.ControlServiceConnection.ACTION_CONTROL_SERVICE;
-import static me.aap.fermata.util.Utils.isAutoFlavor;
 import static me.aap.utils.misc.MiscUtils.isPackageInstalled;
 
 
@@ -132,7 +132,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 
 		switch (action) {
 			case ACTION_CAR_MEDIA_SERVICE:
-				if (isAutoFlavor()) connectToControl();
+				if (BuildConfig.AUTO) connectToControl();
 			case ACTION_MEDIA_SERVICE:
 				notifColor = intent.getIntExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
 				return new ServiceBinder();
@@ -186,7 +186,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 
 	void updateSessionState(PlaybackStateCompat playbackState, MediaMetadataCompat meta,
 													List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
-		if (isAutoFlavor() && (controlConnection != null)) {
+		if (BuildConfig.AUTO && (controlConnection != null)) {
 			MediaSessionState st = new MediaSessionState(playbackState, meta, queue, repeat, shuffle);
 			controlConnection.sendPlaybackState(st);
 		}

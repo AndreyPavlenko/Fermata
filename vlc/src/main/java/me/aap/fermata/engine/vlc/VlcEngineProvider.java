@@ -2,6 +2,7 @@ package me.aap.fermata.engine.vlc;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -108,6 +109,12 @@ public class VlcEngineProvider implements MediaEngineProvider {
 
 			m = media.getMeta(IMedia.Meta.Genre);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
+
+			m = media.getMeta(IMedia.Meta.ArtworkURL);
+			if (m != null) {
+				Bitmap bm = item.getLib().getBitmap(m);
+				if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+			}
 
 			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, media.getDuration());
 			return true;

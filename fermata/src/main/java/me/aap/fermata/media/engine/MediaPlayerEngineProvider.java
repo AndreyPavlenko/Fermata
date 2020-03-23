@@ -1,6 +1,8 @@
 package me.aap.fermata.media.engine;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.support.v4.media.MediaMetadataCompat;
@@ -57,6 +59,13 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
 			if (m != null)
 				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, Long.parseLong(m));
+
+			byte [] pic = mmr.getEmbeddedPicture();
+
+			if(pic != null) {
+				Bitmap bm = BitmapFactory.decodeByteArray(pic, 0, pic.length);
+				if(bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+			}
 		} catch (Exception ex) {
 			Log.d(getClass().getName(), "Failed to retrieve media metadata of " + item.getLocation(), ex);
 

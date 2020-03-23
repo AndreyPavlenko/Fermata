@@ -77,9 +77,9 @@
     <string name="folders">Папки</string>
     <string name="favorites">Избранное</string>
     <string name="playlists">Плейлисты</string>
-    <string name="settings">Настройки</string>
     <string name="search">Поиск</string>
     <string name="filter">Фильтр</string>
+    <string name="settings">Настройки</string>
     <string name="menu">Меню</string>
     <string name="exit">Выход</string>
     <string name="cancel">Отменить</string>
@@ -136,10 +136,10 @@
     <string name="select_all">Выбрать все</string>
     <string name="unselect_all">Отменить выбор</string>
     <string name="loading">Загрузка…</string>
-    <string name="press_back_again">Нажмите кнопку назад еще раз, чтобы выйти</string>
-    <string name="press_x_again">Нажмите кнопку X еще раз, чтобы выйти</string>
-    <string name="please_restart_app">Пожалуйста, перезапустите приложение</string>
-    <string name="use_phone_to_grant_perm">Пожалуйста, воспользуйтесь телефоном, чтобы предоставить необходимые разрешения</string>
+    <string name="press_back_again">Нажмите кнопку назад еще раз, чтобы выйти.</string>
+    <string name="press_x_again">Нажмите кнопку X еще раз, чтобы выйти.</string>
+    <string name="please_restart_app">Пожалуйста, перезапустите приложение.</string>
+    <string name="use_phone_to_grant_perm">Пожалуйста, воспользуйтесь телефоном, чтобы предоставить необходимые разрешения.</string>
 
     <string name="eq_manual">Ручные</string>
     <string name="eq_normal">Номальные</string>
@@ -153,10 +153,15 @@
     <string name="eq_pop">Поп</string>
     <string name="eq_rock">Рок</string>
 
+    <string name="donate">Кофе разработчику</string>
+    <string name="donate_text">Если вам нравится приложение, вы можете купить мне кофе.</string>
+    <string name="use_phone_for_donation">Пожалуйста, воспользуйтесь телефоном, чтобы купить кофе.</string>
+
     <string name="err_failed_to_play">Не удалось воспроизвести %s</string>
     <string name="err_failed_to_play_cause">Не удалось воспроизвести %1$s: %2$s</string>
     <string name="err_unsupported_source_type">Неподдерживаемый тип источника: %s</string>
     <string name="err_playlist_exists">Плейлист уже существует: %1$s</string>
     <string name="err_invalid_playlist_name">Невалидное имя плейлиста: %1$s</string>
     <string name="err_failed_add_folder">Не удалось добавить директорию: %1$s</string>
+    <string name="err_failed_open_url">Не удалось открыть URL: %1$s</string>
 </resources>

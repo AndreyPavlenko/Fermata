@@ -148,10 +148,10 @@
     <string name="select_all">Select all</string>
     <string name="unselect_all">Unselect all</string>
     <string name="loading">Loading…</string>
-    <string name="press_back_again">Press back button again to exit</string>
-    <string name="press_x_again">Press X button again to exit</string>
-    <string name="please_restart_app">Please restart the application</string>
-    <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions</string>
+    <string name="press_back_again">Press back button again to exit.</string>
+    <string name="press_x_again">Press X button again to exit.</string>
+    <string name="please_restart_app">Please restart the application.</string>
+    <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions.</string>
 
     <string name="eq_manual">Manual</string>
     <string name="eq_normal">Normal</string>
@@ -165,10 +165,15 @@
     <string name="eq_pop">Pop</string>
     <string name="eq_rock">Rock</string>
 
+    <string name="donate">Coffee for developer</string>
+    <string name="donate_text">If you like the application, please consider buying me a coffee.</string>
+    <string name="use_phone_for_donation">Please use your phone to buy a coffee.</string>
+
     <string name="err_failed_to_play">Failed to play %s</string>
     <string name="err_failed_to_play_cause">Failed to play %1$s: %2$s</string>
     <string name="err_unsupported_source_type">Unsupported source type: %s</string>
     <string name="err_playlist_exists">Playlist already exists: %1$s</string>
     <string name="err_invalid_playlist_name">Invalid playlist name: %1$s</string>
     <string name="err_failed_add_folder">Failed to add folder: %1$s</string>
+    <string name="err_failed_open_url">Failed to open URL: %1$s</string>
 </resources>

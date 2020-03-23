@@ -1,6 +1,7 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.session.MediaSession;
 import android.net.Uri;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -46,6 +47,8 @@ public interface MediaLib {
 
 	@NonNull
 	Playlists getPlaylists();
+
+	Bitmap getBitmap(String uri);
 
 	@Nullable
 	Item getItem(CharSequence id);

@@ -17,9 +17,9 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.AppActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.ui.activity.ActivityDelegate;
-import me.aap.utils.ui.menu.OverlayMenu;
 
 /**
  * @author Andrey Pavlenko
@@ -88,8 +88,7 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 
 
 	public void recreate() {
-		OverlayMenu menu = getActivityDelegate().getContextMenu();
-		menu.show(b -> b.addItem(1, getResources().getString(R.string.please_restart_app)));
+		Utils.showAlert(getContext(), R.string.please_restart_app);
 	}
 
 	public void finish() {
@@ -102,8 +101,7 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 	public void checkPermissions(String... perms) {
 		for (String perm : perms) {
 			if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
-				OverlayMenu menu = getActivityDelegate().getContextMenu();
-				menu.show(b -> b.addItem(1, getResources().getString(R.string.use_phone_to_grant_perm)));
+				Utils.showAlert(getContext(), R.string.use_phone_to_grant_perm);
 				return;
 			}
 		}
