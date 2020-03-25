@@ -39,16 +39,20 @@ class CueTrackItem extends PlayableItemBase {
 	static CueTrackItem create(String id, BrowsableItem parent, int trackNumber, MediaFile file,
 														 String title, String performer, String writer, String albumTitle,
 														 long offset, boolean isVideo) {
-		Item i = ((DefaultMediaLib) parent.getLib()).getFromCache(id);
+		DefaultMediaLib lib = (DefaultMediaLib) parent.getLib();
 
-		if (i != null) {
-			CueTrackItem c = (CueTrackItem) i;
-			if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-			if (DEBUG && !file.equals(c.getFile())) throw new AssertionError();
-			return c;
-		} else {
-			return new CueTrackItem(id, parent, trackNumber, file, title, performer, writer,
-					albumTitle, offset, isVideo);
+		synchronized (lib.cacheLock()) {
+			Item i = lib.getFromCache(id);
+
+			if (i != null) {
+				CueTrackItem c = (CueTrackItem) i;
+				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
+				if (DEBUG && !file.equals(c.getFile())) throw new AssertionError();
+				return c;
+			} else {
+				return new CueTrackItem(id, parent, trackNumber, file, title, performer, writer,
+						albumTitle, offset, isVideo);
+			}
 		}
 	}
 
@@ -116,7 +120,7 @@ class CueTrackItem extends PlayableItemBase {
 		return duration;
 	}
 
-	 void setTrackDuration(long duration) {
+	void setTrackDuration(long duration) {
 		this.duration = duration;
 	}
 
@@ -129,6 +133,7 @@ class CueTrackItem extends PlayableItemBase {
 	public CueTrackItem export(String exportId, BrowsableItem parent) {
 		CueTrackItem i = CueTrackItem.create(exportId, parent, trackNumber, getFile(), name,
 				performer, writer, albumTitle, offset, isVideo);
+		if (i.mediaData == null) i.mediaData = this.mediaData;
 		i.setTrackDuration(getDuration());
 		return i;
 	}

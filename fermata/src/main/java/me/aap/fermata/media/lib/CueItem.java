@@ -1,5 +1,6 @@
 package me.aap.fermata.media.lib;
 
+import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.util.Log;
 
@@ -10,12 +11,10 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
-import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.text.TextUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,10 +26,6 @@ import static me.aap.fermata.BuildConfig.DEBUG;
  */
 class CueItem extends BrowsableItemBase<CueTrackItem> {
 	public static final String SCHEME = "cue";
-	private static final Pref<BooleanSupplier> CUE_TITLE_NAME = TITLE_NAME.withDefaultValue(() -> true);
-	private static final Pref<BooleanSupplier> CUE_TITLE_FILE_NAME = TITLE_FILE_NAME.withDefaultValue(() -> false);
-	private static final Pref<BooleanSupplier> CUE_SUBTITLE_NAME = SUBTITLE_NAME.withDefaultValue(() -> false);
-	private static final Pref<BooleanSupplier> CUE_SUBTITLE_FILE_NAME = SUBTITLE_FILE_NAME.withDefaultValue(() -> true);
 	private final String name;
 	private final String subtitle;
 	private final List<CueTrackItem> tracks;
@@ -38,7 +33,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 	private CueItem(String id, BrowsableItem parent, MediaFile dir, MediaFile cueFile) {
 		super(id, parent, cueFile);
 
-		FermataApplication app = FermataApplication.get();
+		Context ctx = parent.getLib().getContext();
 		List<CueTrackItem> tracks = new ArrayList<>();
 		MediaFile file = null;
 		String fileName = null;
@@ -55,7 +50,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 		MediaMetadataRetriever mmr = null;
 
 		try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(
-				app.getContentResolver().openInputStream(cueFile.getUri())), UTF_8))) {
+				ctx.getContentResolver().openInputStream(cueFile.getUri())), UTF_8))) {
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
 
@@ -117,7 +112,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 			if (size > 0) {
 				CueTrackItem last = tracks.get(size - 1);
 				mmr = new MediaMetadataRetriever();
-				mmr.setDataSource(app, last.getFile().getUri());
+				mmr.setDataSource(ctx, last.getFile().getUri());
 				String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
 				if (dur != null) {
 					last.setTrackDuration(Long.parseLong(dur) - last.getOffset());
@@ -137,15 +132,17 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 
 	static CueItem create(String id, BrowsableItem parent, MediaFile dir, MediaFile cueFile,
 												DefaultMediaLib lib) {
-		MediaLib.Item i = lib.getFromCache(id);
+		synchronized (lib.cacheLock()) {
+			MediaLib.Item i = lib.getFromCache(id);
 
-		if (i != null) {
-			CueItem c = (CueItem) i;
-			if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-			if (DEBUG && !cueFile.equals(c.getFile())) throw new AssertionError();
-			return c;
-		} else {
-			return new CueItem(id, parent, dir, cueFile);
+			if (i != null) {
+				CueItem c = (CueItem) i;
+				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
+				if (DEBUG && !cueFile.equals(c.getFile())) throw new AssertionError();
+				return c;
+			} else {
+				return new CueItem(id, parent, dir, cueFile);
+			}
 		}
 	}
 
@@ -242,25 +239,5 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 	@Override
 	public List<CueTrackItem> listChildren() {
 		return new ArrayList<>(tracks);
-	}
-
-	@Override
-	public Pref<BooleanSupplier> getTitleNamePrefKey() {
-		return CUE_TITLE_NAME;
-	}
-
-	@Override
-	public Pref<BooleanSupplier> getTitleFileNamePrefKey() {
-		return CUE_TITLE_FILE_NAME;
-	}
-
-	@Override
-	public Pref<BooleanSupplier> getSubtitleNamePrefKey() {
-		return CUE_SUBTITLE_NAME;
-	}
-
-	@Override
-	public Pref<BooleanSupplier> getSubtitleFileNamePrefKey() {
-		return CUE_SUBTITLE_FILE_NAME;
 	}
 }

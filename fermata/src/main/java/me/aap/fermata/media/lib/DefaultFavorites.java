@@ -15,6 +15,7 @@ import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FavoritesPrefs;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
@@ -85,9 +86,9 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	}
 
 	@Override
-	public MediaDescriptionCompat.Builder getMediaDescriptionBuilder() {
-		return super.getMediaDescriptionBuilder()
-				.setIconUri(getResourceUri(getLib().getContext(), R.drawable.favorite_filled));
+	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
+		super.buildMediaDescription(b, null);
+		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.favorite_filled));
 	}
 
 	@Override

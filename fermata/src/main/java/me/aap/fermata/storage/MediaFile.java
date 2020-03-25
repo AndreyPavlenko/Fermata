@@ -8,10 +8,23 @@ import androidx.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * @author Andrey Pavlenko
  */
 public interface MediaFile {
+
+	@Nullable
+	static MediaFile resolve(String uri, MediaFile relativeTo) {
+		return uri.contains(":/") ? MediaFile.create(uri) : relativeTo.findChild(uri);
+	}
+
+	static MediaFile create(String uri) {
+		if (uri.startsWith("file:/")) return FsFile.create(Uri.parse(uri));
+		else if (uri.startsWith("content:/")) return create(Uri.parse(uri), false);
+		else return new NetFile(Uri.parse(uri));
+	}
 
 	static MediaFile create(Uri rootUri, boolean preferFs) {
 		if ("file".equals(rootUri.getScheme())) return FsFile.create(rootUri);
@@ -55,8 +68,25 @@ public interface MediaFile {
 		return null;
 	}
 
+	@Nullable
+	default MediaFile findChild(String name) {
+		String[] names = name.split("/");
+		MediaFile f = this;
+
+		for (String n : names) {
+			f = f.getChild(n);
+			if (f == null) break;
+		}
+
+		return (f == this) ? null : f;
+	}
+
 	default boolean isDirectory() {
 		return false;
+	}
+
+	default boolean isLocalFile() {
+		return true;
 	}
 
 	default List<MediaFile> ls() {

@@ -15,10 +15,10 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 	Pref<Supplier<String>> LAST_PLAYED_ITEM = Pref.s("LAST_PLAYED_ITEM", (String) null).withInheritance(false);
 	Pref<LongSupplier> LAST_PLAYED_POS = Pref.l("LAST_PLAYED_POS", 0).withInheritance(false);
 	Pref<BooleanSupplier> TITLE_SEQ_NUM = Pref.b("TITLE_SEQ_NUM", true);
-	Pref<BooleanSupplier> TITLE_NAME = Pref.b("TITLE_NAME", false);
-	Pref<BooleanSupplier> TITLE_FILE_NAME = Pref.b("TITLE_FILE_NAME", true);
-	Pref<BooleanSupplier> SUBTITLE_NAME = Pref.b("SUBTITLE_NAME", true);
-	Pref<BooleanSupplier> SUBTITLE_FILE_NAME = Pref.b("SUBTITLE_FILE_NAME", false);
+	Pref<BooleanSupplier> TITLE_NAME = Pref.b("TITLE_NAME", true);
+	Pref<BooleanSupplier> TITLE_FILE_NAME = Pref.b("TITLE_FILE_NAME", false);
+	Pref<BooleanSupplier> SUBTITLE_NAME = Pref.b("SUBTITLE_NAME", false);
+	Pref<BooleanSupplier> SUBTITLE_FILE_NAME = Pref.b("SUBTITLE_FILE_NAME", true);
 	Pref<BooleanSupplier> SUBTITLE_ALBUM = Pref.b("SUBTITLE_ALBUM", false);
 	Pref<BooleanSupplier> SUBTITLE_ARTIST = Pref.b("SUBTITLE_ARTIST", false);
 	Pref<BooleanSupplier> SUBTITLE_DURATION = Pref.b("SUBTITLE_DURATION", true);

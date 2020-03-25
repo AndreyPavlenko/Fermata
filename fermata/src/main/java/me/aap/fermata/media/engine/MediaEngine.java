@@ -94,6 +94,10 @@ public interface MediaEngine extends Closeable {
 	default void setSubtitleDelay(int milliseconds) {
 	}
 
+	default boolean setSurfaceSize(VideoView view) {
+		return false;
+	}
+
 	interface Listener {
 
 		default void onEnginePrepared(MediaEngine engine) {

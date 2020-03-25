@@ -13,6 +13,9 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.app.App;
+import me.aap.utils.concurrent.ConcurrentUtils;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
@@ -136,9 +139,49 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	@Override
-	public MediaDescriptionCompat getMediaDescription() {
-		if (mediaDescr == null) mediaDescr = getMediaDescriptionBuilder().build();
-		return mediaDescr;
+	public MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> update) {
+		MediaDescriptionCompat dsc = mediaDescr;
+
+		if (dsc == null) {
+			MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+
+			if (ConcurrentUtils.isMainThread()) {
+				MediaDescriptionCompat[] mdsc = new MediaDescriptionCompat[1];
+
+				buildMediaDescription(b, c -> {
+					mdsc[0] = b.build();
+					App.get().getExecutor().submit(() -> {
+						c.accept(b);
+						App.get().getHandler().post(() -> {
+							if (mediaDescr == null) mediaDescr = b.build();
+							if (update != null) update.accept(mediaDescr);
+						});
+					});
+				});
+
+				return (mdsc[0] == null) ? (mediaDescr = b.build()) : mdsc[0];
+			} else {
+				buildMediaDescription(b, c -> c.accept(b));
+				MediaDescriptionCompat mdsc = b.build();
+				App.get().getHandler().post(() -> {
+					if (mediaDescr == null) mediaDescr = mdsc;
+				});
+				return mdsc;
+			}
+		}
+
+		return dsc;
+	}
+
+	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
+		MediaFile f = getFile();
+		b.setMediaId(getId()).setTitle((f != null) ? f.getName() : getTitle()).setSubtitle("");
+		if (update != null) update.accept(this::loadMediaDescription);
+		else loadMediaDescription(b);
+	}
+
+	void loadMediaDescription(MediaDescriptionCompat.Builder b) {
+		b.setTitle(getTitle()).setSubtitle(getSubtitle());
 	}
 
 	@Override

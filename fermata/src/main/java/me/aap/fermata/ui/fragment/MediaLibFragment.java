@@ -234,7 +234,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		for (MediaItemWrapper w : a.getList()) {
 			if (i.equals(w.getItem())) {
-				w.getView().refresh();
+				MediaItemView v = w.getView();
+				if (v != null) v.refresh();
 				break;
 			}
 		}

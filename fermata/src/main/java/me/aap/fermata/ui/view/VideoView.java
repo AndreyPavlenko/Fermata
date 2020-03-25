@@ -136,6 +136,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	public void setSurfaceSize(MediaEngine eng) {
+		if (eng.setSurfaceSize(this)) return;
+
 		PlayableItem item = eng.getSource();
 		if (item == null) return;
 

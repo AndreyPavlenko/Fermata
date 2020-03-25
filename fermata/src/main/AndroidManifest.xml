@@ -2,6 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="me.aap.fermata">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -13,9 +15,18 @@
         android:name="android.permission.READ_PHONE_STATE"
         tools:node="remove" />
 
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
     <application
         android:name="me.aap.fermata.FermataApplication"
         android:allowBackup="true"
+        android:banner="@mipmap/ic_launcher"
+        android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -23,7 +34,9 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme.Dark">
+        android:theme="@style/AppTheme.Dark"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="q">
 
         <meta-data
             android:name="com.google.android.gms.car.application"
@@ -40,7 +53,9 @@
             android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 

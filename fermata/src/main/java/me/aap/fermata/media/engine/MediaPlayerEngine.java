@@ -84,7 +84,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public long getDuration() {
-		return (player == null) ? 0 : player.getDuration();
+		return (source == null) || source.isStream() ? 0 : player.getDuration();
 	}
 
 	@Override
@@ -178,8 +178,10 @@ public class MediaPlayerEngine implements MediaEngine,
 			default:
 				if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 					err = new MediaEngineException("MEDIA_ERROR_SERVER_DIED");
-				} else {
+				} else if ((what == MediaPlayer.MEDIA_ERROR_UNKNOWN) || !player.isPlaying()) {
 					err = new MediaEngineException("MEDIA_ERROR_UNKNOWN");
+				} else {
+					return true;
 				}
 		}
 

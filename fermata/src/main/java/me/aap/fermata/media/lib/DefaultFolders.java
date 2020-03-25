@@ -18,6 +18,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.TextUtils;
@@ -93,9 +94,9 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	}
 
 	@Override
-	public MediaDescriptionCompat.Builder getMediaDescriptionBuilder() {
-		return super.getMediaDescriptionBuilder()
-				.setIconUri(getResourceUri(getLib().getContext(), R.drawable.folder));
+	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
+		super.buildMediaDescription(b, null);
+		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.folder));
 	}
 
 	public List<FolderItem> listChildren() {

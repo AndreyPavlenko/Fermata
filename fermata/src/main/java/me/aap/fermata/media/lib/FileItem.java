@@ -15,6 +15,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.text.TextUtils;
@@ -53,15 +54,17 @@ class FileItem extends PlayableItemBase {
 
 	static FileItem create(String id, BrowsableItem parent, MediaFile file, DefaultMediaLib lib,
 												 boolean isFile) {
-		Item i = lib.getFromCache(id);
+		synchronized (lib.cacheLock()) {
+			Item i = lib.getFromCache(id);
 
-		if (i != null) {
-			FileItem f = (FileItem) i;
-			if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
-			if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
-			return f;
-		} else {
-			return new FileItem(id, parent, file, isFile);
+			if (i != null) {
+				FileItem f = (FileItem) i;
+				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
+				if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
+				return f;
+			} else {
+				return new FileItem(id, parent, file, isFile);
+			}
 		}
 	}
 
@@ -121,15 +124,20 @@ class FileItem extends PlayableItemBase {
 	@Override
 	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
 		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
-		if (queryMetadata(meta)) return meta;
+		return buildMediaMetadata(meta, this);
+	}
+
+	static MediaMetadataCompat.Builder buildMediaMetadata(MediaMetadataCompat.Builder meta,
+																												PlayableItem item) {
+		if (queryMetadata(meta, item)) return meta;
 
 		MediaEngineManager mgr = MediaEngineManager.getInstance();
-		if (mgr != null) mgr.getMediaMetadata(meta, this);
+		if (mgr != null) mgr.getMediaMetadata(meta, item);
 		return meta;
 	}
 
 	@SuppressWarnings("deprecation")
-	private boolean queryMetadata(MediaMetadataCompat.Builder meta) {
+	private static boolean queryMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false;
 
 		Uri uri = null;
@@ -137,11 +145,11 @@ class FileItem extends PlayableItemBase {
 		String[] selectionArgs = null;
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-			uri = getFile().getAudioUri();
+			uri = item.getFile().getAudioUri();
 		}
 
 		if (uri == null) {
-			String path = getFile().getPath();
+			String path = item.getFile().getPath();
 
 			if (path != null) {
 				uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
@@ -162,7 +170,7 @@ class FileItem extends PlayableItemBase {
 
 			String m = c.getString(1);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
-			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, getFile().getName());
+			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
 
 			m = c.getString(2);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, m);
@@ -174,12 +182,12 @@ class FileItem extends PlayableItemBase {
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
 
 			Uri artUri = ContentUris.withAppendedId(albumArtUri, c.getLong(5));
-			Bitmap bm = getLib().getBitmap(artUri.toString());
+			Bitmap bm = item.getLib().getBitmap(artUri.toString());
 			if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 
 			return true;
 		} catch (Exception ex) {
-			Log.d(getClass().getName(), "Failed to query media metadata", ex);
+			Log.d(FileItem.class.getName(), "Failed to query media metadata", ex);
 		}
 
 		return false;

@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
+import android.support.v4.media.MediaMetadataCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -39,7 +40,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 	private final ColorStateList iconTint;
 	private MediaItemWrapper itemWrapper;
-	private Future<Void> loading;
+	private Future<MediaMetadataCompat> loading;
 	private MediaItemListView listView;
 
 	public MediaItemView(Context context, AttributeSet attrs) {
@@ -86,7 +87,9 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 				});
 			}
 		} else {
-			setDescription(i, i.getMediaDescription());
+			setDescription(i, i.getMediaDescription(d -> {
+				if (wrapper == getItemWrapper()) setDescription(i, d);
+			}));
 		}
 	}
 

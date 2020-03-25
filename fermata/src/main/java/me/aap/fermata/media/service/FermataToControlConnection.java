@@ -10,7 +10,6 @@ import android.os.Parcelable;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
-import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 
@@ -42,12 +41,13 @@ class FermataToControlConnection extends ControlServiceConnection {
 		Log.d(getClass().getName(), "Message received: " + msg);
 
 		switch (msg.what) {
-			case MSG_KEY_EVENT:
+			case MSG_MEDIA_BTN_EVENT:
 				if (getService().callback == null) return;
-				getService().callback.onMediaButtonEvent(new KeyEvent(msg.arg1, msg.arg2));
+				Bundle b = msg.getData();
+				getService().callback.onMediaButtonEvent(requireNonNull(b.getParcelable(KEY)));
 				break;
 			case MSG_GET_CHILDREN:
-				Bundle b = msg.getData();
+				b = msg.getData();
 				int arg = msg.arg1;
 				getService().getLib().getChildren(b.getString(KEY), (r, err) -> {
 					Message m = Message.obtain(this, MSG_GET_CHILDREN, arg, 0);

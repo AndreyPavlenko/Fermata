@@ -32,15 +32,17 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 	}
 
 	static FolderItem create(String id, BrowsableItem parent, MediaFile file, DefaultMediaLib lib) {
-		Item i = lib.getFromCache(id);
+		synchronized (lib.cacheLock()) {
+			Item i = lib.getFromCache(id);
 
-		if (i != null) {
-			FolderItem f = (FolderItem) i;
-			if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
-			if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
-			return f;
-		} else {
-			return new FolderItem(id, parent, file);
+			if (i != null) {
+				FolderItem f = (FolderItem) i;
+				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
+				if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
+				return f;
+			} else {
+				return new FolderItem(id, parent, file);
+			}
 		}
 	}
 
@@ -79,10 +81,9 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 	}
 
 	@Override
-	public MediaDescriptionCompat.Builder getMediaDescriptionBuilder() {
+	void loadMediaDescription(MediaDescriptionCompat.Builder b) {
+		super.loadMediaDescription(b);
 		MediaFile file = getFile();
-		MediaDescriptionCompat.Builder b = super.getMediaDescriptionBuilder();
-
 		MediaFile cover = file.getChild("cover.jpg");
 
 		if (cover != null) {
@@ -90,8 +91,6 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		} else if ((cover = file.getChild("folder.jpg")) != null) {
 			b.setIconBitmap(getLib().getBitmap(cover.getUri().toString()));
 		}
-
-		return b;
 	}
 
 	public List<Item> listChildren() {
@@ -104,9 +103,11 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		StringBuilder fileBuf = null;
 		StringBuilder folderBuf = null;
 		StringBuilder cueBuf = null;
+		StringBuilder m3uBuf = null;
 		int fileBufLen = 0;
 		int folderBufLen = 0;
 		int cueBufLen = 0;
+		int m3uBufLen = 0;
 
 		for (MediaFile f : ls) {
 			String name = f.getName();
@@ -132,6 +133,17 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 
 					cueBuf.append(name);
 					i = CueItem.create(cueBuf.toString(), this, getFile(), f, lib);
+				} else if (M3uItem.isM3uFile(name)) {
+					if (m3uBuf == null) {
+						m3uBuf = new StringBuilder(id.length() + name.length() + 1);
+						m3uBuf.append(M3uItem.SCHEME).append(id, SCHEME.length(), id.length()).append('/');
+						m3uBufLen = m3uBuf.length();
+					} else {
+						m3uBuf.setLength(m3uBufLen);
+					}
+
+					m3uBuf.append(name);
+					i = M3uItem.create(m3uBuf.toString(), this, getFile(), f, lib);
 				} else {
 					if (fileBuf == null) {
 						fileBuf = TextUtils.getSharedStringBuilder();
@@ -182,6 +194,8 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 			switch (ext) {
 				case "ac3":
 				case "cue":
+				case "m3u":
+				case "m3u8":
 				case "flac":
 				case "ogg":
 				case "opus":

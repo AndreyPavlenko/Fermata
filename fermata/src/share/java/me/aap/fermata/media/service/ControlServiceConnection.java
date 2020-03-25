@@ -15,7 +15,7 @@ import androidx.annotation.CallSuper;
  */
 public abstract class ControlServiceConnection extends Handler implements ServiceConnection {
 	public static final String ACTION_CONTROL_SERVICE = "me.aap.fermata.action.ControlService";
-	protected static final byte MSG_KEY_EVENT = 0;
+	protected static final byte MSG_MEDIA_BTN_EVENT = 0;
 	protected static final byte MSG_GET_CHILDREN = 1;
 	protected static final byte MSG_SESSION_STATE = 2;
 	protected static final byte MSG_PLAY = 3;

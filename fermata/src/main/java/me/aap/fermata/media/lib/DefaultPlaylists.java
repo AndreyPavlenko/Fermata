@@ -17,6 +17,7 @@ import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.TextUtils;
 
@@ -76,9 +77,9 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	}
 
 	@Override
-	public MediaDescriptionCompat.Builder getMediaDescriptionBuilder() {
-		return super.getMediaDescriptionBuilder()
-				.setIconUri(getResourceUri(getLib().getContext(), R.drawable.playlist));
+	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
+		super.buildMediaDescription(b, null);
+		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.playlist));
 	}
 
 	public List<Playlist> listChildren() {

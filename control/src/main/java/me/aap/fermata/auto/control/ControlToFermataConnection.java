@@ -12,7 +12,6 @@ import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
-import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.media.MediaBrowserServiceCompat;
@@ -219,9 +218,11 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 
 		@Override
 		public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
-			KeyEvent ke = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-			if (ke == null) return true;
-			send(Message.obtain(ControlToFermataConnection.this, MSG_KEY_EVENT, ke.getAction(), ke.getKeyCode()));
+			Message m = Message.obtain(ControlToFermataConnection.this, MSG_MEDIA_BTN_EVENT);
+			Bundle b = new Bundle();
+			b.putParcelable(KEY, mediaButtonEvent);
+			m.setData(b);
+			send(m);
 			return true;
 		}
 

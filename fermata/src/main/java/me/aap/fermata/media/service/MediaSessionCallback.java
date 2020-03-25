@@ -261,40 +261,53 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@Override
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
 		KeyEvent ke = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-		if ((ke != null) && onMediaButtonEvent(ke)) return true;
-		else return super.onMediaButtonEvent(mediaButtonEvent);
-	}
 
-	public boolean onMediaButtonEvent(KeyEvent ke) {
-		if (ke.getAction() == KeyEvent.ACTION_DOWN) {
-			switch (ke.getKeyCode()) {
-				case KeyEvent.KEYCODE_MEDIA_NEXT:
-				case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-					long time = keyPressTime = System.currentTimeMillis();
-					boolean ff = ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT;
-					handler.postDelayed(() -> delayedNextPrev(time, ff), 1000);
-					return true;
-			}
-		} else if (ke.getAction() == KeyEvent.ACTION_UP) {
-			switch (ke.getKeyCode()) {
-				case KeyEvent.KEYCODE_MEDIA_NEXT:
-				case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-					long holdTime = System.currentTimeMillis() - keyPressTime;
-					keyPressTime = 0;
+		if (ke != null) {
+			if (ke.getAction() == KeyEvent.ACTION_DOWN) {
+				switch (ke.getKeyCode()) {
+					case KeyEvent.KEYCODE_MEDIA_NEXT:
+					case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+					case KeyEvent.KEYCODE_MEDIA_REWIND:
+					case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+						long time = keyPressTime = System.currentTimeMillis();
+						boolean ff = ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT;
+						handler.postDelayed(() -> progressiveRwFF(time, ff), 1000);
+						return true;
+				}
+			} else if (ke.getAction() == KeyEvent.ACTION_UP) {
+				int code = ke.getKeyCode();
 
-					if (holdTime <= 1000) {
-						if (ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT) {
-							onSkipToNext();
-						} else {
-							onSkipToPrevious();
+				switch (code) {
+					case KeyEvent.KEYCODE_MEDIA_NEXT:
+					case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+					case KeyEvent.KEYCODE_MEDIA_REWIND:
+					case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+						long holdTime = System.currentTimeMillis() - keyPressTime;
+						keyPressTime = 0;
+
+						if (holdTime <= 1000) {
+							switch (code) {
+								case KeyEvent.KEYCODE_MEDIA_NEXT:
+									onSkipToNext();
+									break;
+								case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+									onSkipToPrevious();
+									break;
+								case KeyEvent.KEYCODE_MEDIA_REWIND:
+									onRewind();
+									break;
+								case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+									onFastForward();
+									break;
+							}
 						}
-					}
 
-					return true;
+						return true;
+				}
 			}
 		}
 
-		return false;
+		return super.onMediaButtonEvent(mediaButtonEvent);
 	}
 
 	public void close() {
@@ -311,7 +324,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if ((st != PlaybackState.STATE_NONE) && (st != PlaybackState.STATE_ERROR)) return;
 
 		PlayableItem i = lib.getLastPlayedItem();
-		if ((i == null) || i.isVideo()) return;
+		if ((i == null) || i.isVideo() || i.isStream()) return;
 
 		engine = engineManager.createEngine(engine, i, this);
 		Log.i(getClass().getName(), "MediaEngine " + engine + " created for " + i);
@@ -337,6 +350,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		switch (state.getState()) {
 			case PlaybackStateCompat.STATE_NONE:
+			case PlaybackStateCompat.STATE_STOPPED:
 			case PlaybackStateCompat.STATE_ERROR:
 				i = lib.getLastPlayedItem();
 				if (i != null) playItem(i, lib.getLastPlayedPosition(i));
@@ -475,13 +489,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		playItem(i, 0);
 	}
 
-	private void delayedNextPrev(long time, boolean ff) {
-		if (keyPressTime != time) return;
-		long holdTime = System.currentTimeMillis() - keyPressTime;
-		onRwFf(ff, (int) (holdTime / 1000));
-		handler.postDelayed(() -> delayedNextPrev(time, ff), 1000);
-	}
-
 	@Override
 	public void onRewind() {
 		onRwFf(false, 1);
@@ -521,6 +528,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		setPlaybackState(b.setState(state.getState(), engine.getPosition(), engine.getSpeed()).build());
+	}
+
+	private void progressiveRwFF(long time, boolean ff) {
+		if (keyPressTime != time) return;
+		long holdTime = System.currentTimeMillis() - keyPressTime;
+		onRwFf(ff, (int) (holdTime / 1000));
+		handler.postDelayed(() -> progressiveRwFF(time, ff), 1000);
 	}
 
 	@Override

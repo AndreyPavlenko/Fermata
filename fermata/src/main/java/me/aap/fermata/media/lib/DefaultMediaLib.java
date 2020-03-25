@@ -13,8 +13,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.regex.Pattern;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
+import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.pref.PreferenceStore;
@@ -113,6 +116,15 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			case CueTrackItem.SCHEME:
 				i = CueTrackItem.create(this, id);
 				break;
+			case M3uItem.SCHEME:
+				i = M3uItem.create(this, id);
+				break;
+			case M3uGroupItem.SCHEME:
+				i = M3uGroupItem.create(this, id);
+				break;
+			case M3uTrackItem.SCHEME:
+				i = M3uTrackItem.create(this, id);
+				break;
 			case DefaultFavorites.SCHEME:
 				i = getFavorites().getItem(id);
 				break;
@@ -154,10 +166,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			return;
 		}
 
-		Pattern q = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE);
-		List<MediaItem> r = new ArrayList<>();
-		forEach(getFolders().getChildren(), i -> i.search(q, r));
-		result.sendResult(r, null);
+		result.detach();
+		App.get().getExecutor().submit(() -> {
+			Pattern q = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE);
+			List<MediaItem> r = new ArrayList<>();
+			forEach(getFolders().getChildren(), i -> i.search(q, r));
+			result.sendResult(r, null);
+		});
 	}
 
 	@Override
@@ -254,15 +269,24 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		Bitmap bm = bitmapCache.get(uri);
 		if (bm != null) return bm;
 
-		ContentResolver cr = getContext().getContentResolver();
-		try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
-			if (fd != null) {
-				bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
+		if (uri.startsWith("http://") || uri.startsWith("https://")) {
+			try (InputStream in = new URL(uri).openStream()) {
+				bm = BitmapFactory.decodeStream(in);
 				if (bm != null) bitmapCache.put(uri, bm);
-			}
-		} catch (Exception ex) {
-			if (!uri.startsWith(FileItem.albumArtUri.toString())) {
+			} catch (Exception ex) {
 				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+			}
+		} else {
+			ContentResolver cr = getContext().getContentResolver();
+			try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
+				if (fd != null) {
+					bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
+					if (bm != null) bitmapCache.put(uri, bm);
+				}
+			} catch (Exception ex) {
+				if (!uri.startsWith(FileItem.albumArtUri.toString())) {
+					Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+				}
 			}
 		}
 
@@ -275,34 +299,46 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return media;
 	}
 
+	Object cacheLock() {
+		return cache;
+	}
+
 	void addToCache(Item i) {
-		clearRefs();
-		if (BuildConfig.DEBUG && cache.containsKey(i.getId())) throw new AssertionError();
-		cache.put(i.getId(), new ItemRef(i, refQueue));
+		synchronized (cacheLock()) {
+			clearRefs();
+			if (BuildConfig.DEBUG && cache.containsKey(i.getId())) throw new AssertionError();
+			cache.put(i.getId(), new ItemRef(i, refQueue));
+		}
 	}
 
 	void removeFromCache(Item i) {
-		clearRefs();
-		if (i == null) return;
-		CollectionUtils.remove(cache, i.getId(), new ItemRef(i, refQueue));
+		synchronized (cacheLock()) {
+			clearRefs();
+			if (i == null) return;
+			CollectionUtils.remove(cache, i.getId(), new ItemRef(i, refQueue));
+		}
 	}
 
 	Item getFromCache(String id) {
-		clearRefs();
-		ItemRef r = cache.get(id);
+		synchronized (cacheLock()) {
+			clearRefs();
+			ItemRef r = cache.get(id);
 
-		if (r != null) {
-			Item cached = r.get();
-			if (cached != null) return cached;
-			else CollectionUtils.remove(cache, id, r);
+			if (r != null) {
+				Item cached = r.get();
+				if (cached != null) return cached;
+				else CollectionUtils.remove(cache, id, r);
+			}
 		}
 
 		return null;
 	}
 
 	private void clearRefs() {
-		for (ItemRef r = (ItemRef) refQueue.poll(); r != null; r = (ItemRef) refQueue.poll()) {
-			CollectionUtils.remove(cache, r.id, r);
+		synchronized (cacheLock()) {
+			for (ItemRef r = (ItemRef) refQueue.poll(); r != null; r = (ItemRef) refQueue.poll()) {
+				CollectionUtils.remove(cache, r.id, r);
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.concurrent.Future;
 
@@ -14,6 +15,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.concurrent.CompletedFuture;
+import me.aap.utils.concurrent.ConcurrentUtils;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.text.TextUtils;
 
@@ -91,28 +93,12 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 		return this;
 	}
 
-	public MediaMetadataCompat getMediaData() {
-		if (mediaData == null) {
-			String id = getOrigId();
-
-			if (!id.equals(getId())) {
-				PlayableItem i = (PlayableItem) getLib().getItem(id);
-				if (i != null) return mediaData = i.getMediaData();
-			}
-
-			mediaData = getMediaMetadataBuilder().build();
-		}
-
-		return mediaData;
-	}
-
-	@SuppressWarnings("unchecked")
-	public Future<Void> getMediaData(Consumer<MediaMetadataCompat> consumer) {
+	public Future<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> consumer) {
 		MediaMetadataCompat meta = mediaData;
 
 		if (meta != null) {
-			consumer.accept(meta);
-			return CompletedFuture.nullResult();
+			if (consumer != null) consumer.accept(meta);
+			return new CompletedFuture<>(meta);
 		}
 
 		String id = getOrigId();
@@ -122,24 +108,34 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 
 			if (i != null) {
 				return i.getMediaData(m -> {
-					mediaData = m;
-					consumer.accept(m);
+					if (mediaData == null) mediaData = m;
+					if (consumer != null) consumer.accept(m);
 				});
 			}
 		}
 
-		return (Future<Void>) FermataApplication.get().getExecutor().submit(() -> {
+		if (ConcurrentUtils.isMainThread()) {
+			return FermataApplication.get().getExecutor().submit(() -> {
+				MediaMetadataCompat m = getMediaMetadataBuilder().build();
+				FermataApplication.get().getHandler().post(() -> {
+					if (mediaData == null) mediaData = m;
+					if (consumer != null) consumer.accept(m);
+				});
+				return m;
+			});
+		} else {
 			MediaMetadataCompat m = getMediaMetadataBuilder().build();
 			FermataApplication.get().getHandler().post(() -> {
 				if (mediaData == null) mediaData = m;
-				consumer.accept(mediaData);
+				if (consumer != null) consumer.accept(m);
 			});
-		});
+			return new CompletedFuture<>(m);
+		}
 	}
 
 	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
 		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
-		Bitmap bm = getParent().getMediaDescription().getIconBitmap();
+		Bitmap bm = getParent().getMediaDescription(null).getIconBitmap();
 		if (bm != null) b.putBitmap(METADATA_KEY_ALBUM_ART, bm);
 		return b;
 	}

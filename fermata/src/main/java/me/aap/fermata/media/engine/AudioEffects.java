@@ -47,6 +47,7 @@ public class AudioEffects {
 		bassBoost = BASS_BOOST_SUPPORTED ? new BassBoost(priority, audioSessionId) : null;
 	}
 
+	@Nullable
 	public static AudioEffects create(int priority, int audioSessionId) {
 		return SUPPORTED ? new AudioEffects(priority, audioSessionId) : null;
 	}

@@ -16,6 +16,7 @@ import androidx.media.MediaBrowserServiceCompat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
@@ -63,13 +64,13 @@ public interface MediaLib {
 	void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result);
 
 	default void getChildren(String parentMediaId, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
-		getChildren(parentMediaId, new MediaLibResult.Wrapper(result));
+		getChildren(parentMediaId, new MediaLibResult.Wrapper<>(result));
 	}
 
 	void search(String query, MediaLibResult<List<MediaItem>> result);
 
 	default void search(String query, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
-		search(query, new MediaLibResult.Wrapper(result));
+		search(query, new MediaLibResult.Wrapper<>(result));
 	}
 
 	default void clearCache() {
@@ -103,6 +104,8 @@ public interface MediaLib {
 
 		MediaItem asMediaItem();
 
+		MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> update);
+
 		default String getName() {
 			MediaFile f = getFile();
 			return (f != null) ? f.getName() : getTitle();
@@ -113,15 +116,6 @@ public interface MediaLib {
 			if (p == null) return MediaSession.QueueItem.UNKNOWN_ID;
 			int i = p.getChildren().indexOf(this);
 			return i == -1 ? MediaSession.QueueItem.UNKNOWN_ID : i;
-		}
-
-		default MediaDescriptionCompat getMediaDescription() {
-			return getMediaDescriptionBuilder().build();
-		}
-
-		default MediaDescriptionCompat.Builder getMediaDescriptionBuilder() {
-			return new MediaDescriptionCompat.Builder().setMediaId(getId())
-					.setTitle(getTitle()).setSubtitle(getSubtitle());
 		}
 
 		@Override
@@ -142,11 +136,24 @@ public interface MediaLib {
 
 		boolean isVideo();
 
+		default boolean isStream() {
+			return !getFile().isLocalFile();
+		}
+
 		boolean isMediaDataLoaded();
 
-		MediaMetadataCompat getMediaData();
+		Future<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> consumer);
 
-		Future<Void> getMediaData(Consumer<MediaMetadataCompat> consumer);
+		default MediaMetadataCompat getMediaData() {
+			try {
+				return getMediaData(null).get();
+			} catch (ExecutionException ex) {
+				throw new RuntimeException(ex);
+			} catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+				throw new RuntimeException(ex);
+			}
+		}
 
 		@NonNull
 		@Override
@@ -199,7 +206,7 @@ public interface MediaLib {
 
 		@Override
 		default MediaItem asMediaItem() {
-			return new MediaItem(getMediaDescription(), MediaItem.FLAG_PLAYABLE);
+			return new MediaItem(getMediaDescription(null), MediaItem.FLAG_PLAYABLE);
 		}
 
 		default PlayableItem getPrevPlayable() {
@@ -320,7 +327,7 @@ public interface MediaLib {
 
 		@Override
 		default MediaItem asMediaItem() {
-			return new MediaItem(getMediaDescription(), MediaItem.FLAG_BROWSABLE);
+			return new MediaItem(getMediaDescription(null), MediaItem.FLAG_BROWSABLE);
 		}
 
 		default List<MediaSessionCompat.QueueItem> getQueue() {
@@ -329,7 +336,7 @@ public interface MediaLib {
 			int id = 0;
 
 			for (Item i : children) {
-				queue.add(new MediaSessionCompat.QueueItem(i.getMediaDescription(), id++));
+				queue.add(new MediaSessionCompat.QueueItem(i.getMediaDescription(null), id++));
 			}
 
 			return queue;

@@ -1,12 +1,12 @@
 package me.aap.fermata.engine.vlc;
 
 import android.content.ContentResolver;
-import android.graphics.Rect;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.ViewGroup;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
@@ -41,6 +41,13 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.text.TextUtils;
+
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 
 /**
  * @author Andrey Pavlenko
@@ -124,7 +131,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			return;
 		}
 
-		Media media = source.getMedia();
+		IMedia media = source.getMedia();
 		this.source = source.prepare();
 		playing = false;
 		pendingPosition = -1;
@@ -160,6 +167,8 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public long getDuration() {
+		if (source.isStream()) return 0;
+
 		long dur = source.getDuration();
 
 		if (dur <= 0) {
@@ -178,7 +187,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	public long getPosition() {
 		Source src = source;
 
-		if (src != Source.NULL) {
+		if ((src != Source.NULL) && !src.isStream()) {
 			return (pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition;
 		} else {
 			return 0;
@@ -216,25 +225,31 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		out.detachViews();
 
 		if (view != null) {
-			SurfaceHolder surface = view.getVideoSurface().getHolder();
-			Rect size = surface.getSurfaceFrame();
-			surface.addCallback(this);
 			out.setVideoView(view.getVideoSurface());
 			out.setSubtitlesView(view.getSubtitleSurface(true));
 			out.attachViews(this);
-			out.setWindowSize(size.width(), size.height());
-			player.setAspectRatio(size.width() + ":" + size.height());
+			setSurfaceSize(view);
 		}
 	}
 
 	@Override
 	public float getVideoWidth() {
-		return source.getVideoWidth();
+		float w = source.getVideoWidth();
+		if ((int) w == 0) {
+			VideoTrack t = player.getCurrentVideoTrack();
+			if (t != null) return t.width;
+		}
+		return w;
 	}
 
 	@Override
 	public float getVideoHeight() {
-		return source.getVideoHeight();
+		float h = source.getVideoHeight();
+		if ((int) h == 0) {
+			VideoTrack t = player.getCurrentVideoTrack();
+			if (t != null) return t.height;
+		}
+		return h;
 	}
 
 	@Override
@@ -338,18 +353,171 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-		try {
-			player.getVLCVout().setWindowSize(width, height);
-			player.setAspectRatio(width + ":" + height);
-		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to set window size and ratio", ex);
-		}
+		if ((videoView == null) || !(source instanceof VideoSource)) return;
+		setSurfaceSize(videoView, (VideoSource) source);
 	}
 
 	@Override
 	public void onNewVideoLayout(IVLCVout vlcVout, int width, int height, int visibleWidth,
 															 int visibleHeight, int sarNum, int sarDen) {
-		listener.onVideoSizeChanged(this, width, height);
+		if ((videoView == null) || !(source instanceof VideoSource)) return;
+
+		VideoSource src = (VideoSource) source;
+		src.videoWidth = width;
+		src.videoHeight = height;
+		src.visibleVideoWidth = visibleWidth;
+		src.visibleVideoHeight = visibleHeight;
+		src.videoSarNum = sarNum;
+		src.videoSarDen = sarDen;
+		setSurfaceSize(videoView, src);
+	}
+
+	@Override
+	public boolean setSurfaceSize(VideoView view) {
+		if (source instanceof VideoSource) setSurfaceSize(view, (VideoSource) source);
+		return true;
+	}
+
+	private void setSurfaceSize(VideoView view, VideoSource src) {
+		int sw = view.getWidth();
+		int sh = view.getHeight();
+		if ((sw == 0) || (sh == 0)) return;
+
+		int scaleType = src.getItem().getPrefs().getVideoScalePref();
+		player.getVLCVout().setWindowSize(sw, sh);
+
+		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
+			setPlayerLayout(sw, sh, scaleType);
+			setSurfaceLayout(view, MATCH_PARENT, MATCH_PARENT);
+			return;
+		}
+
+		ViewGroup.LayoutParams lp = view.getVideoSurface().getLayoutParams();
+
+		if ((lp.width == MATCH_PARENT) && (lp.height == MATCH_PARENT)) {
+			player.setScale(0);
+			player.setAspectRatio(null);
+		}
+
+		double dw = sw;
+		double dh = sh;
+		double ar;
+		double vw;
+
+		if (src.videoSarDen == src.videoSarNum) {
+			vw = src.visibleVideoWidth;
+			ar = (double) src.visibleVideoWidth / (double) src.visibleVideoHeight;
+		} else {
+			vw = src.visibleVideoWidth * ((double) src.videoSarNum / (double) src.videoSarDen);
+			ar = vw / src.visibleVideoHeight;
+		}
+
+		double dar = dw / dh;
+
+		switch (scaleType) {
+			default:
+			case SCALE_BEST:
+				if (dar < ar) dh = dw / ar;
+				else dw = dh * ar;
+				break;
+			case SCALE_FILL:
+				if (dar >= ar) dh = dw / ar;
+				else dw = dh * ar;
+				break;
+			case SCALE_ORIGINAL:
+				dh = src.videoHeight;
+				dw = vw;
+				break;
+			case SCALE_4_3:
+				ar = 4.0 / 3.0;
+				if (dar < ar) dh = dw / ar;
+				else dw = dh * ar;
+				break;
+			case SCALE_16_9:
+				ar = 16.0 / 9.0;
+				if (dar < ar) dh = dw / ar;
+				else dw = dh * ar;
+				break;
+		}
+
+		sw = (int) Math.ceil(dw * src.videoWidth / src.visibleVideoWidth);
+		sh = (int) Math.ceil(dh * src.videoHeight / src.visibleVideoHeight);
+		setSurfaceLayout(view, sw, sh);
+	}
+
+	private void setPlayerLayout(int surfaceW, int surfaceH, int scaleType) {
+		switch (scaleType) {
+			default:
+			case SCALE_BEST:
+				player.setScale(0);
+				player.setAspectRatio(null);
+				break;
+			case SCALE_FILL:
+				IMedia.VideoTrack t = player.getCurrentVideoTrack();
+
+				if (t == null) {
+					player.setScale(0);
+					player.setAspectRatio(null);
+					break;
+				}
+
+				float videoW = t.width;
+				float videoH = t.height;
+				boolean swap = t.orientation == IMedia.VideoTrack.Orientation.LeftBottom
+						|| t.orientation == IMedia.VideoTrack.Orientation.RightTop;
+
+				if (swap) {
+					float w = videoW;
+					videoW = videoH;
+					videoH = w;
+				}
+
+				if (t.sarNum != t.sarDen) videoW = videoW * t.sarNum / t.sarDen;
+
+				float ar = videoW / videoH;
+				float dar = (float) surfaceW / surfaceH;
+				float scale;
+
+				if (dar >= ar) scale = surfaceW / videoW;
+				else scale = surfaceH / videoH;
+
+				player.setScale(scale);
+				player.setAspectRatio(null);
+				break;
+			case SCALE_ORIGINAL:
+				player.setScale(1);
+				player.setAspectRatio(null);
+				break;
+			case SCALE_4_3:
+				player.setScale(0);
+				player.setAspectRatio("4:3");
+				break;
+			case SCALE_16_9:
+				player.setScale(0);
+				player.setAspectRatio("16:9");
+				break;
+		}
+	}
+
+	private void setSurfaceLayout(VideoView view, int width, int height) {
+		SurfaceView surface = view.getVideoSurface();
+		ViewGroup.LayoutParams lp = surface.getLayoutParams();
+
+		if ((lp.width != width) || (lp.height != height)) {
+			lp.width = width;
+			lp.height = height;
+			surface.setLayoutParams(lp);
+		}
+
+		if ((surface = view.getSubtitleSurface(false)) != null) {
+			lp = surface.getLayoutParams();
+
+			if ((lp.width != width) || (lp.height != height)) {
+				lp.width = width;
+				lp.height = height;
+				surface.setLayoutParams(lp);
+			}
+		}
 	}
 
 	@Override
@@ -410,6 +578,10 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			return 0;
 		}
 
+		boolean isStream() {
+			return false;
+		}
+
 		void setDuration(long duration) {
 		}
 
@@ -446,33 +618,29 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	}
 
 	private static class PendingSource extends Source {
-		Media media;
+		IMedia media;
 
-		public PendingSource(PlayableItem item, Media media, ParcelFileDescriptor fd) {
+		public PendingSource(PlayableItem item, IMedia media, ParcelFileDescriptor fd) {
 			super(item, fd);
 			this.media = media;
 		}
 
-		Media getMedia() {
+		IMedia getMedia() {
 			return media;
 		}
 
 		PreparedSource prepare() {
 			PlayableItem pi = getItem();
+			boolean stream = (media.getType() == IMedia.Type.Stream) || !pi.getFile().isLocalFile();
 
 			if (pi.isVideo()) {
-				int w = 0, h = 0;
 				ArrayList<AudioStreamInfo> audio = new ArrayList<>();
 				ArrayList<SubtitleStreamInfo> subtitle = new ArrayList<>();
 
 				for (int i = 0, n = media.getTrackCount(); i < n; i++) {
 					IMedia.Track t = media.getTrack(i);
 
-					if (t instanceof VideoTrack) {
-						VideoTrack v = (VideoTrack) t;
-						w = v.width;
-						h = v.height;
-					} else if (t instanceof AudioTrack) {
+					if (t instanceof AudioTrack) {
 						AudioTrack a = (AudioTrack) t;
 						audio.add(new AudioStreamInfo(a.id, a.language, a.description));
 					} else if (t instanceof SubtitleTrack) {
@@ -483,11 +651,11 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 				audio.trimToSize();
 				subtitle.trimToSize();
-				return new VideoSource(pi, fd, media.getDuration(), w, h,
+				return new VideoSource(pi, fd, media.getDuration(), stream,
 						audio.isEmpty() ? Collections.emptyList() : audio,
 						subtitle.isEmpty() ? Collections.emptyList() : subtitle);
 			} else {
-				return new PreparedSource(pi, fd, media.getDuration());
+				return new PreparedSource(pi, fd, media.getDuration(), stream);
 			}
 		}
 
@@ -506,15 +674,22 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	private static class PreparedSource extends Source {
 		private long duration;
+		private final boolean isStream;
 
-		PreparedSource(PlayableItem item, ParcelFileDescriptor fd, long duration) {
+		PreparedSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean isStream) {
 			super(item, fd);
 			this.duration = duration;
+			this.isStream = isStream;
 		}
 
 		@Override
 		long getDuration() {
 			return duration;
+		}
+
+		@Override
+		public boolean isStream() {
+			return isStream;
 		}
 
 		@Override
@@ -524,17 +699,19 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	}
 
 	private static final class VideoSource extends PreparedSource {
-		private final int videoWidth;
-		private final int videoHeight;
+		int videoWidth;
+		int videoHeight;
+		int visibleVideoWidth;
+		int visibleVideoHeight;
+		int videoSarNum;
+		int videoSarDen;
 		private final List<AudioStreamInfo> audioStreamInfo;
 		private List<SubtitleStreamInfo> subtitleStreamInfo;
 
-		VideoSource(PlayableItem item, ParcelFileDescriptor fd, long duration, int videoWidth, int videoHeight,
+		VideoSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean isStream,
 								List<AudioStreamInfo> audioStreamInfo,
 								List<SubtitleStreamInfo> subtitleStreamInfo) {
-			super(item, fd, duration);
-			this.videoWidth = videoWidth;
-			this.videoHeight = videoHeight;
+			super(item, fd, duration, isStream);
 			this.subtitleStreamInfo = subtitleStreamInfo;
 			this.audioStreamInfo = audioStreamInfo;
 		}
