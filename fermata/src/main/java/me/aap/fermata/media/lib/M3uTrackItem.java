@@ -1,6 +1,5 @@
 package me.aap.fermata.media.lib;
 
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.support.v4.media.MediaMetadataCompat;
 
@@ -79,7 +78,7 @@ class M3uTrackItem extends PlayableItemBase {
 		return (m3u != null) ? m3u.getTrack(gid, tid) : null;
 	}
 
-	public M3uItem getM3uItem() {
+	private M3uItem getM3uItem() {
 		Item p = getParent();
 		return (p instanceof M3uItem) ? (M3uItem) p : ((M3uGroupItem) p).getParent();
 	}
@@ -99,7 +98,7 @@ class M3uTrackItem extends PlayableItemBase {
 	}
 
 	@Override
-	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
+	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
 		M3uItem m3u = getM3uItem();
 		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
 		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, name);
@@ -110,8 +109,7 @@ class M3uTrackItem extends PlayableItemBase {
 			MediaFile dir = Objects.requireNonNull(m3uFile.getParent());
 			MediaFile f = MediaFile.resolve(logo, dir);
 			if (f != null) {
-				Bitmap bm = m3u.getLib().getBitmap(f.getUri().toString());
-				if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+				meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, f.getUri().toString());
 			}
 		}
 
@@ -135,6 +133,7 @@ class M3uTrackItem extends PlayableItemBase {
 
 	@Override
 	public void setDuration(long duration) {
+		this.duration = duration;
 		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(getMediaData());
 		b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
 		clearCache();

@@ -65,7 +65,7 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		if (subtitle == null) {
 			int files = 0;
 			int folders = 0;
-			for (Item i : getChildren(null)) {
+			for (Item i : getUnsortedChildren()) {
 				if (i instanceof PlayableItem) files++;
 				else folders++;
 			}
@@ -81,15 +81,15 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 	}
 
 	@Override
-	void loadMediaDescription(MediaDescriptionCompat.Builder b) {
-		super.loadMediaDescription(b);
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
 		MediaFile file = getFile();
 		MediaFile cover = file.getChild("cover.jpg");
 
 		if (cover != null) {
-			b.setIconBitmap(getLib().getBitmap(cover.getUri().toString()));
+			b.setIconUri(cover.getUri());
 		} else if ((cover = file.getChild("folder.jpg")) != null) {
-			b.setIconBitmap(getLib().getBitmap(cover.getUri().toString()));
+			b.setIconUri(cover.getUri());
 		}
 	}
 

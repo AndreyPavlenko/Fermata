@@ -77,11 +77,18 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	}
 
 	@Override
-	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
-		super.buildMediaDescription(b, null);
+	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
+		buildCompleteDescription(b);
+		return null;
+	}
+
+	@Override
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
 		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.playlist));
 	}
 
+	@Override
 	public List<Playlist> listChildren() {
 		int[] ids = getPlaylistIdsPref();
 		List<Playlist> children = new ArrayList<>(ids.length);
@@ -98,14 +105,15 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		return children;
 	}
 
+	@Override
 	Item getItem(String id) {
 		assert id.startsWith(SCHEME);
 
-		for (Playlist i : getChildren(null)) {
+		for (Playlist i : getUnsortedChildren()) {
 			if (!id.startsWith(i.getId())) continue;
 			if (id.equals(i.getId())) return i;
 
-			for (Item c : i.getChildren(null)) {
+			for (Item c : i.getUnsortedChildren()) {
 				if (id.equals(c.getId())) return c;
 			}
 		}
@@ -129,7 +137,7 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 			return null;
 		}
 
-		if (CollectionUtils.contains(getChildren(null), c -> n.equals(c.getName()))) {
+		if (CollectionUtils.contains(getUnsortedChildren(), c -> n.equals(c.getName()))) {
 			Context ctx = getLib().getContext();
 			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_playlist_exists, n),
 					Toast.LENGTH_LONG).show();

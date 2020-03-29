@@ -48,7 +48,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	@Override
 	public String getSubtitle() {
 		return getLib().getContext().getResources().getString(R.string.browsable_subtitle,
-				getChildren(null).size());
+				getUnsortedChildren().size());
 	}
 
 	@Override

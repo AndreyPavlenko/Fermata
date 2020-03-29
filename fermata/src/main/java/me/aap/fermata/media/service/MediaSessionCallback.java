@@ -12,8 +12,10 @@ import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
 import android.media.audiofx.Virtualizer;
 import android.media.session.PlaybackState;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -47,8 +49,10 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 
@@ -95,6 +99,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.VIRT_MODE;
 import static me.aap.fermata.media.pref.MediaPrefs.VIRT_STRENGTH;
 import static me.aap.fermata.media.pref.MediaPrefs.getUserPresetBands;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
+import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
 
 /**
  * @author Andrey Pavlenko
@@ -133,6 +138,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private boolean tryAnotherEngine;
 	@NonNull
 	private PlaybackStateCompat currentState;
+	private MediaMetadataCompat currentMetadata;
 	private List<VideoViewWraper> videoView;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
@@ -417,7 +423,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			engine.pause();
 			long pos = engine.getPosition();
 			lib.setLastPlayed(i, pos);
-			PlaybackStateCompat.Builder state = createPlayingState(i, true, pos, engine.getSpeed());
+			PlaybackStateCompat.Builder state = createPlayingState(i, true, false, pos, engine.getSpeed());
 			setPlaybackState(state.build());
 		}
 	}
@@ -592,15 +598,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (add) favorites.addItem(i);
 		else favorites.removeItem(i);
 
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-		List<MediaSessionCompat.QueueItem> queue = null;
-
 		if (i.getParent() == favorites) {
-			session.setQueue(queue = favorites.getQueue());
-			b.setActiveQueueItemId(i.getQueueId()).build();
+			favorites.getQueue(q -> {
+				if (i != getCurrentItem()) return;
+				PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
+				session.setQueue(q);
+				b.setActiveQueueItemId(i.getQueueId()).build();
+				setPlaybackState(b.build(), q);
+			});
 		}
-
-		setPlaybackState(b.build(), queue);
 	}
 
 	@Override
@@ -705,12 +711,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			repeat = REPEAT_MODE_NONE;
 		}
 
-		MediaMetadataCompat meta = getMetadata(i);
+		PlaybackStateCompat st = createPlayingState(i, !playOnPrepared, i.isMediaDescriptionLoaded(),
+				pos, speed).build();
+		MediaMetadataCompat meta = buildMetadata(i, m -> {
+			if ((this.engine == null) || (this.engine.getSource() != i)) return;
+			PlaybackStateCompat s = createPlayingState(i, !isPlaying(), true, engine.getPosition(), speed).build();
+			session.setMetadata(m);
+			setPlaybackState(s, m, null, repeat, shuffle);
+		});
+
 		session.setMetadata(meta);
 		session.setRepeatMode(repeat);
 		session.setShuffleMode(shuffle);
+		setPlaybackState(st, meta, null, repeat, shuffle);
 		setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
-		setPlaybackState(createPlayingState(i, !playOnPrepared, pos, speed).build(), meta, null, repeat, shuffle);
 
 		if (playOnPrepared) {
 			lib.setLastPlayed(i, pos);
@@ -718,17 +732,67 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 	}
 
-	MediaMetadataCompat getMetadata(PlayableItem i) {
-		MediaMetadataCompat meta = i.getMediaData();
-		MediaMetadataCompat.Builder mb = new MediaMetadataCompat.Builder(meta);
-		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getTitle());
-		mb.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, i.getSubtitle());
+	private MediaMetadataCompat buildMetadata(PlayableItem i, Consumer<MediaMetadataCompat> update) {
+		MediaMetadataCompat meta;
+		MediaDescriptionCompat dsc;
+		boolean runUpdate = false;
 
-		if (meta.getBitmap(METADATA_KEY_ALBUM_ART) == null) {
-			mb.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultIcon());
+		if (isMainThread()) {
+			if (i.isMediaDataLoaded()) {
+				meta = i.getMediaData();
+			} else {
+				meta = null;
+				runUpdate = true;
+			}
+			if (i.isMediaDescriptionLoaded()) {
+				dsc = i.getMediaDescription();
+			} else {
+				dsc = i.getMediaDescription(null);
+				runUpdate = true;
+			}
+		} else {
+			meta = i.getMediaData();
+			dsc = i.getMediaDescription();
 		}
 
-		return mb.build();
+		MediaMetadataCompat.Builder b = (meta != null) ? new MediaMetadataCompat.Builder(i.getMediaData())
+				: new MediaMetadataCompat.Builder();
+		CharSequence title = dsc.getTitle();
+		CharSequence subtitle = dsc.getSubtitle();
+		Bitmap icon = dsc.getIconBitmap();
+
+		if (title == null) title = i.getTitle();
+		if (subtitle == null) subtitle = i.getSubtitle();
+
+		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, title.toString());
+		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, subtitle.toString());
+
+		if (icon != null) {
+			b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
+		} else {
+			Uri iconUri = dsc.getIconUri();
+
+			if (iconUri != null) {
+				MediaLib lib = getMediaLib();
+				String u = iconUri.toString();
+				icon = lib.getCachedBitmap(u);
+
+				if (icon != null) {
+					b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
+				} else if (!isMainThread()) {
+					icon = lib.getBitmap(u);
+					if (icon != null) b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
+				} else {
+					runUpdate = true;
+					b.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultIcon());
+				}
+			} else {
+				b.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultIcon());
+			}
+		}
+
+		if (runUpdate) App.get().execute(() -> buildMetadata(i, update), update);
+		return b.build();
 	}
 
 	@Override
@@ -827,37 +891,43 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		BrowsableItem p = i.getParent();
+		boolean updateQueue = false;
 
 		if (current != null) {
 			if (!p.equals(current.getParent())) {
+				updateQueue = true;
 				lib.setLastPlayed(current, currentPos);
-				List<MediaSessionCompat.QueueItem> queue = p.getQueue();
-				session.setQueue(queue);
-				service.updateSessionState(null, null, queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
 			} else {
 				lib.setLastPlayed(i, pos);
 			}
 		} else {
-			List<MediaSessionCompat.QueueItem> queue = p.getQueue();
-			session.setQueue(queue);
-			service.updateSessionState(null, null, queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
+			updateQueue = true;
 		}
 
+		if (i.isVideo() && (videoView != null)) engine.setVideoView(videoView.get(0).view);
+
 		playOnPrepared = true;
-		if (i.isVideo() && (videoView != null))
-			engine.setVideoView(videoView.get(0).view);
 		tryAnotherEngine = true;
 		engine.prepare(i);
+
+		if (updateQueue) {
+			p.getQueue(q -> {
+				if ((engine == null) || (engine.getSource() != i)) return;
+				session.setQueue(q);
+				service.updateSessionState(null, null, q, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
+			});
+		}
 	}
 
-	private PlaybackStateCompat.Builder createPlayingState(PlayableItem i, boolean pause,
+	private PlaybackStateCompat.Builder createPlayingState(PlayableItem i, boolean pause, boolean setQueueId,
 																												 long position, float speed) {
+		long qid = setQueueId ? i.getQueueId() : currentState.getActiveQueueItemId();
 		int state = pause ? PlaybackStateCompat.STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING;
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		boolean repeat = p.getRepeatPref();
 		return new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(state, position, speed)
-				.setActiveQueueItemId(i.getQueueId())
+				.setActiveQueueItemId(qid)
 				.addCustomAction(customRewind).addCustomAction(customFastForward)
 				.addCustomAction(repeat ? customRepeatDisable : customRepeatEnable)
 				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd);
@@ -874,6 +944,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private void setPlaybackState(PlaybackStateCompat state, MediaMetadataCompat meta,
 																List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
 		currentState = state;
+		currentMetadata = meta;
 		session.setPlaybackState(state);
 		service.updateSessionState(state, meta, queue, repeat, shuffle);
 		service.updateNotification(state.getState(), getCurrentItem());
@@ -891,6 +962,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@NonNull
 	PlaybackStateCompat getPlaybackState() {
 		return currentState;
+	}
+
+	public MediaMetadataCompat getMetadata() {
+		return currentMetadata;
 	}
 
 	public boolean isPlaying() {

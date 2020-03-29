@@ -337,7 +337,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	public void addPlaylistMenu(OverlayMenu.Builder builder, Supplier<List<PlayableItem>> selection,
 															Supplier<? extends CharSequence> initName) {
 		boolean visible = !isCarActivity() || !getMediaServiceBinder().getLib().getPlaylists()
-				.getChildren().isEmpty();
+				.getUnsortedChildren().isEmpty();
 		if (!visible) return;
 
 		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
@@ -346,7 +346,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private void createPlaylistMenu(OverlayMenu.Builder b, Supplier<List<PlayableItem>> selection,
 																	Supplier<? extends CharSequence> initName) {
-		List<? extends MediaLib.Item> playlists = getLib().getPlaylists().getChildren();
+		List<? extends MediaLib.Item> playlists = getLib().getPlaylists().getUnsortedChildren();
 
 		if (!isCarActivity()) {
 			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
@@ -378,7 +378,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private boolean addToPlaylist(String name, List<PlayableItem> selection) {
 		discardSelection();
-		for (MediaLib.Item pl : getLib().getPlaylists().getChildren()) {
+		for (MediaLib.Item pl : getLib().getPlaylists().getUnsortedChildren()) {
 			if (name.equals(pl.getName())) {
 				((MediaLib.Playlist) pl).addItems(selection);
 				MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);

@@ -94,8 +94,14 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	}
 
 	@Override
-	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
-		super.buildMediaDescription(b, null);
+	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
+		buildCompleteDescription(b);
+		return null;
+	}
+
+	@Override
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
 		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.folder));
 	}
 
@@ -138,51 +144,51 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 
 	@Override
 	public void addItem(Uri uri) {
-		List<FolderItem> children = getChildren(null);
+		List<FolderItem> children = getUnsortedChildren();
 		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getUri()))) return;
 
 		List<FolderItem> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
 		newChildren.add(toFolderItem(uri));
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	@Override
 	public void removeItem(int idx) {
-		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
+		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
 		FolderItem i = newChildren.remove(idx);
 		getLib().removeFromCache(i);
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	@Override
 	public void removeItem(Item item) {
 		Uri uri = item.getFile().getUri();
-		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
+		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
 		if (!CollectionUtils.remove(newChildren, u -> uri.equals(u.getFile().getUri()))) return;
 
 		getLib().removeFromCache(item);
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	@Override
 	public void moveItem(int fromPosition, int toPosition) {
-		List<FolderItem> newChildren = new ArrayList<>(getChildren(null));
+		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
 		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	@Override
 	public void updateSorting() {
 		super.updateSorting();
-		saveChildren(getChildren(null));
+		saveChildren(getUnsortedChildren());
 	}
 
-	private void saveChildren(List<FolderItem> children) {
+	private void saveChildren(List<? extends Item> children) {
 		setFoldersPref(mapToArray(children, i -> i.getFile().getUri().toString(), String[]::new));
 	}
 

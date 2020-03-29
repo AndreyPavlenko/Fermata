@@ -11,14 +11,14 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 public class MediaSessionState implements Parcelable {
-	public PlaybackStateCompat playbackState;
-	public MediaMetadataCompat meta;
-	public List<MediaSessionCompat.QueueItem> queue;
-	public int repeat;
-	public int shuffle;
+	public final PlaybackStateCompat playbackState;
+	public final MediaMetadataCompat meta;
+	public final List<MediaSessionCompat.QueueItem> queue;
+	public final int repeat;
+	public final int shuffle;
 
 	public MediaSessionState(PlaybackStateCompat playbackState, MediaMetadataCompat meta,
-										List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
+													 List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
 		this.playbackState = playbackState;
 		this.meta = meta;
 		this.queue = queue;

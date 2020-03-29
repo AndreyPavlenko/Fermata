@@ -126,7 +126,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		boolean hasBookmarks = false;
 		BrowsableItem parent = bi.getParent();
 
-		for (Item c : bi.getChildren(null)) {
+		for (Item c : bi.getUnsortedChildren()) {
 			if ((c instanceof PlayableItem) && ((PlayableItem) c).getPrefs().hasPref(BOOKMARKS)) {
 				hasBookmarks = true;
 				break;
@@ -140,7 +140,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setSubmenu(this::buildBookmarksMenu);
 		}
 		if (!(bi instanceof Playlist)) {
-			a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true), () -> bi.getName());
+			a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true), bi::getName);
 		}
 		if (parent instanceof Folders) {
 			b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);

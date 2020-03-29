@@ -168,7 +168,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		if (!p.equals(a.getParent())) a.setParent(p);
 
-		p.getChildren(l -> { // Make sure the list is loaded
+		p.getChildren(null, l -> { // Make sure the list is loaded
 			scrollPosition = indexOf(a.getList(), i);
 			FermataApplication.get().getHandler().post(this::scrollToPosition);
 		});

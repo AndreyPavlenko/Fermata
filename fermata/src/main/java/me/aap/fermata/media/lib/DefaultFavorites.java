@@ -86,8 +86,14 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	}
 
 	@Override
-	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
-		super.buildMediaDescription(b, null);
+	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
+		buildCompleteDescription(b);
+		return null;
+	}
+
+	@Override
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
 		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.favorite_filled));
 	}
 
@@ -99,7 +105,7 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	@Override
 	public boolean isFavoriteItem(PlayableItem i) {
 		String id = toChildItemId(i.getOrigId());
-		return CollectionUtils.contains(getChildren(null), c -> id.equals(c.getId()));
+		return CollectionUtils.contains(getUnsortedChildren(), c -> id.equals(c.getId()));
 	}
 
 	@Override

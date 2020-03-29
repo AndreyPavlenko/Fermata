@@ -3,7 +3,6 @@ package me.aap.fermata.storage;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 

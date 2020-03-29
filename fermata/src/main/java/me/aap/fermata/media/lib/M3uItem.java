@@ -1,7 +1,6 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.util.Log;
 
@@ -19,7 +18,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.text.TextUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -266,19 +264,12 @@ class M3uItem extends BrowsableItemBase<Item> {
 	}
 
 	@Override
-	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
-		super.buildMediaDescription(b, (cover != null) ? update : null);
-	}
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
 
-	@Override
-	void loadMediaDescription(MediaDescriptionCompat.Builder b) {
-		super.loadMediaDescription(b);
-		if (cover == null) return;
-
-		MediaFile file = MediaFile.resolve(cover, getFile().getParent());
-		if (file != null) {
-			Bitmap bm = getLib().getBitmap(file.getUri().toString());
-			if (bm != null) b.setIconBitmap(bm);
+		if (cover != null) {
+			MediaFile file = MediaFile.resolve(cover, getFile().getParent());
+			if (file != null) b.setIconUri(file.getUri());
 		}
 	}
 

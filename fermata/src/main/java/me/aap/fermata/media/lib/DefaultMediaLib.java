@@ -3,11 +3,15 @@ package me.aap.fermata.media.lib;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -15,6 +19,7 @@ import androidx.annotation.Nullable;
 
 import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.ArrayList;
@@ -22,8 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
@@ -32,10 +35,14 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.ui.UiUtils;
 
 import static me.aap.utils.collection.CollectionUtils.forEach;
+import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
+import static me.aap.utils.ui.UiUtils.resizedBitmap;
 
 /**
  * @author Andrey Pavlenko
@@ -48,9 +55,10 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final DefaultFolders folders;
 	private final DefaultFavorites favorites;
 	private final DefaultPlaylists playlists;
-	private final Map<String, ItemRef> cache = new HashMap<>();
-	private final Map<String, Bitmap> bitmapCache = new WeakHashMap<>();
-	private final ReferenceQueue<Item> refQueue = new ReferenceQueue<>();
+	private final Map<String, WeakRef<Item>> itemCache = new HashMap<>();
+	private final Map<String, SoftRef<Bitmap>> bitmapCache = new HashMap<>();
+	private final ReferenceQueue<Item> itemRefQueue = new ReferenceQueue<>();
+	private final ReferenceQueue<Bitmap> bitmapRefQueue = new ReferenceQueue<>();
 
 	public DefaultMediaLib(Context ctx) {
 		this.ctx = ctx;
@@ -101,7 +109,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			}
 		}
 
-		getFolders().getChildren(null); // Make sure the roots are loaded and cached
+		getFolders().getUnsortedChildren(); // Make sure the roots are loaded and cached
 
 		switch (id.substring(0, idx)) {
 			case FileItem.SCHEME:
@@ -141,19 +149,22 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	@Override
 	public void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result) {
 		if (getRootId().equals(parentMediaId)) {
-			List<MediaItem> items = new ArrayList<>(3);
 			Item i = getLastPlayedItem();
-			if (i != null) items.add(i.asMediaItem());
-			items.add(getFolders().asMediaItem());
-			items.add(getFavorites().asMediaItem());
-			items.add(getPlaylists().asMediaItem());
-			result.sendResult(items, null);
+			result.detach();
+			App.get().execute(() -> {
+				List<MediaItem> items = new ArrayList<>(3);
+				if (i != null) items.add(i.asMediaItem());
+				items.add(getFolders().asMediaItem());
+				items.add(getFavorites().asMediaItem());
+				items.add(getPlaylists().asMediaItem());
+				result.sendResult(items, null);
+			});
 		} else {
 			Item i = getItem(parentMediaId);
 
 			if (i instanceof BrowsableItem) {
 				result.detach();
-				((BrowsableItem) i).getChildren(c -> result.sendResult(toMediaItems(c), null));
+				App.get().execute(() -> result.sendResult(toMediaItems(((BrowsableItem) i).getChildren()), null));
 			} else {
 				result.sendResult(Collections.emptyList(), null);
 			}
@@ -167,7 +178,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 
 		result.detach();
-		App.get().getExecutor().submit(() -> {
+		App.get().execute(() -> {
 			Pattern q = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE);
 			List<MediaItem> r = new ArrayList<>();
 			forEach(getFolders().getChildren(), i -> i.search(q, r));
@@ -243,7 +254,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		getFolders().clearCache();
 		getFavorites().clearCache();
 		getPlaylists().clearCache();
-		clearRefs();
+
+		synchronized (itemCache) {
+			clearRefs(itemCache, itemRefQueue);
+		}
+		synchronized (bitmapCache) {
+			clearRefs(bitmapCache, bitmapRefQueue);
+		}
 	}
 
 	@NonNull
@@ -264,106 +281,174 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return playlists;
 	}
 
+	@Nullable
 	@Override
-	public Bitmap getBitmap(String uri) {
-		Bitmap bm = bitmapCache.get(uri);
+	public Bitmap getCachedBitmap(String uri) {
+		synchronized (bitmapCache) {
+			clearRefs(bitmapCache, bitmapRefQueue);
+			SoftRef<Bitmap> r = bitmapCache.get(uri);
+
+			if (r != null) {
+				Bitmap bm = r.get();
+				if (bm != null) return bm;
+				else bitmapCache.remove(uri);
+			}
+
+			return null;
+		}
+	}
+
+	@Override
+	public void getBitmap(String uri, Consumer<Bitmap> consumer) {
+		Bitmap bm = getCachedBitmap(uri);
+		if (bm != null) consumeInMainThread(consumer, bm);
+		else App.get().execute(() -> loadBitmap(uri), consumer);
+	}
+
+	private Bitmap loadBitmap(String uri) {
+		Bitmap bm = getCachedBitmap(uri);
 		if (bm != null) return bm;
 
 		if (uri.startsWith("http://") || uri.startsWith("https://")) {
 			try (InputStream in = new URL(uri).openStream()) {
 				bm = BitmapFactory.decodeStream(in);
-				if (bm != null) bitmapCache.put(uri, bm);
 			} catch (Exception ex) {
 				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+			}
+		} else if (uri.startsWith(ContentResolver.SCHEME_ANDROID_RESOURCE)) {
+			try {
+				Context ctx = getContext();
+				Resources res = ctx.getResources();
+				String[] s = uri.split("/");
+				int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
+				Drawable d = res.getDrawable(id, ctx.getTheme());
+				if (d != null) bm = UiUtils.getBitmap(d, Color.WHITE);
+			} catch (Exception ex) {
+				Log.e(getClass().getName(), "Failed to load bitmap: " + uri, ex);
 			}
 		} else {
 			ContentResolver cr = getContext().getContentResolver();
 			try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
-				if (fd != null) {
-					bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
-					if (bm != null) bitmapCache.put(uri, bm);
-				}
+				if (fd != null) bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
 			} catch (Exception ex) {
-				if (!uri.startsWith(FileItem.albumArtUri.toString())) {
+				if (!uri.startsWith(FileItem.albumArtStrUri)) {
 					Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
 				}
 			}
 		}
 
-		return bm;
+		return (bm != null) ? cacheBitmap(uri, bm) : null;
 	}
 
-	private static List<MediaItem> toMediaItems(List<? extends DefaultMediaLib.Item> items) {
+	private Bitmap cacheBitmap(String uri, Bitmap bm) {
+		bm = resizedBitmap(bm, getMaxBitmapSize());
+
+		synchronized (bitmapCache) {
+			clearRefs(bitmapCache, bitmapRefQueue);
+			SoftRef<Bitmap> ref = new SoftRef<>(uri, bm, bitmapRefQueue);
+			SoftRef<Bitmap> cachedRef = CollectionUtils.putIfAbsent(bitmapCache, uri, ref);
+
+			if (cachedRef != null) {
+				Bitmap cached = cachedRef.get();
+				if (cached != null) return cached;
+				bitmapCache.put(uri, ref);
+			}
+
+			return bm;
+		}
+	}
+
+	private int getMaxBitmapSize() {
+		switch (getContext().getResources().getConfiguration().densityDpi) {
+			case DisplayMetrics.DENSITY_LOW:
+				return 32;
+			case DisplayMetrics.DENSITY_MEDIUM:
+				return 48;
+			case DisplayMetrics.DENSITY_HIGH:
+				return 72;
+			case DisplayMetrics.DENSITY_XHIGH:
+				return 96;
+			case DisplayMetrics.DENSITY_XXHIGH:
+				return 144;
+			default:
+				return 192;
+		}
+	}
+
+	private static List<MediaItem> toMediaItems(List<? extends Item> items) {
 		List<MediaItem> media = new ArrayList<>(items.size());
 		forEach(items, i -> media.add(i.asMediaItem()));
 		return media;
 	}
 
 	Object cacheLock() {
-		return cache;
+		return itemCache;
 	}
 
 	void addToCache(Item i) {
-		synchronized (cacheLock()) {
-			clearRefs();
-			if (BuildConfig.DEBUG && cache.containsKey(i.getId())) throw new AssertionError();
-			cache.put(i.getId(), new ItemRef(i, refQueue));
+		synchronized (itemCache) {
+			clearRefs(itemCache, itemRefQueue);
+			if (BuildConfig.DEBUG && itemCache.containsKey(i.getId())) throw new AssertionError();
+			itemCache.put(i.getId(), new WeakRef<>(i.getId(), i, itemRefQueue));
 		}
 	}
 
 	void removeFromCache(Item i) {
-		synchronized (cacheLock()) {
-			clearRefs();
+		synchronized (itemCache) {
+			clearRefs(itemCache, itemRefQueue);
 			if (i == null) return;
-			CollectionUtils.remove(cache, i.getId(), new ItemRef(i, refQueue));
+			CollectionUtils.remove(itemCache, i.getId(), new WeakRef<>(i.getId(), i, itemRefQueue));
 		}
 	}
 
 	Item getFromCache(String id) {
-		synchronized (cacheLock()) {
-			clearRefs();
-			ItemRef r = cache.get(id);
+		synchronized (itemCache) {
+			clearRefs(itemCache, itemRefQueue);
+			WeakRef<Item> r = itemCache.get(id);
 
 			if (r != null) {
 				Item cached = r.get();
 				if (cached != null) return cached;
-				else CollectionUtils.remove(cache, id, r);
+				else CollectionUtils.remove(itemCache, id, r);
 			}
 		}
 
 		return null;
 	}
 
-	private void clearRefs() {
-		synchronized (cacheLock()) {
-			for (ItemRef r = (ItemRef) refQueue.poll(); r != null; r = (ItemRef) refQueue.poll()) {
-				CollectionUtils.remove(cache, r.id, r);
-			}
+	private static void clearRefs(Map map, ReferenceQueue q) {
+		for (Ref r = (Ref) q.poll(); r != null; r = (Ref) q.poll()) {
+			CollectionUtils.remove(map, r.key(), r);
 		}
 	}
 
-	private static final class ItemRef extends WeakReference<Item> {
-		final String id;
+	private interface Ref {
+		Object key();
+	}
 
-		public ItemRef(Item item, ReferenceQueue<? super Item> q) {
-			super(item, q);
-			id = item.getId();
+	private static final class WeakRef<V> extends WeakReference<V> implements Ref {
+		final Object key;
+
+		public WeakRef(Object key, V value, ReferenceQueue<V> q) {
+			super(value, q);
+			this.key = key;
 		}
 
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(get());
+		public Object key() {
+			return key;
+		}
+	}
+
+	private static final class SoftRef<V> extends SoftReference<V> implements Ref {
+		final Object key;
+
+		public SoftRef(Object key, V value, ReferenceQueue<V> q) {
+			super(value, q);
+			this.key = key;
 		}
 
-		@Override
-		public boolean equals(@Nullable Object obj) {
-			if (obj == this) {
-				return true;
-			} else if (obj instanceof ItemRef) {
-				return Objects.equals(get(), ((ItemRef) obj).get());
-			} else {
-				return false;
-			}
+		public Object key() {
+			return key;
 		}
 	}
 }

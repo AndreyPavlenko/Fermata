@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
-import android.support.v4.media.MediaMetadataCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -22,9 +21,8 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
 
-import java.util.concurrent.Future;
-
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -40,7 +38,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 	private final ColorStateList iconTint;
 	private MediaItemWrapper itemWrapper;
-	private Future<MediaMetadataCompat> loading;
 	private MediaItemListView listView;
 
 	public MediaItemView(Context context, AttributeSet attrs) {
@@ -64,7 +61,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	public void setItemWrapper(MediaItemWrapper wrapper) {
-		cancelLoading();
 		itemWrapper = wrapper;
 		wrapper.setView(this);
 		Item i = wrapper.getItem();
@@ -72,8 +68,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (i instanceof PlayableItem) {
 			PlayableItem pi = (PlayableItem) i;
 
-			if (pi.isMediaDataLoaded()) {
-				setDescription(pi, pi.getMediaData().getDescription());
+			if (pi.isMediaDescriptionLoaded()) {
+				setDescription(wrapper, pi.getMediaDescription());
 			} else {
 				getTitle().setText(pi.getFile().getName());
 				getSubtitle().setText(R.string.loading);
@@ -82,22 +78,19 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 				rotate.setDuration(1000);
 				rotate.setRepeatCount(Animation.INFINITE);
 				icon.startAnimation(rotate);
-				loading = pi.getMediaData(m -> {
-					if (wrapper == getItemWrapper()) setDescription(pi, m.getDescription());
+				pi.getMediaDescription(d -> {
+					if (wrapper == getItemWrapper()) setDescription(wrapper, pi.getMediaDescription());
 				});
 			}
 		} else {
-			setDescription(i, i.getMediaDescription(d -> {
-				if (wrapper == getItemWrapper()) setDescription(i, d);
+			setDescription(wrapper, i.getMediaDescription(d -> {
+				if (wrapper == getItemWrapper()) setDescription(wrapper, d);
 			}));
 		}
 	}
 
 	public void cancelLoading() {
-		if (loading != null) {
-			loading.cancel(false);
-			loading = null;
-		}
+		if (itemWrapper != null) itemWrapper = new MediaItemWrapper(itemWrapper.getItem());
 	}
 
 	public ImageView getIcon() {
@@ -129,37 +122,55 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		this.listView = listView;
 	}
 
-	private void setDescription(Item item, MediaDescriptionCompat dsc) {
-		boolean setIcon = true;
+	private void setDescription(MediaItemWrapper wrapper, MediaDescriptionCompat dsc) {
+		Item item = wrapper.getItem();
 		ImageView icon = getIcon();
+		boolean loadIcon = (item instanceof BrowsableItem) || ((PlayableItem) item).isStream();
 		icon.clearAnimation();
 
-		if (item instanceof BrowsableItem) {
+		if (loadIcon) {
 			Bitmap img = dsc.getIconBitmap();
 			icon.clearAnimation();
 
 			if (img != null) {
 				icon.setImageBitmap(img);
 				icon.setImageTintList(null);
-				setIcon = false;
 			} else {
 				Uri uri = dsc.getIconUri();
 
 				if (uri != null) {
-					icon.setImageURI(uri);
-					icon.setImageTintList(null);
-					setIcon = false;
+					MediaLib lib = item.getLib();
+					String u = uri.toString();
+					img = lib.getCachedBitmap(u);
+
+					if (img != null) {
+						icon.setImageBitmap(img);
+						icon.setImageTintList(null);
+					} else {
+						icon.setImageTintList(iconTint);
+						icon.setImageResource(item.getIcon());
+
+						lib.getBitmap(u, bm -> {
+							if ((bm == null) || (wrapper != getItemWrapper())) return;
+							icon.setImageBitmap(bm);
+							icon.setImageTintList(null);
+						});
+					}
+				} else {
+					icon.setImageTintList(iconTint);
+					icon.setImageResource(item.getIcon());
 				}
 			}
-		}
-
-		if (setIcon) {
+		} else {
 			icon.setImageTintList(iconTint);
 			icon.setImageResource(item.getIcon());
 		}
 
-		getTitle().setText(item.getTitle());
-		getSubtitle().setText(item.getSubtitle());
+		CharSequence title = dsc.getTitle();
+		CharSequence subtitle = dsc.getSubtitle();
+
+		getTitle().setText((title != null) ? title : item.getTitle());
+		getSubtitle().setText((subtitle != null) ? subtitle : item.getSubtitle());
 	}
 
 	@Override

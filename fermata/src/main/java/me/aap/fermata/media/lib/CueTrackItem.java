@@ -87,7 +87,7 @@ class CueTrackItem extends PlayableItemBase {
 	}
 
 	@Override
-	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
+	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
 		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
 		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, getName());
 		meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, getDuration());

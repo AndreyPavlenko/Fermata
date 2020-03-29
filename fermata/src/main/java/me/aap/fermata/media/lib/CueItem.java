@@ -218,7 +218,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 	}
 
 	public CueTrackItem getTrack(int id) {
-		List<CueTrackItem> children = getChildren();
+		List<CueTrackItem> children = getUnsortedChildren();
 		if (id > children.size()) return null;
 
 		CueTrackItem t = children.get(id - 1);

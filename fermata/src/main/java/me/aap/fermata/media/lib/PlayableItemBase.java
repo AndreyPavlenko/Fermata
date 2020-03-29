@@ -6,27 +6,31 @@ import android.support.v4.media.MediaMetadataCompat;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.concurrent.Future;
-
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.app.App;
+import me.aap.utils.concurrent.CompletableFuture;
 import me.aap.utils.concurrent.CompletedFuture;
 import me.aap.utils.concurrent.ConcurrentUtils;
+import me.aap.utils.concurrent.FutureSupplier;
+import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.text.TextUtils;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
 import static java.util.Objects.requireNonNull;
+import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
+import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
 
 /**
  * @author Andrey Pavlenko
  */
 abstract class PlayableItemBase extends ItemBase implements PlayableItem, PlayableItemPrefs {
-	protected MediaMetadataCompat mediaData;
+	protected volatile MediaMetadataCompat mediaData;
+	private CompletableFuture<MediaMetadataCompat> loadMeta;
 	protected String subtitle;
 
 	public PlayableItemBase(String id, @NonNull BrowsableItem parent, @NonNull MediaFile file) {
@@ -93,11 +97,18 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 		return this;
 	}
 
-	public Future<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> consumer) {
+	@Override
+	public MediaMetadataCompat getMediaData() {
+		MediaMetadataCompat meta = mediaData;
+		return (meta != null) ? meta : PlayableItem.super.getMediaData();
+	}
+
+	@Override
+	public FutureSupplier<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> completionCallback) {
 		MediaMetadataCompat meta = mediaData;
 
 		if (meta != null) {
-			if (consumer != null) consumer.accept(meta);
+			consumeInMainThread(completionCallback, meta);
 			return new CompletedFuture<>(meta);
 		}
 
@@ -107,35 +118,58 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 			PlayableItem i = (PlayableItem) getLib().getItem(id);
 
 			if (i != null) {
-				return i.getMediaData(m -> {
+				FutureSupplier<MediaMetadataCompat> f = i.getMediaData(completionCallback);
+				f.addConsumer(m -> {
 					if (mediaData == null) mediaData = m;
-					if (consumer != null) consumer.accept(m);
 				});
+				return f;
 			}
 		}
 
-		if (ConcurrentUtils.isMainThread()) {
-			return FermataApplication.get().getExecutor().submit(() -> {
-				MediaMetadataCompat m = getMediaMetadataBuilder().build();
-				FermataApplication.get().getHandler().post(() -> {
-					if (mediaData == null) mediaData = m;
-					if (consumer != null) consumer.accept(m);
-				});
-				return m;
-			});
+		boolean isNew;
+		CompletableFuture<MediaMetadataCompat> load;
+
+		synchronized (this) {
+			if (loadMeta == null) {
+				isNew = true;
+				loadMeta = load = new CompletableFuture<>();
+			} else {
+				isNew = false;
+				load = loadMeta;
+			}
+		}
+
+		load.addConsumer(completionCallback, () -> new MediaMetadataCompat.Builder().build(),
+				App.get().getHandler());
+
+		if (isMainThread()) {
+			if (isNew) App.get().getExecutor().submit(() -> loadMeta(load));
 		} else {
-			MediaMetadataCompat m = getMediaMetadataBuilder().build();
-			FermataApplication.get().getHandler().post(() -> {
-				if (mediaData == null) mediaData = m;
-				if (consumer != null) consumer.accept(m);
-			});
-			return new CompletedFuture<>(m);
+			loadMeta(load);
+		}
+
+		CompletableFuture<MediaMetadataCompat> f = new CompletableFuture<>();
+		load.addConsumer((BiConsumer<MediaMetadataCompat, Throwable>) f);
+		return f;
+	}
+
+	private void loadMeta(CompletableFuture<MediaMetadataCompat> load) {
+		if (load.isDone()) return;
+
+		MediaMetadataCompat meta = getMediaMetadataBuilder().build();
+
+		if (load.complete(meta)) {
+			mediaData = meta;
+			synchronized (this) {
+				if (loadMeta == load) loadMeta = null;
+			}
 		}
 	}
 
-	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
+	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
+		ConcurrentUtils.ensureNotMainThread(true);
 		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
-		Bitmap bm = getParent().getMediaDescription(null).getIconBitmap();
+		Bitmap bm = getParent().getMediaDescription().getIconBitmap();
 		if (bm != null) b.putBitmap(METADATA_KEY_ALBUM_ART, bm);
 		return b;
 	}

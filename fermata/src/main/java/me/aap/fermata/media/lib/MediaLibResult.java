@@ -15,7 +15,7 @@ public interface MediaLibResult<T> {
 	}
 
 	class Wrapper<T> implements MediaLibResult<T> {
-		MediaBrowserServiceCompat.Result<T> result;
+		final MediaBrowserServiceCompat.Result<T> result;
 
 		Wrapper(MediaBrowserServiceCompat.Result<T> result) {
 			this.result = result;

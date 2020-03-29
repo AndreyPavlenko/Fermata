@@ -8,8 +8,6 @@ import androidx.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * @author Andrey Pavlenko
  */

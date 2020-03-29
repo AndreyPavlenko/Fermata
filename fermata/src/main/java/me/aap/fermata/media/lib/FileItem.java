@@ -3,10 +3,12 @@ package me.aap.fermata.media.lib;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.support.v4.media.MediaMetadataCompat;
 import android.util.Log;
@@ -27,7 +29,8 @@ import static me.aap.fermata.BuildConfig.DEBUG;
  */
 @SuppressLint("InlinedApi")
 class FileItem extends PlayableItemBase {
-	static final Uri albumArtUri = Uri.parse("content://media/external/audio/albumart");
+	static final String albumArtStrUri = "content://media/external/audio/albumart";
+	private static final Uri albumArtUri = Uri.parse(albumArtStrUri);
 	public static final String SCHEME = "file";
 	private static final String[] QUERY;
 	private final boolean isVideo;
@@ -122,7 +125,7 @@ class FileItem extends PlayableItemBase {
 	}
 
 	@Override
-	public MediaMetadataCompat.Builder getMediaMetadataBuilder() {
+	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
 		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
 		return buildMediaMetadata(meta, this);
 	}
@@ -181,9 +184,16 @@ class FileItem extends PlayableItemBase {
 			m = c.getString(4);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
 
-			Uri artUri = ContentUris.withAppendedId(albumArtUri, c.getLong(5));
-			Bitmap bm = item.getLib().getBitmap(artUri.toString());
-			if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+			MediaLib lib = item.getLib();
+			Uri u = ContentUris.withAppendedId(albumArtUri, c.getLong(5));
+			m = u.toString();
+			Bitmap bm = lib.getCachedBitmap(m);
+
+			if (bm != null) {
+				meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+			} else if (isBitmapUri(lib.getContext(), m, u)) {
+				meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+			}
 
 			return true;
 		} catch (Exception ex) {
@@ -191,5 +201,14 @@ class FileItem extends PlayableItemBase {
 		}
 
 		return false;
+	}
+
+	@SuppressWarnings("unused")
+	private static boolean isBitmapUri(Context ctx, String u, Uri uri) {
+		try (ParcelFileDescriptor fd = ctx.getContentResolver().openFileDescriptor(uri, "r")) {
+			return true;
+		} catch (Exception ex) {
+			return false;
+		}
 	}
 }

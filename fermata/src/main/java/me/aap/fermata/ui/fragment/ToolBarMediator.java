@@ -166,5 +166,6 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 
 	private static void sortPrefChanged(MediaLibFragment.ListAdapter adapter) {
 		adapter.getParent().updateSorting();
+		adapter.setParent(adapter.getParent());
 	}
 }

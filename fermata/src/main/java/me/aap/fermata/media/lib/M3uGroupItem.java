@@ -1,6 +1,5 @@
 package me.aap.fermata.media.lib;
 
-import android.graphics.Bitmap;
 import android.support.v4.media.MediaDescriptionCompat;
 
 import androidx.annotation.NonNull;
@@ -10,7 +9,6 @@ import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.text.TextUtils;
 
 import static java.util.Objects.requireNonNull;
@@ -66,21 +64,13 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 	}
 
 	@Override
-	void buildMediaDescription(MediaDescriptionCompat.Builder b, Consumer<Consumer<MediaDescriptionCompat.Builder>> update) {
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
 		M3uItem m3u = getParent();
-		super.buildMediaDescription(b, (m3u.cover != null) ? update : null);
-	}
 
-	@Override
-	void loadMediaDescription(MediaDescriptionCompat.Builder b) {
-		super.loadMediaDescription(b);
-		M3uItem m3u = getParent();
-		if (m3u.cover == null) return;
-
-		MediaFile file = MediaFile.resolve(m3u.cover, getFile().getParent());
-		if (file != null) {
-			Bitmap bm = getLib().getBitmap(file.getUri().toString());
-			if (bm != null) b.setIconBitmap(bm);
+		if (m3u.cover != null) {
+			MediaFile file = MediaFile.resolve(m3u.cover, getFile().getParent());
+			if (file != null) b.setIconUri(file.getUri());
 		}
 	}
 

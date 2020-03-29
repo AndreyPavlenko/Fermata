@@ -8,18 +8,20 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media.MediaBrowserServiceCompat;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -27,6 +29,8 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.NaturalOrderComparator;
+import me.aap.utils.concurrent.CompletableFuture;
+import me.aap.utils.concurrent.FutureSupplier;
 import me.aap.utils.function.Consumer;
 
 /**
@@ -49,7 +53,16 @@ public interface MediaLib {
 	@NonNull
 	Playlists getPlaylists();
 
-	Bitmap getBitmap(String uri);
+	@Nullable
+	Bitmap getCachedBitmap(String uri);
+
+	void getBitmap(String uri, Consumer<Bitmap> consumer);
+
+	default Bitmap getBitmap(String uri) {
+		CompletableFuture<Bitmap> f = new CompletableFuture<>();
+		getBitmap(uri, f);
+		return f.get(() -> null);
+	}
 
 	@Nullable
 	Item getItem(CharSequence id);
@@ -74,6 +87,11 @@ public interface MediaLib {
 	}
 
 	default void clearCache() {
+	}
+
+	default <T> CompletableFuture<T> newCompletableFuture() {
+		long timeout = BuildConfig.DEBUG ? 0 : 10;
+		return new CompletableFuture<>(timeout, TimeUnit.SECONDS);
 	}
 
 	interface Item extends Comparable<Item> {
@@ -102,9 +120,21 @@ public interface MediaLib {
 
 		MediaPrefs getPrefs();
 
-		MediaItem asMediaItem();
+		boolean isMediaDescriptionLoaded();
 
-		MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> update);
+		MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> completionCallback);
+
+		default MediaDescriptionCompat getMediaDescription() {
+			CompletableFuture<MediaDescriptionCompat> f = getLib().newCompletableFuture();
+			MediaDescriptionCompat dsc = getMediaDescription(f);
+
+			try {
+				return f.get();
+			} catch (Exception ex) {
+				Log.e(getClass().getName(), "Failed to get media description", ex);
+				return dsc;
+			}
+		}
 
 		default String getName() {
 			MediaFile f = getFile();
@@ -116,6 +146,28 @@ public interface MediaLib {
 			if (p == null) return MediaSession.QueueItem.UNKNOWN_ID;
 			int i = p.getChildren().indexOf(this);
 			return i == -1 ? MediaSession.QueueItem.UNKNOWN_ID : i;
+		}
+
+
+		default MediaItem asMediaItem() {
+			MediaDescriptionCompat md = getMediaDescription();
+			boolean browsable = (this instanceof BrowsableItem);
+
+			if ((md.getIconUri() != null) || (md.getIconBitmap() != null)) {
+				MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+				b.setMediaId(md.getMediaId());
+				b.setTitle(md.getTitle());
+				b.setSubtitle(md.getSubtitle());
+
+				if (browsable || ((PlayableItem) this).isStream()) {
+					if (md.getIconBitmap() != null) b.setIconBitmap(md.getIconBitmap());
+					else b.setIconBitmap(getLib().getBitmap(md.getIconUri().toString()));
+				}
+
+				md = b.build();
+			}
+
+			return new MediaItem(md, browsable ? MediaItem.FLAG_BROWSABLE : MediaItem.FLAG_PLAYABLE);
 		}
 
 		@Override
@@ -142,17 +194,10 @@ public interface MediaLib {
 
 		boolean isMediaDataLoaded();
 
-		Future<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> consumer);
+		FutureSupplier<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> completionCallback);
 
 		default MediaMetadataCompat getMediaData() {
-			try {
-				return getMediaData(null).get();
-			} catch (ExecutionException ex) {
-				throw new RuntimeException(ex);
-			} catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-				throw new RuntimeException(ex);
-			}
+			return getMediaData(null).get(() -> new MediaMetadataCompat.Builder().build());
 		}
 
 		@NonNull
@@ -202,11 +247,6 @@ public interface MediaLib {
 
 		default void setRepeatItemEnabled(boolean enabled) {
 			getParent().getPrefs().setRepeatItemPref(enabled ? getId() : null);
-		}
-
-		@Override
-		default MediaItem asMediaItem() {
-			return new MediaItem(getMediaDescription(null), MediaItem.FLAG_PLAYABLE);
 		}
 
 		default PlayableItem getPrevPlayable() {
@@ -304,12 +344,26 @@ public interface MediaLib {
 
 		BrowsableItemPrefs getPrefs();
 
-		List<? extends Item> getChildren();
+		void getChildren(
+				// This consumer receives unsorted list of items without metadata
+				@Nullable Consumer<List<? extends Item>> listCallback,
+				@Nullable Consumer<List<? extends Item>> completionCallback
+		);
 
-		List<? extends Item> getChildren(@Nullable Consumer<List<? extends Item>> onLoadingCompletion);
+		default List<? extends Item> getChildren() {
+			CompletableFuture<List<? extends Item>> f = getLib().newCompletableFuture();
+			getChildren(null, f);
+			return f.get(Collections::emptyList);
+		}
+
+		default List<? extends Item> getUnsortedChildren() {
+			CompletableFuture<List<? extends Item>> f = getLib().newCompletableFuture();
+			getChildren(f, null);
+			return f.get(Collections::emptyList);
+		}
 
 		default List<PlayableItem> getPlayableChildren(boolean recursive) {
-			List<? extends Item> children = getChildren(null);
+			List<? extends Item> children = getUnsortedChildren();
 			List<PlayableItem> playable = new ArrayList<>(children.size());
 			for (Item c : children) {
 				if (c instanceof PlayableItem) playable.add((PlayableItem) c);
@@ -325,21 +379,15 @@ public interface MediaLib {
 			return R.drawable.folder;
 		}
 
-		@Override
-		default MediaItem asMediaItem() {
-			return new MediaItem(getMediaDescription(null), MediaItem.FLAG_BROWSABLE);
-		}
-
-		default List<MediaSessionCompat.QueueItem> getQueue() {
-			List<? extends Item> children = getChildren();
-			List<MediaSessionCompat.QueueItem> queue = new ArrayList<>(children.size());
-			int id = 0;
-
-			for (Item i : children) {
-				queue.add(new MediaSessionCompat.QueueItem(i.getMediaDescription(null), id++));
-			}
-
-			return queue;
+		default void getQueue(Consumer<List<MediaSessionCompat.QueueItem>> consumer) {
+			getChildren(null, children -> {
+				List<MediaSessionCompat.QueueItem> queue = new ArrayList<>(children.size());
+				int id = 0;
+				for (Item i : children) {
+					queue.add(new MediaSessionCompat.QueueItem(i.getMediaDescription(), id++));
+				}
+				consumer.accept(queue);
+			});
 		}
 
 		default PlayableItem getFirstPlayable() {
@@ -373,7 +421,7 @@ public interface MediaLib {
 		default PlayableItem getLastPlayedItem() {
 			String id = getPrefs().getLastPlayedItemPref();
 			if (id != null) {
-				for (Item i : getChildren(null)) {
+				for (Item i : getUnsortedChildren()) {
 					if ((i instanceof PlayableItem) && id.equals(i.getId())) return (PlayableItem) i;
 				}
 			}

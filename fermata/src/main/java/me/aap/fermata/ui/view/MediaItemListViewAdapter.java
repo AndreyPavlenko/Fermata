@@ -18,6 +18,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.concurrent.CompletableFuture;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
 import static me.aap.utils.collection.CollectionUtils.filterMap;
@@ -53,14 +54,15 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if (parent != null) {
 			if (filter == null) {
 				list = Collections.emptyList();
-				List<? extends Item> children = parent.getChildren(c -> {
+				CompletableFuture<List<? extends Item>> unsorted = parent.getLib().newCompletableFuture();
+				parent.getChildren(unsorted, c -> {
 					if (parent == this.parent) setChildren(c);
 				});
-				if (list == Collections.EMPTY_LIST) setChildren(children);
+				if (list == Collections.EMPTY_LIST) setChildren(unsorted.get(Collections::emptyList));
 			} else {
 				list = Collections.emptyList();
 				notifyDataSetChanged();
-				parent.getChildren(c -> {
+				parent.getChildren(null, c -> {
 					if (parent == this.parent) setChildren(c);
 				});
 			}

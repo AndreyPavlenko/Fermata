@@ -29,7 +29,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 	Item getItem(String id) {
 		assert id.startsWith(getScheme());
 
-		for (C i : getChildren(null)) {
+		for (C i : getUnsortedChildren()) {
 			if (id.equals(i.getId())) return i;
 		}
 
@@ -50,19 +50,19 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 	}
 
 	public void addItem(C i) {
-		List<C> children = getChildren(null);
+		List<C> children = getUnsortedChildren();
 		i = toChildItem(i);
 		if (children.contains(i)) return;
 
 		List<C> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
 		newChildren.add(i);
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	public void addItems(List<C> items) {
-		List<C> children = getChildren(null);
+		List<C> children = getUnsortedChildren();
 		List<C> newChildren = new ArrayList<>(children.size() + items.size());
 		boolean added = false;
 		newChildren.addAll(children);
@@ -76,27 +76,27 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		if (!added) return;
 
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	public void removeItem(int idx) {
-		List<C> newChildren = new ArrayList<>(getChildren(null));
+		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		newChildren.remove(idx);
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	public void removeItem(C i) {
-		List<C> newChildren = new ArrayList<>(getChildren(null));
+		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		if (!newChildren.remove(toChildItem(i))) return;
 
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	public void removeItems(List<C> items) {
-		List<C> newChildren = new ArrayList<>(getChildren(null));
+		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		boolean removed = false;
 
 		for (C i : items) {
@@ -105,20 +105,20 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		if (!removed) return;
 
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	public void moveItem(int fromPosition, int toPosition) {
-		List<C> newChildren = new ArrayList<>(getChildren(null));
+		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setChildren(newChildren);
+		setChildren(newChildren, false);
 		saveChildren(newChildren);
 	}
 
 	public void updateSorting() {
 		super.updateSorting();
-		saveChildren(getChildren(null));
+		saveChildren(getUnsortedChildren());
 	}
 
 	public boolean isChildItemId(String id) {
@@ -137,7 +137,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 		if (isChildItemId(id)) return i;
 		if (!(i instanceof PlayableItem)) throw new IllegalArgumentException("Unsupported child: " + i);
 
-		PlayableItem pi = (PlayableItem)i;
+		PlayableItem pi = (PlayableItem) i;
 		return (C) pi.export(toChildItemId(pi.getOrigId()), this);
 	}
 }

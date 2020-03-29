@@ -7,14 +7,11 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Parcelable;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import java.util.Collections;
-import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 
@@ -135,19 +132,24 @@ class FermataToControlConnection extends ControlServiceConnection {
 	public void onServiceConnected(ComponentName name, IBinder remove) {
 		super.onServiceConnected(name, remove);
 		MediaSessionCallback cb = getService().callback;
+		if (cb != null) sendState(cb);
+	}
 
-		if (cb != null) {
-			MediaMetadataCompat meta = null;
-			List<MediaSessionCompat.QueueItem> queue = Collections.emptyList();
-			PlayableItem i = cb.getCurrentItem();
+	private void sendState(MediaSessionCallback cb) {
+		PlayableItem i = cb.getCurrentItem();
 
-			if (i != null) {
-				meta = cb.getMetadata(i);
-				queue = i.getParent().getQueue();
-			}
-
-			sendPlaybackState(new MediaSessionState(getService().callback.getPlaybackState(), meta,
-					queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID));
+		if (i != null) {
+			i.getParent().getQueue(q -> {
+				if (i == cb.getCurrentItem()) {
+					sendPlaybackState(new MediaSessionState(getService().callback.getPlaybackState(),
+							cb.getMetadata(), q, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID));
+				} else {
+					sendState(cb);
+				}
+			});
+		} else {
+			sendPlaybackState(new MediaSessionState(getService().callback.getPlaybackState(), null,
+					Collections.emptyList(), REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID));
 		}
 	}
 }

@@ -4,7 +4,6 @@ import androidx.annotation.CallSuper;
 
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
-import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.FloatingButton;
 
 /**
