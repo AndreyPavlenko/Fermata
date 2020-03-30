@@ -59,6 +59,7 @@ import me.aap.utils.ui.UiUtils;
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
 import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
@@ -792,6 +793,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		if (runUpdate) App.get().execute(() -> buildMetadata(i, update), update);
+		b.putString(METADATA_KEY_ALBUM_ART_URI, null);
 		return b.build();
 	}
 

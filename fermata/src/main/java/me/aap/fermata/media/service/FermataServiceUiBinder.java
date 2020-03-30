@@ -36,6 +36,7 @@ import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING
 import static android.view.View.GONE;
 import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
+import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.service.FermataMediaService.ACTION_CAR_MEDIA_SERVICE;
 import static me.aap.fermata.media.service.FermataMediaService.ACTION_MEDIA_SERVICE;
 import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_NOTIF_COLOR;
@@ -49,14 +50,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	private PlayableItem currentItem;
 	private BiConsumer<FermataServiceUiBinder, Throwable> resultHandler;
 	private boolean bound;
-	@NonNull
-	@SuppressWarnings("NullableProblems")
 	private MediaSessionCallback sessionCallback;
-	@NonNull
-	@SuppressWarnings("NullableProblems")
 	private MediaControllerCallback callback;
-	@NonNull
-	@SuppressWarnings("NullableProblems")
 	private MediaControllerCompat mediaController;
 	@Nullable
 	private View playPauseButton;
@@ -293,6 +288,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
+		BiConsumer<FermataServiceUiBinder, Throwable> rh = requireNonNull(resultHandler);
+
 		try {
 			ServiceBinder binder = (ServiceBinder) service;
 			sessionCallback = binder.getMediaSessionCallback();
@@ -301,12 +298,11 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			callback = new MediaControllerCallback(sessionCallback);
 			mediaController.registerCallback(callback);
 
-			BiConsumer<FermataServiceUiBinder, Throwable> rh = resultHandler;
 			resultHandler = null;
 			rh.accept(this, null);
 			callback.onPlaybackStateChanged(mediaController.getPlaybackState());
 		} catch (RemoteException ex) {
-			resultHandler.accept(null, ex);
+			rh.accept(null, ex);
 		}
 	}
 

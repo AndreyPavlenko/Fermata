@@ -5,9 +5,9 @@
 .project
 .classpath
 build/
+dist/
 *.iml
 gradle/
 gradlew
 gradlew.bat
 local.properties
-build.sh

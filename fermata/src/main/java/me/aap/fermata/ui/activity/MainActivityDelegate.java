@@ -423,7 +423,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	private void onMediaServiceBind(FermataServiceUiBinder b, Throwable err) {
 		AppActivity a = getAppActivity();
 
-		if (err == null) {
+		if (b != null) {
 			mediaServiceBinder = b;
 			Context ctx = a.getContext();
 			b.getMediaSessionCallback().getSession().setSessionActivity(
