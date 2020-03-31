@@ -57,7 +57,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 		List<C> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
 		newChildren.add(i);
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
@@ -76,14 +76,14 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		if (!added) return;
 
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void removeItem(int idx) {
 		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		newChildren.remove(idx);
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
@@ -91,7 +91,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		if (!newChildren.remove(toChildItem(i))) return;
 
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
@@ -105,14 +105,14 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		if (!removed) return;
 
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void moveItem(int fromPosition, int toPosition) {
 		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
 		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 

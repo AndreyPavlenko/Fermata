@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
@@ -35,7 +36,6 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
-import java.util.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.ui.UiUtils;
@@ -168,6 +168,18 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			} else {
 				result.sendResult(Collections.emptyList(), null);
 			}
+		}
+	}
+
+	@Override
+	public void getItem(String itemId, MediaLibResult<MediaItem> result) {
+		Item i = getItem(itemId);
+
+		if (i == null) {
+			result.sendResult(null, null);
+		} else {
+			result.detach();
+			App.get().execute(() -> result.sendResult(i.asMediaItem(), null));
 		}
 	}
 
@@ -359,20 +371,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	}
 
 	private int getMaxBitmapSize() {
-		switch (getContext().getResources().getConfiguration().densityDpi) {
-			case DisplayMetrics.DENSITY_LOW:
-				return 32;
-			case DisplayMetrics.DENSITY_MEDIUM:
-				return 48;
-			case DisplayMetrics.DENSITY_HIGH:
-				return 72;
-			case DisplayMetrics.DENSITY_XHIGH:
-				return 96;
-			case DisplayMetrics.DENSITY_XXHIGH:
-				return 144;
-			default:
-				return 192;
-		}
+		DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
+		return Math.min(dm.widthPixels, dm.heightPixels) / 2;
 	}
 
 	private static List<MediaItem> toMediaItems(List<? extends Item> items) {
@@ -416,6 +416,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return null;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private static void clearRefs(Map map, ReferenceQueue q) {
 		for (Ref r = (Ref) q.poll(); r != null; r = (Ref) q.poll()) {
 			CollectionUtils.remove(map, r.key(), r);

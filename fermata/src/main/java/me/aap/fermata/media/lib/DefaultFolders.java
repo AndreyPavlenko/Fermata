@@ -150,7 +150,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		List<FolderItem> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
 		newChildren.add(toFolderItem(uri));
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
@@ -159,7 +159,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
 		FolderItem i = newChildren.remove(idx);
 		getLib().removeFromCache(i);
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
@@ -170,7 +170,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		if (!CollectionUtils.remove(newChildren, u -> uri.equals(u.getFile().getUri()))) return;
 
 		getLib().removeFromCache(item);
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
@@ -178,7 +178,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 	public void moveItem(int fromPosition, int toPosition) {
 		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
 		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setChildren(newChildren, false);
+		setChildren(newChildren);
 		saveChildren(newChildren);
 	}
 

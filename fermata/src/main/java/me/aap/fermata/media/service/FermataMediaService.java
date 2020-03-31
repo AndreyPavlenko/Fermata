@@ -175,6 +175,11 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 	}
 
 	@Override
+	public void onLoadItem(String itemId, @NonNull Result<MediaItem> result) {
+		getLib().getItem(itemId, result);
+	}
+
+	@Override
 	public void onSearch(@NonNull String query, Bundle extras, @NonNull Result<List<MediaItem>> result) {
 		getLib().search(query, result);
 	}

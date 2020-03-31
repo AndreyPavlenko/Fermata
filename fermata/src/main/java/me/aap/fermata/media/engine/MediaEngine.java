@@ -24,6 +24,11 @@ public interface MediaEngine extends Closeable {
 
 	void pause();
 
+	default boolean canPause() {
+		PlayableItem src = getSource();
+		return (src != null) && !src.isStream();
+	}
+
 	PlayableItem getSource();
 
 	long getDuration();

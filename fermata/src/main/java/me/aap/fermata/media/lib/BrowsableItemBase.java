@@ -193,9 +193,9 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 		return shuffle;
 	}
 
-	void setChildren(List<C> children, boolean sort) {
+	void setChildren(List<C> children) {
 		shuffle = null;
-		if (sort) sortChildren(children);
+		sortChildren(children);
 		this.children = Collections.unmodifiableList(children);
 	}
 
@@ -233,7 +233,7 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 			if (c instanceof BrowsableItem) ((BrowsableItem) c).updateSorting();
 		}
 
-		setChildren(new ArrayList<>(children), true);
+		setChildren(new ArrayList<>(children));
 	}
 
 	private void sortChildren(List<C> children) {

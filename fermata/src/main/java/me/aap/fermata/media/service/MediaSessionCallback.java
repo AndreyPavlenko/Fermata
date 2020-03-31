@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -52,7 +53,6 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
-import java.util.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 
@@ -421,6 +421,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		PlayableItem i = getCurrentItem();
 
 		if (i != null) {
+			if (!engine.canPause()) {
+				onStop();
+				return;
+			}
+
 			engine.pause();
 			long pos = engine.getPosition();
 			lib.setLastPlayed(i, pos);

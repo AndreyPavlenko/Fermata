@@ -80,6 +80,12 @@ public interface MediaLib {
 		getChildren(parentMediaId, new MediaLibResult.Wrapper<>(result));
 	}
 
+	void getItem(String itemId, MediaLibResult<MediaItem> result);
+
+	default void getItem(String itemId, MediaBrowserServiceCompat.Result<MediaItem> result) {
+		getItem(itemId, new MediaLibResult.Wrapper<>(result));
+	}
+
 	void search(String query, MediaLibResult<List<MediaItem>> result);
 
 	default void search(String query, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {

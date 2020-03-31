@@ -23,6 +23,8 @@ import androidx.fragment.app.FragmentTransaction;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -40,8 +42,6 @@ import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.VideoFragment;
 import me.aap.fermata.ui.view.ControlPanelView;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
