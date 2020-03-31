@@ -18,7 +18,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.AppActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
-import me.aap.utils.function.BiConsumer;
+import java.util.function.BiConsumer;
 import me.aap.utils.ui.activity.ActivityDelegate;
 
 /**

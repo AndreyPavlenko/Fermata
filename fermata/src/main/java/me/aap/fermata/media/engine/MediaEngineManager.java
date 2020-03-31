@@ -25,7 +25,7 @@ import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.utils.function.Consumer;
+import java.util.function.Consumer;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;

@@ -52,7 +52,7 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
-import me.aap.utils.function.Consumer;
+import java.util.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 

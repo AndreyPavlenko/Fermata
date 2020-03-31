@@ -1,9 +1,9 @@
 package me.aap.fermata.media.pref;
 
-import me.aap.utils.function.BooleanSupplier;
-import me.aap.utils.function.IntSupplier;
-import me.aap.utils.function.LongSupplier;
-import me.aap.utils.function.Supplier;
+import java.util.function.BooleanSupplier;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 /**
  * @author Andrey Pavlenko

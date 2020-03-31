@@ -17,7 +17,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.1'
+        classpath 'com.android.tools.build:gradle:4.0.0-beta03'
     }
 }
 
@@ -32,6 +32,7 @@ allprojects {
 }
 
 subprojects {
+    def dynFeature = false
 
     switch (name) {
         case 'fermata':
@@ -41,6 +42,7 @@ subprojects {
         case 'vlc':
         case 'exoplayer':
             apply plugin: 'com.android.dynamic-feature'
+            dynFeature = true
             break
         default:
             apply plugin: 'com.android.library'
@@ -57,9 +59,11 @@ subprojects {
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
             resConfigs "en", "ru"
+            if(!dynFeature) multiDexEnabled true
         }
 
         compileOptions {
+            coreLibraryDesugaringEnabled true
             sourceCompatibility = JavaVersion.VERSION_1_8
             targetCompatibility = JavaVersion.VERSION_1_8
         }
@@ -69,6 +73,7 @@ subprojects {
         testImplementation 'junit:junit:4.12'
         androidTestImplementation 'androidx.test.ext:junit:1.1.1'
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.5'
     }
 }
 

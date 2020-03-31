@@ -19,7 +19,7 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.app.App;
 import me.aap.utils.concurrent.CompletableFuture;
-import me.aap.utils.function.Consumer;
+import java.util.function.Consumer;
 import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;

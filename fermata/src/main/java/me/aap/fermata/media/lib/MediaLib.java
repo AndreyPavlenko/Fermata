@@ -31,7 +31,7 @@ import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.NaturalOrderComparator;
 import me.aap.utils.concurrent.CompletableFuture;
 import me.aap.utils.concurrent.FutureSupplier;
-import me.aap.utils.function.Consumer;
+import java.util.function.Consumer;
 
 /**
  * @author Andrey Pavlenko

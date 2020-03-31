@@ -1,6 +1,6 @@
 package me.aap.fermata.media.pref;
 
-import me.aap.utils.function.IntSupplier;
+import java.util.function.IntSupplier;
 
 /**
  * @author Andrey Pavlenko

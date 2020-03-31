@@ -29,7 +29,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataMediaService.ServiceBinder;
 import me.aap.utils.event.BasicEventBroadcaster;
-import me.aap.utils.function.BiConsumer;
+import java.util.function.BiConsumer;
 import me.aap.utils.text.TextUtils;
 
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;

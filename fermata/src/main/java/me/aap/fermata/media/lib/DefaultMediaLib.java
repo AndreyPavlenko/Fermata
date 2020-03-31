@@ -35,7 +35,7 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
-import me.aap.utils.function.Consumer;
+import java.util.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.ui.UiUtils;
