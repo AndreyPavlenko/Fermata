@@ -7,6 +7,14 @@ ext {
     BUILD_TOOLS_VERSION = "29.0.2"
     ABI = project.properties['ABI'] ?: ['arm64-v8a', 'armeabi-v7a', 'x86']
     localProps = gradle.ext.localProps
+
+    ANDROID_MATERIAL_VERSION = '1.2.0-alpha05'
+    ANDROID_PLAY_CORE_VERSION = '1.7.2'
+    ANDROID_DESUGAR_JDK_VERSION = '1.0.5'
+    ANDROIDX_CORE_VERSION = '1.2.0'
+    ANDROIDX_MEDIA_VERSION = '1.1.0'
+    ANDROIDX_APPCOMPAT_VERSION = '1.1.0'
+    ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.0.0-beta4'
 }
 
 buildscript {
@@ -18,6 +26,12 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.0-beta03'
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            force 'net.sf.proguard:proguard-gradle:6.2.2'
+        }
     }
 }
 
@@ -32,8 +46,6 @@ allprojects {
 }
 
 subprojects {
-    def dynFeature = false
-
     switch (name) {
         case 'fermata':
         case 'control':
@@ -42,7 +54,6 @@ subprojects {
         case 'vlc':
         case 'exoplayer':
             apply plugin: 'com.android.dynamic-feature'
-            dynFeature = true
             break
         default:
             apply plugin: 'com.android.library'
@@ -59,7 +70,6 @@ subprojects {
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
             resConfigs "en", "ru"
-            if(!dynFeature) multiDexEnabled true
         }
 
         compileOptions {
@@ -70,10 +80,10 @@ subprojects {
     }
 
     dependencies {
+        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:' + ANDROID_DESUGAR_JDK_VERSION
         testImplementation 'junit:junit:4.12'
         androidTestImplementation 'androidx.test.ext:junit:1.1.1'
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.5'
     }
 }
 

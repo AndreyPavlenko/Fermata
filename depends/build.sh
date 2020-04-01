@@ -12,6 +12,12 @@ DEPENDS_DIR="$(cd "$(dirname "$0")" && pwd)"
 EXO_DIR="$DEPENDS_DIR/ExoPlayer"
 EXO_EXT_DIR="$EXO_DIR/extensions"
 
+SDK_MIN_VERSION="$(grep 'SDK_MIN_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
+SDK_TARGET_VERSION="$(grep 'SDK_TARGET_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
+SDK_COMPILE_VERSION="$(grep 'SDK_COMPILE_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
+ANDROIDX_MEDIA_VERSION="$(grep 'ANDROIDX_MEDIA_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
+ANDROIDX_APPCOMPAT_VERSION="$(grep 'ANDROIDX_APPCOMPAT_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
+
 : ${HOST_PLATFORM:='linux-x86_64'}
 : ${ABI:='armeabi-v7a arm64-v8a x86'}
 
@@ -24,6 +30,15 @@ else
 fi
 
 git checkout release-v2
+
+sed -i "s/minSdkVersion .*/minSdkVersion = $SDK_MIN_VERSION/" "$EXO_DIR/constants.gradle"
+sed -i "s/targetSdkVersion .*/targetSdkVersion = $SDK_TARGET_VERSION/" "$EXO_DIR/constants.gradle"
+sed -i "s/appTargetSdkVersion .*/appTargetSdkVersion = $SDK_TARGET_VERSION/" "$EXO_DIR/constants.gradle"
+sed -i "s/compileSdkVersion .*/compileSdkVersion = $SDK_COMPILE_VERSION/" "$EXO_DIR/constants.gradle"
+sed -i "s/androidxMediaVersion .*/androidxMediaVersion = $ANDROIDX_MEDIA_VERSION/" "$EXO_DIR/constants.gradle"
+sed -i "s/androidxAppCompatVersion .*/androidxAppCompatVersion = $ANDROIDX_APPCOMPAT_VERSION/" "$EXO_DIR/constants.gradle"
+sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/gvr/build.gradle"
+sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/leanback/build.gradle"
 
 
 # Build ExoPlayer FFmpeg extension

@@ -25,7 +25,7 @@ android {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
-    implementation 'androidx.core:core:1.2.0'
+    implementation 'androidx.core:core:' + ANDROIDX_CORE_VERSION
     implementation project(':exoplayer-library-core')
     implementation project(':exoplayer-library-hls')
     implementation project(':exoplayer-extension-ffmpeg')
