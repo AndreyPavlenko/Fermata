@@ -10,7 +10,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.text.TextUtils;
 
-import static me.aap.fermata.util.Utils.isVideoFile;
+import static me.aap.fermata.util.Utils.isVideoMimeType;
 import static me.aap.utils.io.FileUtils.getFileExtension;
 import static me.aap.utils.io.FileUtils.getMimeTypeFromExtension;
 
@@ -39,7 +39,7 @@ class M3uTrackItem extends PlayableItemBase {
 		} else {
 			String ext = getFileExtension(file.getUri().getPath());
 			if (ext == null) isVideo = true;
-			else isVideo = ext.startsWith("m3u") || isVideoFile(getMimeTypeFromExtension(ext));
+			else isVideo = ext.startsWith("m3u") || isVideoMimeType(getMimeTypeFromExtension(ext));
 		}
 
 		this.name = (name != null) && !name.isEmpty() ? name : file.getName();
@@ -102,7 +102,7 @@ class M3uTrackItem extends PlayableItemBase {
 		M3uItem m3u = getM3uItem();
 		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
 		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, name);
-		meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+		if (duration > 0) meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
 
 		if (logo != null) {
 			MediaFile m3uFile = m3u.getFile();
@@ -128,6 +128,8 @@ class M3uTrackItem extends PlayableItemBase {
 
 	@Override
 	public long getDuration() {
+		if (duration > 0) return duration;
+		duration = getMediaData().getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
 		return duration;
 	}
 

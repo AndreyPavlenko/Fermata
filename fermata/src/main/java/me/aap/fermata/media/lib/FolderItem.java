@@ -16,7 +16,6 @@ import me.aap.fermata.media.pref.FolderItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.io.FileUtils;
-import me.aap.utils.text.TextUtils;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
 
@@ -146,7 +145,7 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 					i = M3uItem.create(m3uBuf.toString(), this, getFile(), f, lib);
 				} else {
 					if (fileBuf == null) {
-						fileBuf = TextUtils.getSharedStringBuilder();
+						fileBuf = new StringBuilder(id.length() + name.length() + 64);
 						fileBuf.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length()).append('/');
 						fileBufLen = fileBuf.length();
 					} else {
