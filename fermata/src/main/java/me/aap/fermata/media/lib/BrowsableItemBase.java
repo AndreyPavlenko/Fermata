@@ -17,7 +17,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.app.App;
 import me.aap.utils.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import me.aap.utils.function.Consumer;
 
 import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;

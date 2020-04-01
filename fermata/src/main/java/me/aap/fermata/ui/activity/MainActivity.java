@@ -8,7 +8,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.view.ControlPanelView;
-import java.util.function.Supplier;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.ui.activity.ActivityBase;
 
 public class MainActivity extends ActivityBase implements AppActivity {

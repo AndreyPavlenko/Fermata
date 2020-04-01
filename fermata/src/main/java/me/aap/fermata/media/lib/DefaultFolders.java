@@ -18,7 +18,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.CollectionUtils;
-import java.util.function.Consumer;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.TextUtils;

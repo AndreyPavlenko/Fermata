@@ -38,7 +38,7 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.collection.CollectionUtils;
-import java.util.function.Supplier;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.text.TextUtils;
 

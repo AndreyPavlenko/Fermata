@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.IntSupplier;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.LongSupplier;
+import me.aap.utils.function.Supplier;
 
 /**
  * @author Andrey Pavlenko

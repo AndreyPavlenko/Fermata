@@ -4,8 +4,8 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.IntSupplier;
+import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
 
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.event.BasicEventBroadcaster;

@@ -1,6 +1,6 @@
 package me.aap.fermata.media.pref;
 
-import java.util.function.BooleanSupplier;
+import me.aap.utils.function.BooleanSupplier;
 
 /**
  * @author Andrey Pavlenko

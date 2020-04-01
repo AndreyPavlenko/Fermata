@@ -16,8 +16,8 @@ import me.aap.utils.concurrent.CompletableFuture;
 import me.aap.utils.concurrent.CompletedFuture;
 import me.aap.utils.concurrent.ConcurrentUtils;
 import me.aap.utils.concurrent.FutureSupplier;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import me.aap.utils.function.BiConsumer;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.text.TextUtils;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
