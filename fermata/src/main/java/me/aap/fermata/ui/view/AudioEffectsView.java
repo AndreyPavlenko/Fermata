@@ -50,6 +50,7 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
+import static me.aap.utils.function.CheckedRunnable.runWithRetry;
 
 /**
  * @author Andrey Pavlenko
@@ -218,6 +219,10 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 	}
 
 	private void apply(PreferenceStore ps) {
+		runWithRetry(() -> applyPrefs(ps));
+	}
+
+	private void applyPrefs(PreferenceStore ps) {
 		try (PreferenceStore.Edit e = ps.editPreferenceStore()) {
 			PreferenceStore store = requireNonNull(this.store);
 			AudioEffects effects = requireNonNull(this.effects);
@@ -310,7 +315,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			sb.setOnSeekBarChangeListener(new SeekBarListener() {
 				@Override
 				public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-					eqBandChanged(eq, band, progress, fromUser);
+					runWithRetry(() -> eqBandChanged(eq, band, progress, fromUser));
 				}
 			});
 
@@ -350,7 +355,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 
 	private void configureSwitch(CompoundButton sw, Supplier<AudioEffect> effect) {
 		sw.setChecked(effect.get().getEnabled());
-		sw.setOnCheckedChangeListener((b, checked) -> effect.get().setEnabled(checked));
+		sw.setOnCheckedChangeListener((b, checked) -> runWithRetry(() -> effect.get().setEnabled(checked)));
 	}
 
 	private void configureSeek(SeekBar sb, IntSupplier get, ShortConsumer set) {
@@ -359,7 +364,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 		sb.setOnSeekBarChangeListener(new SeekBarListener() {
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-				set.accept((short) progress);
+				runWithRetry(() -> set.accept((short) progress));
 			}
 		});
 	}
@@ -444,6 +449,10 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
+		runWithRetry(() -> preferenceChanged(store, prefs));
+	}
+
+	private void preferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
 		if (prefs.contains(MediaPrefs.EQ_PRESET)) {
 			int p = store.getIntPref(MediaPrefs.EQ_PRESET);
 

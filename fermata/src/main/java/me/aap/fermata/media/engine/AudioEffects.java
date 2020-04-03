@@ -56,7 +56,7 @@ public class AudioEffects {
 			return new AudioEffects(priority, audioSessionId);
 		} catch (Exception ex) {
 			// Sometimes it fails with RuntimeException: AudioEffect: set/get parameter error
-			Log.w(AudioEffects.class.getName(), "Failed to create AudioEffects - retrying...", ex);
+			Log.w(AudioEffects.class.getName(), "Failed to create AudioEffects - retrying...");
 
 			try {
 				Thread.sleep(300);

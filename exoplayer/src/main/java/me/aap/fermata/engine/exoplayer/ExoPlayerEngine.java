@@ -153,6 +153,11 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 		stop();
 		player.release();
 		source = null;
+
+		if (audioEffects != null) {
+			audioEffects.release();
+			audioEffects = null;
+		}
 	}
 
 	@Override

@@ -334,7 +334,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if ((i == null) || i.isVideo() || i.isStream()) return;
 
 		engine = engineManager.createEngine(engine, i, this);
-		Log.i(getClass().getName(), "MediaEngine " + engine + " created for " + i);
+		Log.d(getClass().getName(), "MediaEngine " + engine + " created for " + i);
 		if (engine == null) return;
 
 		playOnPrepared = false;
@@ -730,7 +730,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		session.setRepeatMode(repeat);
 		session.setShuffleMode(shuffle);
 		setPlaybackState(st, meta, null, repeat, shuffle);
-		setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
+
+		try {
+			setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
+		} catch (Exception ex) {
+			Log.w(getClass().getName(), "Failed to set audio effects. Retrying...");
+
+			try {
+				setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
+			} catch (Exception ex1) {
+				Log.w(getClass().getName(), "Failed to set audio effects!", ex1);
+			}
+		}
 
 		if (playOnPrepared) {
 			lib.setLastPlayed(i, pos);
