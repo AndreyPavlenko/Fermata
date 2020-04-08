@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Binder;
@@ -24,6 +25,7 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.Action;
@@ -41,7 +43,9 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.utils.ui.UiUtils;
 
+import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.service.ControlServiceConnection.ACTION_CONTROL_SERVICE;
 import static me.aap.utils.misc.MiscUtils.isPackageInstalled;
 
@@ -84,6 +88,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 	private Action actionNext;
 	private Action actionFavAdd;
 	private Action actionFavRm;
+	private Bitmap defaultAudioIcon;
+	private Bitmap defaultVideoIcon;
 
 	public MediaLib getLib() {
 		return lib;
@@ -241,7 +247,18 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 			builder.setContentTitle(description.getTitle())
 					.setContentText(description.getSubtitle())
 					.setSubText(description.getDescription());
-			if (!callback.isDefaultIcon(largeIcon)) builder.setLargeIcon(largeIcon);
+
+			if (callback.isDefaultIcon(largeIcon)) {
+				if (i.isVideo()) {
+					if (defaultVideoIcon == null) defaultVideoIcon = createLargeIcon(R.drawable.video);
+					largeIcon = defaultVideoIcon;
+				} else {
+					if (defaultAudioIcon == null) defaultAudioIcon = createLargeIcon(R.drawable.audiotrack);
+					largeIcon = defaultAudioIcon;
+				}
+			}
+
+			builder.setLargeIcon(largeIcon);
 		}
 
 		builder
@@ -253,6 +270,18 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 				.addAction(((i != null) && i.isFavoriteItem()) ? actionFavRm : actionFavAdd);
 
 		return builder.build();
+	}
+
+	private Bitmap createLargeIcon(@DrawableRes int icon) {
+		Resources res = getResources();
+		int w = res.getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
+		int h = res.getDimensionPixelSize(android.R.dimen.notification_large_icon_height);
+		int s = Math.max(w, h);
+		int min = UiUtils.toIntPx(this, 16);
+		int max = UiUtils.toIntPx(this, 128);
+		if (s < min) s = min;
+		else if (s > max) s = max;
+		return UiUtils.drawBitmap(requireNonNull(getDrawable(icon)), notifColor, Color.WHITE, s, s);
 	}
 
 	public void notificationInit() {

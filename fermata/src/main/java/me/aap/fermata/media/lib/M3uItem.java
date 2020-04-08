@@ -1,7 +1,7 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
-import android.support.v4.media.MediaDescriptionCompat;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -18,6 +18,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -34,14 +35,14 @@ class M3uItem extends BrowsableItemBase<Item> {
 	private final String name;
 	private final String subtitle;
 	private final List<Item> tracks;
-	final String cover;
+	private final String cover;
+	private Uri iconUri;
 
 	private M3uItem(String id, BrowsableItem parent, MediaFile dir, MediaFile m3uFile) {
 		super(id, parent, m3uFile);
 		Context ctx = parent.getLib().getContext();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
 		String idPath = id.substring(SCHEME.length());
 
 		String m3uName = null;
@@ -62,7 +63,8 @@ class M3uItem extends BrowsableItemBase<Item> {
 		boolean first = true;
 
 		try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(
-				ctx.getContentResolver().openInputStream(m3uFile.getUri())), UTF_8))) {
+				ctx.getContentResolver().openInputStream(m3uFile.getUri())), UTF_8));
+				 SharedTextBuilder tb = SharedTextBuilder.get()) {
 			read:
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
@@ -157,27 +159,27 @@ class M3uItem extends BrowsableItemBase<Item> {
 
 					if (group == null) {
 						int tid = tracks.size();
-						sb.setLength(0);
-						sb.append(M3uTrackItem.SCHEME).append(':').append(-1).append(':')
+						tb.setLength(0);
+						tb.append(M3uTrackItem.SCHEME).append(':').append(-1).append(':')
 								.append(tid).append(idPath);
-						tracks.add(new M3uTrackItem(sb.toString(), this, tid, file, name, album, artist, genre,
+						tracks.add(new M3uTrackItem(tb.toString(), this, tid, file, name, album, artist, genre,
 								logo, duration, type));
 					} else {
 						M3uGroupItem g = groups.get(group);
 
 						if (g == null) {
 							int gid = groups.size();
-							sb.setLength(0);
-							sb.append(M3uGroupItem.SCHEME).append(':').append(gid).append(idPath);
-							g = new M3uGroupItem(sb.toString(), this, group, gid);
+							tb.setLength(0);
+							tb.append(M3uGroupItem.SCHEME).append(':').append(gid).append(idPath);
+							g = new M3uGroupItem(tb.toString(), this, group, gid);
 							groups.put(group, g);
 						}
 
 						int tid = g.tracks.size();
-						sb.setLength(0);
-						sb.append(M3uTrackItem.SCHEME).append(':').append(g.getGroupId()).append(':')
+						tb.setLength(0);
+						tb.append(M3uTrackItem.SCHEME).append(':').append(g.getGroupId()).append(':')
 								.append(tid).append(idPath);
-						g.tracks.add(new M3uTrackItem(sb.toString(), g, tid, file, name, album, artist, genre,
+						g.tracks.add(new M3uTrackItem(tb.toString(), g, tid, file, name, album, artist, genre,
 								logo, duration, type));
 					}
 				}
@@ -239,9 +241,9 @@ class M3uItem extends BrowsableItemBase<Item> {
 
 	static M3uItem create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
-		FileItem file = (FileItem) lib.getItem(sb);
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
+		FileItem file = (FileItem) lib.getItem(tb);
 		if (file == null) return null;
 
 		FolderItem parent = (FolderItem) file.getParent();
@@ -264,13 +266,26 @@ class M3uItem extends BrowsableItemBase<Item> {
 	}
 
 	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
+	public Uri getIconUri() {
+		if (iconUri == Uri.EMPTY) {
+			return null;
+		} else if (iconUri == null) {
+			if (cover != null) {
+				MediaFile file = MediaFile.resolve(cover, getFile().getParent());
 
-		if (cover != null) {
-			MediaFile file = MediaFile.resolve(cover, getFile().getParent());
-			if (file != null) b.setIconUri(file.getUri());
+				if (file != null) {
+					iconUri = file.getUri();
+				} else {
+					iconUri = Uri.EMPTY;
+					return null;
+				}
+			} else {
+				iconUri = Uri.EMPTY;
+				return null;
+			}
 		}
+
+		return iconUri;
 	}
 
 	public M3uTrackItem getTrack(int id) {

@@ -19,7 +19,7 @@ import me.aap.fermata.media.pref.PlaylistsPrefs;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
 
@@ -92,14 +92,16 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	public List<Playlist> listChildren() {
 		int[] ids = getPlaylistIdsPref();
 		List<Playlist> children = new ArrayList<>(ids.length);
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(SCHEME).append(':');
-		int len = sb.length();
 
-		for (int id : ids) {
-			sb.setLength(len);
-			sb.append(id).append(':');
-			children.add(new DefaultPlaylist(sb.toString(), this, id));
+		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+			tb.append(SCHEME).append(':');
+			int len = tb.length();
+
+			for (int id : ids) {
+				tb.setLength(len);
+				tb.append(id).append(':');
+				children.add(new DefaultPlaylist(tb.toString(), this, id));
+			}
 		}
 
 		return children;
@@ -145,9 +147,9 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		}
 
 		int playlistId = getPlaylistsCounterPref() + 1;
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(SCHEME).append(':').append(playlistId).append(':');
-		DefaultPlaylist pl = new DefaultPlaylist(sb.toString(), this, playlistId);
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(SCHEME).append(':').append(playlistId).append(':');
+		DefaultPlaylist pl = new DefaultPlaylist(tb.releaseString(), this, playlistId);
 		setPlaylistsCounterPref(playlistId);
 		pl.setPlaylistNamePref(n);
 		super.addItem(pl);

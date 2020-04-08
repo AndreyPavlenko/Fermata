@@ -1,15 +1,15 @@
 package me.aap.fermata.media.lib;
 
-import android.support.v4.media.MediaDescriptionCompat;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
-import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static java.util.Objects.requireNonNull;
 
@@ -18,9 +18,9 @@ import static java.util.Objects.requireNonNull;
  */
 class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 	public static final String SCHEME = "m3ug";
+	final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
 	private final String name;
 	private final int groupId;
-	final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
 	private String subtitle;
 
 	M3uGroupItem(String id, M3uItem parent, String name, int groupId) {
@@ -40,9 +40,9 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 		int start = id.indexOf(':') + 1;
 		int end = id.indexOf(':', start);
 		int gid = Integer.parseInt(id.substring(start, end));
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(M3uItem.SCHEME).append(id, end, id.length());
-		M3uItem m3u = (M3uItem) lib.getItem(sb);
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(M3uItem.SCHEME).append(id, end, id.length());
+		M3uItem m3u = (M3uItem) lib.getItem(tb.releaseString());
 		return (m3u != null) ? m3u.getGroup(gid) : null;
 	}
 
@@ -64,14 +64,8 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 	}
 
 	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
-		M3uItem m3u = getParent();
-
-		if (m3u.cover != null) {
-			MediaFile file = MediaFile.resolve(m3u.cover, getFile().getParent());
-			if (file != null) b.setIconUri(file.getUri());
-		}
+	public Uri getIconUri() {
+		return getParent().getIconUri();
 	}
 
 	public int getGroupId() {
@@ -92,6 +86,6 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 
 	@Override
 	public List<M3uTrackItem> listChildren() {
-		return new ArrayList<>(tracks);
+		return Collections.unmodifiableList(tracks);
 	}
 }

@@ -10,7 +10,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.collection.CollectionUtils;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 
 /**
@@ -127,8 +127,8 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 	public String toChildItemId(String id) {
 		if (isChildItemId(id)) return id;
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		return sb.append(getScheme()).append(':').append(id).toString();
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		return tb.append(getScheme()).append(':').append(id).releaseString();
 	}
 
 	@SuppressWarnings("unchecked")

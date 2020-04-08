@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
+import me.aap.utils.io.FileUtils;
+
 /**
  * @author Andrey Pavlenko
  */
@@ -51,6 +53,11 @@ public interface MediaFile {
 	@Nullable
 	default String getPath() {
 		return null;
+	}
+
+	@Nullable
+	default String getMimeType() {
+		return FileUtils.getMimeType(getUri().getPath());
 	}
 
 	@Nullable

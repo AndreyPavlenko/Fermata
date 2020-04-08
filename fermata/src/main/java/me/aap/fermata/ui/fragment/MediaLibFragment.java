@@ -31,10 +31,12 @@ import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
-import me.aap.utils.misc.MiscUtils;
+import me.aap.utils.misc.Assert;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
+
+import static me.aap.utils.misc.Assert.assertTrue;
 
 /**
  * @author Andrey Pavlenko
@@ -127,7 +129,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	private void bind(FermataServiceUiBinder b) {
-		MiscUtils.assertTrue(adapter == null);
+		assertTrue(adapter == null);
 		adapter = createAdapter(b);
 		b.addBroadcastListener(this);
 		b.getLib().getPrefs().addBroadcastListener(this);
@@ -136,8 +138,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	private void attachTouchHelper() {
-		MiscUtils.assertTrue(adapter != null);
-		MiscUtils.assertTrue(listView != null);
+		assertTrue(adapter != null);
+		assertTrue(listView != null);
 		adapter.setListView(listView);
 		listView.setAdapter(adapter);
 		ItemTouchHelper touchHelper = new ItemTouchHelper(adapter.getItemTouchCallback());

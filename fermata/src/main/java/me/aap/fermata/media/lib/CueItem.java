@@ -15,7 +15,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -50,7 +50,8 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 		MediaMetadataRetriever mmr = null;
 
 		try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(
-				ctx.getContentResolver().openInputStream(cueFile.getUri())), UTF_8))) {
+				ctx.getContentResolver().openInputStream(cueFile.getUri())), UTF_8));
+				 SharedTextBuilder tb = SharedTextBuilder.get()) {
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
 
@@ -60,7 +61,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 				} else if (l.startsWith("TRACK ")) {
 					if (wasTrack) {
 						addTrack(id, tracks, file, track, title, performer, writer, index, albumTitle,
-								albumPerformer, albumWriter, isVideo);
+								albumPerformer, albumWriter, isVideo, tb);
 						title = performer = writer = albumTitle = albumPerformer = albumWriter = null;
 					} else {
 						wasTrack = true;
@@ -90,7 +91,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 				} else if (l.startsWith("FILE ")) {
 					if (wasTrack) {
 						addTrack(id, tracks, file, track, title, performer, writer, index, albumTitle,
-								albumPerformer, albumWriter, isVideo);
+								albumPerformer, albumWriter, isVideo, tb);
 						track = title = performer = writer = index = albumTitle = albumPerformer = albumWriter = null;
 					}
 
@@ -105,7 +106,7 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 			}
 
 			addTrack(id, tracks, file, track, title, performer, writer, index, albumTitle,
-					albumPerformer, albumWriter, isVideo);
+					albumPerformer, albumWriter, isVideo, tb);
 
 			int size = tracks.size();
 
@@ -148,9 +149,9 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 
 	static CueItem create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
-		FileItem file = (FileItem) lib.getItem(sb);
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
+		FileItem file = (FileItem) lib.getItem(tb.releaseString());
 		if (file == null) return null;
 
 		FolderItem parent = (FolderItem) file.getParent();
@@ -169,7 +170,8 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 
 	private void addTrack(String id, List<CueTrackItem> tracks, MediaFile file, String track, String title,
 												String performer, String writer, String index, String albumTitle,
-												String albumPerformer, String albumWriter, boolean isVideo) {
+												String albumPerformer, String albumWriter, boolean isVideo,
+												SharedTextBuilder tb) {
 		if ((file == null) || (track == null) || (index == null)) return;
 
 		String[] i = index.split(":");
@@ -193,10 +195,10 @@ class CueItem extends BrowsableItemBase<CueTrackItem> {
 		}
 
 		int trackNum = tracks.size() + 1;
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(CueTrackItem.SCHEME).append(':').append(trackNum)
+		tb.setLength(0);
+		tb.append(CueTrackItem.SCHEME).append(':').append(trackNum)
 				.append(id, SCHEME.length(), id.length());
-		CueTrackItem t = new CueTrackItem(sb.toString(), this, trackNum, file, title,
+		CueTrackItem t = new CueTrackItem(tb.toString(), this, trackNum, file, title,
 				performer, writer, albumTitle, offset, isVideo);
 		tracks.add(t);
 

@@ -30,6 +30,8 @@ import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataMediaService.ServiceBinder;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.function.BiConsumer;
+import me.aap.utils.text.StringBuilderWrapper;
+import me.aap.utils.text.TextBuilder;
 import me.aap.utils.text.TextUtils;
 
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
@@ -321,7 +323,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	private final class MediaControllerCallback extends MediaControllerCompat.Callback {
 		private final MediaSessionCallback sessionCallback;
 		private final Handler handler = FermataApplication.get().getHandler();
-		private final StringBuilder timeBuilder = new StringBuilder(10);
+		private final TextBuilder timeBuilder = new StringBuilderWrapper(10);
 		private Object progressUpdateStamp;
 		boolean pauseProgressUpdate;
 		boolean updateDuration;
@@ -425,7 +427,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			handler.postDelayed(() -> updateProgress(stamp), 1000);
 		}
 
-		private StringBuilder timeToString(int seconds) {
+		private TextBuilder timeToString(int seconds) {
 			timeBuilder.setLength(0);
 			TextUtils.timeToString(timeBuilder, seconds);
 			return timeBuilder;

@@ -3,7 +3,6 @@ package me.aap.fermata.media.engine;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
-import android.support.v4.media.MediaMetadataCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,20 +18,19 @@ import com.google.android.play.core.splitinstall.SplitInstallSessionState;
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener;
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
 
-import java.io.Closeable;
 import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.utils.function.Consumer;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
-import me.aap.utils.pref.PreferenceStore;
 import me.aap.fermata.ui.activity.MainActivity;
+import me.aap.utils.function.Consumer;
+import me.aap.utils.pref.PreferenceStore;
 
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
@@ -41,14 +39,13 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 /**
  * @author Andrey Pavlenko
  */
-public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
+public class MediaEngineManager implements PreferenceStore.Listener {
 	private static final String MODULE_EXO = "exoplayer";
 	private static final String MODULE_VLC = "vlc";
-	private static MediaEngineManager instance;
-	private final MediaLib lib;
-	private final MediaEngineProvider mediaPlayer;
-	private MediaEngineProvider exoPlayer;
-	private MediaEngineProvider vlcPlayer;
+	final MediaLib lib;
+	final MediaEngineProvider mediaPlayer;
+	MediaEngineProvider exoPlayer;
+	MediaEngineProvider vlcPlayer;
 
 	public MediaEngineManager(MediaLib lib) {
 		this.lib = lib;
@@ -57,19 +54,6 @@ public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
 		lib.getPrefs().addBroadcastListener(this);
 		setExoPlayer(true);
 		setVlcPlayer(true);
-		instance = this;
-	}
-
-	public static MediaEngineManager getInstance() {
-		return instance;
-	}
-
-	public void getMediaMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
-		if ((vlcPlayer != null) && (!"content".equals(item.getLocation().getScheme()))) {
-			if (vlcPlayer.getMediaMetadata(meta, item)) return;
-		}
-
-		mediaPlayer.getMediaMetadata(meta, item);
 	}
 
 	public boolean isExoPlayerSupported() {
@@ -127,11 +111,6 @@ public class MediaEngineManager implements Closeable, PreferenceStore.Listener {
 		}
 
 		return null;
-	}
-
-	@Override
-	public void close() {
-		lib.getPrefs().removeBroadcastListener(this);
 	}
 
 	private void setExoPlayer(boolean install) {

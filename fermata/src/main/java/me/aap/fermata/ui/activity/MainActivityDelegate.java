@@ -1,6 +1,6 @@
 package me.aap.fermata.ui.activity;
 
-import android.Manifest;
+import android.Manifest.permission;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -452,13 +452,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private static String[] getRequiredPermissions() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-			return new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-					Manifest.permission.FOREGROUND_SERVICE, Manifest.permission.ACCESS_MEDIA_LOCATION};
+			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE,
+					permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION};
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-			return new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-					Manifest.permission.FOREGROUND_SERVICE};
+			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE,
+					permission.FOREGROUND_SERVICE};
 		} else {
-			return new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
+			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE};
 		}
 	}
 

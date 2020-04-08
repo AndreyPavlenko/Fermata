@@ -1,6 +1,6 @@
 package me.aap.fermata.media.lib;
 
-import android.support.v4.media.MediaDescriptionCompat;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
@@ -25,6 +25,7 @@ import static me.aap.fermata.BuildConfig.DEBUG;
 class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 	public static final String SCHEME = "folder";
 	private String subtitle;
+	private Uri iconUri;
 
 	private FolderItem(String id, BrowsableItem parent, MediaFile file) {
 		super(id, parent, file);
@@ -79,20 +80,7 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		return this;
 	}
 
-	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
-		MediaFile file = getFile();
-		MediaFile cover = file.getChild("cover.jpg");
-
-		if (cover != null) {
-			b.setIconUri(cover.getUri());
-		} else if ((cover = file.getChild("folder.jpg")) != null) {
-			b.setIconUri(cover.getUri());
-		}
-	}
-
-	public List<Item> listChildren() {
+	protected List<Item> listChildren() {
 		List<MediaFile> ls = getFile().ls();
 		if (ls.isEmpty()) return Collections.emptyList();
 
@@ -111,6 +99,11 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		for (MediaFile f : ls) {
 			String name = f.getName();
 			if (name.startsWith(".")) continue;
+
+			if (isIcon(name)) {
+				iconUri = f.getUri();
+				continue;
+			}
 
 			Item i;
 
@@ -172,6 +165,37 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		}
 
 		return children;
+	}
+
+	@Override
+	protected String getChildrenIdPattern() {
+		return '%' + getId().substring(SCHEME.length()) + "/%";
+	}
+
+
+	@Override
+	public Uri getIconUri() {
+		if (iconUri == Uri.EMPTY) {
+			return null;
+		} else if (iconUri == null) {
+			MediaFile file = getFile();
+			MediaFile cover = file.getChild("cover.jpg");
+
+			if (cover != null) {
+				iconUri = cover.getUri();
+			} else if ((cover = file.getChild("folder.jpg")) != null) {
+				iconUri = cover.getUri();
+			} else {
+				iconUri = Uri.EMPTY;
+				return null;
+			}
+		}
+
+		return iconUri;
+	}
+
+	private boolean isIcon(String name) {
+		return "cover.jpg".equals(name) || "folder.jpg".equals(name);
 	}
 
 	@Override

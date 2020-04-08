@@ -8,6 +8,7 @@
 
     <style name="AppTheme" parent="Theme.Utils.Base">
         <item name="android:windowBackground">@drawable/app_background</item>
+        <item name="android:navigationBarColor">?attr/colorPrimary</item>
 
         <item name="appMediaItemStyle">@style/AppTheme.MediaItemStyle</item>
         <item name="appControlPanelStyle">@style/AppTheme.ControlPanelStyle</item>

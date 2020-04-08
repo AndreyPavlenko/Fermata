@@ -8,7 +8,7 @@ import java.util.Objects;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static me.aap.fermata.util.Utils.isVideoMimeType;
 import static me.aap.utils.io.FileUtils.getFileExtension;
@@ -72,9 +72,9 @@ class M3uTrackItem extends PlayableItemBase {
 		start = end + 1;
 		end = id.indexOf(':', start);
 		int tid = Integer.parseInt(id.substring(start, end));
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(M3uItem.SCHEME).append(id, end, id.length());
-		M3uItem m3u = (M3uItem) lib.getItem(sb);
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(M3uItem.SCHEME).append(id, end, id.length());
+		M3uItem m3u = (M3uItem) lib.getItem(tb);
 		return (m3u != null) ? m3u.getTrack(gid, tid) : null;
 	}
 
@@ -116,7 +116,7 @@ class M3uTrackItem extends PlayableItemBase {
 		if (album != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
 		if (artist != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
 		if (genre != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, genre);
-		if (getFile().isLocalFile()) FileItem.buildMediaMetadata(meta, this);
+		if (getFile().isLocalFile()) getLib().getMetadataRetriever().getMediaMetadata(meta, this);
 
 		return meta;
 	}

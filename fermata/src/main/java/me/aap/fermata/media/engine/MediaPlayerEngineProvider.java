@@ -60,11 +60,11 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			if (m != null)
 				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, Long.parseLong(m));
 
-			byte [] pic = mmr.getEmbeddedPicture();
+			byte[] pic = mmr.getEmbeddedPicture();
 
-			if(pic != null) {
+			if (pic != null) {
 				Bitmap bm = BitmapFactory.decodeByteArray(pic, 0, pic.length);
-				if(bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+				if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 			}
 		} catch (Exception ex) {
 			Log.d(getClass().getName(), "Failed to retrieve media metadata of " + item.getLocation(), ex);
@@ -75,7 +75,6 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 				if (mp == null) return false;
 
 				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
-				meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
 			} catch (Exception ex2) {
 				Log.d(getClass().getName(), "Failed to retrieve duration of " + item.getLocation(), ex2);
 				return false;

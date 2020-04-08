@@ -21,7 +21,7 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static me.aap.fermata.util.Utils.getResourceUri;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
@@ -110,17 +110,19 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		String[] pref = getFoldersPref();
 		boolean preferFile = getPreferFileApiPref();
 		List<FolderItem> children = new ArrayList<>(pref.length);
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(FolderItem.SCHEME).append(':');
-		int len = sb.length();
 
-		for (String uri : pref) {
-			Uri u = Uri.parse(uri);
-			MediaFile folder = MediaFile.create(u, preferFile);
-			sb.setLength(len);
-			sb.append(folder.getName());
-			FolderItem i = FolderItem.create(sb.toString(), this, folder, lib);
-			children.add(i);
+		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+			tb.append(FolderItem.SCHEME).append(':');
+			int len = tb.length();
+
+			for (String uri : pref) {
+				Uri u = Uri.parse(uri);
+				MediaFile folder = MediaFile.create(u, preferFile);
+				tb.setLength(len);
+				tb.append(folder.getName());
+				FolderItem i = FolderItem.create(tb.toString(), this, folder, lib);
+				children.add(i);
+			}
 		}
 
 		return children;
@@ -194,8 +196,8 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 
 	private FolderItem toFolderItem(Uri u) {
 		MediaFile folder = MediaFile.create(u, getPreferFileApiPref());
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(FolderItem.SCHEME).append(':').append(folder.getName());
-		return FolderItem.create(sb.toString(), this, folder, getLib());
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(FolderItem.SCHEME).append(':').append(folder.getName());
+		return FolderItem.create(tb.releaseString(), this, folder, getLib());
 	}
 }

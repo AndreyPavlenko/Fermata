@@ -119,7 +119,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private final MediaLib lib;
 	private final FermataMediaService service;
 	private final MediaSessionCompat session;
-	private final MediaEngineManager engineManager;
 	private final PlaybackControlPrefs playbackControlPrefs;
 	private final Handler handler;
 	private final AudioManager audioManager;
@@ -147,7 +146,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		this.lib = lib;
 		this.service = service;
 		this.session = session;
-		this.engineManager = new MediaEngineManager(lib);
 		this.playbackControlPrefs = playbackControlPrefs;
 		this.handler = handler;
 		Context ctx = lib.getContext();
@@ -228,7 +226,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	public MediaEngineManager getEngineManager() {
-		return engineManager;
+		return lib.getMediaEngineManager();
 	}
 
 	public void addVideoView(VideoView view, int priority) {
@@ -322,7 +320,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
 		listeners.clear();
-		engineManager.close();
 	}
 
 	@Override
@@ -333,7 +330,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		PlayableItem i = lib.getLastPlayedItem();
 		if ((i == null) || i.isVideo() || i.isStream()) return;
 
-		engine = engineManager.createEngine(engine, i, this);
+		engine = getEngineManager().createEngine(engine, i, this);
 		Log.d(getClass().getName(), "MediaEngine " + engine + " created for " + i);
 		if (engine == null) return;
 
@@ -852,7 +849,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		Log.w(TAG, msg, ex);
 
 		if (tryAnotherEngine) {
-			this.engine = engineManager.createAnotherEngine(engine, this);
+			this.engine = getEngineManager().createAnotherEngine(engine, this);
 
 			if (this.engine != null) {
 				Log.i(getClass().getName(), "Trying another engine: " + this.engine);
@@ -895,7 +892,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private void playItem(PlayableItem i, long pos) {
 		PlayableItem current = getCurrentItem();
 		long currentPos = (current != null) ? engine.getPosition() : 0;
-		engine = engineManager.createEngine(engine, i, this);
+		engine = getEngineManager().createEngine(engine, i, this);
 
 		if (engine == null) {
 			if (current != null) lib.setLastPlayed(current, currentPos);

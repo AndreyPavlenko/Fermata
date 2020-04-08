@@ -1,27 +1,34 @@
 package me.aap.fermata.media.lib;
 
+import android.net.Uri;
+import android.support.v4.media.MediaDescriptionCompat;
+import android.support.v4.media.MediaMetadataCompat;
+
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.app.App;
 import me.aap.utils.concurrent.CompletableFuture;
 import me.aap.utils.function.Consumer;
+import me.aap.utils.function.JointConsumer;
 
 import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
 import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
+import static me.aap.utils.concurrent.PriorityThreadPool.MAX_PRIORITY;
+import static me.aap.utils.concurrent.PriorityThreadPool.MIN_PRIORITY;
 
 /**
  * @author Andrey Pavlenko
@@ -29,7 +36,7 @@ import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
 abstract class BrowsableItemBase<C extends Item> extends ItemBase implements BrowsableItem,
 		BrowsableItemPrefs {
 	private volatile List<C> children;
-	private Iterator<PlayableItem> shuffle;
+	private volatile Iterator<PlayableItem> shuffle;
 	private LoadChildren loadChildren;
 
 	public BrowsableItemBase(String id, @Nullable BrowsableItem parent, @Nullable MediaFile file) {
@@ -38,8 +45,12 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 
 	protected abstract List<C> listChildren();
 
-	protected boolean canListInMainThread() {
-		return true;
+	protected String getChildrenIdPattern() {
+		return null;
+	}
+
+	protected Uri getIconUri() {
+		return null;
 	}
 
 	@Override
@@ -72,107 +83,101 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void getChildren(@Nullable Consumer<List<? extends Item>> listCallback,
-													@Nullable Consumer<List<? extends Item>> completionCallback) {
+	public void getChildren(@Nullable Consumer<List<? extends Item>> listConsumer,
+													@Nullable Consumer<List<? extends Item>> sortedListConsumer) {
 		List<C> children = this.children;
 
 		if (children != null) {
-			consumeInMainThread(listCallback, children);
-			consumeInMainThread(completionCallback, children);
+			consumeInMainThread(listConsumer, children);
+			consumeInMainThread(sortedListConsumer, children);
 			return;
 		}
 
-		boolean run;
 		LoadChildren load;
+		boolean main = isMainThread();
+		boolean canBlock = ((listConsumer != null) && listConsumer.canBlockThread()) ||
+				((sortedListConsumer != null) && sortedListConsumer.canBlockThread());
+		FermataApplication app = FermataApplication.get();
+		JointConsumer<List<? extends Item>> consumer = new JointConsumer<>(listConsumer, sortedListConsumer);
 
 		synchronized (this) {
-			if (loadChildren == null) {
-				run = true;
-				loadChildren = load = new LoadChildren();
-				if (completionCallback != null) load.sort = new CompletableFuture<>();
-			} else {
-				load = loadChildren;
+			if (loadChildren == null) loadChildren = load = new LoadChildren();
+			else load = loadChildren;
+		}
 
-				if ((completionCallback != null) && (load.sort == null)) {
-					run = true;
-					load.sort = new CompletableFuture<>();
+		load.list.addConsumer(consumer.getFirst(), Collections::emptyList, app.getHandler());
+		load.sort.addConsumer(consumer, Collections::emptyList, app.getHandler());
+
+		if (sortedListConsumer != null) {
+			load.list.addConsumer(list -> {
+				if (canBlock || !isMainThread()) {
+					load.sort.run(() -> sort(load, list));
 				} else {
-					run = false;
+					byte pri = main ? MAX_PRIORITY : MIN_PRIORITY;
+					app.getExecutor().submit(pri, () -> load.sort.run(() -> sort(load, list)));
 				}
-			}
+			}, Collections::emptyList);
 		}
 
-		load.list.addConsumer(listCallback, Collections::emptyList, App.get().getHandler());
-
-		if (load.sort != null) {
-			load.sort.addConsumer(completionCallback, Collections::emptyList, App.get().getHandler());
-			if (load.sort.isDone()) return;
-		} else if (load.list.isDone()) {
-			return;
-		}
-
-		boolean main = isMainThread();
-		List<C> list;
-
-		if (load.list.isDone()) {
-			list = new ArrayList<>((List<C>) load.list.get(null));
-		} else if (!main) {
-			list = listChildren();
-			load.list.complete(new ArrayList<>(list));
-			if (load.sort == null) return;
-		} else if (canListInMainThread()) {
-			// Do not list in main thread if there are no Future consumers
-			if (!(listCallback instanceof Future) && !(completionCallback instanceof Future)) {
-				list = null;
-			} else {
-				list = listChildren();
-				load.list.complete(new ArrayList<>(list));
-				if (load.sort == null) return;
-			}
+		if (canBlock || !main) {
+			load.list.run(this::list);
 		} else {
-			list = null;
-		}
-
-		if (run || !main) {
-			if (main) App.get().getExecutor().submit(() -> loadChildren(load, list));
-			else loadChildren(load, list);
+			byte pri = main ? MAX_PRIORITY : MIN_PRIORITY;
+			app.getExecutor().submit(pri, () -> load.list.run(this::list));
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private void loadChildren(LoadChildren load, List<C> list) {
-		CompletableFuture<List<? extends Item>> sort = load.sort;
-		if ((sort != null) && sort.isDone()) return;
+	private List<C> list() {
+		List<C> list = Collections.unmodifiableList(listChildren());
+		queryMetadata(list);
+		return list;
+	}
 
-		if (list == null) {
-			if (load.list.isDone()) {
-				list = new ArrayList<>((List<C>) load.list.get(null));
-			} else {
-				list = listChildren();
-				load.list.complete(new ArrayList<>(list));
-			}
-		}
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private List sort(LoadChildren load, List list) {
+		if (load.sort.isDone()) return load.sort.get(Collections::emptyList);
 
-		if (sort == null) {
-			synchronized (this) {
-				if ((sort = load.sort) == null) return;
-			}
-		}
-
+		list = new ArrayList(list);
 		sortChildren(list);
+		List children = Collections.unmodifiableList(list);
 
-		if (sort.complete(list)) {
-			List<C> children = list;
-			App.get().getHandler().post(() -> {
-				if (this.children == null) {
-					this.children = children;
+		if (load.sort.complete(children)) {
+			synchronized (this) {
+				if (loadChildren == load) {
 					shuffle = null;
+					this.children = children;
+					loadChildren = null;
 				}
-				synchronized (this) {
-					if (this.loadChildren == load) loadChildren = null;
-				}
-			});
+			}
+
+			return children;
+		} else {
+			return load.sort.get(Collections::emptyList);
 		}
+	}
+
+	private void queryMetadata(List<C> children) {
+		String pattern = getChildrenIdPattern();
+		if (pattern == null) return;
+
+		Map<String, MediaMetadataCompat.Builder> meta = getLib().getMetadataRetriever().queryMetadata(pattern);
+		if (meta.isEmpty()) return;
+
+		for (C c : children) {
+			if (!(c instanceof PlayableItemBase)) continue;
+			MediaMetadataCompat.Builder b = meta.get(c.getId());
+			if (b == null) continue;
+
+			PlayableItemBase p = (PlayableItemBase) c;
+			p.setParentData(b);
+			p.setMediaData(b.build());
+		}
+	}
+
+	@Override
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		super.buildCompleteDescription(b);
+		b.setIconUri(getIconUri());
 	}
 
 	@Override
@@ -199,23 +204,29 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 		this.children = Collections.unmodifiableList(children);
 	}
 
+	boolean isChildrenLoaded() {
+		return children != null;
+	}
+
 	@Override
 	public void clearCache() {
 		super.clearCache();
+		List<C> children = this.children;
 
 		if (children != null) {
+			shuffle = null;
+			this.children = null;
+
 			for (Item i : children) {
 				i.clearCache();
 			}
 		}
-
-		shuffle = null;
-		children = null;
 	}
 
 	@Override
 	public void updateTitles() {
 		super.updateTitles();
+		List<C> children = this.children;
 
 		if (children != null) {
 			for (Item i : children) {
@@ -226,6 +237,7 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 
 	@Override
 	public void updateSorting() {
+		List<C> children = this.children;
 		if (children == null) return;
 
 		for (C c : children) {
@@ -284,7 +296,6 @@ abstract class BrowsableItemBase<C extends Item> extends ItemBase implements Bro
 
 	private static final class LoadChildren {
 		final CompletableFuture<List<? extends Item>> list = new CompletableFuture<>();
-		@Nullable
-		CompletableFuture<List<? extends Item>> sort;
+		final CompletableFuture<List<? extends Item>> sort = new CompletableFuture<>();
 	}
 }

@@ -15,7 +15,7 @@ import java.util.List;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.io.FileUtils;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static android.provider.DocumentsContract.buildDocumentUriUsingTree;
 
@@ -83,16 +83,18 @@ class FsFile implements MediaFile {
 
 		MediaRoot mediaRoot = (MediaRoot) root;
 		String rootId = mediaRoot.msDir.getId();
-		StringBuilder sb = TextUtils.getSharedStringBuilder().append(rootId);
-		if (!rootId.endsWith(":")) sb.append('/');
 
-		for (int i = parents.size() - 2; i >= 0; i--) {
-			FsFile p = parents.get(i);
-			sb.append(p.getName()).append('/');
+		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+			if (!rootId.endsWith(":")) tb.append('/');
+
+			for (int i = parents.size() - 2; i >= 0; i--) {
+				FsFile p = parents.get(i);
+				tb.append(p.getName()).append('/');
+			}
+
+			tb.append(getName());
+			return Utils.getAudioUri(buildDocumentUriUsingTree(mediaRoot.msDir.getRootUri(), tb.toString()));
 		}
-
-		sb.append(getName());
-		return Utils.getAudioUri(buildDocumentUriUsingTree(mediaRoot.msDir.getRootUri(), sb.toString()));
 	}
 
 	@NonNull

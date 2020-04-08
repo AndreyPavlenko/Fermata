@@ -6,7 +6,7 @@ import android.support.v4.media.MediaMetadataCompat;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
 
@@ -63,9 +63,9 @@ class CueTrackItem extends PlayableItemBase {
 		int i2 = id.indexOf(':', i1 + 1);
 		if (i2 == -1) return null;
 
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		sb.append(CueItem.SCHEME).append(id, i2, id.length());
-		CueItem cue = (CueItem) lib.getItem(sb);
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(CueItem.SCHEME).append(id, i2, id.length());
+		CueItem cue = (CueItem) lib.getItem(tb.releaseString());
 		if (cue == null) return null;
 
 		i1 = Integer.parseInt(id.substring(i1 + 1, i2));

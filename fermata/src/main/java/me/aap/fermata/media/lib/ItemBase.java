@@ -1,35 +1,31 @@
 package me.aap.fermata.media.lib;
 
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
-import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Collection;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.storage.MediaFile;
 import me.aap.utils.app.App;
 import me.aap.utils.concurrent.CompletableFuture;
 import me.aap.utils.function.Consumer;
-import me.aap.utils.misc.MiscUtils;
+import me.aap.utils.misc.Assert;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
 import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
+import static me.aap.utils.concurrent.PriorityThreadPool.MAX_PRIORITY;
 
 /**
  * @author Andrey Pavlenko
@@ -62,37 +58,39 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@Override
 	public String getTitle() {
 		if (title == null) {
-			StringBuilder sb = TextUtils.getSharedStringBuilder();
-			BrowsableItemPrefs prefs = requireNonNull(getParent()).getPrefs();
-			boolean nameAppended = false;
-			boolean browsable = (this instanceof BrowsableItem);
+			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+				BrowsableItem parent = requireNonNull(getParent());
+				BrowsableItemPrefs prefs = parent.getPrefs();
+				boolean nameAppended = false;
+				boolean browsable = (this instanceof BrowsableItem);
 
-			if (prefs.getTitleSeqNumPref()) {
-				if (seqNum == 0) {
-					// Make sure the children are loaded and sorted
-					getParent().getChildren();
-					MiscUtils.assertTrue(seqNum != 0);
-					sb.setLength(0);
+				if (prefs.getTitleSeqNumPref()) {
+					if (seqNum == 0) {
+						// Make sure the children are loaded and sorted
+						parent.getChildren();
+						Assert.assertTrue(seqNum != 0);
+						tb.setLength(0);
+					}
+
+					tb.append(seqNum).append(". ");
 				}
 
-				sb.append(seqNum).append(". ");
-			}
-
-			if (browsable || prefs.getTitleNamePref()) {
-				sb.append(getName());
-				nameAppended = true;
-			}
-
-			if (!browsable && prefs.getTitleFileNamePref()) {
-				MediaFile f = getFile();
-
-				if (f != null) {
-					if (nameAppended) sb.append(" - ");
-					sb.append(f.getName());
+				if (browsable || prefs.getTitleNamePref()) {
+					tb.append(getName());
+					nameAppended = true;
 				}
-			}
 
-			title = sb.toString();
+				if (!browsable && prefs.getTitleFileNamePref()) {
+					MediaFile f = getFile();
+
+					if (f != null) {
+						if (nameAppended) tb.append(" - ");
+						tb.append(f.getName());
+					}
+				}
+
+				title = tb.toString();
+			}
 		}
 
 		return title;
@@ -160,11 +158,11 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	@Override
-	public MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> completionCallback) {
+	public MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> consumer) {
 		MediaDescriptionCompat dsc = mediaDescr;
 
 		if (dsc != null) {
-			consumeInMainThread(completionCallback, dsc);
+			consumeInMainThread(consumer, dsc);
 			return dsc;
 		}
 
@@ -174,72 +172,42 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		if (builder == null) {
 			MediaDescriptionCompat d = b.build();
 			mediaDescr = d;
-			consumeInMainThread(completionCallback, d);
+			consumeInMainThread(consumer, d);
 			return d;
 		}
 
-		boolean isNew;
 		CompletableFuture<MediaDescriptionCompat> load;
 
 		synchronized (this) {
-			if (loadDescr == null) {
-				isNew = true;
-				loadDescr = load = new CompletableFuture<>();
+			if (loadDescr == null) loadDescr = load = new CompletableFuture<>();
+			else load = loadDescr;
+		}
+
+		if (load.setRunning()) {
+			if (isMainThread() && ((consumer == null) || !consumer.canBlockThread())) {
+				load.addConsumer(consumer, this::incomplete, App.get().getHandler());
+				FermataApplication.get().getExecutor().submit(MAX_PRIORITY, () -> loadMediaDescription(load, builder));
+				return b.build();
 			} else {
-				isNew = false;
-				load = loadDescr;
+				dsc = loadMediaDescription(load, builder);
+				consumeInMainThread(consumer, dsc);
+				return dsc;
 			}
-		}
-
-		load.addConsumer(completionCallback, this::incomplete, App.get().getHandler());
-
-		if (isMainThread()) {
-			MediaDescriptionCompat d = b.build();
-			if (isNew) App.get().getExecutor().submit(() -> loadMediaDescription(load, b, builder));
-			return d;
+		} else if (load.isDone()) {
+			dsc = load.get(b::build);
+			consumeInMainThread(consumer, dsc);
+			return dsc;
 		} else {
-			return loadMediaDescription(load, b, builder);
+			load.addConsumer(consumer, this::incomplete, App.get().getHandler());
+			return b.build();
 		}
-	}
-
-	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
-		MediaFile f = getFile();
-		b.setMediaId(getId()).setTitle((f != null) ? f.getName() : getTitle()).setSubtitle("");
-		return this::buildCompleteDescription;
-	}
-
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		b.setMediaId(getId()).setTitle(getTitle()).setSubtitle(getSubtitle());
 	}
 
 	private MediaDescriptionCompat loadMediaDescription(CompletableFuture<MediaDescriptionCompat> load,
-																											MediaDescriptionCompat.Builder b,
 																											Consumer<MediaDescriptionCompat.Builder> builder) {
 		if (load.isDone()) return load.get(this::incomplete);
 
-		if (this instanceof PlayableItem) {
-			MediaMetadataCompat md = ((PlayableItem) this).getMediaData();
-			Bitmap icon = md.getBitmap(METADATA_KEY_ALBUM_ART);
-			if (icon == null) icon = requireNonNull(getParent()).getMediaDescription().getIconBitmap();
-
-			if (icon != null) {
-				b.setIconBitmap(icon);
-			} else {
-				String iconUri = md.getString(METADATA_KEY_ALBUM_ART_URI);
-
-				if (iconUri == null) {
-					Uri uri = getParent().getMediaDescription().getIconUri();
-					if (uri != null) iconUri = uri.toString();
-				}
-
-				if (iconUri != null) {
-					icon = getLib().getCachedBitmap(iconUri);
-					if (icon != null) b.setIconBitmap(icon);
-					else b.setIconUri(Uri.parse(iconUri));
-				}
-			}
-		}
-
+		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
 		builder.accept(b);
 		MediaDescriptionCompat d = b.build();
 
@@ -252,6 +220,16 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		} else {
 			return load.get(this::incomplete);
 		}
+	}
+
+	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
+		MediaFile f = getFile();
+		b.setMediaId(getId()).setTitle((f != null) ? f.getName() : getTitle()).setSubtitle("");
+		return this::buildCompleteDescription;
+	}
+
+	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
+		b.setMediaId(getId()).setTitle(getTitle()).setSubtitle(getSubtitle());
 	}
 
 	private MediaDescriptionCompat incomplete() {

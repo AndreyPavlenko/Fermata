@@ -5,7 +5,7 @@ import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.text.SharedTextBuilder;
 
 import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 
@@ -120,14 +120,14 @@ public interface MediaPrefs extends PreferenceStore {
 	}
 
 	static String toUserPreset(String name, int[] bands) {
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
+		try(SharedTextBuilder tb = SharedTextBuilder.get()) {
+			for (int i = 0; i < bands.length; i++) {
+				tb.append(bands[i]);
+				if (i == (bands.length - 1)) tb.append(':');
+				else tb.append(' ');
+			}
 
-		for (int i = 0; i < bands.length; i++) {
-			sb.append(bands[i]);
-			if (i == (bands.length - 1)) sb.append(':');
-			else sb.append(' ');
+			return tb.append(name).toString();
 		}
-
-		return sb.append(name).toString();
 	}
 }

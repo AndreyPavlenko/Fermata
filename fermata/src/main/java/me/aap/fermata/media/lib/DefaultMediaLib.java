@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.utils.app.App;
@@ -55,6 +57,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final DefaultFolders folders;
 	private final DefaultFavorites favorites;
 	private final DefaultPlaylists playlists;
+	private final MediaEngineManager mediaEngineManager;
+	private final MetadataRetriever metadataRetriever;
 	private final Map<String, WeakRef<Item>> itemCache = new HashMap<>();
 	private final Map<String, SoftRef<Bitmap>> bitmapCache = new HashMap<>();
 	private final ReferenceQueue<Item> itemRefQueue = new ReferenceQueue<>();
@@ -66,6 +70,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		folders = new DefaultFolders(this);
 		favorites = new DefaultFavorites(this);
 		playlists = new DefaultPlaylists(this);
+		mediaEngineManager = new MediaEngineManager(this);
+		metadataRetriever = new MetadataRetriever(mediaEngineManager);
 	}
 
 	public String getRootId() {
@@ -293,6 +299,18 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return playlists;
 	}
 
+	@NonNull
+	@Override
+	public MediaEngineManager getMediaEngineManager() {
+		return mediaEngineManager;
+	}
+
+	@NonNull
+	@Override
+	public MetadataRetriever getMetadataRetriever() {
+		return metadataRetriever;
+	}
+
 	@Nullable
 	@Override
 	public Bitmap getCachedBitmap(String uri) {
@@ -311,13 +329,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	}
 
 	@Override
-	public void getBitmap(String uri, Consumer<Bitmap> consumer) {
+	public void getBitmap(String uri, boolean cache, boolean resize, Consumer<Bitmap> consumer) {
 		Bitmap bm = getCachedBitmap(uri);
 		if (bm != null) consumeInMainThread(consumer, bm);
-		else App.get().execute(() -> loadBitmap(uri), consumer);
+		else App.get().execute(() -> loadBitmap(uri, cache, resize), consumer);
 	}
 
-	private Bitmap loadBitmap(String uri) {
+	private Bitmap loadBitmap(String uri, boolean cache, boolean resize) {
 		Bitmap bm = getCachedBitmap(uri);
 		if (bm != null) return bm;
 
@@ -334,7 +352,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				String[] s = uri.split("/");
 				int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
 				Drawable d = res.getDrawable(id, ctx.getTheme());
-				if (d != null) bm = UiUtils.getBitmap(d, Color.WHITE);
+				if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
 			} catch (Exception ex) {
 				Log.e(getClass().getName(), "Failed to load bitmap: " + uri, ex);
 			}
@@ -343,18 +361,16 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
 				if (fd != null) bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
 			} catch (Exception ex) {
-				if (!uri.startsWith(FileItem.albumArtStrUri)) {
-					Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
-				}
+				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
 			}
 		}
 
-		return (bm != null) ? cacheBitmap(uri, bm) : null;
+		if (bm == null) return null;
+		if (resize) bm = resizedBitmap(bm, getMaxBitmapSize());
+		return cache ? cacheBitmap(uri, bm) : bm;
 	}
 
 	private Bitmap cacheBitmap(String uri, Bitmap bm) {
-		bm = resizedBitmap(bm, getMaxBitmapSize());
-
 		synchronized (bitmapCache) {
 			clearRefs(bitmapCache, bitmapRefQueue);
 			SoftRef<Bitmap> ref = new SoftRef<>(uri, bm, bitmapRefQueue);

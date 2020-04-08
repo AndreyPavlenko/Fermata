@@ -16,6 +16,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistPrefs;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
@@ -79,8 +80,8 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	@Override
 	public String toChildItemId(String id) {
 		if (isChildItemId(id)) return id;
-		StringBuilder sb = TextUtils.getSharedStringBuilder();
-		return sb.append(getScheme()).append(id).toString();
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		return tb.append(getScheme()).append(id).releaseString();
 	}
 
 	@Override

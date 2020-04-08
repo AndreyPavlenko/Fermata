@@ -142,7 +142,7 @@
     <string name="use_phone_to_grant_perm">Пожалуйста, воспользуйтесь телефоном, чтобы предоставить необходимые разрешения.</string>
 
     <string name="eq_manual">Ручные</string>
-    <string name="eq_normal">Номальные</string>
+    <string name="eq_normal">Нормальные</string>
     <string name="eq_classical">Классика</string>
     <string name="eq_dance">Танцевальная</string>
     <string name="eq_flat">Бемоль</string>

@@ -23,15 +23,19 @@ import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
+import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.app.App;
 import me.aap.utils.collection.NaturalOrderComparator;
 import me.aap.utils.concurrent.CompletableFuture;
-import me.aap.utils.concurrent.FutureSupplier;
 import me.aap.utils.function.Consumer;
+
+import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
 
 /**
  * @author Andrey Pavlenko
@@ -53,14 +57,28 @@ public interface MediaLib {
 	@NonNull
 	Playlists getPlaylists();
 
+	@NonNull
+	MediaEngineManager getMediaEngineManager();
+
+	@NonNull
+	MetadataRetriever getMetadataRetriever();
+
 	@Nullable
 	Bitmap getCachedBitmap(String uri);
 
-	void getBitmap(String uri, Consumer<Bitmap> consumer);
+	void getBitmap(String uri, boolean cache, boolean resize, Consumer<Bitmap> consumer);
+
+	default void getBitmap(String uri, Consumer<Bitmap> consumer) {
+		getBitmap(uri, true, true, consumer);
+	}
 
 	default Bitmap getBitmap(String uri) {
+		return getBitmap(uri, true, true);
+	}
+
+	default Bitmap getBitmap(String uri, boolean cache, boolean resize) {
 		CompletableFuture<Bitmap> f = new CompletableFuture<>();
-		getBitmap(uri, f);
+		getBitmap(uri, cache, resize, f);
 		return f.get(() -> null);
 	}
 
@@ -128,7 +146,8 @@ public interface MediaLib {
 
 		boolean isMediaDescriptionLoaded();
 
-		MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> completionCallback);
+		// Returns incomplete description if it's not loaded yet
+		MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> consumer);
 
 		default MediaDescriptionCompat getMediaDescription() {
 			CompletableFuture<MediaDescriptionCompat> f = getLib().newCompletableFuture();
@@ -200,10 +219,12 @@ public interface MediaLib {
 
 		boolean isMediaDataLoaded();
 
-		FutureSupplier<MediaMetadataCompat> getMediaData(@Nullable Consumer<MediaMetadataCompat> completionCallback);
+		void getMediaData(Consumer<MediaMetadataCompat> consumer);
 
 		default MediaMetadataCompat getMediaData() {
-			return getMediaData(null).get(() -> new MediaMetadataCompat.Builder().build());
+			CompletableFuture<MediaMetadataCompat> f = new CompletableFuture<>();
+			getMediaData(f);
+			return f.get(() -> new MediaMetadataCompat.Builder().build());
 		}
 
 		@NonNull
@@ -351,9 +372,9 @@ public interface MediaLib {
 		BrowsableItemPrefs getPrefs();
 
 		void getChildren(
-				// This consumer receives unsorted list of items without metadata
-				@Nullable Consumer<List<? extends Item>> listCallback,
-				@Nullable Consumer<List<? extends Item>> completionCallback
+				// This consumer receives a list of possibly unsorted items
+				@Nullable Consumer<List<? extends Item>> listConsumer,
+				@Nullable Consumer<List<? extends Item>> sortedListConsumer
 		);
 
 		default List<? extends Item> getChildren() {
@@ -386,14 +407,14 @@ public interface MediaLib {
 		}
 
 		default void getQueue(Consumer<List<MediaSessionCompat.QueueItem>> consumer) {
-			getChildren(null, children -> {
+			getChildren(null, children -> App.get().execute(() -> {
 				List<MediaSessionCompat.QueueItem> queue = new ArrayList<>(children.size());
 				int id = 0;
 				for (Item i : children) {
 					queue.add(new MediaSessionCompat.QueueItem(i.getMediaDescription(), id++));
 				}
-				consumer.accept(queue);
-			});
+				consumeInMainThread(consumer, queue);
+			}));
 		}
 
 		default PlayableItem getFirstPlayable() {
