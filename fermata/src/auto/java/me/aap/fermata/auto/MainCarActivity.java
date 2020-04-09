@@ -99,12 +99,6 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 	}
 
 	public void checkPermissions(String... perms) {
-		for (String perm : perms) {
-			if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
-				Utils.showAlert(getContext(), R.string.use_phone_to_grant_perm);
-				return;
-			}
-		}
 	}
 
 	@Override

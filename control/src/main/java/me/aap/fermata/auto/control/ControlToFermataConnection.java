@@ -72,10 +72,17 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 	}
 
 	void loadChildren(String parentId, MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>> result) {
-		if (pendingReq != null) pendingReq.accept(null); // Cancel
-		if (pendingResp != null) pendingResp.accept(null); // Cancel
+		if (pendingReq != null) {
+			pendingReq.accept(null); // Cancel
+			pendingReq = null;
+		}
+		if (pendingResp != null) {
+			pendingResp.accept(null); // Cancel
+			pendingResp = null;
+		}
 
 		int stamp = ++counter;
+		boolean[] sent = new boolean[1];
 
 		if (remoteMessenger != null) {
 			try {
@@ -84,6 +91,9 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 				b.putString(KEY, parentId);
 				msg.setData(b);
 				pendingResp = m -> {
+					if (sent[0]) return;
+					sent[0] = true;
+
 					if ((m == null) || (m.arg1 != stamp)) {
 						result.sendResult(Collections.emptyList());
 					} else {
@@ -97,6 +107,7 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 						result.sendResult(items);
 					}
 				};
+
 				remoteMessenger.send(msg);
 				return;
 			} catch (Exception ex) {
@@ -106,8 +117,14 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 		}
 
 		pendingReq = c -> {
-			if ((c == null) || (c.counter != stamp)) result.sendResult(Collections.emptyList());
-			else c.loadChildren(parentId, result);
+			if (sent[0]) return;
+
+			if ((c == null) || (c.counter != stamp)) {
+				sent[0] = true;
+				result.sendResult(Collections.emptyList());
+			} else {
+				c.loadChildren(parentId, result);
+			}
 		};
 
 		reconnect();

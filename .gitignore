@@ -7,7 +7,4 @@
 build/
 dist/
 *.iml
-gradle/
-gradlew
-gradlew.bat
 local.properties
