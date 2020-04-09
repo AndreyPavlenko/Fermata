@@ -168,6 +168,16 @@
     <string name="donate_text">If you like the application, please consider buying me a coffee.</string>
     <string name="use_phone_for_donation">Please use your phone to buy a coffee.</string>
 
+    <string name="about">About</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player is a free, open source audio and video player with a simple and
+        intuitive interface.</p>
+        <p>If you like the application, please consider making a donation by
+        visiting the application\'s home page: <a href="%1$s">%2$s</a></p>
+        <p><b>Author:</b> Andrey Pavlenko</p>
+        <p><b>Version:</b> %3$s (%4$d)</p>
+        ]]></string>
+
     <string name="err_failed_to_play">Failed to play %s</string>
     <string name="err_failed_to_play_cause">Failed to play %1$s: %2$s</string>
     <string name="err_unsupported_source_type">Unsupported source type: %s</string>

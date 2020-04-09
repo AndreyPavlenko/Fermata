@@ -21,6 +21,7 @@
     <item name="nav_playlist" type="id" />
     <item name="nav_got_to_current" type="id" />
     <item name="nav_donate" type="id" />
+    <item name="nav_about" type="id" />
     <item name="nav_settings" type="id" />
     <item name="nav_exit" type="id" />
     <item name="nav_select" type="id" />

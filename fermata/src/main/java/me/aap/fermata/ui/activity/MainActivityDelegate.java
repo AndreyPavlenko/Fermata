@@ -46,7 +46,6 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
-import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
@@ -261,10 +260,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				return new AudioEffectsFragment();
 			case R.id.video:
 				return new VideoFragment();
-			case R.id.file_picker:
-				return new FilePickerFragment();
 			default:
-				throw new IllegalArgumentException("Invalid fragment id: " + id);
+				return super.createFragment(id);
 		}
 	}
 

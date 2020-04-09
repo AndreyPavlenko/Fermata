@@ -157,6 +157,17 @@
     <string name="donate_text">Если вам нравится приложение, вы можете купить мне кофе.</string>
     <string name="use_phone_for_donation">Пожалуйста, воспользуйтесь телефоном, чтобы купить кофе.</string>
 
+    <string name="about">О приложении</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player - это бесплатный, с открытым исходным кодом, аудио и видео плеер
+        с простым и интуитивным интерфейсом.</p>
+        <p>Если вам нравится приложение, пожалуйста, рассмотрите
+        возможность сделать пожертвование, посетив домашнюю страницу приложения:
+        <a href="%1$s">%2$s</a></p>
+        <p><b>Автор:</b> Андрей Павленко</p>
+        <p><b>Версия:</b> %3$s (%4$d)</p>
+        ]]></string>
+
     <string name="err_failed_to_play">Не удалось воспроизвести %s</string>
     <string name="err_failed_to_play_cause">Не удалось воспроизвести %1$s: %2$s</string>
     <string name="err_unsupported_source_type">Неподдерживаемый тип источника: %s</string>
