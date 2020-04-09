@@ -1,0 +1,31 @@
+## Fermata Media Player
+[<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">](https://play.google.com/store/apps/details?id=me.aap.fermata)
+
+## About
+Fermata Media Player is a free, open source audio and video player with a simple and intuitive interface. It is focused on playing media files organized in folders and playlists.
+
+Supported features:
+
+* Play media files organized in folders
+* Remembers the last played track and position for each folder
+* Support for favorites and playlists
+* Support for CUE and M3U playlists
+* Support for bookmarks
+* Shuffle and repeat functions
+* Audio effects: Equalizer, Bass Boost and Virtualizer
+* Configure audio effects for individual tracks and folders
+* Configure playback speed for individual tracks and folders
+* Sort tracks by name or file name
+* Customizable titles and subtitles
+* Support for Android Auto
+* Pluggable media engines: MediaPlayer, ExoPlayer and VLC
+* Video player with support for subtitles (VLC Engine only)
+
+## Donation
+If you like the application, please consider making a donation:
+
+[PayPal](https://paypal.me/AndrewPavlenko)
+
+[CloudTips](https://pay.cloudtips.ru/p/a03a73da)
+
+[Yandex Money](https://money.yandex.ru/to/410014661137336)
