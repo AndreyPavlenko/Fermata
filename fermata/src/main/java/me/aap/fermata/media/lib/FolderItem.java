@@ -8,30 +8,31 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FolderItemPrefs;
-import me.aap.fermata.storage.MediaFile;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.io.FileUtils;
+import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 
 /**
  * @author Andrey Pavlenko
  */
-class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
+class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 	public static final String SCHEME = "folder";
-	private String subtitle;
-	private Uri iconUri;
+	private volatile FutureSupplier<Uri> iconUri;
 
-	private FolderItem(String id, BrowsableItem parent, MediaFile file) {
+	private FolderItem(String id, BrowsableItem parent, VirtualFolder file) {
 		super(id, parent, file);
 	}
 
-	static FolderItem create(String id, BrowsableItem parent, MediaFile file, DefaultMediaLib lib) {
+	static FolderItem create(String id, BrowsableItem parent, VirtualFolder file, DefaultMediaLib lib) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
 
@@ -46,42 +47,50 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		}
 	}
 
-	static FolderItem create(DefaultMediaLib lib, String id) {
+	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		int idx = id.lastIndexOf('/');
-		if ((idx == -1) || (idx == (id.length() - 1))) return null;
+		if (idx == (id.length() - 1)) return completedNull();
+
+		if (idx == -1) {
+			return lib.getFolders().getUnsortedChildren().map(children -> {
+				String name = id.substring(SCHEME.length() + 1);
+				for (Item i : children) {
+					if (name.equals(((FolderItem) i).getName())) return i;
+				}
+				return null;
+			});
+		}
 
 		String name = id.substring(idx + 1);
-		FolderItem parent = (FolderItem) lib.getItem(id.substring(0, idx));
-		if (parent == null) return null;
 
-		MediaFile folder = parent.getFile().getChild(name);
-		return (folder != null) ? FolderItem.create(id, parent, folder, lib) : null;
+		return lib.getItem(id.substring(0, idx)).then(i -> {
+			FolderItem parent = (FolderItem) i;
+			if (parent == null) return completedNull();
+
+			return parent.getFile().getChild(name).map(folder -> (folder instanceof VirtualFolder)
+					? FolderItem.create(id, parent, (VirtualFolder) folder, lib) : null
+			);
+		});
+	}
+
+	@Override
+	public VirtualFolder getFile() {
+		return (VirtualFolder) super.getFile();
 	}
 
 	@NonNull
-	@Override
-	public String getSubtitle() {
-		if (subtitle == null) {
-			int files = 0;
-			int folders = 0;
-			for (Item i : getUnsortedChildren()) {
-				if (i instanceof PlayableItem) files++;
-				else folders++;
-			}
-			subtitle = getLib().getContext().getResources().getString(R.string.folder_subtitle, files, folders);
-		}
-
-		return subtitle;
-	}
-
 	@Override
 	public FolderItemPrefs getPrefs() {
 		return this;
 	}
 
-	protected List<Item> listChildren() {
-		List<MediaFile> ls = getFile().ls();
+	@Override
+	protected FutureSupplier<List<Item>> listChildren() {
+		return getFile().getChildren().map(this::ls);
+	}
+
+	private List<Item> ls(List<VirtualResource> ls) {
 		if (ls.isEmpty()) return Collections.emptyList();
 
 		String id = getId();
@@ -96,18 +105,18 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		int cueBufLen = 0;
 		int m3uBufLen = 0;
 
-		for (MediaFile f : ls) {
+		for (VirtualResource f : ls) {
 			String name = f.getName();
 			if (name.startsWith(".")) continue;
 
 			if (isIcon(name)) {
-				iconUri = f.getUri();
+				iconUri = completed(f.getUri());
 				continue;
 			}
 
 			Item i;
 
-			if (!f.isDirectory()) {
+			if (!f.isFolder()) {
 				String ext = FileUtils.getFileExtension(name);
 				if (ext == null) continue;
 
@@ -148,7 +157,7 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 					fileBuf.append(name);
 					i = FileItem.create(fileBuf.toString(), this, f, lib, Utils.isVideoMimeType(mime));
 				}
-			} else {
+			} else if (f instanceof VirtualFolder) {
 				if (folderBuf == null) {
 					folderBuf = new StringBuilder(id.length() + name.length() + 1);
 					folderBuf.append(id).append('/');
@@ -158,7 +167,9 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 				}
 
 				folderBuf.append(name);
-				i = FolderItem.create(folderBuf.toString(), this, f, lib);
+				i = FolderItem.create(folderBuf.toString(), this, (VirtualFolder) f, lib);
+			} else {
+				continue;
 			}
 
 			children.add(i);
@@ -172,23 +183,18 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 		return '%' + getId().substring(SCHEME.length()) + "/%";
 	}
 
-
+	@NonNull
 	@Override
-	public Uri getIconUri() {
-		if (iconUri == Uri.EMPTY) {
-			return null;
-		} else if (iconUri == null) {
-			MediaFile file = getFile();
-			MediaFile cover = file.getChild("cover.jpg");
+	public FutureSupplier<Uri> getIconUri() {
+		if (iconUri == null) {
+			return getFile().getChild("cover.jpg").then(cover -> {
+				if (cover != null) return iconUri = completed(cover.getUri());
 
-			if (cover != null) {
-				iconUri = cover.getUri();
-			} else if ((cover = file.getChild("folder.jpg")) != null) {
-				iconUri = cover.getUri();
-			} else {
-				iconUri = Uri.EMPTY;
-				return null;
-			}
+				return getFile().getChild("folder.jpg").then(folder -> {
+					if (folder != null) return iconUri = completed(folder.getUri());
+					else return iconUri = completedNull();
+				});
+			});
 		}
 
 		return iconUri;
@@ -196,18 +202,6 @@ class FolderItem extends BrowsableItemBase<Item> implements FolderItemPrefs {
 
 	private boolean isIcon(String name) {
 		return "cover.jpg".equals(name) || "folder.jpg".equals(name);
-	}
-
-	@Override
-	public void clearCache() {
-		super.clearCache();
-		subtitle = null;
-	}
-
-	@Override
-	public void updateTitles() {
-		super.updateTitles();
-		subtitle = null;
 	}
 
 	private static boolean isSupportedFile(String ext, String mime) {

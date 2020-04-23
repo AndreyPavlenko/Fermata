@@ -31,7 +31,6 @@ import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
-import me.aap.utils.misc.Assert;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
@@ -170,7 +169,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		if (!p.equals(a.getParent())) a.setParent(p);
 
-		p.getChildren(null, l -> { // Make sure the list is loaded
+		// Make sure the list is loaded
+		p.getChildren().withMainHandler().onSuccess(l -> {
 			scrollPosition = indexOf(a.getList(), i);
 			FermataApplication.get().getHandler().post(this::scrollToPosition);
 		});
@@ -351,12 +351,13 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 			if ((current != null) && current.getParent().equals(p)) {
 				scrollPosition = indexOf(getList(), current);
+				if (!isHidden()) scrollToPosition();
 			} else {
-				current = p.getLastPlayedItem();
-				scrollPosition = (current != null) ? indexOf(getList(), current) : -1;
+				p.getLastPlayedItem().withMainHandler().onSuccess(last -> {
+					scrollPosition = (last != null) ? indexOf(getList(), last) : -1;
+					if (!isHidden()) scrollToPosition();
+				});
 			}
-
-			if (!isHidden()) scrollToPosition();
 		}
 	}
 

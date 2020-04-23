@@ -1,263 +1,190 @@
 package me.aap.fermata.media.lib;
 
-import android.graphics.Bitmap;
-import android.net.Uri;
-import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
-import me.aap.fermata.FermataApplication;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
-import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.app.App;
-import me.aap.utils.concurrent.CompletableFuture;
-import me.aap.utils.function.Consumer;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.vfs.VirtualResource;
 
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static java.util.Objects.requireNonNull;
-import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
-import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
-import static me.aap.utils.concurrent.PriorityThreadPool.MAX_PRIORITY;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
  */
 abstract class PlayableItemBase extends ItemBase implements PlayableItem, PlayableItemPrefs {
-	protected volatile MediaMetadataCompat mediaData;
-	private CompletableFuture<MediaMetadataCompat> loadMeta;
-	protected String subtitle;
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static final AtomicReferenceFieldUpdater<PlayableItemBase, FutureSupplier<MediaMetadataCompat>> meta =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(PlayableItemBase.class, FutureSupplier.class, "metaHolder");
 
-	public PlayableItemBase(String id, @NonNull BrowsableItem parent, @NonNull MediaFile file) {
+	@Keep
+	@SuppressWarnings("unused")
+	private volatile FutureSupplier<MediaMetadataCompat> metaHolder;
+
+	public PlayableItemBase(String id, @NonNull BrowsableItem parent, @NonNull VirtualResource file) {
 		super(id, parent, file);
 	}
 
 	@NonNull
 	@Override
-	public String getSubtitle() {
-		if (subtitle == null) {
-			MediaMetadataCompat md = getMediaData();
-
-			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-				BrowsableItemPrefs prefs = requireNonNull(getParent()).getPrefs();
-				String s;
-
-				if (prefs.getSubtitleNamePref()) {
-					s = md.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
-					if ((s != null) && !s.isEmpty()) tb.append(s);
-				}
-
-				if (prefs.getSubtitleFileNamePref()) {
-					if (tb.length() != 0) tb.append(" - ");
-					tb.append(getFile().getName());
-				}
-
-				if (prefs.getSubtitleAlbumPref()) {
-					s = md.getString(MediaMetadataCompat.METADATA_KEY_ALBUM);
-					if ((s != null) && !s.isEmpty()) {
-						if (tb.length() != 0) tb.append(" - ");
-						tb.append(s);
-					}
-				}
-
-				if (prefs.getSubtitleArtistPref()) {
-					s = md.getString(MediaMetadataCompat.METADATA_KEY_ARTIST);
-					if (s == null) s = md.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST);
-					if ((s != null) && !s.isEmpty()) {
-						if (tb.length() != 0) tb.append(" - ");
-						tb.append(s);
-					}
-				}
-
-				if (prefs.getSubtitleDurationPref()) {
-					long dur = getDuration();
-					if (tb.length() != 0) tb.append(" - ");
-					TextUtils.timeToString(tb, (int) (dur / 1000));
-				}
-
-				subtitle = tb.toString();
-			}
-		}
-
-		return subtitle;
+	public BrowsableItem getParent() {
+		return requireNonNull(super.getParent());
 	}
 
 	@NonNull
-	@Override
-	public BrowsableItem getParent() {
-		assert super.getParent() != null;
-		return super.getParent();
-	}
-
 	@Override
 	public PlayableItemPrefs getPrefs() {
 		return this;
 	}
 
+	@NonNull
 	@Override
-	public MediaMetadataCompat getMediaData() {
-		MediaMetadataCompat meta = mediaData;
-		return (meta != null) ? meta : PlayableItem.super.getMediaData();
+	public FutureSupplier<MediaMetadataCompat> getMediaData() {
+		FutureSupplier<MediaMetadataCompat> m = meta.get(this);
+		if (m != null) return m;
+
+		Promise<MediaMetadataCompat> load = getLib().newPromise();
+
+		for (; !meta.compareAndSet(this, null, load); m = meta.get(this)) {
+			if (m != null) return m;
+		}
+
+		return loadMeta().thenReplaceOrClear(meta, this, load);
 	}
 
+	@NonNull
 	@Override
-	public void getMediaData(Consumer<MediaMetadataCompat> consumer) {
-		MediaMetadataCompat meta = mediaData;
+	public FutureSupplier<Void> setDuration(long duration) {
+		return getMediaData().then(md -> {
+			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
+			b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+			setMeta(completed(b.build()));
+			return completedVoid();
+		});
+	}
 
-		if (meta != null) {
-			consumeInMainThread(consumer, meta);
-			return;
-		}
+	@NonNull
+	FutureSupplier<MediaMetadataCompat> loadMeta() {
+		return getLib().getMetadataRetriever().getMediaMetadata(this).then(this::buildMeta);
+	}
 
-		String id = getOrigId();
-
-		if (!id.equals(getId())) {
-			PlayableItem i = (PlayableItem) getLib().getItem(id);
-
-			if (i != null) {
-				Consumer<MediaMetadataCompat> c = m -> {
-					mediaData = m;
-					consumer.accept(m);
-				};
-
-				if (consumer.canBlockThread()) {
-					CompletableFuture<MediaMetadataCompat> f = new CompletableFuture<>();
-					f.addConsumer(c, () -> new MediaMetadataCompat.Builder().build(), App.get().getHandler());
-					i.getMediaData(f);
-				} else {
-					i.getMediaData(c);
-				}
-
-				return;
-			}
-		}
-
-		CompletableFuture<MediaMetadataCompat> load;
-
-		synchronized (this) {
-			if (loadMeta == null) loadMeta = load = new CompletableFuture<>();
-			else load = loadMeta;
-		}
-
-		if (load.setRunning()) {
-			if (isMainThread() && !consumer.canBlockThread()) {
-				load.addConsumer(consumer, this::incomplete, App.get().getHandler());
-				FermataApplication.get().getExecutor().submit(MAX_PRIORITY, () -> loadMeta(load));
-			} else {
-				consumeInMainThread(consumer, loadMeta(load));
-			}
-		} else if (load.isDone()) {
-			consumeInMainThread(consumer, load.get(this::incomplete));
+	@NonNull
+	FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
+		if (meta.getImageUri() == null) {
+			return getParent().getIconUri().then(icon -> {
+				if (icon != null) meta.setImageUri(icon.toString());
+				return completed(meta.build());
+			});
 		} else {
-			load.addConsumer(consumer, this::incomplete, App.get().getHandler());
+			return completed(meta.build());
 		}
 	}
 
-	private MediaMetadataCompat loadMeta(CompletableFuture<MediaMetadataCompat> load) {
-		if (!load.isDone()) {
-			MediaMetadataCompat meta = getMediaMetadataBuilder().build();
+	void setMeta(MediaMetadataCompat m) {
+		setMeta(completed(m));
+	}
 
-			if (load.complete(meta)) {
-				mediaData = meta;
-				synchronized (this) {
-					if (loadMeta == load) loadMeta = null;
+	void setMeta(FutureSupplier<MediaMetadataCompat> m) {
+		meta.set(this, m);
+		m.thenReplaceOrClear(meta, this);
+	}
+
+	void setMeta(MetadataBuilder mb) {
+		FutureSupplier<MediaMetadataCompat> m = meta.get(this);
+		if (m != null) return;
+
+		m = buildMeta(mb);
+
+		if (meta.compareAndSet(this, null, m)) m.thenReplace(meta, this);
+		else m.cancel();
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		return getMediaData().map(md -> {
+			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+				return buildSubtitle(md, tb);
+			}
+		});
+	}
+
+	protected FutureSupplier<String> buildTitle(int seqNum, BrowsableItemPrefs parentPrefs) {
+		if (parentPrefs.getTitleNamePref()) {
+			return getMediaData().map(md -> {
+				try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+					if (seqNum != 0) tb.append(seqNum).append(". ");
+					tb.append(getTitle(md));
+					if (parentPrefs.getTitleFileNamePref()) tb.append(" - ").append(getFile().getName());
+					return tb.toString();
 				}
-				return meta;
-			}
-		}
-
-		return load.get(() -> getMediaMetadataBuilder().build());
-	}
-
-	private MediaMetadataCompat incomplete() {
-		return new MediaMetadataCompat.Builder().build();
-	}
-
-	@Override
-	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
-		if (mediaData != null) {
-			BrowsableItem p = getParent();
-
-			if ((p instanceof BrowsableItemBase) && ((BrowsableItemBase<?>) p).isChildrenLoaded()) {
-				buildCompleteDescription(b);
-				return null;
-			}
-		}
-
-		return super.buildIncompleteDescription(b);
-	}
-
-	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
-		MediaMetadataCompat meta = getMediaData();
-		Bitmap bm = meta.getBitmap(METADATA_KEY_ALBUM_ART);
-
-		if (bm != null) {
-			b.setIconBitmap(bm);
-			return;
+			});
 		} else {
-			String uri = meta.getString(METADATA_KEY_ALBUM_ART_URI);
+			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+				if (seqNum != 0) tb.append(seqNum).append(". ");
+				tb.append(getFile().getName());
+				return completed(tb.toString());
+			}
+		}
+	}
 
-			if (uri != null) {
-				b.setIconUri(Uri.parse(uri));
-				return;
+	protected String buildSubtitle(MediaMetadataCompat md, SharedTextBuilder tb) {
+		BrowsableItemPrefs prefs = requireNonNull(getParent()).getPrefs();
+		String s;
+
+		if (prefs.getSubtitleNamePref()) {
+			tb.append(getTitle(md));
+		}
+
+		if (prefs.getSubtitleFileNamePref()) {
+			if (tb.length() != 0) tb.append(" - ");
+			tb.append(getFile().getName());
+		}
+
+		if (prefs.getSubtitleAlbumPref()) {
+			s = md.getString(MediaMetadataCompat.METADATA_KEY_ALBUM);
+			if ((s != null) && !s.isEmpty()) {
+				if (tb.length() != 0) tb.append(" - ");
+				tb.append(s);
 			}
 		}
 
-		BrowsableItem p = getParent();
-		if (!(p instanceof BrowsableItemBase)) return;
-		Uri uri = ((BrowsableItemBase<?>) p).getIconUri();
-		if (uri != null) b.setIconUri(uri);
-	}
-
-	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
-		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
-		setParentData(b);
-		return b;
-	}
-
-	void setParentData(MediaMetadataCompat.Builder b) {
-		BrowsableItem p = getParent();
-		if (!(p instanceof BrowsableItemBase)) return;
-		Uri uri = ((BrowsableItemBase<?>) p).getIconUri();
-		if (uri != null) b.putString(METADATA_KEY_ALBUM_ART_URI, uri.toString().intern());
-	}
-
-	public void setMediaData(MediaMetadataCompat mediaData) {
-		this.mediaData = mediaData;
-		CompletableFuture<MediaMetadataCompat> load = null;
-
-		synchronized (this) {
-			if (loadMeta != null) {
-				load = loadMeta;
-				loadMeta = null;
+		if (prefs.getSubtitleArtistPref()) {
+			s = md.getString(MediaMetadataCompat.METADATA_KEY_ARTIST);
+			if (s == null) s = md.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST);
+			if ((s != null) && !s.isEmpty()) {
+				if (tb.length() != 0) tb.append(" - ");
+				tb.append(s);
 			}
 		}
 
-		if (load != null) load.complete(mediaData);
+		if (prefs.getSubtitleDurationPref()) {
+			long dur = md.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
+			if (tb.length() != 0) tb.append(" - ");
+			TextUtils.timeToString(tb, (int) (dur / 1000));
+		}
+
+		return tb.toString();
 	}
 
-	@Override
-	public boolean isMediaDataLoaded() {
-		return mediaData != null;
-	}
-
-	@Override
-	public void clearCache() {
-		super.clearCache();
-		subtitle = null;
-	}
-
-	@Override
-	public void updateTitles() {
-		super.updateTitles();
-		subtitle = null;
+	private String getTitle(MediaMetadataCompat md) {
+		String title = md.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
+		if ((title == null) || (title = title.trim()).isEmpty()) {
+			title = md.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE);
+			return ((title == null) || (title = title.trim()).isEmpty()) ? getFile().getName() : title;
+		}
+		return title;
 	}
 }

@@ -16,12 +16,13 @@ import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 
-import static me.aap.fermata.util.Utils.getResourceUri;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 
 /**
  * @author Andrey Pavlenko
@@ -34,18 +35,10 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	public DefaultPlaylists(DefaultMediaLib lib) {
 		super(ID, null, null);
 		this.lib = lib;
-	}
-
-	@NonNull
-	@Override
-	public String getTitle() {
-		return getLib().getContext().getString(R.string.playlists);
-	}
-
-	@NonNull
-	@Override
-	public String getSubtitle() {
-		return "";
+		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
+		dsc.setTitle(getLib().getContext().getString(R.string.playlists));
+		dsc.setSubtitle("");
+		setMediaDescription(dsc.build());
 	}
 
 	@NonNull
@@ -71,27 +64,16 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		return this;
 	}
 
+	@NonNull
 	@Override
 	public BrowsableItemPrefs getPrefs() {
 		return this;
 	}
 
 	@Override
-	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
-		buildCompleteDescription(b);
-		return null;
-	}
-
-	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
-		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.playlist));
-	}
-
-	@Override
-	public List<Playlist> listChildren() {
+	public FutureSupplier<List<Item>> listChildren() {
 		int[] ids = getPlaylistIdsPref();
-		List<Playlist> children = new ArrayList<>(ids.length);
+		List<Item> children = new ArrayList<>(ids.length);
 
 		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
 			tb.append(SCHEME).append(':');
@@ -104,23 +86,23 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 			}
 		}
 
-		return children;
+		return completed(children);
 	}
 
 	@Override
-	Item getItem(String id) {
+	FutureSupplier<Item> getItem(String id) {
 		assert id.startsWith(SCHEME);
 
-		for (Playlist i : getUnsortedChildren()) {
+		for (Item i : getUnsortedChildren().getOrThrow()) {
 			if (!id.startsWith(i.getId())) continue;
-			if (id.equals(i.getId())) return i;
+			if (id.equals(i.getId())) return completed(i);
 
-			for (Item c : i.getUnsortedChildren()) {
-				if (id.equals(c.getId())) return c;
+			for (Item c : ((Playlist) i).getUnsortedChildren().getOrThrow()) {
+				if (id.equals(c.getId())) return completed(c);
 			}
 		}
 
-		return null;
+		return completedNull();
 	}
 
 	@Override
@@ -139,7 +121,8 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 			return null;
 		}
 
-		if (CollectionUtils.contains(getUnsortedChildren(), c -> n.equals(c.getName()))) {
+		if (CollectionUtils.contains(getUnsortedChildren().getOrThrow(),
+				c -> n.equals(((Playlist) c).getName()))) {
 			Context ctx = getLib().getContext();
 			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_playlist_exists, n),
 					Toast.LENGTH_LONG).show();

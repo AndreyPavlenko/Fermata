@@ -15,7 +15,7 @@ public interface MediaEngineProvider {
 
 	MediaEngine createEngine(Listener listener);
 
-	default boolean getMediaMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
+	default boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
 		return false;
 	}
 }

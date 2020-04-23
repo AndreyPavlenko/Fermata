@@ -2,11 +2,9 @@ package me.aap.fermata;
 
 import android.content.SharedPreferences;
 
-import java.util.concurrent.ExecutorService;
-
 import me.aap.utils.app.App;
 import me.aap.utils.app.SplitCompatApp;
-import me.aap.utils.concurrent.PriorityThreadPool;
+import me.aap.utils.concurrent.ThreadPool;
 
 /**
  * @author Andrey Pavlenko
@@ -30,15 +28,7 @@ public class FermataApplication extends SplitCompatApp {
 	}
 
 	@Override
-	public PriorityThreadPool getExecutor() {
-		return (PriorityThreadPool) super.getExecutor();
-	}
-
-	@Override
-	protected ExecutorService createExecutor() {
-		PriorityThreadPool executor = new PriorityThreadPool(2);
-		executor.setThreadFactory(this);
-		executor.allowCoreThreadTimeOut(true);
-		return executor;
+	protected ThreadPool createExecutor() {
+		return new ThreadPool(2);
 	}
 }

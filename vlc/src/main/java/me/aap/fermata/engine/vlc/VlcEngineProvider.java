@@ -18,6 +18,7 @@ import java.util.List;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineProvider;
+import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.io.IoUtils;
 
@@ -75,7 +76,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	}
 
 	@Override
-	public boolean getMediaMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
+	public boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
 		Media media = null;
 		ParcelFileDescriptor fd = null;
 

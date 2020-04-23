@@ -29,6 +29,9 @@
     <item name="nav_unselect_all" type="id" />
 
     <item name="folders_add" type="id" />
+    <item name="folders_add_content" type="id" />
+    <item name="folders_add_fs" type="id" />
+    <item name="folders_add_gdrive" type="id" />
     <item name="folders_remove" type="id" />
 
     <item name="favorites_add" type="id" />

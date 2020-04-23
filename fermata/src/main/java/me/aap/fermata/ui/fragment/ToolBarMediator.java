@@ -116,8 +116,7 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 	}
 
 	private static void titlePrefChanged(MediaLibFragment.ListAdapter adapter) {
-		adapter.getParent().updateTitles();
-		adapter.reload();
+		adapter.getParent().updateTitles().withMainHandler().thenRun(adapter::reload);
 	}
 
 	private static void onSortButtonClick(View v) {
@@ -165,7 +164,6 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 	}
 
 	private static void sortPrefChanged(MediaLibFragment.ListAdapter adapter) {
-		adapter.getParent().updateSorting();
-		adapter.setParent(adapter.getParent());
+		adapter.getParent().updateSorting().thenRun(() -> adapter.setParent(adapter.getParent()));
 	}
 }

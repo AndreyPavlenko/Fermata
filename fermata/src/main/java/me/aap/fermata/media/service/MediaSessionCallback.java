@@ -18,6 +18,7 @@ import android.os.Handler;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.MediaSessionCompat.QueueItem;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -49,17 +50,17 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.view.VideoView;
-import me.aap.utils.app.App;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.Consumer;
+import me.aap.utils.holder.Holder;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
 import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
@@ -88,6 +89,7 @@ import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_REWINDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
+import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_STRENGTH;
@@ -100,7 +102,10 @@ import static me.aap.fermata.media.pref.MediaPrefs.VIRT_MODE;
 import static me.aap.fermata.media.pref.MediaPrefs.VIRT_STRENGTH;
 import static me.aap.fermata.media.pref.MediaPrefs.getUserPresetBands;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
-import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.misc.Assert.assertNotNull;
 
 /**
  * @author Andrey Pavlenko
@@ -140,6 +145,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private PlaybackStateCompat currentState;
 	private MediaMetadataCompat currentMetadata;
 	private List<VideoViewWraper> videoView;
+	private FutureSupplier<Void> playerTask = completedVoid();
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
 															PlaybackControlPrefs playbackControlPrefs, Handler handler) {
@@ -324,41 +330,55 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onPrepare() {
+		playerTask.cancel();
+		playerTask = prepare();
+	}
+
+	private FutureSupplier<Void> prepare() {
 		int st = getPlaybackState().getState();
-		if ((st != PlaybackState.STATE_NONE) && (st != PlaybackState.STATE_ERROR)) return;
 
-		PlayableItem i = lib.getLastPlayedItem();
-		if ((i == null) || i.isVideo() || i.isStream()) return;
+		if ((st != PlaybackState.STATE_NONE) && (st != PlaybackState.STATE_ERROR)) {
+			return completedVoid();
+		}
 
-		engine = getEngineManager().createEngine(engine, i, this);
-		Log.d(getClass().getName(), "MediaEngine " + engine + " created for " + i);
-		if (engine == null) return;
+		return lib.getLastPlayedItem().withMainHandler().then(i -> {
+			if ((i == null) || i.isVideo() || i.isStream()) return completedVoid();
 
-		playOnPrepared = false;
-		if (i.isVideo() && (videoView != null))
-			engine.setVideoView(videoView.get(0).view);
-		tryAnotherEngine = true;
-		engine.prepare(i);
+			engine = getEngineManager().createEngine(engine, i, this);
+			Log.d(getClass().getName(), "MediaEngine " + engine + " created for " + i);
+			if (engine == null) return completedVoid();
+
+			playOnPrepared = false;
+			if (i.isVideo() && (videoView != null)) engine.setVideoView(videoView.get(0).view);
+			tryAnotherEngine = true;
+			engine.prepare(i);
+			return completedVoid();
+		});
+	}
+
+	@Override
+	public void onPlay() {
+		playerTask.cancel();
+		playerTask = play();
 	}
 
 	@SuppressLint("SwitchIntDef")
-	@Override
-	public void onPlay() {
+	private FutureSupplier<Void> play() {
 		if (!requestAudioFocus()) {
 			Log.i(getClass().getName(), "Audio focus request failed");
-			return;
+			return completedVoid();
 		}
 
 		PlaybackStateCompat state = getPlaybackState();
-		PlayableItem i;
 
 		switch (state.getState()) {
 			case PlaybackStateCompat.STATE_NONE:
 			case PlaybackStateCompat.STATE_STOPPED:
 			case PlaybackStateCompat.STATE_ERROR:
-				i = lib.getLastPlayedItem();
-				if (i != null) playItem(i, lib.getLastPlayedPosition(i));
-				break;
+				return lib.getLastPlayedItem().withMainHandler().then(i -> {
+					if (i != null) playItem(i, lib.getLastPlayedPosition(i));
+					return completedVoid();
+				});
 			case PlaybackStateCompat.STATE_PAUSED:
 				assert (engine != null);
 				assert (engine.getSource() != null);
@@ -373,36 +393,45 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			default:
 				break;
 		}
-	}
 
+		return completedVoid();
+	}
 
 	@Override
 	public void onPlayFromMediaId(String mediaId, Bundle extras) {
+		playerTask.cancel();
+		playerTask = playFromMediaId(mediaId, extras);
+	}
+
+	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
 		if (!requestAudioFocus()) {
 			Log.i(getClass().getName(), "Audio focus request failed");
-			return;
+			return completedVoid();
 		}
 
-		Item i = lib.getItem(mediaId);
-		PlayableItem pi = null;
+		return lib.getItem(mediaId).withMainHandler().then(i -> {
+			if (i instanceof PlayableItem) {
+				return completed((PlayableItem) i);
+			} else if (i instanceof BrowsableItem) {
+				return ((BrowsableItem) i).getFirstPlayable();
+			} else {
+				return completedNull();
+			}
+		}).then(pi -> {
+			if (pi != null) {
+				long pos = (extras == null) ? 0 : extras.getLong(EXTRA_POS, 0);
+				playItem(pi, pos);
+			} else {
+				String msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, mediaId);
+				Log.w(TAG, msg);
+				PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+						.setState(PlaybackStateCompat.STATE_ERROR, 0, 1.0f)
+						.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
+				setPlaybackState(state);
+			}
 
-		if (i instanceof PlayableItem) {
-			pi = (PlayableItem) i;
-		} else if (i instanceof BrowsableItem) {
-			pi = ((BrowsableItem) i).getFirstPlayable();
-		}
-
-		if (pi != null) {
-			long pos = (extras == null) ? 0 : extras.getLong(EXTRA_POS, 0);
-			playItem(pi, pos);
-		} else {
-			String msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, mediaId);
-			Log.w(TAG, msg);
-			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
-					.setState(PlaybackStateCompat.STATE_ERROR, 0, 1.0f)
-					.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
-			setPlaybackState(state);
-		}
+			return completedVoid();
+		});
 	}
 
 	@Override
@@ -415,20 +444,21 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onPause() {
+		playerTask.cancel();
 		PlayableItem i = getCurrentItem();
+		if (i == null) return;
 
-		if (i != null) {
-			if (!engine.canPause()) {
-				onStop();
-				return;
-			}
-
-			engine.pause();
-			long pos = engine.getPosition();
-			lib.setLastPlayed(i, pos);
-			PlaybackStateCompat.Builder state = createPlayingState(i, true, false, pos, engine.getSpeed());
-			setPlaybackState(state.build());
+		if (!engine.canPause()) {
+			onStop();
+			return;
 		}
+
+		engine.pause();
+		long pos = engine.getPosition();
+		long qid = currentState.getActiveQueueItemId();
+		lib.setLastPlayed(i, pos);
+		PlaybackStateCompat state = createPlayingState(i, true, qid, pos, engine.getSpeed());
+		setPlaybackState(state);
 	}
 
 	@Override
@@ -473,20 +503,24 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onSkipToPrevious() {
-		skipTo(false);
+		playerTask.cancel();
+		playerTask = skipTo(false);
 	}
 
 	@Override
 	public void onSkipToNext() {
-		skipTo(true);
+		playerTask.cancel();
+		playerTask = skipTo(true);
 	}
 
-	private void skipTo(boolean next) {
+	private FutureSupplier<Void> skipTo(boolean next) {
 		PlayableItem i = getCurrentItem();
-		if (i == null) return;
+		if (i == null) return completedVoid();
 
-		i = next ? i.getNextPlayable() : i.getPrevPlayable();
-		if (i != null) skipTo(next, i);
+		return (next ? i.getNextPlayable() : i.getPrevPlayable()).withMainHandler().then(pi -> {
+			if (pi != null) skipTo(next, pi);
+			return completedVoid();
+		});
 	}
 
 	private void skipTo(boolean next, PlayableItem i) {
@@ -523,7 +557,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				state.getPlaybackSpeed());
 		setPlaybackState(b.build());
 
-		long dur = i.getDuration();
+		long dur = i.getDuration().get(() -> 0L);
 		long timeShift = getTimeMillis(dur, time, timeUnit) * multiply;
 
 		if (ff) {
@@ -602,12 +636,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		else favorites.removeItem(i);
 
 		if (i.getParent() == favorites) {
-			favorites.getQueue(q -> {
+			favorites.getQueue().withMainHandler().onSuccess(q -> {
 				if (i != getCurrentItem()) return;
-				PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
 				session.setQueue(q);
-				b.setActiveQueueItemId(i.getQueueId()).build();
-				setPlaybackState(b.build(), q);
+				String id = i.getId();
+
+				for (QueueItem qi : q) {
+					if (id.equals(qi.getDescription().getMediaId())) {
+						PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
+						b.setActiveQueueItemId(qi.getQueueId()).build();
+						setPlaybackState(b.build(), q);
+					}
+				}
 			});
 		}
 	}
@@ -617,25 +657,29 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		PlayableItem pi = getCurrentItem();
 		if (pi == null) return;
 
-		List<? extends Item> children = pi.getParent().getChildren();
-		if ((queueId < 0) || (queueId >= children.size())) return;
+		playerTask.cancel();
+		playerTask = skipToQueueItem(pi, queueId);
+	}
 
-		Item i = children.get((int) queueId);
+	private FutureSupplier<Void> skipToQueueItem(PlayableItem pi, long queueId) {
+		return pi.getParent().getChildren().withMainHandler().then(children -> {
+			if ((queueId < 0) || (queueId >= children.size())) return completedNull();
 
-		if (i instanceof PlayableItem) {
-			pi = (PlayableItem) i;
-		} else if (i instanceof BrowsableItem) {
-			pi = ((BrowsableItem) i).getFirstPlayable();
-		} else {
-			return;
-		}
+			Item i = children.get((int) queueId);
+			if (i instanceof PlayableItem) return completed((PlayableItem) i);
+			else if (i instanceof BrowsableItem) return ((BrowsableItem) i).getFirstPlayable();
+			else return completedNull();
+		}).then(i -> {
+			if (i == null) return completedVoid();
 
-		PlaybackStateCompat state = getPlaybackState();
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-		b.setState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, state.getPosition(),
-				state.getPlaybackSpeed());
-		setPlaybackState(b.build());
-		playItem(pi, 0);
+			PlaybackStateCompat state = getPlaybackState();
+			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
+			b.setState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, state.getPosition(),
+					state.getPlaybackSpeed());
+			setPlaybackState(b.build());
+			playItem(i, 0);
+			return completedVoid();
+		});
 	}
 
 	@Override
@@ -714,20 +758,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			repeat = REPEAT_MODE_NONE;
 		}
 
-		PlaybackStateCompat st = createPlayingState(i, !playOnPrepared, i.isMediaDescriptionLoaded(),
-				pos, speed).build();
-		MediaMetadataCompat meta = buildMetadata(i, m -> {
-			if ((this.engine == null) || (this.engine.getSource() != i)) return;
-			PlaybackStateCompat s = createPlayingState(i, !isPlaying(), true, engine.getPosition(), speed).build();
-			session.setMetadata(m);
-			setPlaybackState(s, m, null, repeat, shuffle);
-		});
-
-		session.setMetadata(meta);
-		session.setRepeatMode(repeat);
-		session.setShuffleMode(shuffle);
-		setPlaybackState(st, meta, null, repeat, shuffle);
-
 		try {
 			setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
 		} catch (Exception ex) {
@@ -744,88 +774,112 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			lib.setLastPlayed(i, pos);
 			start(engine, speed);
 		}
+
+		session.setRepeatMode(repeat);
+		session.setShuffleMode(shuffle);
+
+		FutureSupplier<Long> getQid = i.getQueueId();
+		Holder<MediaMetadataCompat> mdHolder = new Holder<>();
+		Holder<Consumer<MediaMetadataCompat>> update = new Holder<>(mdHolder::set);
+
+		FutureSupplier<Void> load = i.getMediaData().withMainHandler().then(md1 -> {
+			update.get().accept(md1);
+
+			return getQid.then(qid -> i.getMediaDescription().withMainHandler().then(dsc -> {
+						if (getCurrentItem() != i) return completedVoid();
+						MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(md1);
+						FutureSupplier<MediaMetadataCompat> md2 = buildMetadata(b, md1, dsc);
+
+						if (md2.isDone()) {
+							update.get().accept(md2.get(b::build));
+							return completedVoid();
+						} else {
+							update.get().accept(b.build());
+							return md2.withMainHandler().then(md3 -> {
+								update.get().accept(md3);
+								return completedVoid();
+							});
+						}
+					})
+			);
+		});
+
+		MediaMetadataCompat md;
+
+		if (load.isDone()) {
+			md = mdHolder.get();
+			assertNotNull(md);
+		} else {
+			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
+			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getFile().getName());
+			md = b.build();
+			update.set(m -> {
+				if (getCurrentItem() != i) return;
+				PlaybackStateCompat s = createPlayingState(i, !isPlaying(), getQid.peek(0L), engine.getPosition(), speed);
+				session.setMetadata(m);
+				setPlaybackState(s, m, null, repeat, shuffle);
+			});
+		}
+
+		PlaybackStateCompat s = createPlayingState(i, !playOnPrepared, getQid.peek(0L), engine.getPosition(), speed);
+		session.setMetadata(md);
+		setPlaybackState(s, md, null, repeat, shuffle);
 	}
 
-	private MediaMetadataCompat buildMetadata(PlayableItem i, Consumer<MediaMetadataCompat> update) {
-		MediaMetadataCompat meta;
-		MediaDescriptionCompat dsc;
-		boolean runUpdate = false;
+	private FutureSupplier<MediaMetadataCompat> buildMetadata(MediaMetadataCompat.Builder b,
+																														MediaMetadataCompat meta,
+																														MediaDescriptionCompat dsc) {
+		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, requireNonNull(dsc.getTitle()).toString());
+		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, requireNonNull(dsc.getSubtitle()).toString());
+		if (meta.getBitmap(METADATA_KEY_ALBUM_ART) != null) return completed(b.build());
 
-		if (isMainThread()) {
-			if (i.isMediaDataLoaded()) {
-				meta = i.getMediaData();
-			} else {
-				meta = null;
-				runUpdate = true;
-			}
-			if (i.isMediaDescriptionLoaded()) {
-				dsc = i.getMediaDescription();
-			} else {
-				dsc = i.getMediaDescription(null);
-				runUpdate = true;
-			}
-		} else {
-			meta = i.getMediaData();
-			dsc = i.getMediaDescription();
+		String art = meta.getString(METADATA_KEY_ALBUM_ART);
+
+		if (art != null) {
+			return lib.getBitmap(art).then(bm -> {
+				b.putBitmap(METADATA_KEY_ALBUM_ART, (bm != null) ? bm : getDefaultImage());
+				return completed(b.build());
+			});
 		}
 
-		MediaMetadataCompat.Builder b = (meta != null) ? new MediaMetadataCompat.Builder(i.getMediaData())
-				: new MediaMetadataCompat.Builder();
-		CharSequence title = dsc.getTitle();
-		CharSequence subtitle = dsc.getSubtitle();
-		Bitmap icon = dsc.getIconBitmap();
+		Uri uri = dsc.getIconUri();
 
-		if (title == null) title = i.getTitle();
-		if (subtitle == null) subtitle = i.getSubtitle();
-
-		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, title.toString());
-		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, subtitle.toString());
-
-		if (icon != null) {
-			b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
-		} else {
-			Uri iconUri = dsc.getIconUri();
-
-			if (iconUri != null) {
-				MediaLib lib = getMediaLib();
-				String u = iconUri.toString();
-				icon = lib.getCachedBitmap(u);
-
-				if (icon != null) {
-					b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
-				} else if (!isMainThread()) {
-					icon = lib.getBitmap(u);
-					if (icon != null) b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
-				} else {
-					runUpdate = true;
-					b.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultIcon());
-				}
-			} else {
-				b.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultIcon());
-			}
+		if (uri != null) {
+			return lib.getBitmap(uri.toString()).then(bm -> {
+				b.putBitmap(METADATA_KEY_ALBUM_ART, (bm != null) ? bm : getDefaultImage());
+				return completed(b.build());
+			});
 		}
 
-		if (runUpdate) App.get().execute(() -> buildMetadata(i, update), update);
-		b.putString(METADATA_KEY_ALBUM_ART_URI, null);
-		return b.build();
+		b.putBitmap(METADATA_KEY_ALBUM_ART, getDefaultImage());
+		return completed(b.build());
 	}
 
 	@Override
 	public void onEngineEnded(MediaEngine engine) {
+		playerTask.cancel();
+		playerTask = engineEnded(engine);
+	}
+
+	private FutureSupplier<Void> engineEnded(MediaEngine engine) {
 		PlayableItem i = engine.getSource();
 
 		if (i != null) {
-			PlayableItem next = i.getNextPlayable();
 			if (i.isVideo()) i.getPrefs().setWatchedPref(true);
 
-			if (next != null) {
-				skipTo(true, next);
-			} else {
-				onStop(false);
-				lib.setLastPlayed(i, 0);
-			}
+			return i.getNextPlayable().withMainHandler().then(next -> {
+				if (next != null) {
+					skipTo(true, next);
+				} else {
+					onStop(false);
+					lib.setLastPlayed(i, 0);
+				}
+
+				return completedVoid();
+			});
 		} else {
 			onStop(false);
+			return completedVoid();
 		}
 	}
 
@@ -926,7 +980,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		engine.prepare(i);
 
 		if (updateQueue) {
-			p.getQueue(q -> {
+			p.getQueue().withMainHandler().onSuccess(q -> {
 				if ((engine == null) || (engine.getSource() != i)) return;
 				session.setQueue(q);
 				service.updateSessionState(null, null, q, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
@@ -934,9 +988,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 	}
 
-	private PlaybackStateCompat.Builder createPlayingState(PlayableItem i, boolean pause, boolean setQueueId,
-																												 long position, float speed) {
-		long qid = setQueueId ? i.getQueueId() : currentState.getActiveQueueItemId();
+	private PlaybackStateCompat createPlayingState(PlayableItem i, boolean pause, long qid,
+																								 long position, float speed) {
 		int state = pause ? PlaybackStateCompat.STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING;
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		boolean repeat = p.getRepeatPref();
@@ -945,19 +998,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				.setActiveQueueItemId(qid)
 				.addCustomAction(customRewind).addCustomAction(customFastForward)
 				.addCustomAction(repeat ? customRepeatDisable : customRepeatEnable)
-				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd);
+				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd).build();
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state) {
 		setPlaybackState(state, null);
 	}
 
-	private void setPlaybackState(PlaybackStateCompat state, List<MediaSessionCompat.QueueItem> queue) {
+	private void setPlaybackState(PlaybackStateCompat state, List<QueueItem> queue) {
 		setPlaybackState(state, null, queue, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state, MediaMetadataCompat meta,
-																List<MediaSessionCompat.QueueItem> queue, int repeat, int shuffle) {
+																List<QueueItem> queue, int repeat, int shuffle) {
 		currentState = state;
 		currentMetadata = meta;
 		session.setPlaybackState(state);
@@ -1108,7 +1161,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			}
 		};
 
-		long delay = (long) ((i.getDuration() - pos) / speed);
+		long delay = (long) ((i.getDuration().get(() -> 0L) - pos) / speed);
 		handler.postDelayed(timer, delay);
 	}
 
@@ -1117,23 +1170,23 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		timer = null;
 	}
 
-	private Bitmap defaultIcon;
+	private Bitmap defaultImage;
 
-	private Bitmap getDefaultIcon() {
-		if (defaultIcon == null) {
+	private Bitmap getDefaultImage() {
+		if (defaultImage == null) {
 			try {
 				FermataApplication app = FermataApplication.get();
 				Drawable d = app.getPackageManager().getApplicationIcon(app.getPackageName());
-				defaultIcon = UiUtils.getBitmap(d);
+				defaultImage = UiUtils.getBitmap(d);
 			} catch (Exception ex) {
 				Log.e(getClass().getName(), "Failed to get application icon", ex);
 			}
 		}
-		return defaultIcon;
+		return defaultImage;
 	}
 
-	boolean isDefaultIcon(Bitmap icon) {
-		return (icon != null) && (defaultIcon != null) && (icon.sameAs(defaultIcon));
+	boolean isDefaultImage(Bitmap icon) {
+		return (icon != null) && (defaultImage != null) && (icon.sameAs(defaultImage));
 	}
 
 	public interface Listener {

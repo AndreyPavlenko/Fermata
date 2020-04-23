@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.media.MediaMetadata;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
@@ -14,16 +15,17 @@ import androidx.annotation.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import me.aap.fermata.media.lib.MediaLib;
-import me.aap.utils.io.MemOutputStream;
-import me.aap.utils.text.TextUtils;
+import me.aap.utils.app.App;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.text.TextBuilder;
+
+import static me.aap.utils.async.Completed.completedEmptyMap;
 
 /**
  * @author Andrey Pavlenko
@@ -44,19 +46,17 @@ public class MetadataRetriever implements Closeable {
 			COL_DURATION, COL_ART};
 
 	private final MediaEngineManager mgr;
-	private final File imageCache;
-	private final String imageCacheUri;
+	private final BitmapCache bitmapCache;
 	@Nullable
 	private final SQLiteDatabase db;
 
 	public MetadataRetriever(MediaEngineManager mgr) {
 		this.mgr = mgr;
+		bitmapCache = new BitmapCache();
 		Context ctx = mgr.lib.getContext();
 		File cache = ctx.getExternalCacheDir();
 		File dbFile = new File(cache, "metadata.db");
 		SQLiteDatabase db = null;
-		imageCache = new File(cache, "images");
-		imageCacheUri = Uri.fromFile(imageCache).toString();
 
 		try {
 			db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
@@ -75,72 +75,87 @@ public class MetadataRetriever implements Closeable {
 		createTable();
 	}
 
+	public BitmapCache getBitmapCache() {
+		return bitmapCache;
+	}
+
 	@Override
 	public void close() {
 		if (db != null) db.close();
 	}
 
-	public void getMediaMetadata(MediaMetadataCompat.Builder meta, MediaLib.PlayableItem item) {
-		if (queryMetadata(meta, item)) return;
+	public FutureSupplier<MetadataBuilder> getMediaMetadata(MediaLib.PlayableItem item) {
+		return App.get().execute(() -> load(item));
+	}
 
+	private MetadataBuilder load(MediaLib.PlayableItem item) {
+		MetadataBuilder meta = queryMetadata(item);
+		if (meta != null) return meta;
+
+		MetaBuilder mb = new MetaBuilder();
 		MediaEngineProvider vlcPlayer = mgr.vlcPlayer;
 
 		if ((vlcPlayer != null) && (!"content".equals(item.getLocation().getScheme()))) {
-			if (!vlcPlayer.getMediaMetadata(meta, item)) mgr.mediaPlayer.getMediaMetadata(meta, item);
+			if (!vlcPlayer.getMediaMetadata(mb, item)) mgr.mediaPlayer.getMediaMetadata(mb, item);
 		} else {
-			mgr.mediaPlayer.getMediaMetadata(meta, item);
+			mgr.mediaPlayer.getMediaMetadata(mb, item);
 		}
 
 		try {
-			insertMetadata(meta, item);
-		} catch (Exception ex) {
+			insertMetadata(mb, item);
+		} catch (Throwable ex) {
 			Log.e(getClass().getName(), "Failed to update MediaStore", ex);
 		}
+
+		return mb;
 	}
 
-	public Map<String, MediaMetadataCompat.Builder> queryMetadata(String idPattern) {
-		if (db == null) return Collections.emptyMap();
+	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern) {
+		return (db != null) ? App.get().execute(() -> query(idPattern)) : completedEmptyMap();
+	}
 
-		StringBuilder sb = new StringBuilder(128);
-		sb.append(idPattern).append("%/%");
+	private Map<String, MetadataBuilder> query(String idPattern) {
+		assert db != null;
 
-		try (Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID + " LIKE ? AND NOT " + COL_ID + " LIKE ?",
-				new String[]{idPattern, sb.toString()}, null, null, null)) {
+		try (SharedTextBuilder tb = SharedTextBuilder.get().append(idPattern).append("%/%");
+				 Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID + " LIKE ? AND NOT " + COL_ID + " LIKE ?",
+						 new String[]{idPattern, tb.toString()}, null, null, null)) {
 			int count = c.getCount();
 			if (count == 0) return Collections.emptyMap();
 
-			Map<String, MediaMetadataCompat.Builder> result = new HashMap<>((int) (count * 1.5f));
+			Map<String, MetadataBuilder> result = new HashMap<>((int) (count * 1.5f));
 
 			while (c.moveToNext()) {
 				String id = c.getString(0);
-				MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder();
-				readMetadata(meta, c, sb);
+				MetadataBuilder meta = new MetadataBuilder();
+				readMetadata(meta, c, tb);
 				result.put(id, meta);
 			}
 
 			return result;
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			Log.d(MetadataRetriever.class.getName(), "Failed to query media metadata", ex);
 			return Collections.emptyMap();
 		}
 	}
 
-	private boolean queryMetadata(MediaMetadataCompat.Builder meta, MediaLib.PlayableItem item) {
-		if (db == null) return false;
+	private MetadataBuilder queryMetadata(MediaLib.PlayableItem item) {
+		if (db == null) return null;
 
 		try (Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID + " = ?",
-				new String[]{item.getOrigId()}, null, null, null)) {
-			if (!c.moveToNext()) return false;
-			StringBuilder sb = new StringBuilder(128);
-			readMetadata(meta, c, sb);
-			return true;
-		} catch (Exception ex) {
+				new String[]{item.getOrigId()}, null, null, null);
+				 SharedTextBuilder tb = SharedTextBuilder.get()) {
+			if (!c.moveToNext()) return null;
+			MetadataBuilder meta = new MetaBuilder();
+			readMetadata(meta, c, tb);
+			return meta;
+		} catch (Throwable ex) {
 			Log.d(MetadataRetriever.class.getName(), "Failed to query media metadata", ex);
-			return false;
+			return null;
 		}
 	}
 
-	private void readMetadata(MediaMetadataCompat.Builder meta, Cursor c, StringBuilder sb) {
+	private void readMetadata(MetadataBuilder meta, Cursor c, TextBuilder tb) {
 		String m = c.getString(1);
 		if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
 
@@ -153,63 +168,33 @@ public class MetadataRetriever implements Closeable {
 		meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, c.getLong(4));
 
 		byte[] art = c.getBlob(5);
-
-		if (art != null) {
-			meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, getImageUri(art, sb));
-		}
+		if (art != null) meta.setImageUri(bitmapCache.getImageUri(art, tb));
 	}
 
-	private void insertMetadata(MediaMetadataCompat.Builder meta, MediaLib.PlayableItem item) {
-		if (db == null) return;
-
-		MediaMetadataCompat m = meta.build();
-		long dur = m.getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
-		if (dur <= 0) return;
-
-		ContentValues values = new ContentValues(10);
-		values.put(COL_ID, item.getOrigId());
-
-		String v = m.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
-		if (v != null) values.put(COL_TITLE, v);
-
-		v = m.getString(MediaMetadataCompat.METADATA_KEY_ALBUM);
-		if (v != null) values.put(COL_ALBUM, v);
-
-		v = m.getString(MediaMetadataCompat.METADATA_KEY_ARTIST);
-		if (v != null) values.put(COL_ARTIST, v);
-
-		v = m.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST);
-		if (v != null) values.put(COL_ALBUM_ARTIST, v);
-
-		v = m.getString(MediaMetadataCompat.METADATA_KEY_COMPOSER);
-		if (v != null) values.put(COL_COMPOSER, v);
-
-		v = m.getString(MediaMetadataCompat.METADATA_KEY_WRITER);
-		if (v != null) values.put(COL_WRITER, v);
-
-		v = m.getString(MediaMetadataCompat.METADATA_KEY_GENRE);
-		if (v != null) values.put(COL_GENRE, v);
-
-		values.put(COL_DURATION, dur);
-
-		Bitmap bm = m.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART);
+	private void insertMetadata(MetaBuilder meta, MediaLib.PlayableItem item) {
+		ContentValues values = meta.values;
+		Bitmap bm = meta.image;
+		meta.values = null;
+		meta.image = null;
+		if ((db == null) || !meta.durationSet) return;
 
 		if (bm == null) {
-			String u = m.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI);
-			if (u != null) bm = item.getLib().getBitmap(u, false, false);
+			String u = meta.getImageUri();
+			if (u != null) bm = item.getLib().getBitmap(u, false, false).get(null);
 		}
 
 		if (bm != null) {
-			StringBuilder sb = new StringBuilder(128);
-			byte[] art = saveImage(bm, sb);
+			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+				byte[] art = bitmapCache.saveBitmap(bm, tb);
 
-			if (art != null) {
-				meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, null);
-				meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, getImageUri(art, sb));
-				values.put(COL_ART, art);
+				if (art != null) {
+					meta.setImageUri(bitmapCache.getImageUri(art, tb));
+					values.put(COL_ART, art);
+				}
 			}
 		}
 
+		values.put(COL_ID, item.getId());
 		db.insert(TABLE, null, values);
 	}
 
@@ -238,44 +223,57 @@ public class MetadataRetriever implements Closeable {
 				");");
 	}
 
-	private String getImageUri(byte[] hash, StringBuilder sb) {
-		sb.setLength(0);
-		sb.append(imageCacheUri);
-		int len = sb.length();
-		TextUtils.appendHexString(sb.append("/X/"), hash).append(".jpg");
-		sb.setCharAt(len + 1, sb.charAt(len + 3));
-		return sb.toString().intern();
-	}
+	private static final class MetaBuilder extends MetadataBuilder {
+		ContentValues values = new ContentValues(10);
+		boolean durationSet;
+		Bitmap image;
 
-	private byte[] saveImage(Bitmap bm, StringBuilder sb) {
-		if (bm == null) return null;
-
-		try {
-			MemOutputStream mos = new MemOutputStream(bm.getByteCount());
-			if (!bm.compress(Bitmap.CompressFormat.JPEG, 100, mos)) return null;
-
-			byte[] content = mos.trimBuffer();
-			MessageDigest md = MessageDigest.getInstance("sha-1");
-			md.update(content);
-			byte[] digest = md.digest();
-			sb.setLength(0);
-			TextUtils.appendHexString(sb.append("X/"), digest).append(".jpg");
-			sb.setCharAt(0, sb.charAt(2));
-			File f = new File(imageCache, sb.toString());
-
-			if (!f.isFile()) {
-				File dir = f.getParentFile();
-				if (dir != null) //noinspection ResultOfMethodCallIgnored
-					dir.mkdirs();
-				try (OutputStream os = new FileOutputStream(f)) {
-					os.write(content);
-				}
+		@Override
+		public void putString(String k, String v) {
+			switch (k) {
+				case MediaMetadataCompat.METADATA_KEY_TITLE:
+					values.put(COL_TITLE, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_ALBUM:
+					values.put(COL_ALBUM, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_ARTIST:
+					values.put(COL_ARTIST, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST:
+					values.put(COL_ALBUM_ARTIST, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_COMPOSER:
+					values.put(COL_COMPOSER, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_WRITER:
+					values.put(COL_WRITER, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_GENRE:
+					values.put(COL_GENRE, v);
+					break;
+				case MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI:
+					setImageUri(v);
+					return;
 			}
 
-			return digest;
-		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to save image", ex);
-			return null;
+			super.putString(k, v);
+		}
+
+		@Override
+		public void putLong(String key, long value) {
+			if (MediaMetadata.METADATA_KEY_DURATION.equals(key)) {
+				values.put(COL_DURATION, value);
+				durationSet = true;
+			}
+
+			super.putLong(key, value);
+		}
+
+		@Override
+		public void putBitmap(String key, Bitmap value) {
+			if (MediaMetadata.METADATA_KEY_ALBUM_ART.equals(key)) image = value;
+			else super.putBitmap(key, value);
 		}
 	}
 }

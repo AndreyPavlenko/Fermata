@@ -1,50 +1,37 @@
 package me.aap.fermata.media.lib;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
-import android.util.DisplayMetrics;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
-import me.aap.utils.app.App;
+import me.aap.utils.async.Async;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.ui.UiUtils;
+import me.aap.utils.vfs.VfsManager;
 
-import static me.aap.utils.collection.CollectionUtils.forEach;
-import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
-import static me.aap.utils.ui.UiUtils.resizedBitmap;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -60,9 +47,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final MediaEngineManager mediaEngineManager;
 	private final MetadataRetriever metadataRetriever;
 	private final Map<String, WeakRef<Item>> itemCache = new HashMap<>();
-	private final Map<String, SoftRef<Bitmap>> bitmapCache = new HashMap<>();
 	private final ReferenceQueue<Item> itemRefQueue = new ReferenceQueue<>();
-	private final ReferenceQueue<Bitmap> bitmapRefQueue = new ReferenceQueue<>();
 
 	public DefaultMediaLib(Context ctx) {
 		this.ctx = ctx;
@@ -74,15 +59,18 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		metadataRetriever = new MetadataRetriever(mediaEngineManager);
 	}
 
+	@NonNull
 	public String getRootId() {
 		return ID;
 	}
 
+	@NonNull
 	@Override
 	public Context getContext() {
 		return ctx;
 	}
 
+	@NonNull
 	@Override
 	public MediaLibPrefs getPrefs() {
 		return this;
@@ -94,123 +82,109 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return sharedPreferences;
 	}
 
+	@NonNull
 	@Override
-	public Item getItem(CharSequence itemId) {
+	public FutureSupplier<Item> getItem(CharSequence itemId) {
 		String id = itemId.toString();
 		Item i = getFromCache(id);
-		if (i != null) return i;
+		if (i != null) return completed(i);
 
 		int idx = id.indexOf(':');
 
 		if (idx == -1) {
 			switch (id) {
 				case DefaultFolders.ID:
-					return getFolders();
+					return completed(getFolders());
 				case DefaultFavorites.ID:
-					return getFavorites();
+					return completed(getFavorites());
 				case DefaultPlaylists.ID:
-					return getPlaylists();
+					return completed(getPlaylists());
 				default:
-					return null;
+					return completedNull();
 			}
 		}
-
-		getFolders().getUnsortedChildren(); // Make sure the roots are loaded and cached
 
 		switch (id.substring(0, idx)) {
 			case FileItem.SCHEME:
-				i = FileItem.create(this, id);
-				break;
+				return FileItem.create(this, id);
 			case FolderItem.SCHEME:
-				i = FolderItem.create(this, id);
-				break;
+				return FolderItem.create(this, id);
 			case CueItem.SCHEME:
-				i = CueItem.create(this, id);
-				break;
+				return CueItem.create(this, id);
 			case CueTrackItem.SCHEME:
-				i = CueTrackItem.create(this, id);
-				break;
+				return CueTrackItem.create(this, id);
 			case M3uItem.SCHEME:
-				i = M3uItem.create(this, id);
-				break;
+				return M3uItem.create(this, id);
 			case M3uGroupItem.SCHEME:
-				i = M3uGroupItem.create(this, id);
-				break;
+				return M3uGroupItem.create(this, id);
 			case M3uTrackItem.SCHEME:
-				i = M3uTrackItem.create(this, id);
-				break;
+				return M3uTrackItem.create(this, id);
 			case DefaultFavorites.SCHEME:
-				i = getFavorites().getItem(id);
-				break;
+				return getFavorites().getItem(id);
 			case DefaultPlaylists.SCHEME:
-				i = getPlaylists().getItem(id);
-				break;
+				return getPlaylists().getItem(id);
 			default:
-				return null;
+				return completedNull();
 		}
-
-		return i;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result) {
-		if (getRootId().equals(parentMediaId)) {
-			Item i = getLastPlayedItem();
-			result.detach();
-			App.get().execute(() -> {
-				List<MediaItem> items = new ArrayList<>(3);
-				if (i != null) items.add(i.asMediaItem());
-				items.add(getFolders().asMediaItem());
-				items.add(getFavorites().asMediaItem());
-				items.add(getPlaylists().asMediaItem());
-				result.sendResult(items, null);
-			});
-		} else {
-			Item i = getItem(parentMediaId);
+		result.detach();
 
-			if (i instanceof BrowsableItem) {
-				result.detach();
-				App.get().execute(() -> result.sendResult(toMediaItems(((BrowsableItem) i).getChildren()), null));
-			} else {
-				result.sendResult(Collections.emptyList(), null);
-			}
+		if (getRootId().equals(parentMediaId)) {
+			List<MediaItem> items = new ArrayList<>(4);
+
+			Async.forEach(f -> {
+						MediaItem i = f.get();
+						if (i != null) items.add(i);
+						return completedVoid();
+					},
+					getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem()),
+					getFolders().asMediaItem(),
+					getFavorites().asMediaItem(),
+					getPlaylists().asMediaItem()
+			).onFailure(this::log).onCompletion((r, f) -> result.sendResult(items, null));
+		} else {
+			getItem(parentMediaId).then(i -> {
+				if (i instanceof BrowsableItem) {
+					return ((BrowsableItem) i).getChildren().then(children -> {
+						if (children.isEmpty()) return completedEmptyList();
+						List<MediaItem> items = new ArrayList<>(children.size());
+						return Async.forEach(c -> c.asMediaItem().map(items::add), children).map(r -> items);
+					});
+				} else {
+					return completedEmptyList();
+				}
+			}).onFailure(this::log).onCompletion((r, f) -> result.sendResult(r, null));
 		}
 	}
 
 	@Override
 	public void getItem(String itemId, MediaLibResult<MediaItem> result) {
-		Item i = getItem(itemId);
-
-		if (i == null) {
-			result.sendResult(null, null);
-		} else {
-			result.detach();
-			App.get().execute(() -> result.sendResult(i.asMediaItem(), null));
-		}
-	}
-
-	public void search(String query, MediaLibResult<List<MediaItem>> result) {
-		if ((query == null) || (query.length() < 3)) {
-			result.sendResult(Collections.emptyList(), null);
-			return;
-		}
-
 		result.detach();
-		App.get().execute(() -> {
-			Pattern q = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE);
-			List<MediaItem> r = new ArrayList<>();
-			forEach(getFolders().getChildren(), i -> i.search(q, r));
-			result.sendResult(r, null);
-		});
+		getItem(itemId)
+				.then(Item::asMediaItem)
+				.onFailure(this::log)
+				.onCompletion((i, f) -> result.sendResult(i, null));
 	}
 
 	@Override
-	public PlayableItem getLastPlayedItem() {
+	public void search(String query, MediaLibResult<List<MediaItem>> result) {
+		// TODO Implement
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<PlayableItem> getLastPlayedItem() {
 		String id = getLastPlayedItemPref();
-		Item i = (id == null) ? null : getItem(id);
-		return (i instanceof PlayableItem) ? (PlayableItem) i
-				: (i instanceof BrowsableItem) ? ((BrowsableItem) i).getFirstPlayable()
-				: null;
+		if (id == null) return completedNull();
+		return getItem(id).then(i -> {
+			if (i instanceof PlayableItem) return completed((PlayableItem) i);
+			if (i instanceof BrowsableItem) return ((BrowsableItem) i).getFirstPlayable();
+			return completedNull();
+		});
 	}
 
 	@Override
@@ -225,7 +199,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	public void setLastPlayed(PlayableItem i, long position) {
 		String id;
 		BrowsableItemPrefs p;
-		long dur = i.getDuration();
+		long dur = i.getDuration().getOrThrow();
 
 		if (dur <= 0) {
 			id = i.getId();
@@ -238,16 +212,18 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 
 		if ((dur - position) <= 1000) {
-			PlayableItem next = i.getNextPlayable();
-			position = 0;
+			i.getNextPlayable().onCompletion((next, fail) -> {
+				if (next == null) next = i;
 
-			if (next == null) {
-				id = i.getId();
-				p = i.getParent().getPrefs();
-			} else {
-				id = next.getId();
-				p = next.getParent().getPrefs();
-			}
+				String nextId = next.getId();
+				BrowsableItemPrefs nextPrefs = next.getParent().getPrefs();
+				setLastPlayedItemPref(nextId);
+				setLastPlayedPosPref(0);
+				nextPrefs.setLastPlayedItemPref(nextId);
+				nextPrefs.setLastPlayedPosPref(0);
+			});
+
+			return;
 		} else {
 			id = i.getId();
 			p = i.getParent().getPrefs();
@@ -265,20 +241,6 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		setLastPlayedPosPref(position);
 		p.setLastPlayedItemPref(id);
 		p.setLastPlayedPosPref(position);
-	}
-
-	@Override
-	public void clearCache() {
-		getFolders().clearCache();
-		getFavorites().clearCache();
-		getPlaylists().clearCache();
-
-		synchronized (itemCache) {
-			clearRefs(itemCache, itemRefQueue);
-		}
-		synchronized (bitmapCache) {
-			clearRefs(bitmapCache, bitmapRefQueue);
-		}
 	}
 
 	@NonNull
@@ -301,6 +263,12 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@NonNull
 	@Override
+	public VfsManager getVfsManager() {
+		return folders.getVfsManager();
+	}
+
+	@NonNull
+	@Override
 	public MediaEngineManager getMediaEngineManager() {
 		return mediaEngineManager;
 	}
@@ -311,90 +279,10 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return metadataRetriever;
 	}
 
-	@Nullable
+	@NonNull
 	@Override
-	public Bitmap getCachedBitmap(String uri) {
-		synchronized (bitmapCache) {
-			clearRefs(bitmapCache, bitmapRefQueue);
-			SoftRef<Bitmap> r = bitmapCache.get(uri);
-
-			if (r != null) {
-				Bitmap bm = r.get();
-				if (bm != null) return bm;
-				else bitmapCache.remove(uri);
-			}
-
-			return null;
-		}
-	}
-
-	@Override
-	public void getBitmap(String uri, boolean cache, boolean resize, Consumer<Bitmap> consumer) {
-		Bitmap bm = getCachedBitmap(uri);
-		if (bm != null) consumeInMainThread(consumer, bm);
-		else App.get().execute(() -> loadBitmap(uri, cache, resize), consumer);
-	}
-
-	private Bitmap loadBitmap(String uri, boolean cache, boolean resize) {
-		Bitmap bm = getCachedBitmap(uri);
-		if (bm != null) return bm;
-
-		if (uri.startsWith("http://") || uri.startsWith("https://")) {
-			try (InputStream in = new URL(uri).openStream()) {
-				bm = BitmapFactory.decodeStream(in);
-			} catch (Exception ex) {
-				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
-			}
-		} else if (uri.startsWith(ContentResolver.SCHEME_ANDROID_RESOURCE)) {
-			try {
-				Context ctx = getContext();
-				Resources res = ctx.getResources();
-				String[] s = uri.split("/");
-				int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
-				Drawable d = res.getDrawable(id, ctx.getTheme());
-				if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
-			} catch (Exception ex) {
-				Log.e(getClass().getName(), "Failed to load bitmap: " + uri, ex);
-			}
-		} else {
-			ContentResolver cr = getContext().getContentResolver();
-			try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
-				if (fd != null) bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
-			} catch (Exception ex) {
-				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
-			}
-		}
-
-		if (bm == null) return null;
-		if (resize) bm = resizedBitmap(bm, getMaxBitmapSize());
-		return cache ? cacheBitmap(uri, bm) : bm;
-	}
-
-	private Bitmap cacheBitmap(String uri, Bitmap bm) {
-		synchronized (bitmapCache) {
-			clearRefs(bitmapCache, bitmapRefQueue);
-			SoftRef<Bitmap> ref = new SoftRef<>(uri, bm, bitmapRefQueue);
-			SoftRef<Bitmap> cachedRef = CollectionUtils.putIfAbsent(bitmapCache, uri, ref);
-
-			if (cachedRef != null) {
-				Bitmap cached = cachedRef.get();
-				if (cached != null) return cached;
-				bitmapCache.put(uri, ref);
-			}
-
-			return bm;
-		}
-	}
-
-	private int getMaxBitmapSize() {
-		DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
-		return Math.min(dm.widthPixels, dm.heightPixels) / 2;
-	}
-
-	private static List<MediaItem> toMediaItems(List<? extends Item> items) {
-		List<MediaItem> media = new ArrayList<>(items.size());
-		forEach(items, i -> media.add(i.asMediaItem()));
-		return media;
+	public FutureSupplier<Bitmap> getBitmap(String uri, boolean cache, boolean resize) {
+		return getMetadataRetriever().getBitmapCache().getBitmap(getContext(), uri, cache, resize);
 	}
 
 	Object cacheLock() {
@@ -413,7 +301,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
 			if (i == null) return;
-			CollectionUtils.remove(itemCache, i.getId(), new WeakRef<>(i.getId(), i, itemRefQueue));
+			String id = i.getId();
+			WeakRef<Item> r = itemCache.get(id);
+			if (r == null) return;
+			Item cached = r.get();
+			if ((cached == null) || (cached == i)) itemCache.remove(id);
 		}
 	}
 
@@ -425,7 +317,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			if (r != null) {
 				Item cached = r.get();
 				if (cached != null) return cached;
-				else CollectionUtils.remove(itemCache, id, r);
+				else itemCache.remove(id);
 			}
 		}
 
@@ -439,6 +331,10 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 	}
 
+	private void log(Throwable ex) {
+		Log.e(getClass().getName(), "Error occurred", ex);
+	}
+
 	private interface Ref {
 		Object key();
 	}
@@ -447,19 +343,6 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		final Object key;
 
 		public WeakRef(Object key, V value, ReferenceQueue<V> q) {
-			super(value, q);
-			this.key = key;
-		}
-
-		public Object key() {
-			return key;
-		}
-	}
-
-	private static final class SoftRef<V> extends SoftReference<V> implements Ref {
-		final Object key;
-
-		public SoftRef(Object key, V value, ReferenceQueue<V> q) {
 			super(value, q);
 			this.key = key;
 		}

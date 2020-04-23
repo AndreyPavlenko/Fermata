@@ -86,7 +86,7 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 	@Override
 	public CharSequence getTitle() {
 		PlayableItem pi = getMainActivity().getMediaServiceBinder().getCurrentItem();
-		return (pi == null) ? "" : pi.getTitle();
+		return (pi == null) ? "" : pi.getMediaDescription().getOrThrow().getTitle();
 	}
 
 	private MainActivityDelegate getMainActivity() {

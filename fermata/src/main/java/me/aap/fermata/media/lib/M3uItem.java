@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,33 +16,37 @@ import java.util.Map;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.vfs.VfsManager;
+import me.aap.utils.vfs.VirtualResource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.BuildConfig.DEBUG;
-import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.text.TextUtils.indexOfChar;
 
 /**
  * @author Andrey Pavlenko
  */
-class M3uItem extends BrowsableItemBase<Item> {
+class M3uItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3u";
 	private final String name;
 	private final String subtitle;
 	private final List<Item> tracks;
 	private final String cover;
-	private Uri iconUri;
+	private FutureSupplier<Uri> iconUri;
 
-	private M3uItem(String id, BrowsableItem parent, MediaFile dir, MediaFile m3uFile) {
+	private M3uItem(String id, BrowsableItem parent, VirtualResource dir, VirtualResource m3uFile) {
 		super(id, parent, m3uFile);
 		Context ctx = parent.getLib().getContext();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
 		String idPath = id.substring(SCHEME.length());
+		VfsManager vfs = getLib().getVfsManager();
 
 		String m3uName = null;
 		String m3uAlbum = null;
@@ -148,7 +151,7 @@ class M3uItem extends BrowsableItemBase<Item> {
 					continue;
 				}
 
-				MediaFile file = MediaFile.resolve(l, dir);
+				VirtualResource file = vfs.resolve(l, dir).get(null);
 
 				if (file != null) {
 					if (album == null) album = m3uAlbum;
@@ -206,24 +209,21 @@ class M3uItem extends BrowsableItemBase<Item> {
 				g.init();
 				children.add(g);
 			}
-
-			Collections.sort(children, (c1, c2) -> compareNatural(c1.getName(), c2.getName()));
 		}
 
 		if (ntracks > 0) {
 			children.addAll(tracks);
-			Collections.sort(children.subList(ngroups, children.size()),
-					(c1, c2) -> compareNatural(c1.getName(), c2.getName()));
 		}
 
 		this.name = (m3uName == null) ? m3uFile.getName() : m3uName;
 		this.cover = cover;
 		this.tracks = children;
 		this.subtitle = getLib().getContext().getResources().getString(R.string.folder_subtitle,
-				ngroups, ntracks);
+				ntracks, ngroups);
 	}
 
-	static M3uItem create(String id, BrowsableItem parent, MediaFile dir, MediaFile m3uFile,
+	@NonNull
+	static M3uItem create(String id, BrowsableItem parent, VirtualResource dir, VirtualResource m3uFile,
 												DefaultMediaLib lib) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
@@ -239,15 +239,18 @@ class M3uItem extends BrowsableItemBase<Item> {
 		}
 	}
 
-	static M3uItem create(DefaultMediaLib lib, String id) {
+	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
-		FileItem file = (FileItem) lib.getItem(tb);
-		if (file == null) return null;
 
-		FolderItem parent = (FolderItem) file.getParent();
-		return create(id, parent, parent.getFile(), file.getFile(), lib);
+		return lib.getItem(tb.releaseString()).map(i -> {
+			FileItem file = (FileItem) i;
+			if (file == null) return null;
+
+			FolderItem parent = (FolderItem) file.getParent();
+			return create(id, parent, parent.getFile(), file.getFile(), lib);
+		});
 	}
 
 	static boolean isM3uFile(String name) {
@@ -261,27 +264,16 @@ class M3uItem extends BrowsableItemBase<Item> {
 
 	@NonNull
 	@Override
-	public String getSubtitle() {
-		return subtitle;
-	}
-
-	@Override
-	public Uri getIconUri() {
-		if (iconUri == Uri.EMPTY) {
-			return null;
-		} else if (iconUri == null) {
-			if (cover != null) {
-				MediaFile file = MediaFile.resolve(cover, getFile().getParent());
-
-				if (file != null) {
-					iconUri = file.getUri();
-				} else {
-					iconUri = Uri.EMPTY;
-					return null;
-				}
+	public FutureSupplier<Uri> getIconUri() {
+		if (iconUri == null) {
+			if (cover == null) {
+				iconUri = completedNull();
 			} else {
-				iconUri = Uri.EMPTY;
-				return null;
+				return getFile().getParent().then(folder -> {
+					if (folder == null) return iconUri = completedNull();
+					return getLib().getVfsManager().resolve(cover, folder).then(file ->
+							iconUri = (file != null) ? completed(file.getUri()) : completedNull());
+				});
 			}
 		}
 
@@ -320,7 +312,12 @@ class M3uItem extends BrowsableItemBase<Item> {
 	}
 
 	@Override
-	public List<Item> listChildren() {
-		return new ArrayList<>(tracks);
+	public FutureSupplier<List<Item>> listChildren() {
+		return completed(tracks);
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		return completed(subtitle);
 	}
 }

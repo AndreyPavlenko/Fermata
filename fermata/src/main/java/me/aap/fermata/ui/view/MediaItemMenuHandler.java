@@ -17,6 +17,7 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.BasicPreferenceStore;
@@ -40,6 +41,8 @@ import static me.aap.fermata.media.pref.PlayableItemPrefs.bookmarkTime;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addAudioPrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addDelayPrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -70,22 +73,18 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	public void show() {
-		menu.show(this::build);
+		menu.showFuture(this::build);
 	}
 
-	public void build(OverlayMenu.Builder builder) {
+	public FutureSupplier<Void> build(OverlayMenu.Builder builder) {
 		MainActivityDelegate a = getMainActivity();
 		builder.setSelectionHandler(this);
 
 		if (item instanceof PlayableItem) {
 			buildPlayableMenu(a, builder, (PlayableItem) item, true);
+			return completedVoid();
 		} else {
-			buildBrowsableMenu(a, builder, (BrowsableItem) item);
-		}
-
-		if (a.getMediaSessionCallback().getEngineManager().isExternalPlayerSupported()) {
-			builder.addItem(R.id.preferred_media_engine, R.drawable.media_engine,
-					R.string.preferred_media_engine).setSubmenu(this::buildMediaEngineMenu);
+			return buildBrowsableMenu(a, builder, (BrowsableItem) item);
 		}
 	}
 
@@ -98,7 +97,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		}
 
 		if (pi.getPrefs().hasPref(BOOKMARKS)) {
-			b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setSubmenu(this::buildBookmarksMenu);
+			b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
 		} else {
 			b.addItem(R.id.bookmark_create, R.drawable.bookmark, R.string.create_bookmark).setSubmenu(this::buildCreateBookmarkMenu);
 		}
@@ -118,32 +117,46 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		if ((pi.getParent() instanceof Playlist)) {
 			b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove);
 		} else {
-			a.addPlaylistMenu(b, () -> Collections.singletonList(pi));
+			a.addPlaylistMenu(b, completed(Collections.singletonList(pi)));
 		}
+
+		addMediaEngineMenu(a, b);
 	}
 
-	protected void buildBrowsableMenu(MainActivityDelegate a, OverlayMenu.Builder b, BrowsableItem bi) {
-		boolean hasBookmarks = false;
-		BrowsableItem parent = bi.getParent();
+	private FutureSupplier<Void> buildBrowsableMenu(MainActivityDelegate a, OverlayMenu.Builder b, BrowsableItem bi) {
+		return bi.getUnsortedChildren().withMainHandler().then(children -> {
+			boolean hasBookmarks = false;
+			BrowsableItem parent = bi.getParent();
 
-		for (Item c : bi.getUnsortedChildren()) {
-			if ((c instanceof PlayableItem) && ((PlayableItem) c).getPrefs().hasPref(BOOKMARKS)) {
-				hasBookmarks = true;
-				break;
+			for (Item c : children) {
+				if ((c instanceof PlayableItem) && ((PlayableItem) c).getPrefs().hasPref(BOOKMARKS)) {
+					hasBookmarks = true;
+					break;
+				}
 			}
-		}
 
-		if (!(parent instanceof Favorites)) {
-			b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
-		}
-		if (hasBookmarks) {
-			b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setSubmenu(this::buildBookmarksMenu);
-		}
-		if (!(bi instanceof Playlist)) {
-			a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true), bi::getName);
-		}
-		if (parent instanceof Folders) {
-			b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
+			if (!(parent instanceof Favorites)) {
+				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+			}
+			if (hasBookmarks) {
+				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
+			}
+			if (!(bi instanceof Playlist)) {
+				a.addPlaylistMenu(b, bi.getPlayableChildren(true), bi::getName);
+			}
+			if (parent instanceof Folders) {
+				b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
+			}
+
+			addMediaEngineMenu(a, b);
+			return completedVoid();
+		});
+	}
+
+	private void addMediaEngineMenu(MainActivityDelegate a, OverlayMenu.Builder builder) {
+		if (a.getMediaSessionCallback().getEngineManager().isExternalPlayerSupported()) {
+			builder.addItem(R.id.preferred_media_engine, R.drawable.media_engine,
+					R.string.preferred_media_engine).setSubmenu(this::buildMediaEngineMenu);
 		}
 	}
 
@@ -223,8 +236,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		}
 	}
 
-	private void buildBookmarksMenu(OverlayMenu.Builder b) {
-		List<PlayableItem> items;
+	private FutureSupplier<Void> buildBookmarksMenu(OverlayMenu.Builder b) {
 		b.setSelectionHandler(this);
 		b.addItem(R.id.bookmark_remove_all, R.string.remove_all_bookmarks).setSubmenu(s -> {
 			s.setSelectionHandler(this);
@@ -233,12 +245,18 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		});
 
 		if (item instanceof BrowsableItem) {
-			items = ((BrowsableItem) item).getPlayableChildren(true);
+			return ((BrowsableItem) item).getPlayableChildren(true).withMainHandler().then(items -> {
+				addBookmarks(b, items);
+				return completedVoid();
+			});
 		} else {
-			items = Collections.singletonList((PlayableItem) item);
+			addBookmarks(b, Collections.singletonList((PlayableItem) item));
 			b.addItem(R.id.bookmark_create, R.string.create_bookmark).setSubmenu(this::buildCreateBookmarkMenu);
+			return completedVoid();
 		}
+	}
 
+	private void addBookmarks(OverlayMenu.Builder b, List<PlayableItem> items) {
 		for (PlayableItem pi : items) {
 			for (String bm : pi.getPrefs().getBookmarks()) {
 				String name = PlayableItemPrefs.bookmarkName(bm);
@@ -309,7 +327,6 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		int id = i.getItemId();
 		MediaLibFragment f;
 		Item item = getItem();
-		List<PlayableItem> items;
 
 		switch (id) {
 			case R.id.folders_remove:
@@ -318,14 +335,17 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				break;
 			case R.id.favorites_add:
 				if (item instanceof BrowsableItem) {
-					items = ((BrowsableItem) item).getPlayableChildren(true);
-					item.getLib().getFavorites().addItems(items);
+					((BrowsableItem) item).getPlayableChildren(true).withMainHandler().onSuccess(list -> {
+						item.getLib().getFavorites().addItems(list);
+						MediaLibFragment mf = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+						if (mf != null) mf.reload();
+					});
 				} else {
 					item.getLib().getFavorites().addItem((PlayableItem) item);
+					f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+					if (f != null) f.reload();
 				}
 
-				f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
-				if (f != null) f.reload();
 				break;
 			case R.id.favorites_remove:
 				item.getLib().getFavorites().removeItem((PlayableItem) item);
@@ -338,12 +358,14 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 						Collections.singletonList((PlayableItem) item));
 				break;
 			case R.id.bookmark_remove_all_confirm:
-				items = (item instanceof BrowsableItem) ?
-						((BrowsableItem) item).getPlayableChildren(true) :
-						Collections.singletonList((PlayableItem) item);
-
-				for (PlayableItem pi : items) {
-					pi.getPrefs().removePref(BOOKMARKS);
+				if ((item instanceof BrowsableItem)) {
+					((BrowsableItem) item).getPlayableChildren(true).withMainHandler().onSuccess(list -> {
+						for (PlayableItem pi : list) {
+							pi.getPrefs().removePref(BOOKMARKS);
+						}
+					});
+				} else {
+					((PlayableItem) item).getPrefs().removePref(BOOKMARKS);
 				}
 
 				break;
@@ -432,7 +454,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			o.title = R.string.bookmark_time;
 			o.editable = false;
 			o.ems = 4;
-			o.seekMax = (int) (((PlayableItem) item).getDuration() / 1000);
+			o.seekMax = (int) (((PlayableItem) item).getDuration().get(() -> 0L) / 1000);
 		});
 
 		set.addToMenu(b, true);

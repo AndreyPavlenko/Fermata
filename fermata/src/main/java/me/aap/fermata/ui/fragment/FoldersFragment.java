@@ -3,7 +3,10 @@ package me.aap.fermata.ui.fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,12 +21,17 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 /**
@@ -65,7 +73,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 				if (hasSelected) {
 					b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
-					getMainActivity().addPlaylistMenu(b, a::getSelectedItems);
+					getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
 				}
 			} else {
 				b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
@@ -104,29 +112,67 @@ public class FoldersFragment extends MediaLibFragment {
 		getAdapter().setParent(getLib().getFolders());
 	}
 
-	public void addFolder() {
-		MainActivityDelegate a = getMainActivity();
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		if (hidden) return;
 
-		if (!a.isCarActivity()) {
-			try {
-				addFolderIntent(a);
-				return;
-			} catch (ActivityNotFoundException ex) {
-				Log.d(getClass().getName(), "Failed to start activity", ex);
-			}
+		FoldersAdapter a = getAdapter();
+		if (a != null) a.animateAddButton(a.getParent());
+	}
+
+	@Override
+	public void switchingTo(@NonNull ActivityFragment newFragment) {
+		super.switchingTo(newFragment);
+		getMainActivity().getFloatingButton().clearAnimation();
+	}
+
+	public void addFolder() {
+		if (getMainActivity().isCarActivity()) {
+			addFolderPicker();
+			return;
 		}
 
-		addFolderPicker(a);
+		OverlayMenu menu = getMainActivity().getContextMenu();
+		menu.show(b -> {
+			b.setTitle(R.string.add_folder);
+			b.setSelectionHandler(this::addFolder);
+			b.addItem(R.id.folders_add_content, R.string.add_folder_content);
+			b.addItem(R.id.folders_add_fs, R.string.add_folder_fs);
+//			b.addItem(R.id.folders_add_gdrive, R.string.add_folder_gdrive);
+		});
 	}
 
-	public void addFolderIntent(MainActivityDelegate a) throws ActivityNotFoundException {
+	private boolean addFolder(OverlayMenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.folders_add_content:
+				addFolderIntent();
+				return true;
+			case R.id.folders_add_fs:
+				addFolderPicker();
+				return true;
+			case R.id.folders_add_gdrive:
+				addFolderGdrive();
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private void addFolderIntent() throws ActivityNotFoundException {
 		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		a.startActivityForResult(this::addFolderResult, intent);
+		getMainActivity().startActivityForResult(this::addFolderResult, intent);
 	}
 
-	public void addFolderPicker(MainActivityDelegate a) {
-		FilePickerFragment f = a.showFragment(R.id.file_picker);
-		f.init(this::addFolderResult, FilePickerFragment.FOLDER);
+	public void addFolderPicker() {
+		FilePickerFragment f = getMainActivity().showFragment(R.id.file_picker);
+		f.setMode(FilePickerFragment.FOLDER);
+		f.setFileSystem(LocalFileSystem.getInstance());
+		f.setConsumer(this::addFolderResult);
+	}
+
+	private void addFolderGdrive() {
+
 	}
 
 	private void addFolderResult(int result, Intent data) {
@@ -135,22 +181,19 @@ public class FoldersFragment extends MediaLibFragment {
 		Uri uri = data.getData();
 		if (uri == null) return;
 
-		requireNonNull(getMainActivity().getContext()).getContentResolver()
+		MainActivityDelegate a = getMainActivity();
+		requireNonNull(a.getContext()).getContentResolver()
 				.takePersistableUriPermission(uri, FLAG_GRANT_READ_URI_PERMISSION);
 		Folders folders = getLib().getFolders();
-		folders.addItem(uri);
-		getAdapter().setParent(folders);
+		folders.addItem(uri).withMainHandler().thenRun(() -> getAdapter().setParent(folders));
 	}
 
-	private void addFolderResult(Uri uri) {
+	private void addFolderResult(VirtualResource folder) {
 		MainActivityDelegate a = getMainActivity();
-
-		if (uri != null) {
+		if (folder instanceof VirtualFolder) {
 			Folders folders = a.getLib().getFolders();
-			folders.addItem(uri);
-			getAdapter().setParent(folders);
+			folders.addItem(folder.getUri()).withMainHandler().thenRun(() -> getAdapter().setParent(folders));
 		}
-
 		a.showFragment(getFragmentId());
 	}
 
@@ -164,7 +207,8 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	private boolean isRootFolder() {
-		return (getAdapter().getParent() instanceof Folders);
+		BrowsableItem p = getAdapter().getParent();
+		return (p == null) || (p instanceof Folders);
 	}
 
 	@Override
@@ -179,6 +223,13 @@ public class FoldersFragment extends MediaLibFragment {
 
 		FoldersAdapter(BrowsableItem parent) {
 			super(parent);
+			animateAddButton(parent);
+		}
+
+		@Override
+		public void setParent(BrowsableItem parent) {
+			super.setParent(parent);
+			animateAddButton(parent);
 		}
 
 		public boolean isLongPressDragEnabled() {
@@ -201,6 +252,17 @@ public class FoldersFragment extends MediaLibFragment {
 			BrowsableItem i = getAdapter().getParent();
 			if (i instanceof Folders) ((Folders) i).moveItem(fromPosition, toPosition);
 			return super.onItemMove(fromPosition, toPosition);
+		}
+
+		private void animateAddButton(BrowsableItem parent) {
+			if (!(parent instanceof Folders)) return;
+
+			parent.getUnsortedChildren().onSuccess(c -> {
+				if (!c.isEmpty()) return;
+
+				Animation shake = AnimationUtils.loadAnimation(getContext(), R.anim.shake);
+				getMainActivity().getFloatingButton().startAnimation(shake);
+			});
 		}
 	}
 }

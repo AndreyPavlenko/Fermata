@@ -27,7 +27,9 @@ import java.util.List;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
@@ -40,6 +42,7 @@ import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.VideoFragment;
 import me.aap.fermata.ui.view.ControlPanelView;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
@@ -55,6 +58,7 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.activity.ActivityListener.SERVICE_BOUND;
 
@@ -287,10 +291,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return (pi != null) || (getLib().getPrefs().getLastPlayedItemPref() != null);
 	}
 
-	public boolean goToCurrent() {
+	public FutureSupplier<Boolean> goToCurrent() {
 		PlayableItem pi = getMediaServiceBinder().getCurrentItem();
+		return (pi == null) ? getLib().getLastPlayedItem().withMainHandler().map(this::goToItem)
+				: completed(goToItem(pi));
+	}
 
-		if (pi == null) pi = getLib().getLastPlayedItem();
+	private boolean goToItem(PlayableItem pi) {
 		if (pi == null) return false;
 
 		MediaLib.BrowsableItem root = pi.getRoot();
@@ -305,10 +312,9 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			throw new UnsupportedOperationException();
 		}
 
-		PlayableItem i = pi;
 		FermataApplication.get().getHandler().post(() -> {
 			ActivityFragment f = getActiveFragment();
-			if (f instanceof MediaLibFragment) ((MediaLibFragment) f).revealItem(i);
+			if (f instanceof MediaLibFragment) ((MediaLibFragment) f).revealItem(pi);
 		});
 
 		return true;
@@ -327,66 +333,71 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return findViewById(R.id.tool_menu);
 	}
 
-	public void addPlaylistMenu(OverlayMenu.Builder builder, Supplier<List<PlayableItem>> selection) {
+	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection) {
 		addPlaylistMenu(builder, selection, () -> "");
 	}
 
-	public void addPlaylistMenu(OverlayMenu.Builder builder, Supplier<List<PlayableItem>> selection,
+	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection,
 															Supplier<? extends CharSequence> initName) {
-		boolean visible = !isCarActivity() || !getMediaServiceBinder().getLib().getPlaylists()
-				.getUnsortedChildren().isEmpty();
+		boolean visible = !isCarActivity() || getMediaServiceBinder().getLib().getPlaylists().hasPlaylists();
 		if (!visible) return;
 
 		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
 				.setSubmenu(b -> createPlaylistMenu(b, selection, initName));
 	}
 
-	private void createPlaylistMenu(OverlayMenu.Builder b, Supplier<List<PlayableItem>> selection,
+	private void createPlaylistMenu(OverlayMenu.Builder b, FutureSupplier<List<PlayableItem>> selection,
 																	Supplier<? extends CharSequence> initName) {
-		List<? extends MediaLib.Item> playlists = getLib().getPlaylists().getUnsortedChildren();
+		List<Item> playlists = getLib().getPlaylists().getUnsortedChildren().getOrThrow();
 
 		if (!isCarActivity()) {
 			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
-					.setHandler(i -> createPlaylist(selection.get(), initName));
+					.setHandler(i -> createPlaylist(selection, initName));
 		}
 
 		for (int i = 0; i < playlists.size(); i++) {
-			MediaLib.Item pl = playlists.get(i);
+			Playlist pl = (Playlist) playlists.get(i);
 			String name = pl.getName();
 			b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name)
-					.setHandler(item -> addToPlaylist(name, selection.get()));
+					.setHandler(item -> addToPlaylist(name, selection));
 		}
 	}
 
-	private boolean createPlaylist(List<PlayableItem> selection, Supplier<? extends CharSequence> initName) {
+	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection, Supplier<? extends CharSequence> initName) {
 		UiUtils.queryText(getContext(), R.string.playlist_name, initName.get(), name -> {
 			discardSelection();
 			if (name == null) return;
 
-			MediaLib.Playlist pl = getLib().getPlaylists().addItem(name);
+			Playlist pl = getLib().getPlaylists().addItem(name);
 			if (pl != null) {
-				pl.addItems(selection);
-				MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
-				if (f != null) f.getAdapter().reload();
+				selection.withMainHandler().onSuccess(items -> {
+					pl.addItems(items);
+					MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
+					if (f != null) f.getAdapter().reload();
+				});
 			}
 		});
 		return true;
 	}
 
-	private boolean addToPlaylist(String name, List<PlayableItem> selection) {
+	private boolean addToPlaylist(String name, FutureSupplier<List<PlayableItem>> selection) {
 		discardSelection();
-		for (MediaLib.Item pl : getLib().getPlaylists().getUnsortedChildren()) {
+		for (Item i : getLib().getPlaylists().getUnsortedChildren().getOrThrow()) {
+			Playlist pl = (Playlist) i;
+
 			if (name.equals(pl.getName())) {
-				((MediaLib.Playlist) pl).addItems(selection);
-				MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
-				if (f != null) f.getAdapter().reload();
+				selection.withMainHandler().onSuccess(items -> {
+					pl.addItems(items);
+					MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
+					if (f != null) f.getAdapter().reload();
+				});
 				break;
 			}
 		}
 		return true;
 	}
 
-	public void removeFromPlaylist(MediaLib.Playlist pl, List<PlayableItem> selection) {
+	public void removeFromPlaylist(Playlist pl, List<PlayableItem> selection) {
 		discardSelection();
 		pl.removeItems(selection);
 		MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
@@ -429,7 +440,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			init();
 			fireBroadcastEvent(SERVICE_BOUND);
 
-			if (!goToCurrent()) showFragment(R.id.nav_folders);
+			goToCurrent().onSuccess(ok -> {
+				if (!ok) showFragment(R.id.nav_folders);
+			});
+
 			a.checkPermissions(getRequiredPermissions());
 
 			FermataApplication.get().getHandler().post(() -> {

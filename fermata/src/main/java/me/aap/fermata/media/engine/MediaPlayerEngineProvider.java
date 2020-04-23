@@ -27,7 +27,8 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 		return new MediaPlayerEngine(ctx, listener);
 	}
 
-	public boolean getMediaMetadata(MediaMetadataCompat.Builder meta, PlayableItem item) {
+	@Override
+	public boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
 		MediaMetadataRetriever mmr = null;
 
 		try {
@@ -66,7 +67,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 				Bitmap bm = BitmapFactory.decodeByteArray(pic, 0, pic.length);
 				if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 			}
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			Log.d(getClass().getName(), "Failed to retrieve media metadata of " + item.getLocation(), ex);
 
 			MediaPlayer mp = null;
@@ -75,7 +76,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 				if (mp == null) return false;
 
 				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
-			} catch (Exception ex2) {
+			} catch (Throwable ex2) {
 				Log.d(getClass().getName(), "Failed to retrieve duration of " + item.getLocation(), ex2);
 				return false;
 			} finally {

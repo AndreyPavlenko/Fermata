@@ -8,17 +8,22 @@ import java.util.List;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.text.SharedTextBuilder;
+
+import static me.aap.utils.async.Async.forEach;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 
 
 /**
  * @author Andrey Pavlenko
  */
-abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
+abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 
-	ItemContainer(String id, @Nullable BrowsableItem parent, @Nullable MediaFile file) {
+	ItemContainer(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
 		super(id, parent, file);
 	}
 
@@ -26,43 +31,37 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 	abstract void saveChildren(List<C> children);
 
-	Item getItem(String id) {
+	FutureSupplier<Item> getItem(String id) {
 		assert id.startsWith(getScheme());
 
-		for (C i : getUnsortedChildren()) {
-			if (id.equals(i.getId())) return i;
+		for (C i : list()) {
+			if (id.equals(i.getId())) return completed(i);
 		}
 
-		return null;
+		return completedNull();
 	}
 
-	@SuppressWarnings("unchecked")
-	List<C> listChildren(String[] ids) {
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	FutureSupplier<List<Item>> listChildren(String[] ids) {
 		MediaLib lib = getLib();
-		List<C> children = new ArrayList<>(ids.length);
-
-		for (String id : ids) {
-			Item i = lib.getItem(id);
-			if (i != null) children.add(toChildItem((C) i));
-		}
-
-		return children;
+		List children = new ArrayList<>(ids.length);
+		return forEach(id -> lib.getItem(id).map(children::add), ids).then(v -> completed(children));
 	}
 
 	public void addItem(C i) {
-		List<C> children = getUnsortedChildren();
+		List<C> children = list();
 		i = toChildItem(i);
 		if (children.contains(i)) return;
 
 		List<C> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
 		newChildren.add(i);
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void addItems(List<C> items) {
-		List<C> children = getUnsortedChildren();
+		List<C> children = list();
 		List<C> newChildren = new ArrayList<>(children.size() + items.size());
 		boolean added = false;
 		newChildren.addAll(children);
@@ -76,27 +75,27 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		if (!added) return;
 
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void removeItem(int idx) {
-		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<C> newChildren = new ArrayList<>(list());
 		newChildren.remove(idx);
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void removeItem(C i) {
-		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<C> newChildren = new ArrayList<>(list());
 		if (!newChildren.remove(toChildItem(i))) return;
 
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void removeItems(List<C> items) {
-		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<C> newChildren = new ArrayList<>(list());
 		boolean removed = false;
 
 		for (C i : items) {
@@ -105,20 +104,15 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		if (!removed) return;
 
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	public void moveItem(int fromPosition, int toPosition) {
-		List<C> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<C> newChildren = new ArrayList<>(list());
 		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
-	}
-
-	public void updateSorting() {
-		super.updateSorting();
-		saveChildren(getUnsortedChildren());
 	}
 
 	public boolean isChildItemId(String id) {
@@ -131,6 +125,11 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 		return tb.append(getScheme()).append(':').append(id).releaseString();
 	}
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private void setNewChildren(List<C> c) {
+		super.setChildren((List) c);
+	}
+
 	@SuppressWarnings("unchecked")
 	public C toChildItem(C i) {
 		String id = i.getId();
@@ -139,5 +138,10 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase<C> {
 
 		PlayableItem pi = (PlayableItem) i;
 		return (C) pi.export(toChildItemId(pi.getOrigId()), this);
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private List<C> list() {
+		return (List) getUnsortedChildren().getOrThrow();
 	}
 }

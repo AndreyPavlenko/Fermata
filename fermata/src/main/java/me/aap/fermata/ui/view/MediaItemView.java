@@ -7,6 +7,7 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.view.animation.Animation;
@@ -22,12 +23,15 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.material.checkbox.MaterialCheckBox;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
+
+import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
 
 /**
  * @author Andrey Pavlenko
@@ -65,27 +69,78 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		wrapper.setView(this);
 		Item i = wrapper.getItem();
 
-		if (i instanceof PlayableItem) {
-			PlayableItem pi = (PlayableItem) i;
+		FutureSupplier<MediaDescriptionCompat> load = i.getMediaDescription().withMainHandler()
+				.addConsumer((result, fail, progress, total) -> {
+					if (wrapper != getItemWrapper()) return;
 
-			if (pi.isMediaDescriptionLoaded()) {
-				setDescription(wrapper, pi.getMediaDescription());
-			} else {
-				getTitle().setText(pi.getFile().getName());
-				getSubtitle().setText(R.string.loading);
-				ImageView icon = getIcon();
-				icon.setImageResource(R.drawable.loading);
-				rotate.setDuration(1000);
-				rotate.setRepeatCount(Animation.INFINITE);
-				icon.startAnimation(rotate);
-				pi.getMediaDescription(d -> {
-					if (wrapper == getItemWrapper()) setDescription(wrapper, pi.getMediaDescription());
+					if (fail != null) {
+						Log.e(getClass().getName(), "Failed to load media description: " + i, fail);
+						setDefaults(i, false);
+						return;
+					}
+
+					CharSequence sub = result.getSubtitle();
+					getTitle().setText(MiscUtils.ifNull(result.getTitle(), i.getFile()::getName));
+					if (sub != null) getSubtitle().setText(sub);
+
+					if (progress != PROGRESS_DONE) return;
+
+					Uri uri = result.getIconUri();
+
+					if (uri != null) {
+						FutureSupplier<Bitmap> loadIcon = i.getLib().getBitmap(uri.toString(), true, true)
+								.withMainHandler().onCompletion((bm, err) -> {
+									if (wrapper != getItemWrapper()) return;
+
+									ImageView icon = getIcon();
+									icon.clearAnimation();
+
+									if (bm != null) {
+										icon.setImageTintList(null);
+										icon.setImageBitmap(bm);
+									} else {
+										icon.setImageTintList(iconTint);
+										icon.setImageResource(i.getIcon());
+									}
+								});
+
+						if (!loadIcon.isDone()) {
+							ImageView icon = getIcon();
+							icon.clearAnimation();
+							icon.setImageTintList(iconTint);
+							icon.setImageResource(i.getIcon());
+						}
+					} else {
+						ImageView icon = getIcon();
+						icon.clearAnimation();
+						icon.setImageTintList(iconTint);
+						icon.setImageResource(i.getIcon());
+					}
 				});
-			}
+
+		if (!load.isDone()) setDefaults(i, true);
+	}
+
+	private void setDefaults(Item i, boolean loading) {
+		if (i instanceof BrowsableItem) {
+			getTitle().setText(((BrowsableItem) i).getName());
 		} else {
-			setDescription(wrapper, i.getMediaDescription(d -> {
-				if (wrapper == getItemWrapper()) setDescription(wrapper, d);
-			}));
+			getTitle().setText(i.getFile().getName());
+		}
+
+		ImageView icon = getIcon();
+
+		if (loading) {
+			rotate.setDuration(1000);
+			rotate.setRepeatCount(Animation.INFINITE);
+			icon.setImageResource(R.drawable.loading);
+			icon.startAnimation(rotate);
+			getSubtitle().setText(R.string.loading);
+		} else {
+			icon.clearAnimation();
+			icon.setImageTintList(iconTint);
+			icon.setImageResource(i.getIcon());
+			getSubtitle().setText("");
 		}
 	}
 
@@ -120,57 +175,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	public void setListView(MediaItemListView listView) {
 		this.listView = listView;
-	}
-
-	private void setDescription(MediaItemWrapper wrapper, MediaDescriptionCompat dsc) {
-		Item item = wrapper.getItem();
-		ImageView icon = getIcon();
-		boolean loadIcon = (item instanceof BrowsableItem) || ((PlayableItem) item).isStream();
-		icon.clearAnimation();
-
-		if (loadIcon) {
-			Bitmap img = dsc.getIconBitmap();
-			icon.clearAnimation();
-
-			if (img != null) {
-				icon.setImageBitmap(img);
-				icon.setImageTintList(null);
-			} else {
-				Uri uri = dsc.getIconUri();
-
-				if (uri != null) {
-					MediaLib lib = item.getLib();
-					String u = uri.toString();
-					img = lib.getCachedBitmap(u);
-
-					if (img != null) {
-						icon.setImageBitmap(img);
-						icon.setImageTintList(null);
-					} else {
-						icon.setImageTintList(iconTint);
-						icon.setImageResource(item.getIcon());
-
-						lib.getBitmap(u, bm -> {
-							if ((bm == null) || (wrapper != getItemWrapper())) return;
-							icon.setImageBitmap(bm);
-							icon.setImageTintList(null);
-						});
-					}
-				} else {
-					icon.setImageTintList(iconTint);
-					icon.setImageResource(item.getIcon());
-				}
-			}
-		} else {
-			icon.setImageTintList(iconTint);
-			icon.setImageResource(item.getIcon());
-		}
-
-		CharSequence title = dsc.getTitle();
-		CharSequence subtitle = dsc.getSubtitle();
-
-		getTitle().setText((title != null) ? title : item.getTitle());
-		getSubtitle().setText((subtitle != null) ? subtitle : item.getSubtitle());
 	}
 
 	@Override

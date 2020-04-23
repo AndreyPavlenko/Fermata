@@ -12,14 +12,14 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
+import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FavoritesPrefs;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
-import static me.aap.fermata.util.Utils.getResourceUri;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 
@@ -37,18 +37,10 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 		this.lib = lib;
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("favorites", Context.MODE_PRIVATE);
 		favoritesPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
-	}
-
-	@NonNull
-	@Override
-	public String getTitle() {
-		return getLib().getContext().getString(R.string.favorites);
-	}
-
-	@NonNull
-	@Override
-	public String getSubtitle() {
-		return "";
+		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
+		dsc.setTitle(getLib().getContext().getString(R.string.favorites));
+		dsc.setSubtitle("");
+		setMediaDescription(dsc.build());
 	}
 
 	@NonNull
@@ -86,31 +78,24 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	}
 
 	@Override
-	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
-		buildCompleteDescription(b);
-		return null;
-	}
-
-	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
-		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.favorite_filled));
-	}
-
-	@Override
-	public List<PlayableItem> listChildren() {
+	public FutureSupplier<List<Item>> listChildren() {
 		return listChildren(getFavoritesPref());
 	}
 
 	@Override
 	public boolean isFavoriteItem(PlayableItem i) {
 		String id = toChildItemId(i.getOrigId());
-		return CollectionUtils.contains(getUnsortedChildren(), c -> id.equals(c.getId()));
+		return CollectionUtils.contains(getUnsortedChildren().getOrThrow(), c -> id.equals(c.getId()));
 	}
 
 	@Override
 	public boolean isFavoriteItemId(String id) {
 		return isChildItemId(id);
+	}
+
+	@Override
+	public void addItem(PlayableItem i) {
+
 	}
 
 	@Override

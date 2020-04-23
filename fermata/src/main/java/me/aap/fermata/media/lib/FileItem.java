@@ -1,16 +1,18 @@
 package me.aap.fermata.media.lib;
 
 import android.annotation.SuppressLint;
-import android.net.Uri;
-import android.support.v4.media.MediaMetadataCompat;
+
+import androidx.annotation.NonNull;
 
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.storage.MediaFile;
-import me.aap.fermata.util.Utils;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
+import static me.aap.fermata.util.Utils.isVideoFile;
+import static me.aap.utils.async.Completed.completedNull;
 
 /**
  * @author Andrey Pavlenko
@@ -20,13 +22,13 @@ class FileItem extends PlayableItemBase {
 	public static final String SCHEME = "file";
 	private final boolean isVideo;
 
-	private FileItem(String id, BrowsableItem parent, MediaFile file, boolean isVideo) {
+	private FileItem(String id, BrowsableItem parent, VirtualResource file, boolean isVideo) {
 		super(id, parent, file);
 		this.isVideo = isVideo;
 	}
 
-	static FileItem create(String id, BrowsableItem parent, MediaFile file, DefaultMediaLib lib,
-												 boolean isFile) {
+	static FileItem create(String id, BrowsableItem parent, VirtualResource file, DefaultMediaLib lib,
+												 boolean isVideo) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
 
@@ -36,25 +38,28 @@ class FileItem extends PlayableItemBase {
 				if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
 				return f;
 			} else {
-				return new FileItem(id, parent, file, isFile);
+				return new FileItem(id, parent, file, isVideo);
 			}
 		}
 	}
 
-
-	static FileItem create(DefaultMediaLib lib, String id) {
+	@NonNull
+	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		int idx = id.lastIndexOf('/');
-		if ((idx == -1) || (idx == (id.length() - 1))) return null;
+		if ((idx == -1) || (idx == (id.length() - 1))) return completedNull();
 
 		String name = id.substring(idx + 1);
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(FolderItem.SCHEME).append(id, SCHEME.length(), idx);
-		FolderItem parent = (FolderItem) lib.getItem(tb.releaseString());
-		if (parent == null) return null;
 
-		MediaFile file = parent.getFile().getChild(name);
-		return (file != null) ? create(id, parent, file, lib, Utils.isVideoFile(file.getName())) : null;
+		return lib.getItem(tb.releaseString()).then(i -> {
+			FolderItem parent = (FolderItem) i;
+			if (parent == null) return completedNull();
+
+			return parent.getFile().getChild(name).map(file -> (file != null) ?
+					create(id, parent, file, lib, isVideoFile(file.getName())) : null);
+		});
 	}
 
 	@Override
@@ -62,28 +67,11 @@ class FileItem extends PlayableItemBase {
 		return isVideo;
 	}
 
-	@Override
-	public Uri getLocation() {
-		return getFile().getUri();
-	}
-
-	@Override
-	public long getDuration() {
-		return getMediaData().getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
-	}
-
-	@Override
-	public void setDuration(long duration) {
-		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(getMediaData());
-		b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
-		clearCache();
-		mediaData = b.build();
-	}
-
+	@NonNull
 	@Override
 	public FileItem export(String exportId, BrowsableItem parent) {
 		FileItem f = create(exportId, parent, getFile(), (DefaultMediaLib) parent.getLib(), isVideo());
-		if (f.mediaData == null) f.mediaData = this.mediaData;
+		f.setMeta(getMediaData());
 		return f;
 	}
 
@@ -92,12 +80,5 @@ class FileItem extends PlayableItemBase {
 		String id = getId();
 		if (id.startsWith(SCHEME)) return id;
 		return id.substring(id.indexOf(SCHEME));
-	}
-
-	@Override
-	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
-		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
-		getLib().getMetadataRetriever().getMediaMetadata(meta, this);
-		return meta;
 	}
 }

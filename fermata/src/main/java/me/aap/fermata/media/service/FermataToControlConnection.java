@@ -139,7 +139,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 		PlayableItem i = cb.getCurrentItem();
 
 		if (i != null) {
-			i.getParent().getQueue(q -> {
+			i.getParent().getQueue().withMainHandler().onSuccess(q -> {
 				if (i == cb.getCurrentItem()) {
 					sendPlaybackState(new MediaSessionState(getService().callback.getPlaybackState(),
 							cb.getMetadata(), q, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID));

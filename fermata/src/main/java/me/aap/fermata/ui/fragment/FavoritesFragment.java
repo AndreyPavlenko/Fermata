@@ -16,6 +16,7 @@ import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 /**
@@ -51,7 +52,7 @@ public class FavoritesFragment extends MediaLibFragment {
 
 			if (a.hasSelected()) {
 				b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
-				getMainActivity().addPlaylistMenu(b, a::getSelectedItems);
+				getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
 			}
 		} else {
 			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);

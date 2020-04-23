@@ -9,49 +9,56 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Folders;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.FoldersPrefs;
-import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.async.Async;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VfsManager;
+import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.content.ContentFileSystem;
+import me.aap.utils.vfs.generic.GenericFileSystem;
+import me.aap.utils.vfs.local.LocalFileSystem;
 
-import static me.aap.fermata.util.Utils.getResourceUri;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
+import static me.aap.utils.security.SecurityUtils.sha1String;
 
 /**
  * @author Andrey Pavlenko
  */
-class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
+class DefaultFolders extends BrowsableItemBase implements Folders,
 		FoldersPrefs {
 	static final String ID = "Folders";
 	private final DefaultMediaLib lib;
 	private final SharedPreferenceStore foldersPrefStore;
+	private final VfsManager vfs;
 
 	public DefaultFolders(DefaultMediaLib lib) {
 		super(ID, null, null);
 		this.lib = lib;
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("folders", Context.MODE_PRIVATE);
 		foldersPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
-	}
+		vfs = new VfsManager(LocalFileSystem.Provider.getInstance(),
+				new ContentFileSystem.Provider(getPreferFileApiPref()),
+				GenericFileSystem.Provider.getInstance());
 
-	@NonNull
-	@Override
-	public String getTitle() {
-		return getLib().getContext().getString(R.string.folders);
-	}
-
-	@NonNull
-	@Override
-	public String getSubtitle() {
-		return "";
+		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
+		dsc.setTitle(getLib().getContext().getString(R.string.folders));
+		dsc.setSubtitle("");
+		setMediaDescription(dsc.build());
 	}
 
 	@NonNull
@@ -77,6 +84,7 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		return this;
 	}
 
+	@NonNull
 	@Override
 	public FoldersPrefs getPrefs() {
 		return this;
@@ -93,39 +101,28 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		return getLib().getBroadcastEventListeners();
 	}
 
-	@Override
-	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
-		buildCompleteDescription(b);
-		return null;
+	VfsManager getVfsManager() {
+		return vfs;
 	}
 
-	@Override
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		super.buildCompleteDescription(b);
-		b.setIconUri(getResourceUri(getLib().getContext(), R.drawable.folder));
-	}
-
-	public List<FolderItem> listChildren() {
+	protected FutureSupplier<List<Item>> listChildren() {
 		DefaultMediaLib lib = getLib();
 		String[] pref = getFoldersPref();
-		boolean preferFile = getPreferFileApiPref();
-		List<FolderItem> children = new ArrayList<>(pref.length);
+		List<Item> children = new ArrayList<>(pref.length);
+		Set<String> names = new HashSet<>((int) (pref.length * 1.5));
 
-		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-			tb.append(FolderItem.SCHEME).append(':');
-			int len = tb.length();
+		return Async.forEach(u -> vfs.getResource(Uri.parse(u)).then(res -> {
+			if (!(res instanceof VirtualFolder)) return completedVoid();
 
-			for (String uri : pref) {
-				Uri u = Uri.parse(uri);
-				MediaFile folder = MediaFile.create(u, preferFile);
-				tb.setLength(len);
-				tb.append(folder.getName());
-				FolderItem i = FolderItem.create(tb.toString(), this, folder, lib);
-				children.add(i);
-			}
-		}
+			VirtualFolder folder = (VirtualFolder) res;
+			String name = folder.getName();
+			if (!names.add(name)) name = sha1String(u);
 
-		return children;
+			String id = SharedTextBuilder.get().append(FolderItem.SCHEME).append(':').append(name).releaseString();
+			FolderItem i = FolderItem.create(id, this, folder, lib);
+			children.add(i);
+			return completedVoid();
+		}), pref).then(v -> completed(children));
 	}
 
 	@Override
@@ -144,60 +141,88 @@ class DefaultFolders extends BrowsableItemBase<FolderItem> implements Folders,
 		}
 	}
 
+	@NonNull
 	@Override
-	public void addItem(Uri uri) {
-		List<FolderItem> children = getUnsortedChildren();
-		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getUri()))) return;
+	public FutureSupplier<Item> addItem(Uri uri) {
+		List<FolderItem> children = list();
+
+		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getUri()))) {
+			return completedNull();
+		}
 
 		List<FolderItem> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
-		newChildren.add(toFolderItem(uri));
-		setChildren(newChildren);
-		saveChildren(newChildren);
+		return toFolderItem(uri, newChildren).withMainHandler().map(folder -> {
+			if (folder == null) return null;
+
+			newChildren.add(folder);
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			return folder;
+		});
 	}
 
 	@Override
 	public void removeItem(int idx) {
-		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<FolderItem> newChildren = new ArrayList<>(list());
 		FolderItem i = newChildren.remove(idx);
 		getLib().removeFromCache(i);
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	@Override
 	public void removeItem(Item item) {
 		Uri uri = item.getFile().getUri();
-		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<FolderItem> newChildren = new ArrayList<>(list());
 		if (!CollectionUtils.remove(newChildren, u -> uri.equals(u.getFile().getUri()))) return;
 
 		getLib().removeFromCache(item);
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
 	}
 
 	@Override
 	public void moveItem(int fromPosition, int toPosition) {
-		List<FolderItem> newChildren = new ArrayList<>(getUnsortedChildren());
+		List<FolderItem> newChildren = new ArrayList<>(list());
 		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setChildren(newChildren);
+		setNewChildren(newChildren);
 		saveChildren(newChildren);
-	}
-
-	@Override
-	public void updateSorting() {
-		super.updateSorting();
-		saveChildren(getUnsortedChildren());
 	}
 
 	private void saveChildren(List<? extends Item> children) {
 		setFoldersPref(mapToArray(children, i -> i.getFile().getUri().toString(), String[]::new));
 	}
 
-	private FolderItem toFolderItem(Uri u) {
-		MediaFile folder = MediaFile.create(u, getPreferFileApiPref());
-		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(FolderItem.SCHEME).append(':').append(folder.getName());
-		return FolderItem.create(tb.releaseString(), this, folder, getLib());
+	@NonNull
+	private FutureSupplier<FolderItem> toFolderItem(Uri u, List<FolderItem> children) {
+		return vfs.getResource(u).map(res -> {
+			if (!(res instanceof VirtualFolder)) return null;
+
+			VirtualFolder folder = (VirtualFolder) res;
+			String name = folder.getName();
+
+			for (FolderItem c : children) {
+				if (name.equals(c.getFile().getName())) {
+					name = sha1String(u.toString());
+					break;
+				}
+			}
+
+			SharedTextBuilder tb = SharedTextBuilder.get();
+			tb.append(FolderItem.SCHEME).append(':').append(name);
+			return FolderItem.create(tb.releaseString(), this, folder, getLib());
+		});
+	}
+
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private List<FolderItem> list() {
+		return (List) getUnsortedChildren().getOrThrow();
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private void setNewChildren(List<FolderItem> c) {
+		super.setChildren((List) c);
 	}
 }

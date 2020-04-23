@@ -124,9 +124,14 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 			setSurfaceSize(eng);
 			cb.addVideoView(this, a.isCarActivity() ? 0 : 1);
+
 			TextView title = getTitle();
-			title.setText(i.getTitle());
 			title.setVisibility(GONE);
+
+			i.getMediaDescription().withMainHandler().onSuccess(dsc -> {
+				if (cb.getCurrentItem() != i) return;
+				title.setText(dsc.getTitle());
+			});
 
 			if (!prefListenerRegistered) {
 				i.getLib().getPrefs().addBroadcastListener(this);

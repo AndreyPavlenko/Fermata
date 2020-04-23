@@ -5,23 +5,24 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
  */
-class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
+class M3uGroupItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3ug";
 	final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
 	private final String name;
 	private final int groupId;
-	private String subtitle;
 
 	M3uGroupItem(String id, M3uItem parent, String name, int groupId) {
 		super(id, parent, parent.getFile());
@@ -31,19 +32,21 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 
 	void init() {
 		tracks.trimToSize();
-		subtitle = getLib().getContext().getResources().getString(R.string.browsable_subtitle,
-				tracks.size());
 	}
 
-	static M3uGroupItem create(DefaultMediaLib lib, String id) {
+	@NonNull
+	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		int start = id.indexOf(':') + 1;
 		int end = id.indexOf(':', start);
 		int gid = Integer.parseInt(id.substring(start, end));
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uItem.SCHEME).append(id, end, id.length());
-		M3uItem m3u = (M3uItem) lib.getItem(tb.releaseString());
-		return (m3u != null) ? m3u.getGroup(gid) : null;
+
+		return lib.getItem(tb.releaseString()).map(i -> {
+			M3uItem m3u = (M3uItem) i;
+			return (m3u != null) ? m3u.getGroup(gid) : null;
+		});
 	}
 
 	@Override
@@ -59,12 +62,7 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 
 	@NonNull
 	@Override
-	public String getSubtitle() {
-		return subtitle;
-	}
-
-	@Override
-	public Uri getIconUri() {
+	public FutureSupplier<Uri> getIconUri() {
 		return getParent().getIconUri();
 	}
 
@@ -84,8 +82,17 @@ class M3uGroupItem extends BrowsableItemBase<M3uTrackItem> {
 		return R.drawable.m3u;
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
-	public List<M3uTrackItem> listChildren() {
-		return Collections.unmodifiableList(tracks);
+	protected FutureSupplier<List<Item>> listChildren() {
+		return completed((List) tracks);
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		String t = getLib().getContext().getResources().getString(R.string.browsable_subtitle,
+				tracks.size());
+		return completed(t);
 	}
 }
+

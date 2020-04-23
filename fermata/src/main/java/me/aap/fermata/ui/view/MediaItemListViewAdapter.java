@@ -20,8 +20,8 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
+import static java.util.Objects.requireNonNull;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
-import static me.aap.utils.misc.Assert.assertTrue;
 
 /**
  * @author Andrey Pavlenko
@@ -50,29 +50,14 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@CallSuper
 	public void setParent(BrowsableItem parent) {
 		this.parent = parent;
+		list = Collections.emptyList();
+		notifyDataSetChanged();
+		if (parent == null) return;
 
-		if (parent != null) {
-			list = Collections.emptyList();
-			List<?>[] result = new List[1];
-			Pattern f = filter;
-
-			parent.getChildren(c -> {
-				if (parent != this.parent) return;
-				result[0] = c;
-				setChildren(c);
-				notifyDataSetChanged();
-			}, c -> {
-				assertTrue(result[0] != null);
-				if ((c == result[0]) || (parent != this.parent) || (f != filter)) return;
-				setChildren(c);
-				notifyDataSetChanged();
-			});
-
-			if (result[0] == null) notifyDataSetChanged();
-		} else {
-			list = Collections.emptyList();
-			notifyDataSetChanged();
-		}
+		parent.getChildren().withMainHandler().addConsumer((result, fail, progress, total) -> {
+			if (this.parent != parent) return;
+			setChildren(result);
+		});
 	}
 
 	@CallSuper
@@ -106,8 +91,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@Override
 	protected void onItemDismiss(int position) {
 		list.remove(position);
-		getParent().updateTitles();
-		refresh();
+		getParent().updateTitles().withMainHandler().thenRun(this::refresh);
 	}
 
 	@CallSuper
@@ -117,8 +101,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		MediaItemViewHolder h = (MediaItemViewHolder) listView.getChildViewHolder(listView.getChildAt(fromPosition));
 		h.getItemView().hideMenu();
 		CollectionUtils.move(list, fromPosition, toPosition);
-		getParent().updateTitles();
-		refresh();
+		getParent().updateTitles().withMainHandler().thenRun(this::refresh);
 		return true;
 	}
 
@@ -192,6 +175,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	}
 
 	private boolean filter(Item i) {
-		return (filter == null) || filter.matcher(i.getTitle()).find();
+		return (filter == null) ||
+				filter.matcher(requireNonNull(i.getMediaDescription().getOrThrow().getTitle())).find();
 	}
 }

@@ -1,45 +1,47 @@
 package me.aap.fermata.media.lib;
 
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
-import me.aap.fermata.storage.MediaFile;
-import me.aap.utils.app.App;
-import me.aap.utils.concurrent.CompletableFuture;
-import me.aap.utils.function.Consumer;
-import me.aap.utils.misc.Assert;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 
 import static java.util.Objects.requireNonNull;
-import static me.aap.utils.concurrent.ConcurrentUtils.consumeInMainThread;
-import static me.aap.utils.concurrent.ConcurrentUtils.isMainThread;
-import static me.aap.utils.concurrent.PriorityThreadPool.MAX_PRIORITY;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.misc.Assert.assertNotEquals;
 
 /**
  * @author Andrey Pavlenko
  */
 abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static final AtomicReferenceFieldUpdater<ItemBase, FutureSupplier<MediaDescriptionCompat>> description =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class, FutureSupplier.class, "descriptionHolder");
+	@Keep
+	@SuppressWarnings("unused")
+	private volatile FutureSupplier<MediaDescriptionCompat> descriptionHolder;
 	private final String id;
 	private final BrowsableItem parent;
-	private final MediaFile file;
-	private String title;
-	private volatile MediaDescriptionCompat mediaDescr;
-	private CompletableFuture<MediaDescriptionCompat> loadDescr;
-	private int seqNum;
+	private final VirtualResource file;
+	protected int seqNum;
 
-	public ItemBase(String id, @Nullable BrowsableItem parent, MediaFile file) {
+	public ItemBase(String id, @Nullable BrowsableItem parent, VirtualResource file) {
 		this.id = id.intern();
 		this.parent = parent;
 		this.file = file;
@@ -47,6 +49,10 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		//noinspection ConstantConditions
 		if (lib != null) lib.addToCache(this);
 	}
+
+	protected abstract FutureSupplier<String> buildTitle(int seqNum, BrowsableItemPrefs parentPrefs);
+
+	protected abstract FutureSupplier<String> buildSubtitle();
 
 	@NonNull
 	@Override
@@ -56,44 +62,83 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 
 	@NonNull
 	@Override
-	public String getTitle() {
-		if (title == null) {
-			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-				BrowsableItem parent = requireNonNull(getParent());
-				BrowsableItemPrefs prefs = parent.getPrefs();
-				boolean nameAppended = false;
-				boolean browsable = (this instanceof BrowsableItem);
+	public FutureSupplier<MediaDescriptionCompat> getMediaDescription() {
+		FutureSupplier<MediaDescriptionCompat> d = description.get(this);
+		if (d != null) return d;
 
-				if (prefs.getTitleSeqNumPref()) {
-					if (seqNum == 0) {
-						// Make sure the children are loaded and sorted
-						parent.getChildren();
-						Assert.assertTrue(seqNum != 0);
-						tb.setLength(0);
-					}
+		Promise<MediaDescriptionCompat> load = getLib().newPromise();
 
-					tb.append(seqNum).append(". ");
-				}
-
-				if (browsable || prefs.getTitleNamePref()) {
-					tb.append(getName());
-					nameAppended = true;
-				}
-
-				if (!browsable && prefs.getTitleFileNamePref()) {
-					MediaFile f = getFile();
-
-					if (f != null) {
-						if (nameAppended) tb.append(" - ");
-						tb.append(f.getName());
-					}
-				}
-
-				title = tb.toString();
-			}
+		for (; !description.compareAndSet(this, null, load); d = description.get(this)) {
+			if (d != null) return d;
 		}
 
-		return title;
+		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+		b.setMediaId(getId());
+
+		FutureSupplier<String> title = buildTitle();
+		FutureSupplier<String> subtitle = buildSubtitle();
+		FutureSupplier<Uri> icon = getIconUri();
+
+		if (title.isDone() && subtitle.isDone() && icon.isDone()) {
+			b.setTitle(title.get(getFile()::getName));
+			b.setSubtitle(subtitle.get(() -> ""));
+			b.setIconUri(icon.get(null));
+			MediaDescriptionCompat dsc = b.build();
+			load.complete(dsc);
+			d = completed(dsc);
+			return description.compareAndSet(this, load, d) ? d : getMediaDescription();
+		}
+
+		title.then(t -> {
+			b.setTitle(t);
+			load.setProgress(b.build(), 1, 3);
+			return subtitle.then(s -> {
+				b.setSubtitle(s);
+				load.setProgress(b.build(), 2, 3);
+				return icon.then(u -> {
+					if (u != null) b.setIconUri(u);
+					return completed(b.build());
+				});
+			});
+		}).thenReplaceOrClear(description, this, load);
+
+		return description.get(this);
+	}
+
+	void setMediaDescription(MediaDescriptionCompat dsc) {
+		setMediaDescription(completed(dsc));
+	}
+
+	void setMediaDescription(FutureSupplier<MediaDescriptionCompat> dsc) {
+		description.set(this, dsc);
+		dsc.thenReplaceOrClear(description, this);
+	}
+
+	protected FutureSupplier<String> buildTitle() {
+		BrowsableItem parent = requireNonNull(getParent());
+		BrowsableItemPrefs prefs = parent.getPrefs();
+		int seq = seqNum;
+
+		if (prefs.getTitleSeqNumPref()) {
+			if (seq == 0) {
+				return parent.getChildren().then(children -> {
+					int s = seqNum;
+					assertNotEquals(s, 0);
+					return buildTitle(s, prefs);
+				});
+			} else {
+				return buildTitle(seq, prefs);
+			}
+		} else {
+			return buildTitle(0, prefs);
+		}
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<Void> updateTitles() {
+		description.set(this, null);
+		return completedVoid();
 	}
 
 	@Override
@@ -102,7 +147,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	@Override
-	public MediaFile getFile() {
+	public VirtualResource getFile() {
 		return file;
 	}
 
@@ -117,6 +162,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		return (DefaultMediaLib) getRoot().getLib();
 	}
 
+	@NonNull
 	@Override
 	public MediaPrefs getPrefs() {
 		return this;
@@ -147,98 +193,6 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	@Override
-	public boolean isMediaDescriptionLoaded() {
-		return mediaDescr != null;
-	}
-
-	@Override
-	public MediaDescriptionCompat getMediaDescription() {
-		MediaDescriptionCompat dsc = mediaDescr;
-		return (dsc != null) ? dsc : Item.super.getMediaDescription();
-	}
-
-	@Override
-	public MediaDescriptionCompat getMediaDescription(@Nullable Consumer<MediaDescriptionCompat> consumer) {
-		MediaDescriptionCompat dsc = mediaDescr;
-
-		if (dsc != null) {
-			consumeInMainThread(consumer, dsc);
-			return dsc;
-		}
-
-		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
-		Consumer<MediaDescriptionCompat.Builder> builder = buildIncompleteDescription(b);
-
-		if (builder == null) {
-			MediaDescriptionCompat d = b.build();
-			mediaDescr = d;
-			consumeInMainThread(consumer, d);
-			return d;
-		}
-
-		CompletableFuture<MediaDescriptionCompat> load;
-
-		synchronized (this) {
-			if (loadDescr == null) loadDescr = load = new CompletableFuture<>();
-			else load = loadDescr;
-		}
-
-		if (load.setRunning()) {
-			if (isMainThread() && ((consumer == null) || !consumer.canBlockThread())) {
-				load.addConsumer(consumer, this::incomplete, App.get().getHandler());
-				FermataApplication.get().getExecutor().submit(MAX_PRIORITY, () -> loadMediaDescription(load, builder));
-				return b.build();
-			} else {
-				dsc = loadMediaDescription(load, builder);
-				consumeInMainThread(consumer, dsc);
-				return dsc;
-			}
-		} else if (load.isDone()) {
-			dsc = load.get(b::build);
-			consumeInMainThread(consumer, dsc);
-			return dsc;
-		} else {
-			load.addConsumer(consumer, this::incomplete, App.get().getHandler());
-			return b.build();
-		}
-	}
-
-	private MediaDescriptionCompat loadMediaDescription(CompletableFuture<MediaDescriptionCompat> load,
-																											Consumer<MediaDescriptionCompat.Builder> builder) {
-		if (load.isDone()) return load.get(this::incomplete);
-
-		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
-		builder.accept(b);
-		MediaDescriptionCompat d = b.build();
-
-		if (load.complete(d)) {
-			mediaDescr = d;
-			synchronized (this) {
-				if (loadDescr == load) loadDescr = null;
-			}
-			return d;
-		} else {
-			return load.get(this::incomplete);
-		}
-	}
-
-	Consumer<MediaDescriptionCompat.Builder> buildIncompleteDescription(MediaDescriptionCompat.Builder b) {
-		MediaFile f = getFile();
-		b.setMediaId(getId()).setTitle((f != null) ? f.getName() : getTitle()).setSubtitle("");
-		return this::buildCompleteDescription;
-	}
-
-	void buildCompleteDescription(MediaDescriptionCompat.Builder b) {
-		b.setMediaId(getId()).setTitle(getTitle()).setSubtitle(getSubtitle());
-	}
-
-	private MediaDescriptionCompat incomplete() {
-		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
-		buildIncompleteDescription(b);
-		return b.build();
-	}
-
-	@Override
 	public int hashCode() {
 		return getId().hashCode();
 	}
@@ -260,20 +214,8 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		return getId();
 	}
 
-	public void clearCache() {
-		title = null;
-		mediaDescr = null;
-	}
-
-	@Override
-	public void updateTitles() {
-		title = null;
-		mediaDescr = null;
-	}
-
 	void setSeqNum(int seqNum) {
 		this.seqNum = seqNum;
-		title = null;
 	}
 
 	@Override

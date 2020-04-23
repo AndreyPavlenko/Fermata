@@ -1,14 +1,15 @@
 package me.aap.fermata.media.lib;
 
-import android.net.Uri;
 import android.support.v4.media.MediaMetadataCompat;
 
-import java.util.Objects;
+import androidx.annotation.NonNull;
 
+import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.storage.MediaFile;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.fermata.util.Utils.isVideoMimeType;
 import static me.aap.utils.io.FileUtils.getFileExtension;
@@ -28,7 +29,7 @@ class M3uTrackItem extends PlayableItemBase {
 	private final boolean isVideo;
 	private long duration;
 
-	M3uTrackItem(String id, BrowsableItem parent, int trackNumber, MediaFile file, String name,
+	M3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file, String name,
 							 String album, String artist, String genre, String logo, long duration, byte type) {
 		super(id, parent, file);
 
@@ -61,10 +62,11 @@ class M3uTrackItem extends PlayableItemBase {
 		this.logo = i.logo;
 		this.duration = i.duration;
 		this.isVideo = i.isVideo;
-		mediaData = i.mediaData;
+		setMeta(i.getMediaData());
 	}
 
-	static M3uTrackItem create(DefaultMediaLib lib, String id) {
+	@NonNull
+	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		int start = id.indexOf(':') + 1;
 		int end = id.indexOf(':', start);
@@ -74,18 +76,16 @@ class M3uTrackItem extends PlayableItemBase {
 		int tid = Integer.parseInt(id.substring(start, end));
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uItem.SCHEME).append(id, end, id.length());
-		M3uItem m3u = (M3uItem) lib.getItem(tb);
-		return (m3u != null) ? m3u.getTrack(gid, tid) : null;
+
+		return lib.getItem(tb.releaseString()).map(i -> {
+			M3uItem m3u = (M3uItem) i;
+			return (m3u != null) ? m3u.getTrack(gid, tid) : null;
+		});
 	}
 
 	private M3uItem getM3uItem() {
 		Item p = getParent();
 		return (p instanceof M3uItem) ? (M3uItem) p : ((M3uGroupItem) p).getParent();
-	}
-
-	@Override
-	public String getName() {
-		return name;
 	}
 
 	public int getTrackNumber() {
@@ -97,51 +97,35 @@ class M3uTrackItem extends PlayableItemBase {
 		return isVideo;
 	}
 
+	@NonNull
 	@Override
-	MediaMetadataCompat.Builder getMediaMetadataBuilder() {
-		M3uItem m3u = getM3uItem();
-		MediaMetadataCompat.Builder meta = super.getMediaMetadataBuilder();
+	FutureSupplier<MediaMetadataCompat> loadMeta() {
+		if (getFile().isLocalFile()) return super.loadMeta();
+		return buildMeta(new MetadataBuilder());
+	}
+
+	@NonNull
+	@Override
+	FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
 		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, name);
-		if (duration > 0) meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
-
-		if (logo != null) {
-			MediaFile m3uFile = m3u.getFile();
-			MediaFile dir = Objects.requireNonNull(m3uFile.getParent());
-			MediaFile f = MediaFile.resolve(logo, dir);
-			if (f != null) {
-				meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, f.getUri().toString());
-			}
-		}
-
 		if (album != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
 		if (artist != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
 		if (genre != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, genre);
-		if (getFile().isLocalFile()) getLib().getMetadataRetriever().getMediaMetadata(meta, this);
 
-		return meta;
+		if (logo != null) {
+			return getM3uItem().getFile().getParent().then(dir -> {
+				if (dir == null) return super.buildMeta(meta);
+				return getLib().getVfsManager().resolve(logo, dir).then(f -> {
+					if (f != null) meta.setImageUri(f.getUri().toString());
+					return super.buildMeta(meta);
+				});
+			});
+		}
+
+		return super.buildMeta(meta);
 	}
 
-	@Override
-	public Uri getLocation() {
-		return getFile().getUri();
-	}
-
-	@Override
-	public long getDuration() {
-		if (duration > 0) return duration;
-		duration = getMediaData().getLong(MediaMetadataCompat.METADATA_KEY_DURATION);
-		return duration;
-	}
-
-	@Override
-	public void setDuration(long duration) {
-		this.duration = duration;
-		MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(getMediaData());
-		b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
-		clearCache();
-		mediaData = b.build();
-	}
-
+	@NonNull
 	@Override
 	public M3uTrackItem export(String exportId, BrowsableItem parent) {
 		DefaultMediaLib lib = getLib();
