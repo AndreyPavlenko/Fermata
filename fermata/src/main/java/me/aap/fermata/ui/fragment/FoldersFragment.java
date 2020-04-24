@@ -3,10 +3,12 @@ package me.aap.fermata.ui.fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,11 +22,13 @@ import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.local.LocalFileSystem;
@@ -137,21 +141,21 @@ public class FoldersFragment extends MediaLibFragment {
 		menu.show(b -> {
 			b.setTitle(R.string.add_folder);
 			b.setSelectionHandler(this::addFolder);
-			b.addItem(R.id.folders_add_content, R.string.add_folder_content);
-			b.addItem(R.id.folders_add_fs, R.string.add_folder_fs);
-//			b.addItem(R.id.folders_add_gdrive, R.string.add_folder_gdrive);
+			b.addItem(R.id.vfs_content, R.string.vfs_content);
+			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
+//			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
 		});
 	}
 
 	private boolean addFolder(OverlayMenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.folders_add_content:
+			case R.id.vfs_content:
 				addFolderIntent();
 				return true;
-			case R.id.folders_add_fs:
+			case R.id.vfs_file_system:
 				addFolderPicker();
 				return true;
-			case R.id.folders_add_gdrive:
+			case R.id.vfs_gdrive:
 				addFolderGdrive();
 				return true;
 			default:
@@ -165,14 +169,27 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	public void addFolderPicker() {
+		addFolderPicker(LocalFileSystem.getInstance());
+	}
+
+	private void addFolderPicker(VirtualFileSystem fs) {
 		FilePickerFragment f = getMainActivity().showFragment(R.id.file_picker);
 		f.setMode(FilePickerFragment.FOLDER);
-		f.setFileSystem(LocalFileSystem.getInstance());
+		f.setFileSystem(fs);
 		f.setConsumer(this::addFolderResult);
 	}
 
 	private void addFolderGdrive() {
+		getMainActivity().getLib().getVfsManager().getGdriveProvider()
+				.then(VirtualFileSystem.Provider::getFileSystem)
+				.onSuccess(this::addFolderPicker)
+				.onFailure(fail -> failedToLoadModule(R.string.vfs_gdrive, fail));
+	}
 
+	private void failedToLoadModule(@StringRes int name, Throwable ex) {
+		String n = getString(name);
+		Log.e(getClass().getName(), "Failed to load module " + name, ex);
+		Utils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
 	}
 
 	private void addFolderResult(int result, Intent data) {

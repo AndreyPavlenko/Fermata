@@ -7,6 +7,8 @@
     <string name="engine_exo_name" translatable="false">ExoPlayer</string>
     <string name="engine_vlc_name" translatable="false">VLC</string>
 
+    <string name="module_name_gdrive" translatable="false">Google Drive</string>
+
     <string name="interface_prefs">Interface</string>
     <string name="playback_prefs">Playback control</string>
     <string name="engine_prefs">Media engine</string>
@@ -41,7 +43,11 @@
     <string name="preferred_video_engine">Preferred video engine</string>
     <string name="engine_installed">Media engine installed: %1$s</string>
     <string name="engine_uninstalled">Media engine uninstalled: %1$s</string>
-    <string name="engine_install_failed">Failed to install media engine: %1$s</string>
+
+    <string name="module_installation">Module installation: %1$s</string>
+    <string name="install_pending">Installation pending: %1$s</string>
+    <string name="downloading">Downloading %1$s</string>
+    <string name="installing">Installing %1$s</string>
 
     <string name="speed">Speed</string>
     <string name="audio_effects">Audio effects</string>
@@ -142,9 +148,6 @@
     <string name="folder_subtitle">Files: %1$d. Folders: %2$d.</string>
     <string name="browsable_subtitle">Tracks: %1$d.</string>
     <string name="add_folder">Add folder</string>
-    <string name="add_folder_content">Content</string>
-    <string name="add_folder_fs">File system</string>
-    <string name="add_folder_gdrive">Google drive</string>
     <string name="remove_folder">Remove folder</string>
     <string name="select">Select</string>
     <string name="select_all">Select all</string>
@@ -154,6 +157,10 @@
     <string name="press_x_again">Press X button again to exit.</string>
     <string name="please_restart_app">Please restart the application.</string>
     <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions.</string>
+
+    <string name="vfs_content">Content</string>
+    <string name="vfs_file_system">File system</string>
+    <string name="vfs_gdrive">Google drive</string>
 
     <string name="eq_manual">Manual</string>
     <string name="eq_normal">Normal</string>
@@ -188,4 +195,5 @@
     <string name="err_invalid_playlist_name">Invalid playlist name: %1$s</string>
     <string name="err_failed_add_folder">Failed to add folder: %1$s</string>
     <string name="err_failed_open_url">Failed to open URL: %1$s</string>
+    <string name="err_failed_install_module">Failed to install module: %1$s</string>
 </resources>

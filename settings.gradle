@@ -2,14 +2,18 @@ rootProject.name = 'Fermata Music Player'
 
 include ':fermata'
 include ':control'
-include ':vlc'
 include ':utils'
+include ':vlc'
+include ':gdrive'
 project(':utils').projectDir = new File('depends/utils')
+project(':vlc').projectDir = new File('modules/vlc')
+project(':gdrive').projectDir = new File('modules/gdrive')
 
 def exoRoot = file('depends/ExoPlayer')
 
 if (exoRoot.isDirectory()) {
     include ':exoplayer'
+    project(':exoplayer').projectDir = new File('modules/exoplayer')
     gradle.ext.exoplayerRoot = exoRoot
     gradle.ext.exoplayerModulePrefix = 'exoplayer-'
     apply from: new File(exoRoot, 'core_settings.gradle')

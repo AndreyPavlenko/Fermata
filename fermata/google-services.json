@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "647995797117",
+    "firebase_url": "https://fermata-275119.firebaseio.com",
+    "project_id": "fermata-275119",
+    "storage_bucket": "fermata-275119.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647995797117:android:c81b9a40e3772db27ccb14",
+        "android_client_info": {
+          "package_name": "me.aap.fermata"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "647995797117-328ln2tc02sdb1oaioqlrt68nmhuf38o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZQBw4Di5iesQyXGDB0iWKMDfmB9Sc-Cg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "647995797117-328ln2tc02sdb1oaioqlrt68nmhuf38o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647995797117:android:1baec007eee2ad807ccb14",
+        "android_client_info": {
+          "package_name": "me.aap.fermata.auto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "647995797117-328ln2tc02sdb1oaioqlrt68nmhuf38o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZQBw4Di5iesQyXGDB0iWKMDfmB9Sc-Cg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "647995797117-328ln2tc02sdb1oaioqlrt68nmhuf38o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647995797117:android:7e0b4b7d33e609647ccb14",
+        "android_client_info": {
+          "package_name": "me.aap.fermata.auto.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "647995797117-328ln2tc02sdb1oaioqlrt68nmhuf38o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZQBw4Di5iesQyXGDB0iWKMDfmB9Sc-Cg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "647995797117-328ln2tc02sdb1oaioqlrt68nmhuf38o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

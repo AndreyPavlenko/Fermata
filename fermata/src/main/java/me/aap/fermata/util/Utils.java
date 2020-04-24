@@ -74,6 +74,10 @@ public class Utils {
 	}
 
 	public static void showAlert(Context ctx, @StringRes int msg) {
+		showAlert(ctx, ctx.getString(msg));
+	}
+
+	public static void showAlert(Context ctx, String msg) {
 		OverlayMenu menu = MainActivityDelegate.get(ctx).getContextMenu();
 		LinearLayoutCompat v = new LinearLayoutCompat(ctx);
 		v.setOrientation(LinearLayoutCompat.VERTICAL);

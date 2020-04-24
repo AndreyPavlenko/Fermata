@@ -1,6 +1,6 @@
 ext {
-    VERSION_CODE = 53
-    VERSION_NAME = "1.5.6"
+    VERSION_CODE = 54
+    VERSION_NAME = "1.6.0"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 29
     SDK_COMPILE_VERSION = 29
@@ -27,6 +27,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools:r8:2.0.64'
         classpath 'com.android.tools.build:gradle:4.0.0-beta03'
+        classpath 'com.google.gms:google-services:4.3.3'
     }
 }
 
@@ -46,6 +47,7 @@ subprojects {
             break
         case 'vlc':
         case 'exoplayer':
+        case 'gdrive':
             apply plugin: 'com.android.dynamic-feature'
             break
         default:

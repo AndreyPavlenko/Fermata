@@ -18,17 +18,14 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Folders;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.FoldersPrefs;
+import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
-import me.aap.utils.vfs.VfsManager;
 import me.aap.utils.vfs.VirtualFolder;
-import me.aap.utils.vfs.content.ContentFileSystem;
-import me.aap.utils.vfs.generic.GenericFileSystem;
-import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -44,16 +41,14 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	static final String ID = "Folders";
 	private final DefaultMediaLib lib;
 	private final SharedPreferenceStore foldersPrefStore;
-	private final VfsManager vfs;
+	private final FermataVfsManager vfsManager;
 
 	public DefaultFolders(DefaultMediaLib lib) {
 		super(ID, null, null);
 		this.lib = lib;
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("folders", Context.MODE_PRIVATE);
 		foldersPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
-		vfs = new VfsManager(LocalFileSystem.Provider.getInstance(),
-				new ContentFileSystem.Provider(getPreferFileApiPref()),
-				GenericFileSystem.Provider.getInstance());
+		vfsManager = new FermataVfsManager();
 
 		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
 		dsc.setTitle(getLib().getContext().getString(R.string.folders));
@@ -101,8 +96,8 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		return getLib().getBroadcastEventListeners();
 	}
 
-	VfsManager getVfsManager() {
-		return vfs;
+	FermataVfsManager getVfsManager() {
+		return vfsManager;
 	}
 
 	protected FutureSupplier<List<Item>> listChildren() {
@@ -111,7 +106,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		List<Item> children = new ArrayList<>(pref.length);
 		Set<String> names = new HashSet<>((int) (pref.length * 1.5));
 
-		return Async.forEach(u -> vfs.getResource(Uri.parse(u)).then(res -> {
+		return Async.forEach(u -> vfsManager.getResource(Uri.parse(u)).then(res -> {
 			if (!(res instanceof VirtualFolder)) return completedVoid();
 
 			VirtualFolder folder = (VirtualFolder) res;
@@ -196,7 +191,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 
 	@NonNull
 	private FutureSupplier<FolderItem> toFolderItem(Uri u, List<FolderItem> children) {
-		return vfs.getResource(u).map(res -> {
+		return vfsManager.getResource(u).map(res -> {
 			if (!(res instanceof VirtualFolder)) return null;
 
 			VirtualFolder folder = (VirtualFolder) res;

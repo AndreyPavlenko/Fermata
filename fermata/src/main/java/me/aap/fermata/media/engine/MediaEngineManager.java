@@ -1,27 +1,18 @@
 package me.aap.fermata.media.engine;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
-import com.google.android.play.core.install.InstallException;
-import com.google.android.play.core.splitinstall.SplitInstallHelper;
 import com.google.android.play.core.splitinstall.SplitInstallManager;
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory;
-import com.google.android.play.core.splitinstall.SplitInstallRequest;
-import com.google.android.play.core.splitinstall.SplitInstallSessionState;
-import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener;
-import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
 
 import java.util.Collections;
 import java.util.List;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
@@ -29,8 +20,10 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivity;
-import me.aap.utils.function.Consumer;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.activity.ActivityBase;
 
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
@@ -124,8 +117,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				Log.e(getClass().getName(), "ExoPlayer not found", ex);
 				if (install) {
 					exoPlayer = null;
-					installPlayer(MODULE_EXO, this::setExoPlayer, this::installExoPlayerFailed,
-							R.string.engine_exo_name);
+					FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);
+					i.withMainHandler().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
 				}
 			}
 		}
@@ -144,8 +137,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				Log.e(getClass().getName(), "VlcPlayer not found", ex);
 				if (install) {
 					vlcPlayer = null;
-					installPlayer(MODULE_VLC, this::setVlcPlayer, this::installVlcPlayerFailed,
-							R.string.engine_vlc_name);
+					FutureSupplier<Void> i = installPlayer(MODULE_VLC, R.string.engine_vlc_name);
+					i.withMainHandler().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
 				}
 			}
 		}
@@ -158,8 +151,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		if (prefs.contains(MediaLibPrefs.EXO_ENABLED)) {
 			if (lib.getPrefs().getExoEnabledPref()) {
 				exoPlayer = null;
-				installPlayer(MODULE_EXO, this::setExoPlayer, this::installExoPlayerFailed,
-						R.string.engine_exo_name);
+				FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);
+				i.withMainHandler().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
 			} else {
 				exoPlayer = null;
 				Log.i(getClass().getName(), "Uninstalling module " + MODULE_EXO);
@@ -170,8 +163,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		} else if (prefs.contains(MediaLibPrefs.VLC_ENABLED)) {
 			if (lib.getPrefs().getVlcEnabledPref()) {
 				vlcPlayer = null;
-				installPlayer(MODULE_VLC, this::setVlcPlayer, this::installVlcPlayerFailed,
-						R.string.engine_vlc_name);
+				FutureSupplier<Void> i = installPlayer(MODULE_VLC, R.string.engine_vlc_name);
+				i.withMainHandler().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
 			} else {
 				vlcPlayer = null;
 				Log.i(getClass().getName(), "Uninstalling module " + MODULE_VLC);
@@ -182,63 +175,25 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		}
 	}
 
-	@SuppressLint("SwitchIntDef")
-	private void installPlayer(String module, Consumer<Boolean> onSuccess,
-														 Consumer<Exception> onError, @StringRes int engineName) {
-		SplitInstallManager sm = SplitInstallManagerFactory.create(lib.getContext());
-		SplitInstallRequest req = SplitInstallRequest.newBuilder().addModule(module).build();
-		int[] sessionId = new int[1];
-		sm.registerListener(
-				new SplitInstallStateUpdatedListener() {
-					@Override
-					public void onStateUpdate(SplitInstallSessionState st) {
-						if (st.status() == SplitInstallSessionStatus.FAILED) {
-							sm.unregisterListener(this);
-							onError.accept(new InstallException(st.errorCode()));
-							return;
-						}
+	private FutureSupplier<Void> installPlayer(String module, @StringRes int engineName) {
+		Context ctx = lib.getContext();
+		String name = ctx.getString(engineName);
+		String channelId = "fermata.engine.install";
+		String title = ctx.getString(R.string.module_installation, name);
+		String installing = ctx.getString(R.string.installing, name);
+		FutureSupplier<MainActivity> getActivity = ActivityBase.create(ctx, channelId,
+				title, R.drawable.ic_notification, title, null, MainActivity.class);
 
-						if (st.sessionId() == sessionId[0]) {
-							switch (st.status()) {
-								case SplitInstallSessionStatus.INSTALLING:
-									Log.i(getClass().getName(), "Installing module " + module);
-									break;
-								case SplitInstallSessionStatus.INSTALLED:
-									Log.i(getClass().getName(), "Module " + module + " installed");
-									sm.unregisterListener(this);
-									toast(R.string.engine_installed, engineName);
-
-									if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-										SplitInstallHelper.updateAppInfo(lib.getContext());
-										FermataApplication.get().getHandler().post(() -> onSuccess.accept(false));
-									} else {
-										onSuccess.accept(false);
-									}
-
-									break;
-								case SplitInstallSessionStatus.CANCELED:
-									Log.i(getClass().getName(), "Module " + module + " installation canceled");
-									sm.unregisterListener(this);
-									break;
-								case SplitInstallSessionStatus.REQUIRES_USER_CONFIRMATION:
-									try {
-										sm.startConfirmationDialogForResult(st, MainActivity.getInstance(), 123);
-									} catch (Exception ex) {
-										Log.e(getClass().getName(), "Failed to request user confirmation", ex);
-										sm.unregisterListener(this);
-										onError.accept(ex);
-									}
-
-									break;
-							}
-						}
-					}
-				}
-		);
-
-		sm.startInstall(req)
-				.addOnSuccessListener(id -> sessionId[0] = id)
-				.addOnFailureListener(onError::accept);
+		return getActivity.then(a -> {
+			DynamicModuleInstaller i = new DynamicModuleInstaller(a);
+			i.setSmallIcon(R.drawable.ic_notification);
+			i.setTitle(title);
+			i.setNotificationChannel(channelId, installing);
+			i.setPendingMessage(ctx.getString(R.string.install_pending, name));
+			i.setDownloadingMessage(ctx.getString(R.string.downloading, name));
+			i.setInstallingMessage(ctx.getString(R.string.installing, name));
+			return i.install(module);
+		});
 	}
 
 	private void toast(@StringRes int msg, @StringRes int arg) {
@@ -246,19 +201,19 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		Toast.makeText(ctx, ctx.getString(msg, ctx.getString(arg)), Toast.LENGTH_LONG).show();
 	}
 
-	private void installExoPlayerFailed(Exception ex) {
+	private void installExoFailed(Throwable ex) {
 		setExoPlayer(false);
 		if (exoPlayer == null) {
 			Log.e(getClass().getName(), "Failed to install ExoPlayer", ex);
-			toast(R.string.engine_install_failed, R.string.engine_exo_name);
+			toast(R.string.err_failed_install_module, R.string.engine_exo_name);
 		}
 	}
 
-	private void installVlcPlayerFailed(Exception ex) {
+	private void installVlcFailed(Throwable ex) {
 		setVlcPlayer(false);
 		if (vlcPlayer == null) {
 			Log.e(getClass().getName(), "Failed to install VlcPlayer", ex);
-			toast(R.string.engine_install_failed, R.string.engine_vlc_name);
+			toast(R.string.err_failed_install_module, R.string.engine_vlc_name);
 		}
 	}
 }

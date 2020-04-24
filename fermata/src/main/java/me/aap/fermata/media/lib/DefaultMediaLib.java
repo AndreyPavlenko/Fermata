@@ -20,13 +20,13 @@ import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
+import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.vfs.VfsManager;
 
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
@@ -263,7 +263,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@NonNull
 	@Override
-	public VfsManager getVfsManager() {
+	public FermataVfsManager getVfsManager() {
 		return folders.getVfsManager();
 	}
 

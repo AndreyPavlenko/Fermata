@@ -4,31 +4,39 @@ import android.content.SharedPreferences;
 
 import me.aap.utils.app.App;
 import me.aap.utils.app.SplitCompatApp;
-import me.aap.utils.concurrent.ThreadPool;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.SharedPreferenceStore;
 
 /**
  * @author Andrey Pavlenko
  */
 public class FermataApplication extends SplitCompatApp {
-	private SharedPreferences uriToPathMap;
-	private SharedPreferences defaultPrefs;
+	private volatile SharedPreferenceStore preferenceStore;
 
 	public static FermataApplication get() {
 		return App.get();
 	}
 
-	public SharedPreferences getUriToPathMap() {
-		if (uriToPathMap == null) uriToPathMap = getSharedPreferences("uri_to_path", MODE_PRIVATE);
-		return uriToPathMap;
+	public PreferenceStore getPreferenceStore() {
+		SharedPreferenceStore ps = preferenceStore;
+
+		if (ps == null) {
+			synchronized (this) {
+				if ((ps = preferenceStore) == null) {
+					preferenceStore = ps = SharedPreferenceStore.create(getSharedPreferences("fermata", MODE_PRIVATE));
+				}
+			}
+		}
+
+		return ps;
 	}
 
 	public SharedPreferences getDefaultSharedPreferences() {
-		if (defaultPrefs == null) defaultPrefs = getSharedPreferences("fermata", MODE_PRIVATE);
-		return defaultPrefs;
+		return ((SharedPreferenceStore) getPreferenceStore()).getSharedPreferences();
 	}
 
 	@Override
-	protected ThreadPool createExecutor() {
-		return new ThreadPool(2);
+	protected int getMaxNumberOfThreads() {
+		return 2;
 	}
 }

@@ -1,3 +1,5 @@
+apply plugin: 'com.google.gms.google-services'
+
 android {
     defaultConfig {
         applicationId "me.aap.fermata"
@@ -35,6 +37,7 @@ android {
         debug {
             debuggable true
             applicationIdSuffix '.debug'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -59,8 +62,20 @@ android {
         }
     }
 
-    if (findProject(':exoplayer') != null) dynamicFeatures = [':exoplayer', ':vlc']
-    else dynamicFeatures = [':vlc']
+    if (findProject(':exoplayer') != null) dynamicFeatures.add(':exoplayer')
+    dynamicFeatures.add(':vlc')
+    dynamicFeatures.add(':gdrive')
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+    }
 }
 
 dependencies {

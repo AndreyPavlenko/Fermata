@@ -34,7 +34,11 @@
     <string name="preferred_video_engine">Предпочтительный видео движок</string>
     <string name="engine_installed">Медиа движок установлен: %1$s</string>
     <string name="engine_uninstalled">Медиа движок удален: %1$s</string>
-    <string name="engine_install_failed">Не удалось установить mедиа движок: %1$s</string>
+
+    <string name="module_installation">Установка модуля: %1$s</string>
+    <string name="install_pending">Ожидание инсталляции: %1$s</string>
+    <string name="downloading">Скачивание %1$s</string>
+    <string name="installing">Установка %1$s</string>
 
     <string name="speed">Скорость</string>
     <string name="audio_effects">Аудио эффекты</string>
@@ -131,9 +135,6 @@
     <string name="folder_subtitle">Файлов: %1$d. Папок: %2$d.</string>
     <string name="browsable_subtitle">Треков: %1$d.</string>
     <string name="add_folder">Добавить папку</string>
-    <string name="add_folder_content">Контент</string>
-    <string name="add_folder_fs">Файловая система</string>
-    <string name="add_folder_gdrive">Google диск</string>
     <string name="remove_folder">Удалить папку</string>
     <string name="select">Выбрать</string>
     <string name="select_all">Выбрать все</string>
@@ -143,6 +144,10 @@
     <string name="press_x_again">Нажмите кнопку X еще раз, чтобы выйти.</string>
     <string name="please_restart_app">Пожалуйста, перезапустите приложение.</string>
     <string name="use_phone_to_grant_perm">Пожалуйста, воспользуйтесь телефоном, чтобы предоставить необходимые разрешения.</string>
+
+    <string name="vfs_content">Контент</string>
+    <string name="vfs_file_system">Файловая система</string>
+    <string name="vfs_gdrive">Google диск</string>
 
     <string name="eq_manual">Ручные</string>
     <string name="eq_normal">Нормальные</string>
@@ -178,4 +183,5 @@
     <string name="err_invalid_playlist_name">Невалидное имя плейлиста: %1$s</string>
     <string name="err_failed_add_folder">Не удалось добавить директорию: %1$s</string>
     <string name="err_failed_open_url">Не удалось открыть URL: %1$s</string>
+    <string name="err_failed_install_module">Не удалось установить модуль: %1$s</string>
 </resources>

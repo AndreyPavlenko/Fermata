@@ -12,12 +12,7 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.ui.activity.ActivityBase;
 
 public class MainActivity extends ActivityBase implements AppActivity {
-	private static MainActivity instance;
 	private boolean exitPressed;
-
-	public static MainActivity getInstance() {
-		return instance;
-	}
 
 	@Override
 	protected Supplier<MainActivityDelegate> getConstructor() {
@@ -26,14 +21,12 @@ public class MainActivity extends ActivityBase implements AppActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		instance = this;
 		super.onCreate(savedInstanceState);
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		instance = null;
 	}
 
 	@Override

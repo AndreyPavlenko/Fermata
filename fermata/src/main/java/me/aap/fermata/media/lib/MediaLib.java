@@ -28,6 +28,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
+import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
@@ -35,7 +36,6 @@ import me.aap.utils.async.Promise;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
-import me.aap.utils.vfs.VfsManager;
 import me.aap.utils.vfs.VirtualResource;
 
 import static java.util.Objects.requireNonNull;
@@ -67,7 +67,7 @@ public interface MediaLib {
 	Playlists getPlaylists();
 
 	@NonNull
-	VfsManager getVfsManager();
+	FermataVfsManager getVfsManager();
 
 	@NonNull
 	MediaEngineManager getMediaEngineManager();

@@ -464,7 +464,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	private static String[] getRequiredPermissions() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE,
-					permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION};
+					permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION,
+					permission.USE_FULL_SCREEN_INTENT};
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE,
 					permission.FOREGROUND_SERVICE};
