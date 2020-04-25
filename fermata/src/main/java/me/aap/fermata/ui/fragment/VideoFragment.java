@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
  * @author Andrey Pavlenko
  */
 public class VideoFragment extends MainActivityFragment implements FermataServiceUiBinder.Listener {
+	private boolean serviceListenerRegistered;
 
 	@Nullable
 	@Override
@@ -30,13 +31,17 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		getMainActivity().getMediaServiceBinder().addBroadcastListener(this);
+		MainActivityDelegate a = getMainActivity();
+		if ((a == null) || (a.getMediaServiceBinder() == null)) return;
+		a.getMediaServiceBinder().addBroadcastListener(this);
+		serviceListenerRegistered = true;
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		getMainActivity().setVideoMode(!isHidden());
+		MainActivityDelegate a = getMainActivity();
+		if (a != null) a.setVideoMode(!isHidden());
 	}
 
 	@Override
@@ -45,22 +50,35 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 		VideoView v = (VideoView) getView();
 		if (v == null) return;
 
+		MainActivityDelegate a = getMainActivity();
+		if (a == null) return;
+
+		if (!serviceListenerRegistered && (a.getMediaServiceBinder() != null)) {
+			a.getMediaServiceBinder().addBroadcastListener(this);
+			serviceListenerRegistered = true;
+		}
+
 		if (hidden) {
-			getMainActivity().setVideoMode(false);
+			a.setVideoMode(false);
 		} else {
-			getMainActivity().setVideoMode(true);
+			a.setVideoMode(true);
 			v.showVideo();
 		}
 	}
 
 	@Override
 	public void onDestroyView() {
+		super.onDestroyView();
+		serviceListenerRegistered = false;
 		MainActivityDelegate a = getMainActivity();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
+		if (a == null) return;
+
 		a.setVideoMode(false);
+		FermataServiceUiBinder b = a.getMediaServiceBinder();
+		if (b == null) return;
+
 		b.removeBroadcastListener(this);
 		b.getLib().getPrefs().removeBroadcastListener((VideoView) getView());
-		super.onDestroyView();
 	}
 
 	@Override

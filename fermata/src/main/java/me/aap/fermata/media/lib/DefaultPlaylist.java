@@ -2,7 +2,6 @@ package me.aap.fermata.media.lib;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.media.MediaDescriptionCompat;
 
 import androidx.annotation.NonNull;
 
@@ -21,6 +20,7 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 /**
@@ -36,7 +36,17 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 		SharedPreferences prefs = getLib().getContext().getSharedPreferences("playlist_" + playlistId,
 				Context.MODE_PRIVATE);
 		playlistPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
-		buildDescription(getUnsortedChildren().getOrThrow().size());
+	}
+
+	@Override
+	protected FutureSupplier<String> buildTitle() {
+		return completed(getName());
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		int count = getUnsortedChildren().getOrThrow().size();
+		return completed(getLib().getContext().getResources().getString(R.string.browsable_subtitle, count));
 	}
 
 	@Override
@@ -84,13 +94,5 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	@Override
 	void saveChildren(List<PlayableItem> children) {
 		setPlaylistItemsPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
-		buildDescription(children.size());
-	}
-
-	private void buildDescription(int count) {
-		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
-		dsc.setTitle(getName());
-		dsc.setSubtitle(getLib().getContext().getResources().getString(R.string.browsable_subtitle, count));
-		setMediaDescription(dsc.build());
 	}
 }

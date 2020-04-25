@@ -466,6 +466,10 @@ public interface MediaLib {
 			});
 		}
 
+		default boolean sortChildrenEnabled() {
+			return true;
+		}
+
 		@NonNull
 		default FutureSupplier<Void> updateSorting() {
 			return completedVoid();

@@ -3,17 +3,23 @@ package me.aap.fermata.ui.fragment;
 import android.view.View;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_DATE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NONE;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 /**
  * @author Andrey Pavlenko
@@ -28,6 +34,23 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 	public void enable(ToolBarView tb, ActivityFragment f) {
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
 		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
+		setSortButtonVisibility(tb, f);
+	}
+
+	@Override
+	public void onActivityEvent(ToolBarView view, ActivityDelegate a, long e) {
+		ToolBarView.Mediator.super.onActivityEvent(view, a, e);
+
+		if ((e == FRAGMENT_CHANGED) || e == FRAGMENT_CONTENT_CHANGED) {
+			ActivityFragment f = a.getActiveFragment();
+			if (f != null) setSortButtonVisibility((ToolBarView) view, f);
+		}
+	}
+
+	private void setSortButtonVisibility(ToolBarView tb, ActivityFragment f) {
+		if (!(f instanceof MediaLibFragment)) return;
+		BrowsableItem b = ((MediaLibFragment) f).getAdapter().getParent();
+		tb.findViewById(R.id.tool_sort).setVisibility(b.sortChildrenEnabled() ? VISIBLE : GONE);
 	}
 
 	private static void onViewButtonClick(View v) {

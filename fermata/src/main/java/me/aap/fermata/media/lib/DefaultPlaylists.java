@@ -1,7 +1,6 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
-import android.support.v4.media.MediaDescriptionCompat;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,11 +34,16 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	public DefaultPlaylists(DefaultMediaLib lib) {
 		super(ID, null, null);
 		this.lib = lib;
-		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
-		dsc.setMediaId(ID);
-		dsc.setTitle(getLib().getContext().getString(R.string.playlists));
-		dsc.setSubtitle("");
-		setMediaDescription(dsc.build());
+	}
+
+	@Override
+	protected FutureSupplier<String> buildTitle() {
+		return completed(getLib().getContext().getString(R.string.playlists));
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		return completed("");
 	}
 
 	@NonNull
@@ -153,5 +157,10 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	@Override
 	void saveChildren(List<Playlist> children) {
 		setPlaylistIdsPref(CollectionUtils.map(children, (i, t, a) -> a[i] = ((DefaultPlaylist) t).getPlaylistId(), int[]::new));
+	}
+
+	@Override
+	public boolean getTitleSeqNumPref() {
+		return false;
 	}
 }

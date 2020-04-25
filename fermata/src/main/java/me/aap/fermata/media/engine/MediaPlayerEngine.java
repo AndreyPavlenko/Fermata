@@ -115,7 +115,11 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void setVideoView(VideoView view) {
-		player.setDisplay((view == null) ? null : view.getVideoSurface().getHolder());
+		try {
+			player.setDisplay((view == null) ? null : view.getVideoSurface().getHolder());
+		} catch (IllegalStateException | IllegalArgumentException ex) {
+			Log.e(getClass().getName(), "Failed to set display", ex);
+		}
 	}
 
 	@Override

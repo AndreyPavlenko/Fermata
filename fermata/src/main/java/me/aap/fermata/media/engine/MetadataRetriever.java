@@ -172,11 +172,9 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	private void insertMetadata(MetaBuilder meta, MediaLib.PlayableItem item) {
+		if ((db == null) || !meta.durationSet) return;
 		ContentValues values = meta.values;
 		Bitmap bm = meta.image;
-		meta.values = null;
-		meta.image = null;
-		if ((db == null) || !meta.durationSet) return;
 
 		if (bm == null) {
 			String u = meta.getImageUri();
@@ -224,7 +222,7 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	private static final class MetaBuilder extends MetadataBuilder {
-		ContentValues values = new ContentValues(10);
+		final ContentValues values = new ContentValues(10);
 		boolean durationSet;
 		Bitmap image;
 

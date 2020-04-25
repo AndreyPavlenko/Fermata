@@ -2,7 +2,6 @@ package me.aap.fermata.media.lib;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.media.MediaDescriptionCompat;
 
 import androidx.annotation.NonNull;
 
@@ -20,6 +19,7 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 
@@ -37,11 +37,16 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 		this.lib = lib;
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("favorites", Context.MODE_PRIVATE);
 		favoritesPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
-		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
-		dsc.setMediaId(ID);
-		dsc.setTitle(getLib().getContext().getString(R.string.favorites));
-		dsc.setSubtitle("");
-		setMediaDescription(dsc.build());
+	}
+
+	@Override
+	protected FutureSupplier<String> buildTitle() {
+		return completed(getLib().getContext().getString(R.string.favorites));
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		return completed("");
 	}
 
 	@NonNull
@@ -92,11 +97,6 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	@Override
 	public boolean isFavoriteItemId(String id) {
 		return isChildItemId(id);
-	}
-
-	@Override
-	public void addItem(PlayableItem i) {
-
 	}
 
 	@Override

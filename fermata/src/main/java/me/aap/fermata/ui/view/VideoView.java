@@ -232,6 +232,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		surfaceCreated = false;
 		MainActivityDelegate a = getActivity();
 		if (a != null) {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();

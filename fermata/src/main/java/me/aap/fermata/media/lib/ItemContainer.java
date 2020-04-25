@@ -8,10 +8,10 @@ import java.util.List;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.utils.async.Async.forEach;
 import static me.aap.utils.async.Completed.completed;
@@ -45,7 +45,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	FutureSupplier<List<Item>> listChildren(String[] ids) {
 		MediaLib lib = getLib();
 		List children = new ArrayList<>(ids.length);
-		return forEach(id -> lib.getItem(id).map(children::add), ids).then(v -> completed(children));
+		return forEach(id -> lib.getItem(id).map(c -> children.add(toChildItem(c))), ids).map(v -> children);
 	}
 
 	public void addItem(C i) {
@@ -115,6 +115,11 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 		saveChildren(newChildren);
 	}
 
+	@Override
+	public boolean sortChildrenEnabled() {
+		return false;
+	}
+
 	public boolean isChildItemId(String id) {
 		return id.startsWith(getScheme());
 	}
@@ -131,9 +136,9 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	}
 
 	@SuppressWarnings("unchecked")
-	public C toChildItem(C i) {
+	private C toChildItem(Item i) {
 		String id = i.getId();
-		if (isChildItemId(id)) return i;
+		if (isChildItemId(id)) return (C) i;
 		if (!(i instanceof PlayableItem)) throw new IllegalArgumentException("Unsupported child: " + i);
 
 		PlayableItem pi = (PlayableItem) i;

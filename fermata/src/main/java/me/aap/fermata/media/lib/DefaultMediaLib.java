@@ -31,7 +31,6 @@ import me.aap.utils.pref.SharedPreferenceStore;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -129,24 +128,20 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result) {
 		result.detach();
 
 		if (getRootId().equals(parentMediaId)) {
 			List<MediaItem> items = new ArrayList<>(4);
-
-			Async.forEach(f -> {
-						MediaItem i = f.get();
+			getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem())
+					.onSuccess(i -> {
 						if (i != null) items.add(i);
-						return completedVoid();
-					},
-					getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem()),
-					getFolders().asMediaItem(),
-					getFavorites().asMediaItem(),
-					getPlaylists().asMediaItem()
-			).onFailure(this::log).onCompletion((r, f) -> result.sendResult(items, null));
+					})
+					.then(v -> getFolders().asMediaItem()).onSuccess(items::add)
+					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
+					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
+					.onCompletion((r, f) -> result.sendResult(items, null)).onFailure(this::log);
 		} else {
 			getItem(parentMediaId).then(i -> {
 				if (i instanceof BrowsableItem) {

@@ -8,3 +8,4 @@ build/
 dist/
 *.iml
 local.properties
+google-services.json

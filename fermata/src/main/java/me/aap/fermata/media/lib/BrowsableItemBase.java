@@ -37,7 +37,7 @@ import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 /**
  * @author Andrey Pavlenko
  */
-abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, BrowsableItemPrefs {
+public abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, BrowsableItemPrefs {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static final AtomicReferenceFieldUpdater<BrowsableItemBase, FutureSupplier<List<Item>>> children =
 			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(BrowsableItemBase.class, FutureSupplier.class, "childrenHolder");
@@ -201,18 +201,22 @@ abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, Brow
 	}
 
 	void setChildren(List<Item> c) {
-		setChildren(completed(c));
-	}
-
-	void setChildren(FutureSupplier<List<Item>> c) {
-		children.set(this, c);
-		c.thenReplaceOrClear(children, this);
+		SortedItems sorted = new SortedItems(c);
+		setSeqNum(sorted);
+		children.set(this, completed(sorted));
+		updateTitles();
 	}
 
 	private FutureSupplier<List<Item>> sortChildren(List<Item> list) {
+		SortedItems sorted = new SortedItems(list);
+
+		if (!sortChildrenEnabled()) {
+			setSeqNum(sorted);
+			return completed(sorted);
+		}
+
 		BrowsableItemPrefs prefs = getPrefs();
 		boolean desc = prefs.getSortDescPref();
-		SortedItems sorted = new SortedItems(list);
 
 		switch (prefs.getSortByPref()) {
 			case BrowsableItemPrefs.SORT_BY_FILE_NAME:

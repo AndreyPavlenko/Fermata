@@ -195,10 +195,10 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	public void refreshState() {
 		MediaItemWrapper w = getItemWrapper();
+		if (w == null) return;
+
 		Item item = w.getItem();
-		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) {
-			setItemWrapper(w);
-		}
+		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) setItemWrapper(w);
 		refreshState(item);
 	}
 

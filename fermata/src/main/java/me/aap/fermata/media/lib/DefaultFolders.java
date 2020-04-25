@@ -3,7 +3,6 @@ package me.aap.fermata.media.lib;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.support.v4.media.MediaDescriptionCompat;
 
 import androidx.annotation.NonNull;
 
@@ -49,12 +48,16 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("folders", Context.MODE_PRIVATE);
 		foldersPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
 		vfsManager = new FermataVfsManager();
+	}
 
-		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
-		dsc.setMediaId(ID);
-		dsc.setTitle(getLib().getContext().getString(R.string.folders));
-		dsc.setSubtitle("");
-		setMediaDescription(dsc.build());
+	@Override
+	protected FutureSupplier<String> buildTitle() {
+		return completed(getLib().getContext().getString(R.string.folders));
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		return completed("");
 	}
 
 	@NonNull
@@ -95,6 +98,16 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	@Override
 	public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
 		return getLib().getBroadcastEventListeners();
+	}
+
+	@Override
+	public boolean sortChildrenEnabled() {
+		return false;
+	}
+
+	@Override
+	public boolean getTitleSeqNumPref() {
+		return false;
 	}
 
 	FermataVfsManager getVfsManager() {
