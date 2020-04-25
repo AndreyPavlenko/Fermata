@@ -14,6 +14,8 @@
     <item name="tool_sort" type="id" />
     <item name="tool_sort_name" type="id" />
     <item name="tool_sort_file_name" type="id" />
+    <item name="tool_sort_date" type="id" />
+    <item name="tool_sort_desc" type="id" />
     <item name="tool_sort_none" type="id" />
 
     <item name="nav_folders" type="id" />

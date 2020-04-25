@@ -24,6 +24,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.holder.IntHolder;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
@@ -90,7 +91,7 @@ abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, Brow
 			if (list.isEmpty()) return completedEmptyList();
 
 			load.setProgress(list, 1, 2);
-			return loadMetadata(list).map(v -> sortChildren(list));
+			return loadMetadata(list).then(v -> sortChildren(list));
 		}).thenReplaceOrClear(children, this, load);
 
 		return children.get(this);
@@ -208,32 +209,43 @@ abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, Brow
 		c.thenReplaceOrClear(children, this);
 	}
 
-	private SortedItems sortChildren(List<Item> list) {
+	private FutureSupplier<List<Item>> sortChildren(List<Item> list) {
+		BrowsableItemPrefs prefs = getPrefs();
+		boolean desc = prefs.getSortDescPref();
 		SortedItems sorted = new SortedItems(list);
 
-		switch (getPrefs().getSortByPref()) {
+		switch (prefs.getSortByPref()) {
 			case BrowsableItemPrefs.SORT_BY_FILE_NAME:
-				Collections.sort(sorted, this::compareByFile);
+				Collections.sort(sorted, (i1, i2) -> compareByFile(i1, i2, desc));
 				break;
 			case BrowsableItemPrefs.SORT_BY_NAME:
-				Collections.sort(sorted, this::compareByName);
+				Collections.sort(sorted, (i1, i2) -> compareByName(i1, i2, desc));
 				break;
+			case BrowsableItemPrefs.SORT_BY_DATE:
+				return getDates(list).then(dates -> {
+					Collections.sort(sorted, (i1, i2) -> compareByDate(i1, i2, list, dates, desc));
+					setSeqNum(sorted);
+					return completed(sorted);
+				});
 		}
 
+		setSeqNum(sorted);
+		return completed(sorted);
+	}
+
+	private void setSeqNum(SortedItems sorted) {
 		for (int i = 0; i < sorted.size(); i++) {
 			((ItemBase) sorted.get(i)).setSeqNum(i + 1);
 		}
-
-		return sorted;
 	}
 
-	int compareByFile(Item i1, Item i2) {
+	private int compareByFile(Item i1, Item i2, boolean desc) {
 		if (i1 instanceof BrowsableItem) {
 			if (i2 instanceof BrowsableItem) {
 				VirtualResource f1 = i1.getFile();
 				VirtualResource f2 = i2.getFile();
-				return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName()) :
-						compareNatural(name(i1), name(i2));
+				return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc) :
+						compareNatural(name(i1), name(i2), desc);
 			} else {
 				return -1;
 			}
@@ -242,19 +254,63 @@ abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, Brow
 		} else {
 			VirtualResource f1 = i1.getFile();
 			VirtualResource f2 = i2.getFile();
-			return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName()) :
-					compareNatural(name(i1), name(i2));
+			return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc) :
+					compareNatural(name(i1), name(i2), desc);
 		}
 	}
 
-	int compareByName(Item i1, Item i2) {
+	private int compareByName(Item i1, Item i2, boolean desc) {
 		if (i1 instanceof BrowsableItem) {
-			return (i2 instanceof BrowsableItem) ? compareNatural(name(i1), name(i2)) : -1;
+			return (i2 instanceof BrowsableItem) ? compareNatural(name(i1), name(i2), desc) : -1;
 		} else if (i2 instanceof BrowsableItem) {
 			return 1;
 		} else {
-			return compareNatural(name(i1), name(i2));
+			return compareNatural(name(i1), name(i2), desc);
 		}
+	}
+
+	private int compareByDate(Item i1, Item i2, List<Item> list, long[] dates, boolean desc) {
+		if (i1 instanceof BrowsableItem) {
+			if (i2 instanceof BrowsableItem) {
+				return desc ? compareDate(i2, i1, list, dates) : compareDate(i1, i2, list, dates);
+			} else {
+				return -1;
+			}
+		} else if (i2 instanceof BrowsableItem) {
+			return 1;
+		} else if (desc) {
+			return compareDate(i2, i1, list, dates);
+		} else {
+			return compareDate(i1, i2, list, dates);
+		}
+	}
+
+	private int compareDate(Item i1, Item i2, List<Item> list, long[] dates) {
+		int idx1 = -1;
+		int idx2 = -1;
+
+		for (int i = 0; i < list.size(); i++) {
+			Item item = list.get(i);
+
+			if (item == i1) {
+				idx1 = i;
+				if (idx2 != -1) break;
+			} else if (item == i2) {
+				idx2 = i;
+				if (idx1 != -1) break;
+			}
+		}
+
+		long d1 = (idx1 != -1) ? dates[idx1] : 0;
+		long d2 = (idx2 != -1) ? dates[idx2] : 0;
+		return Long.compare(d1, d2);
+	}
+
+	private static FutureSupplier<long[]> getDates(List<Item> list) {
+		IntHolder i = new IntHolder();
+		long[] dates = new long[list.size()];
+		return Async.forEach(item -> item.getFile().getLastModified()
+				.onSuccess(d -> dates[i.value++] = d), list).map(v -> dates);
 	}
 
 	private static String name(Item i) {

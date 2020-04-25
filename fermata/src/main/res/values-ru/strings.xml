@@ -96,6 +96,8 @@
     <string name="seq_num">Порядковый номер</string>
     <string name="track_name">Название</string>
     <string name="file_name">Имя файла</string>
+    <string name="date">Дата</string>
+    <string name="descending">По убыванию</string>
     <string name="album">Альбом</string>
     <string name="artist">Исполнитель</string>
     <string name="duration">Длительность</string>

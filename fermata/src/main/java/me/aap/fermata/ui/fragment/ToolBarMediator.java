@@ -10,6 +10,7 @@ import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_DATE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NONE;
@@ -132,7 +133,12 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 			b.setSelectionHandler(ToolBarMediator::sortMenuHandler);
 			b.addItem(R.id.tool_sort_name, R.string.track_name).setChecked(sort == SORT_BY_NAME, true);
 			b.addItem(R.id.tool_sort_file_name, R.string.file_name).setChecked(sort == SORT_BY_FILE_NAME, true);
+			b.addItem(R.id.tool_sort_date, R.string.date).setChecked(sort == SORT_BY_DATE, true);
 			b.addItem(R.id.tool_sort_none, R.string.do_not_sort).setChecked(sort == SORT_BY_NONE, true);
+
+			if (sort != SORT_BY_NONE) {
+				b.addItem(R.id.tool_sort_desc, R.string.descending).setChecked(prefs.getSortDescPref());
+			}
 		});
 	}
 
@@ -154,8 +160,16 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 				prefs.setSortByPref(SORT_BY_FILE_NAME);
 				sortPrefChanged(adapter);
 				return true;
+			case R.id.tool_sort_date:
+				prefs.setSortByPref(SORT_BY_DATE);
+				sortPrefChanged(adapter);
+				return true;
 			case R.id.tool_sort_none:
 				prefs.setSortByPref(SORT_BY_NONE);
+				sortPrefChanged(adapter);
+				return true;
+			case R.id.tool_sort_desc:
+				prefs.setSortDescPref(!prefs.getSortDescPref());
 				sortPrefChanged(adapter);
 				return true;
 			default:

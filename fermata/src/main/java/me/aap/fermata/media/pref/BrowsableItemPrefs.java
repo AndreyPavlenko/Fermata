@@ -26,7 +26,9 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 	int SORT_BY_NONE = 0;
 	int SORT_BY_NAME = 1;
 	int SORT_BY_FILE_NAME = 2;
+	int SORT_BY_DATE = 3;
 	Pref<IntSupplier> SORT_BY = Pref.i("SORT_BY", SORT_BY_NONE);
+	Pref<BooleanSupplier> SORT_DESC = Pref.b("SORT_DESC", false);
 
 	default boolean getShufflePref() {
 		return getBooleanPref(SHUFFLE);
@@ -167,5 +169,13 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 
 	default void setSortByPref(int sortBy) {
 		applyIntPref(getSortByPrefKey(), sortBy);
+	}
+
+	default boolean getSortDescPref() {
+		return getBooleanPref(SORT_DESC);
+	}
+
+	default void setSortDescPref(boolean desc) {
+		applyBooleanPref(SORT_DESC, desc);
 	}
 }
