@@ -36,6 +36,7 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		super(ID, null, null);
 		this.lib = lib;
 		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
+		dsc.setMediaId(ID);
 		dsc.setTitle(getLib().getContext().getString(R.string.playlists));
 		dsc.setSubtitle("");
 		setMediaDescription(dsc.build());
@@ -75,15 +76,10 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		int[] ids = getPlaylistIdsPref();
 		List<Item> children = new ArrayList<>(ids.length);
 
-		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-			tb.append(SCHEME).append(':');
-			int len = tb.length();
-
-			for (int id : ids) {
-				tb.setLength(len);
-				tb.append(id).append(':');
-				children.add(new DefaultPlaylist(tb.toString(), this, id));
-			}
+		for (int id : ids) {
+			SharedTextBuilder tb = SharedTextBuilder.get();
+			tb.append(SCHEME).append(':').append(id).append(':');
+			children.add(new DefaultPlaylist(tb.releaseString(), this, id));
 		}
 
 		return completed(children);

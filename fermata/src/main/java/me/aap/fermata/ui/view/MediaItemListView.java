@@ -66,7 +66,12 @@ public class MediaItemListView extends RecyclerView {
 
 	@Override
 	public void smoothScrollToPosition(int position) {
-		super.smoothScrollToPosition(position);
+		scrollToPosition(position);
+	}
+
+	@Override
+	public void scrollToPosition(int position) {
+		super.scrollToPosition(position);
 		List<MediaItemWrapper> list = getAdapter().getList();
 		if ((position < 0) || (position >= list.size())) return;
 		View v = list.get(position).getView();

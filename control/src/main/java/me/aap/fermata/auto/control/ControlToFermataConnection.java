@@ -222,6 +222,10 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 				return R.drawable.repeat;
 			case CUSTOM_ACTION_REPEAT_DISABLE:
 				return R.drawable.repeat_filled;
+			case CUSTOM_ACTION_SHUFFLE_ENABLE:
+				return R.drawable.shuffle;
+			case CUSTOM_ACTION_SHUFFLE_DISABLE:
+				return R.drawable.shuffle_filled;
 			case CUSTOM_ACTION_FAVORITES_ADD:
 				return R.drawable.favorite;
 			case CUSTOM_ACTION_FAVORITES_REMOVE:

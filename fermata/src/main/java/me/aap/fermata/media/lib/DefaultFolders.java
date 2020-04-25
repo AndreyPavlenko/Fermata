@@ -51,6 +51,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		vfsManager = new FermataVfsManager();
 
 		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
+		dsc.setMediaId(ID);
 		dsc.setTitle(getLib().getContext().getString(R.string.folders));
 		dsc.setSubtitle("");
 		setMediaDescription(dsc.build());

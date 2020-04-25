@@ -279,12 +279,6 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return metadataRetriever;
 	}
 
-	@NonNull
-	@Override
-	public FutureSupplier<Bitmap> getBitmap(String uri, boolean cache, boolean resize) {
-		return getMetadataRetriever().getBitmapCache().getBitmap(getContext(), uri, cache, resize);
-	}
-
 	Object cacheLock() {
 		return itemCache;
 	}

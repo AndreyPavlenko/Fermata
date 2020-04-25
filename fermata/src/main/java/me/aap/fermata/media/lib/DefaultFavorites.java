@@ -38,6 +38,7 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("favorites", Context.MODE_PRIVATE);
 		favoritesPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
 		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
+		dsc.setMediaId(ID);
 		dsc.setTitle(getLib().getContext().getString(R.string.favorites));
 		dsc.setSubtitle("");
 		setMediaDescription(dsc.build());

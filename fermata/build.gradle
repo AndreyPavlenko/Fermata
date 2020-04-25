@@ -64,7 +64,7 @@ android {
 
     if (findProject(':exoplayer') != null) dynamicFeatures.add(':exoplayer')
     dynamicFeatures.add(':vlc')
-    dynamicFeatures.add(':gdrive')
+//    dynamicFeatures.add(':gdrive')
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

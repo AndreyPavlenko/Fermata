@@ -38,6 +38,7 @@ import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
 import me.aap.utils.vfs.VirtualResource;
 
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -76,7 +77,9 @@ public interface MediaLib {
 	MetadataRetriever getMetadataRetriever();
 
 	@NonNull
-	FutureSupplier<Bitmap> getBitmap(String uri, boolean cache, boolean resize);
+	default FutureSupplier<Bitmap> getBitmap(String uri, boolean cache, boolean resize) {
+		return getMetadataRetriever().getBitmapCache().getBitmap(getContext(), uri, cache, resize);
+	}
 
 	@NonNull
 	default FutureSupplier<Bitmap> getBitmap(String uri) {
@@ -156,6 +159,23 @@ public interface MediaLib {
 		@NonNull
 		FutureSupplier<MediaDescriptionCompat> getMediaDescription();
 
+		default FutureSupplier<MediaDescriptionCompat> getMediaItemDescription() {
+			return getMediaDescription().then(md -> {
+				if (md.getIconUri() != null) {
+					return getLib().getBitmap(md.getIconUri().toString(), true, true).map(bm -> {
+						MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+						b.setMediaId(md.getMediaId());
+						b.setTitle(md.getTitle());
+						b.setSubtitle(md.getSubtitle());
+						b.setIconBitmap(bm);
+						return b.build();
+					});
+				}
+
+				return completed(md);
+			});
+		}
+
 		@NonNull
 		default FutureSupplier<Long> getQueueId() {
 			BrowsableItem p = getParent();
@@ -169,7 +189,7 @@ public interface MediaLib {
 
 		@NonNull
 		default FutureSupplier<MediaItem> asMediaItem() {
-			return getMediaDescription().map(md -> new MediaItem(md, (this instanceof BrowsableItem) ?
+			return getMediaItemDescription().map(md -> new MediaItem(md, (this instanceof BrowsableItem) ?
 					MediaItem.FLAG_BROWSABLE : MediaItem.FLAG_PLAYABLE));
 		}
 
@@ -295,7 +315,13 @@ public interface MediaLib {
 		@NonNull
 		@Override
 		default FutureSupplier<Uri> getIconUri() {
-			return getParent().getIconUri();
+			BrowsableItem p = getParent();
+			if (!p.getPrefs().getShowTrackIconsPref()) return completedNull();
+
+			return getMediaData().then(md -> {
+				String u = md.getString(METADATA_KEY_ALBUM_ART_URI);
+				return (u != null) ? completed(Uri.parse(u)) : p.getIconUri();
+			});
 		}
 
 		default long getOffset() {
@@ -412,8 +438,10 @@ public interface MediaLib {
 				if (list.isEmpty()) return Completed.completedEmptyList();
 				IntHolder i = new IntHolder();
 				List<QueueItem> items = new ArrayList<>(list.size());
-				return Async.forEach(c -> c.getMediaDescription().map(d -> new QueueItem(d, i.value++)),
-						list).map(v -> items);
+				return Async.forEach(c -> c.getMediaItemDescription().then(d -> {
+					items.add(new QueueItem(d, i.value++));
+					return completedVoid();
+				}), list).map(v -> items);
 			});
 		}
 

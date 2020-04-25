@@ -10,6 +10,8 @@ public interface SharedConstants {
 	String CUSTOM_ACTION_FF = "me.aap.fermata.action.fastForward";
 	String CUSTOM_ACTION_REPEAT_ENABLE = "me.aap.fermata.action.repeat.enable";
 	String CUSTOM_ACTION_REPEAT_DISABLE = "me.aap.fermata.action.repeat.disable";
+	String CUSTOM_ACTION_SHUFFLE_ENABLE = "me.aap.fermata.action.shuffle.enable";
+	String CUSTOM_ACTION_SHUFFLE_DISABLE = "me.aap.fermata.action.shuffle.disable";
 	String CUSTOM_ACTION_FAVORITES_ADD = "me.aap.fermata.action.favorites.add";
 	String CUSTOM_ACTION_FAVORITES_REMOVE = "me.aap.fermata.action.favorites.remove";
 }

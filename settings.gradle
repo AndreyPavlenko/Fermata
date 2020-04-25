@@ -7,7 +7,7 @@ include ':vlc'
 include ':gdrive'
 project(':utils').projectDir = new File('depends/utils')
 project(':vlc').projectDir = new File('modules/vlc')
-project(':gdrive').projectDir = new File('modules/gdrive')
+//project(':gdrive').projectDir = new File('modules/gdrive')
 
 def exoRoot = file('depends/ExoPlayer')
 

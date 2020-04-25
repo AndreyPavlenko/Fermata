@@ -61,6 +61,7 @@ import me.aap.utils.ui.UiUtils;
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
 import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
@@ -132,6 +133,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private final PlaybackStateCompat.CustomAction customFastForward;
 	private final PlaybackStateCompat.CustomAction customRepeatEnable;
 	private final PlaybackStateCompat.CustomAction customRepeatDisable;
+	private final PlaybackStateCompat.CustomAction customShuffleEnable;
+	private final PlaybackStateCompat.CustomAction customShuffleDisable;
 	private final PlaybackStateCompat.CustomAction customFavoritesAdd;
 	private final PlaybackStateCompat.CustomAction customFavoritesRemove;
 	private final BroadcastReceiver onNoisy;
@@ -165,6 +168,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				ctx.getString(R.string.repeat), R.drawable.repeat).build();
 		customRepeatDisable = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_REPEAT_DISABLE,
 				ctx.getString(R.string.repeat_disable), R.drawable.repeat_filled).build();
+		customShuffleEnable = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_SHUFFLE_ENABLE,
+				ctx.getString(R.string.shuffle), R.drawable.shuffle).build();
+		customShuffleDisable = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_SHUFFLE_DISABLE,
+				ctx.getString(R.string.shuffle_disable), R.drawable.shuffle_filled).build();
 		customFavoritesAdd = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_FAVORITES_ADD,
 				ctx.getString(R.string.favorites_add), R.drawable.favorite).build();
 		customFavoritesRemove = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_FAVORITES_REMOVE,
@@ -595,6 +602,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			case CUSTOM_ACTION_REPEAT_DISABLE:
 				repeatEnableDisable(false);
 				break;
+			case CUSTOM_ACTION_SHUFFLE_ENABLE:
+				shuffleEnableDisable(true);
+				break;
+			case CUSTOM_ACTION_SHUFFLE_DISABLE:
+				shuffleEnableDisable(false);
+				break;
 			case CUSTOM_ACTION_FAVORITES_ADD:
 				favoriteAddRemove(true);
 				break;
@@ -616,6 +629,23 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			CollectionUtils.replace(actions, customRepeatEnable, customRepeatDisable);
 		} else {
 			CollectionUtils.replace(actions, customRepeatDisable, customRepeatEnable);
+		}
+
+		setPlaybackState(new PlaybackStateCompat.Builder(state).build());
+	}
+
+	private void shuffleEnableDisable(boolean enable) {
+		PlayableItem i = getCurrentItem();
+		if (i == null) return;
+
+		PlaybackStateCompat state = getPlaybackState();
+		List<PlaybackStateCompat.CustomAction> actions = state.getCustomActions();
+		i.getParent().getPrefs().setShufflePref(enable);
+
+		if (enable) {
+			CollectionUtils.replace(actions, customShuffleEnable, customShuffleDisable);
+		} else {
+			CollectionUtils.replace(actions, customShuffleDisable, customShuffleEnable);
 		}
 
 		setPlaybackState(new PlaybackStateCompat.Builder(state).build());
@@ -684,8 +714,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onSetShuffleMode(int shuffleMode) {
-		PlayableItem i = getCurrentItem();
-		if (i != null) i.getParent().getPrefs().setShufflePref(shuffleMode != SHUFFLE_MODE_NONE);
+		shuffleEnableDisable(shuffleMode != SHUFFLE_MODE_NONE);
 	}
 
 	@Override
@@ -833,9 +862,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, requireNonNull(dsc.getSubtitle()).toString());
 		if (meta.getBitmap(METADATA_KEY_ALBUM_ART) != null) return completed(b.build());
 
-		String art = meta.getString(METADATA_KEY_ALBUM_ART);
+		String art = meta.getString(METADATA_KEY_ALBUM_ART_URI);
 
 		if (art != null) {
+			b.putString(METADATA_KEY_ALBUM_ART_URI, null);
 			return lib.getBitmap(art).then(bm -> {
 				b.putBitmap(METADATA_KEY_ALBUM_ART, (bm != null) ? bm : getDefaultImage());
 				return completed(b.build());
@@ -993,11 +1023,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		int state = pause ? PlaybackStateCompat.STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING;
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		boolean repeat = p.getRepeatPref();
+		boolean shuffle = p.getShufflePref();
 		return new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(state, position, speed)
 				.setActiveQueueItemId(qid)
 				.addCustomAction(customRewind).addCustomAction(customFastForward)
 				.addCustomAction(repeat ? customRepeatDisable : customRepeatEnable)
+				.addCustomAction(shuffle ? customShuffleDisable : customShuffleEnable)
 				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd).build();
 	}
 

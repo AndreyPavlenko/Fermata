@@ -80,7 +80,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		FutureSupplier<Uri> icon = getIconUri();
 
 		if (title.isDone() && subtitle.isDone() && icon.isDone()) {
-			b.setTitle(title.get(getFile()::getName));
+			b.setTitle(title.get(() -> getFile().getName()));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
 			MediaDescriptionCompat dsc = b.build();

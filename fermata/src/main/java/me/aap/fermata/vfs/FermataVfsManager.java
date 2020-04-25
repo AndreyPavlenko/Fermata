@@ -21,6 +21,7 @@ import me.aap.utils.vfs.VfsException;
 import me.aap.utils.vfs.VfsManager;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.content.ContentFileSystem;
+import me.aap.utils.vfs.generic.GenericFileSystem;
 import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static me.aap.utils.async.Completed.completed;
@@ -64,8 +65,9 @@ public class FermataVfsManager extends VfsManager {
 		Context ctx = App.get();
 		FermataApplication app = FermataApplication.get();
 		PreferenceStore ps = app.getPreferenceStore();
-		List<VirtualFileSystem.Provider> p = new ArrayList<>(3);
+		List<VirtualFileSystem.Provider> p = new ArrayList<>(4);
 		p.add(LocalFileSystem.Provider.getInstance());
+		p.add(GenericFileSystem.Provider.getInstance());
 		p.add(new ContentFileSystem.Provider(ps.getBooleanPref(PREFER_FILE_API)));
 		addProvider(p, ps, ENABLE_GDRIVE, ctx, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
 		return p;

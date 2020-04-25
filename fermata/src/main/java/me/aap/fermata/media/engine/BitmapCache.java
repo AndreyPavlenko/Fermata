@@ -35,6 +35,7 @@ import me.aap.utils.text.TextBuilder;
 import me.aap.utils.ui.UiUtils;
 
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.security.SecurityUtils.sha1;
 import static me.aap.utils.text.TextUtils.appendHexString;
 import static me.aap.utils.ui.UiUtils.resizedBitmap;
 
@@ -42,14 +43,18 @@ import static me.aap.utils.ui.UiUtils.resizedBitmap;
  * @author Andrey Pavlenko
  */
 public class BitmapCache {
+	private final File iconsCache;
 	private final File imageCache;
+	private final String iconsCacheUri;
 	private final String imageCacheUri;
 	private final Map<String, Ref> cache = new HashMap<>();
 	private final ReferenceQueue<Bitmap> refQueue = new ReferenceQueue<>();
 
 	public BitmapCache() {
 		File cache = App.get().getExternalCacheDir();
+		iconsCache = new File(cache, "icons").getAbsoluteFile();
 		imageCache = new File(cache, "images").getAbsoluteFile();
+		iconsCacheUri = Uri.fromFile(iconsCache).toString() + '/';
 		imageCacheUri = Uri.fromFile(imageCache).toString() + '/';
 	}
 
@@ -71,14 +76,43 @@ public class BitmapCache {
 
 	@NonNull
 	public FutureSupplier<Bitmap> getBitmap(Context ctx, String uri, boolean cache, boolean resize) {
-		Bitmap bm = getCachedBitmap(uri);
+		int size;
+		String iconUri;
+		Bitmap bm;
+
+		if (resize) {
+			size = getIconSize(ctx);
+			iconUri = toIconUri(uri, size);
+			bm = getCachedBitmap(iconUri);
+		} else {
+			size = 0;
+			iconUri = null;
+			bm = getCachedBitmap(uri);
+		}
+
 		if (bm != null) return completed(bm);
-		return App.get().execute(() -> loadBitmap(ctx, uri, cache, resize));
+		return App.get().execute(() -> loadBitmap(ctx, uri, iconUri, cache, size));
 	}
 
-	private Bitmap loadBitmap(Context ctx, String uri, boolean cache, boolean resize) {
-		Bitmap bm = getCachedBitmap(uri);
-		if (bm != null) return bm;
+	private Bitmap loadBitmap(Context ctx, String uri, String iconUri, boolean cache, int size) {
+		Bitmap bm;
+
+		if (iconUri != null) {
+			bm = getCachedBitmap(iconUri);
+			if (bm != null) return bm;
+			bm = loadBitmap(ctx, uri, cache ? iconUri : null, size);
+			if (cache && (bm != null)) saveIcon(bm, iconUri);
+		} else {
+			bm = getCachedBitmap(uri);
+			if (bm != null) return bm;
+			bm = loadBitmap(ctx, uri, cache ? uri : null, size);
+		}
+
+		return bm;
+	}
+
+	private Bitmap loadBitmap(Context ctx, String uri, String cacheUri, int size) {
+		Bitmap bm = null;
 
 		if (uri.startsWith("http://") || uri.startsWith("https://")) {
 			try (InputStream in = new URL(uri).openStream()) {
@@ -106,8 +140,8 @@ public class BitmapCache {
 		}
 
 		if (bm == null) return null;
-		if (resize) bm = resizedBitmap(bm, getIconSize(ctx));
-		return cache ? cacheBitmap(uri, bm) : bm;
+		if (size != 0) bm = resizedBitmap(bm, size);
+		return (cacheUri != null) ? cacheBitmap(cacheUri, bm) : bm;
 	}
 
 	private Bitmap cacheBitmap(String uri, Bitmap bm) {
@@ -159,8 +193,8 @@ public class BitmapCache {
 		tb.setLength(0);
 		tb.append(imageCacheUri);
 		int len = tb.length();
-		appendHexString(tb.append("/X/"), hash).append(".jpg");
-		tb.setCharAt(len + 1, tb.charAt(len + 3));
+		appendHexString(tb.append("X/"), hash).append(".jpg");
+		tb.setCharAt(len, tb.charAt(len + 2));
 		return tb.toString().intern();
 	}
 
@@ -193,6 +227,33 @@ public class BitmapCache {
 		} catch (Exception ex) {
 			Log.e(getClass().getName(), "Failed to save image", ex);
 			return null;
+		}
+	}
+
+	private void saveIcon(Bitmap bm, String uri) {
+		File f = new File(iconsCache, uri.substring(iconsCacheUri.length()));
+		f.getParentFile().mkdirs();
+
+		try (OutputStream out = new FileOutputStream(f)) {
+			bm.compress(Bitmap.CompressFormat.JPEG, 100, out);
+		} catch (Exception ex) {
+			Log.e(getClass().getName(), "Failed to save icon: " + uri, ex);
+		}
+	}
+
+	private String toIconUri(String imageUri, int size) {
+		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+			tb.append(iconsCacheUri).append(size).append("/X/");
+			int len = tb.length();
+
+			if ((imageUri.startsWith(imageCacheUri)) || (imageUri.startsWith(iconsCacheUri))) {
+				tb.append(imageUri.substring(imageUri.lastIndexOf('/') + 1));
+			} else {
+				appendHexString(tb, sha1(imageUri)).append(".jpg");
+			}
+
+			tb.setCharAt(len - 2, tb.charAt(len));
+			return tb.toString();
 		}
 	}
 
