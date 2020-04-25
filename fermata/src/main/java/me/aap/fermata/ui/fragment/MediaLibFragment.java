@@ -299,7 +299,15 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		BrowsableItem p = getAdapter().getParent();
-		if ((p == null) || !store.equals(p.getPrefs())) return;
+		if (p == null) return;
+
+		if (prefs.contains(BrowsableItemPrefs.SHOW_TRACK_ICONS)) {
+			getAdapter().reload();
+			return;
+		}
+
+		if (!store.equals(p.getPrefs())) return;
+		if (prefs.contains(BrowsableItemPrefs.SHOW_TRACK_ICONS)) p.getRoot().updateTitles();
 		if (!Collections.disjoint(reloadOnPrefChange, prefs)) getAdapter().reload();
 	}
 

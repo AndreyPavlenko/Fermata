@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.Locale;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -187,6 +188,11 @@ public class SettingsFragment extends MainActivityFragment {
 			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.FULLSCREEN;
 			o.title = R.string.fullscreen_mode;
+		});
+		sub1.addBooleanPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
+			o.title = R.string.show_track_icons;
 		});
 
 		sub1 = set.subSet(o -> o.title = R.string.playback_prefs);

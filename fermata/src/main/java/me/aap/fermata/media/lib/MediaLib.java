@@ -40,6 +40,7 @@ import me.aap.utils.vfs.VirtualResource;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.util.Utils.getResourceUri;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -161,8 +162,10 @@ public interface MediaLib {
 
 		default FutureSupplier<MediaDescriptionCompat> getMediaItemDescription() {
 			return getMediaDescription().then(md -> {
-				if (md.getIconUri() != null) {
-					return getLib().getBitmap(md.getIconUri().toString(), true, true).map(bm -> {
+				if ((md.getIconUri() != null) || (getParent() == null)) {
+					MediaLib lib = getLib();
+					Uri uri = (getParent() == null) ? getResourceUri(lib.getContext(), getIcon()) : md.getIconUri();
+					return getLib().getBitmap(uri.toString(), true, true).map(bm -> {
 						MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
 						b.setMediaId(md.getMediaId());
 						b.setTitle(md.getTitle());

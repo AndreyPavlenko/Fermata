@@ -2,7 +2,6 @@ package me.aap.fermata.media.lib;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.util.Log;
 
@@ -12,6 +11,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +37,7 @@ import static me.aap.utils.async.Completed.completedVoid;
  * @author Andrey Pavlenko
  */
 public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Listener>
-		implements MediaLib, MediaLibPrefs, SharedPreferenceStore {
+		implements MediaLib, MediaLibPrefs, SharedPreferenceStore, PreferenceStore.Listener {
 	private static final String ID = "Root";
 	private final Context ctx;
 	private final SharedPreferences sharedPreferences;
@@ -57,6 +57,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		playlists = new DefaultPlaylists(this);
 		mediaEngineManager = new MediaEngineManager(this);
 		metadataRetriever = new MetadataRetriever(mediaEngineManager);
+		addBroadcastListener(this);
 	}
 
 	@NonNull
@@ -279,6 +280,20 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		return metadataRetriever;
 	}
 
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
+		if (prefs.contains(BrowsableItemPrefs.SHOW_TRACK_ICONS)) {
+			synchronized (itemCache) {
+				for (Iterator<WeakRef<Item>> it = itemCache.values().iterator(); it.hasNext(); ) {
+					WeakRef<Item> r = it.next();
+					Item i = r.get();
+					if (i == null) it.remove();
+					else i.updateTitles();
+				}
+			}
+		}
+	}
+
 	Object cacheLock() {
 		return itemCache;
 	}
@@ -320,8 +335,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@SuppressWarnings("rawtypes")
 	private static void clearRefs(Map map, ReferenceQueue q) {
-		for (Ref r = (Ref) q.poll(); r != null; r = (Ref) q.poll()) {
-			CollectionUtils.remove(map, r.key(), r);
+		for (WeakRef r = (WeakRef) q.poll(); r != null; r = (WeakRef) q.poll()) {
+			CollectionUtils.remove(map, r.key, r);
 		}
 	}
 
@@ -329,20 +344,12 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		Log.e(getClass().getName(), "Error occurred", ex);
 	}
 
-	private interface Ref {
-		Object key();
-	}
-
-	private static final class WeakRef<V> extends WeakReference<V> implements Ref {
+	private static final class WeakRef<V> extends WeakReference<V> {
 		final Object key;
 
 		public WeakRef(Object key, V value, ReferenceQueue<V> q) {
 			super(value, q);
 			this.key = key;
-		}
-
-		public Object key() {
-			return key;
 		}
 	}
 }
