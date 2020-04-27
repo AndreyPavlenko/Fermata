@@ -11,11 +11,11 @@ import java.util.List;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
-import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.activity.ActivityBase;
 import me.aap.utils.vfs.VfsException;
 import me.aap.utils.vfs.VfsManager;
@@ -25,78 +25,112 @@ import me.aap.utils.vfs.generic.GenericFileSystem;
 import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
  */
 public class FermataVfsManager extends VfsManager {
+	public static final String GDRIVE_ID = "gdrive";
+	public static final String SFTP_ID = "sftp";
 	private static final String CHANNEL_ID = "fermata.vfs.install";
-	private static final PreferenceStore.Pref<BooleanSupplier> PREFER_FILE_API = PreferenceStore.Pref.b("PREFER_FILE_API", true);
-
-	private static final PreferenceStore.Pref<BooleanSupplier> ENABLE_GDRIVE = PreferenceStore.Pref.b("ENABLE_GDRIVE", false);
-	private static final String GDRIVE_ID = "gdrive";
+	private static final Pref<BooleanSupplier> ENABLE_GDRIVE = Pref.b("ENABLE_GDRIVE", false);
+	private static final Pref<BooleanSupplier> ENABLE_SFTP = Pref.b("ENABLE_SFTP", false);
 	private static final String GDRIVE_CLASS = "me.aap.fermata.vfs.gdrive.Provider";
+	private static final String SFTP_CLASS = "me.aap.fermata.vfs.sftp.Provider";
 
 	public FermataVfsManager() {
-		super(providers());
+		super(filesystems());
 
 		PreferenceStore ps = FermataApplication.get().getPreferenceStore();
-
-		if (ps.getBooleanPref(ENABLE_GDRIVE)) getGdriveProvider();
+		initProvider(ps, ENABLE_GDRIVE, GDRIVE_ID);
+		initProvider(ps, ENABLE_SFTP, SFTP_ID);
 	}
 
-	public FutureSupplier<VirtualFileSystem.Provider> getGdriveProvider() {
-		List<VirtualFileSystem.Provider> p = getProviders("gdrive");
-		if (!p.isEmpty()) return completed(p.get(0));
-		FermataApplication.get().getPreferenceStore().applyBooleanPref(ENABLE_GDRIVE, true);
-		return installModule(GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
+	public FutureSupplier<VfsProvider> getProvider(String scheme) {
+		switch (scheme) {
+			case GDRIVE_ID:
+				return getProvider(scheme, ENABLE_GDRIVE, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
+			case SFTP_ID:
+				return getProvider(scheme, ENABLE_SFTP, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
+			default:
+				return completedNull();
+		}
 	}
 
-	private static FutureSupplier<MainActivity> getActivity(@StringRes int moduleName) {
-		Context ctx = App.get();
+	private static FutureSupplier<MainActivity> getActivity(Context ctx, @StringRes int moduleName) {
 		String name = ctx.getString(moduleName);
 		String title = ctx.getString(R.string.module_installation, name);
 		return ActivityBase.create(ctx, CHANNEL_ID, title, R.drawable.ic_notification,
 				title, null, MainActivity.class);
 	}
 
-	private static List<VirtualFileSystem.Provider> providers() {
-		Context ctx = App.get();
+	private static List<VirtualFileSystem> filesystems() {
 		FermataApplication app = FermataApplication.get();
 		PreferenceStore ps = app.getPreferenceStore();
-		List<VirtualFileSystem.Provider> p = new ArrayList<>(4);
-		p.add(LocalFileSystem.Provider.getInstance());
-		p.add(GenericFileSystem.Provider.getInstance());
-		p.add(new ContentFileSystem.Provider(ps.getBooleanPref(PREFER_FILE_API)));
-		addProvider(p, ps, ENABLE_GDRIVE, ctx, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
+		List<VirtualFileSystem> p = new ArrayList<>(5);
+		p.add(LocalFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
+		p.add(GenericFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
+		p.add(ContentFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
+		addFileSystem(p, ps, ENABLE_GDRIVE, app, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
+		addFileSystem(p, ps, ENABLE_SFTP, app, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
 		return p;
 	}
 
-	private static void addProvider(
-			List<VirtualFileSystem.Provider> providers, PreferenceStore ps,
-			PreferenceStore.Pref<BooleanSupplier> p, Context ctx, String className,
+	private static void addFileSystem(
+			List<VirtualFileSystem> fileSystems, PreferenceStore ps,
+			Pref<BooleanSupplier> p, Context ctx, String className,
 			String moduleId, @StringRes int moduleName) {
 		if (!ps.getBooleanPref(p)) return;
+		VfsProvider provider = loadProvider(className, moduleId);
 
-		VirtualFileSystem.Provider provider = loadModule(ctx, className, moduleId, moduleName);
-		if (provider != null) providers.add(provider);
+		if (provider != null) {
+			FutureSupplier<VirtualFileSystem> f = provider
+					.createFileSystem(ctx, () -> getActivity(ctx, moduleName), ps);
+			if (f.isDone() && !f.isFailed()) fileSystems.add(f.getOrThrow());
+		}
 	}
 
-	private static VirtualFileSystem.Provider loadModule(Context ctx, String className, String moduleId,
-																											 @StringRes int moduleName) {
+	private static VfsProvider loadProvider(String className, String moduleId) {
 		try {
-			VfsProvider p = (VfsProvider) Class.forName(className).newInstance();
-			return p.getProvider(ctx, () -> getActivity(moduleName));
+			return (VfsProvider) Class.forName(className).newInstance();
 		} catch (Throwable ex) {
 			Log.e(FermataVfsManager.class.getName(), "Failed to load module " + moduleId);
 			return null;
 		}
 	}
 
-	private FutureSupplier<VirtualFileSystem.Provider> installModule(
+	private void initProvider(PreferenceStore ps, Pref<BooleanSupplier> p, String scheme) {
+		if (!ps.getBooleanPref(p) || isSupportedScheme(scheme)) return;
+		getProvider(scheme).onFailure(fail -> Log.e(getClass().getName(),
+				"Failed to initiate provider " + scheme, fail));
+	}
+
+	private FutureSupplier<VfsProvider> getProvider(
+			String scheme, Pref<BooleanSupplier> pref,
 			String className, String moduleId, @StringRes int moduleName) {
-		return getActivity(moduleName).then(a -> {
+		VfsProvider p = loadProvider(className, moduleId);
+
+		if (p != null) {
+			if (isSupportedScheme(scheme)) return completed(p);
+			return addProvider(p, moduleName).map(fs -> p);
+		} else {
+			return installModule(className, moduleId, moduleName, pref)
+					.then(provider -> addProvider(provider, moduleName).map(fs -> provider));
+		}
+	}
+
+	private FutureSupplier<VirtualFileSystem> addProvider(VfsProvider p, @StringRes int moduleName) {
+		FermataApplication app = FermataApplication.get();
+		return p.createFileSystem(app, () -> getActivity(app, moduleName), app.getPreferenceStore())
+				.onSuccess(this::mount);
+	}
+
+	private FutureSupplier<VfsProvider> installModule(
+			String className, String moduleId, @StringRes int moduleName, Pref<BooleanSupplier> pref) {
+		FermataApplication app = FermataApplication.get();
+		return getActivity(app, moduleName).then(a -> {
 			String name = a.getString(moduleName);
 			String title = a.getString(R.string.module_installation, name);
 			DynamicModuleInstaller i = new DynamicModuleInstaller(a);
@@ -108,11 +142,11 @@ public class FermataVfsManager extends VfsManager {
 			i.setInstallingMessage(a.getString(R.string.installing, name));
 
 			return i.install(moduleId).then(v -> {
-				VirtualFileSystem.Provider provider = loadModule(a, className, moduleId, moduleName);
+				VfsProvider p = loadProvider(className, moduleId);
 
-				if (provider != null) {
-					addProviders(provider);
-					return completed(provider);
+				if (p != null) {
+					app.getPreferenceStore().applyBooleanPref(pref, true);
+					return completed(p);
 				} else {
 					return failed(new VfsException("Failed to install module " + moduleId));
 				}

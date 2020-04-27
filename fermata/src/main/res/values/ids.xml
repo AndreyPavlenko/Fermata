@@ -94,5 +94,6 @@
     <item name="vfs_content" type="id" />
     <item name="vfs_file_system" type="id" />
     <item name="vfs_gdrive" type="id" />
+    <item name="vfs_sftp" type="id" />
 
 </resources>

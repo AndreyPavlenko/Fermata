@@ -10,6 +10,8 @@ import android.view.animation.AnimationUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
+import com.google.android.play.core.install.InstallException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,8 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.fermata.util.Utils;
+import me.aap.fermata.vfs.FermataVfsManager;
+import me.aap.utils.app.App;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
@@ -35,8 +39,11 @@ import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
+import static me.aap.fermata.vfs.FermataVfsManager.SFTP_ID;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 /**
  * @author Andrey Pavlenko
@@ -143,6 +150,7 @@ public class FoldersFragment extends MediaLibFragment {
 			b.setSelectionHandler(this::addFolder);
 			b.addItem(R.id.vfs_content, R.string.vfs_content);
 			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
+			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 //			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
 		});
 	}
@@ -156,7 +164,10 @@ public class FoldersFragment extends MediaLibFragment {
 				addFolderPicker();
 				return true;
 			case R.id.vfs_gdrive:
-				addFolderGdrive();
+				addFolderVfs(GDRIVE_ID, R.string.vfs_gdrive);
+				return true;
+			case R.id.vfs_sftp:
+				addFolderVfs(SFTP_ID, R.string.vfs_sftp);
 				return true;
 			default:
 				return false;
@@ -176,20 +187,33 @@ public class FoldersFragment extends MediaLibFragment {
 		FilePickerFragment f = getMainActivity().showFragment(R.id.file_picker);
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setFileSystem(fs);
-		f.setConsumer(this::addFolderResult);
+		f.setFileConsumer(this::addFolderResult);
 	}
 
-	private void addFolderGdrive() {
-		getMainActivity().getLib().getVfsManager().getGdriveProvider()
-				.then(VirtualFileSystem.Provider::getFileSystem)
-				.onSuccess(this::addFolderPicker)
-				.onFailure(fail -> failedToLoadModule(R.string.vfs_gdrive, fail));
+	private void addFolderVfs(String provId, @StringRes int name) {
+		FermataVfsManager mgr = getLib().getVfsManager();
+		mgr.getProvider(provId)
+				.then(p -> p.select(getMainActivity(), mgr.getFileSystems(provId)))
+				.withMainHandler()
+				.onFailure(fail -> failedToLoadModule(name, fail))
+				.onSuccess(this::addFolderResult);
 	}
 
 	private void failedToLoadModule(@StringRes int name, Throwable ex) {
-		String n = getString(name);
-		Log.e(getClass().getName(), "Failed to load module " + name, ex);
-		Utils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
+		getMainActivity().showFragment(R.id.nav_folders);
+		if (isCancellation(ex)) return;
+
+		App.get().getHandler().post(() -> {
+			String n = getString(name);
+			Log.e(getClass().getName(), "Failed to load add folder: " + name, ex);
+
+			if (ex instanceof InstallException) {
+				Utils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
+			} else {
+				Utils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
+						ex.getLocalizedMessage()));
+			}
+		});
 	}
 
 	private void addFolderResult(int result, Intent data) {

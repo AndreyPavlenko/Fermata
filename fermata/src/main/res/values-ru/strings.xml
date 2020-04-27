@@ -164,6 +164,14 @@
     <string name="eq_pop">Поп</string>
     <string name="eq_rock">Рок</string>
 
+    <string name="host">Хост</string>
+    <string name="port">Порт</string>
+    <string name="path">Путь</string>
+    <string name="username">Имя пользователя</string>
+    <string name="password">Пароль</string>
+    <string name="private_key">Приватный ключ</string>
+    <string name="private_key_pass">Пароль приватного ключа</string>
+
     <string name="donate">Кофе разработчику</string>
     <string name="donate_text">Если вам нравится приложение, вы можете купить мне кофе.</string>
     <string name="use_phone_for_donation">Пожалуйста, воспользуйтесь телефоном, чтобы купить кофе.</string>

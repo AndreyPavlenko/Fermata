@@ -4,10 +4,12 @@ include ':fermata'
 include ':control'
 include ':utils'
 include ':vlc'
-include ':gdrive'
+//include ':gdrive'
+include ':sftp'
 project(':utils').projectDir = new File('depends/utils')
 project(':vlc').projectDir = new File('modules/vlc')
 //project(':gdrive').projectDir = new File('modules/gdrive')
+project(':sftp').projectDir = new File('modules/sftp')
 
 def exoRoot = file('depends/ExoPlayer')
 

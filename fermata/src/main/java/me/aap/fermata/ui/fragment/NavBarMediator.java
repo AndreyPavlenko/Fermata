@@ -81,8 +81,8 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 				MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
 				GenericFragment f = a.showFragment(R.id.generic_fragment);
 				f.setTitle(item.getContext().getString(R.string.about));
-				f.setViewFunction((i, c) -> {
-					Context ctx = c.getContext();
+				f.setContentProvider(g -> {
+					Context ctx = g.getContext();
 					MaterialTextView v = new MaterialTextView(ctx);
 					String url = "https://github.com/AndreyPavlenko/Fermata";
 					String openUrl = url + "/blob/master/README.md#donation";
@@ -91,7 +91,7 @@ public class NavBarMediator implements NavBarView.Mediator, OverlayMenu.Selectio
 					v.setPadding(pad, pad, pad, pad);
 					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
 					if (!a.isCarActivity()) v.setOnClickListener(t -> openUrl(t.getContext(), openUrl));
-					return v;
+					g.addView(v);
 				});
 				return true;
 			case R.id.nav_settings:

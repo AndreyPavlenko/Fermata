@@ -65,6 +65,7 @@ android {
     if (findProject(':exoplayer') != null) dynamicFeatures.add(':exoplayer')
     dynamicFeatures.add(':vlc')
 //    dynamicFeatures.add(':gdrive')
+    dynamicFeatures.add(':sftp')
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

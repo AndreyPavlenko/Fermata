@@ -62,7 +62,9 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 			if (m != null) return m;
 		}
 
-		return loadMeta().thenReplaceOrClear(meta, this, load);
+		loadMeta().thenReplaceOrClear(meta, this, load);
+		m = meta.get(this);
+		return (m != null) ? m : load;
 	}
 
 	@NonNull

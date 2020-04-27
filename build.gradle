@@ -48,6 +48,7 @@ subprojects {
         case 'vlc':
         case 'exoplayer':
         case 'gdrive':
+        case 'sftp':
             apply plugin: 'com.android.dynamic-feature'
             break
         default:

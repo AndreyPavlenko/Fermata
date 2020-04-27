@@ -49,7 +49,9 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 
 	private void setSortButtonVisibility(ToolBarView tb, ActivityFragment f) {
 		if (!(f instanceof MediaLibFragment)) return;
-		BrowsableItem b = ((MediaLibFragment) f).getAdapter().getParent();
+		MediaLibFragment.ListAdapter a = ((MediaLibFragment) f).getAdapter();
+		if (a == null) return;
+		BrowsableItem b = a.getParent();
 		tb.findViewById(R.id.tool_sort).setVisibility(b.sortChildrenEnabled() ? VISIBLE : GONE);
 	}
 

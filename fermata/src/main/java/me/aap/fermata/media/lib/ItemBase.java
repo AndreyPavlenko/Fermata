@@ -102,7 +102,8 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 			});
 		}).thenReplaceOrClear(description, this, load);
 
-		return description.get(this);
+		d = description.get(this);
+		return (d != null) ? d : load;
 	}
 
 	void setMediaDescription(MediaDescriptionCompat dsc) {

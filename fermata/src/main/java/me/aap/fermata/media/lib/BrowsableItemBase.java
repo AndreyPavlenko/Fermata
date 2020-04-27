@@ -70,7 +70,9 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 			if (c != null) return c;
 		}
 
-		return load.thenReplaceOrClear(children, this);
+		load.thenReplaceOrClear(children, this);
+		c = children.get(this);
+		return (c != null) ? c : load;
 	}
 
 	@NonNull
@@ -94,7 +96,8 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 			return loadMetadata(list).then(v -> sortChildren(list));
 		}).thenReplaceOrClear(children, this, load);
 
-		return children.get(this);
+		c = children.get(this);
+		return (c != null) ? c : load;
 	}
 
 	private boolean isDone(FutureSupplier<List<Item>> children) {
