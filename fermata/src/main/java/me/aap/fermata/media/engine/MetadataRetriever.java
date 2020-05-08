@@ -19,13 +19,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 
 import static me.aap.utils.async.Completed.completedEmptyMap;
+import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -49,10 +51,11 @@ public class MetadataRetriever implements Closeable {
 	private final BitmapCache bitmapCache;
 	@Nullable
 	private final SQLiteDatabase db;
+	private final PromiseQueue queue = new PromiseQueue(App.get().getExecutor());
 
 	public MetadataRetriever(MediaEngineManager mgr) {
 		this.mgr = mgr;
-		bitmapCache = new BitmapCache();
+		bitmapCache = new BitmapCache(mgr.lib);
 		Context ctx = mgr.lib.getContext();
 		File cache = ctx.getExternalCacheDir();
 		File dbFile = new File(cache, "metadata.db");
@@ -84,11 +87,11 @@ public class MetadataRetriever implements Closeable {
 		if (db != null) db.close();
 	}
 
-	public FutureSupplier<MetadataBuilder> getMediaMetadata(MediaLib.PlayableItem item) {
-		return App.get().execute(() -> load(item));
+	public FutureSupplier<MetadataBuilder> getMediaMetadata(PlayableItem item) {
+		return queue.enqueue(() -> load(item));
 	}
 
-	private MetadataBuilder load(MediaLib.PlayableItem item) {
+	private MetadataBuilder load(PlayableItem item) {
 		MetadataBuilder meta = queryMetadata(item);
 		if (meta != null) return meta;
 
@@ -111,7 +114,18 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern) {
-		return (db != null) ? App.get().execute(() -> query(idPattern)) : completedEmptyMap();
+		return (db != null) ? queue.enqueue(() -> query(idPattern)) : completedEmptyMap();
+	}
+
+	public FutureSupplier<Void> updateDuration(PlayableItem item, long duration) {
+		if (db == null) return completedVoid();
+
+		return queue.enqueue(() -> {
+			ContentValues values = new ContentValues(1);
+			values.put(COL_DURATION, duration);
+			db.update(TABLE, values, COL_ID + " = ?", new String[]{item.getId()});
+			return null;
+		});
 	}
 
 	private Map<String, MetadataBuilder> query(String idPattern) {
@@ -139,7 +153,7 @@ public class MetadataRetriever implements Closeable {
 		}
 	}
 
-	private MetadataBuilder queryMetadata(MediaLib.PlayableItem item) {
+	private MetadataBuilder queryMetadata(PlayableItem item) {
 		if (db == null) return null;
 
 		try (Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID + " = ?",
@@ -171,7 +185,7 @@ public class MetadataRetriever implements Closeable {
 		if (art != null) meta.setImageUri(bitmapCache.getImageUri(art, tb));
 	}
 
-	private void insertMetadata(MetaBuilder meta, MediaLib.PlayableItem item) {
+	private void insertMetadata(MetaBuilder meta, PlayableItem item) {
 		if ((db == null) || !meta.durationSet) return;
 		ContentValues values = meta.values;
 		Bitmap bm = meta.image;

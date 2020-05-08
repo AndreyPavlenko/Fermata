@@ -39,11 +39,11 @@ import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
  */
 public abstract class BrowsableItemBase extends ItemBase implements BrowsableItem, BrowsableItemPrefs {
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static final AtomicReferenceFieldUpdater<BrowsableItemBase, FutureSupplier<List<Item>>> children =
-			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(BrowsableItemBase.class, FutureSupplier.class, "childrenHolder");
+	private static final AtomicReferenceFieldUpdater<BrowsableItemBase, FutureSupplier<List<Item>>> CHILDREN =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(BrowsableItemBase.class, FutureSupplier.class, "children");
 	@Keep
 	@SuppressWarnings("unused")
-	private volatile FutureSupplier<List<Item>> childrenHolder;
+	private volatile FutureSupplier<List<Item>> children;
 	private FutureSupplier<Iterator<PlayableItem>> shuffle;
 
 	public BrowsableItemBase(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
@@ -61,29 +61,29 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	@NonNull
 	@Override
 	public FutureSupplier<List<Item>> getUnsortedChildren() {
-		FutureSupplier<List<Item>> c = children.get(this);
+		FutureSupplier<List<Item>> c = CHILDREN.get(this);
 		if (c != null) return c;
 
-		FutureSupplier<List<Item>> load = listChildren();
+		Promise<List<Item>> load = new Promise<>();
 
-		for (; !children.compareAndSet(this, null, load); c = children.get(this)) {
+		for (; !CHILDREN.compareAndSet(this, null, load); c = CHILDREN.get(this)) {
 			if (c != null) return c;
 		}
 
-		load.thenReplaceOrClear(children, this);
-		c = children.get(this);
+		listChildren().thenReplaceOrClear(CHILDREN, this, load);
+		c = CHILDREN.get(this);
 		return (c != null) ? c : load;
 	}
 
 	@NonNull
 	@Override
 	public FutureSupplier<List<Item>> getChildren() {
-		FutureSupplier<List<Item>> c = children.get(this);
+		FutureSupplier<List<Item>> c = CHILDREN.get(this);
 		if (isDone(c)) return c;
 
 		LoadChildren load = new LoadChildren();
 
-		for (; !children.compareAndSet(this, c, load); c = children.get(this)) {
+		for (; !CHILDREN.compareAndSet(this, c, load); c = CHILDREN.get(this)) {
 			if (isDone(c)) return c;
 		}
 
@@ -94,9 +94,9 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 			load.setProgress(list, 1, 2);
 			return loadMetadata(list).then(v -> sortChildren(list));
-		}).thenReplaceOrClear(children, this, load);
+		}).thenReplaceOrClear(CHILDREN, this, load);
 
-		c = children.get(this);
+		c = CHILDREN.get(this);
 		return (c != null) ? c : load;
 	}
 
@@ -190,7 +190,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	@NonNull
 	@Override
 	public FutureSupplier<Void> updateTitles() {
-		FutureSupplier<List<Item>> list = children.get(this);
+		FutureSupplier<List<Item>> list = CHILDREN.get(this);
 		if (list == null) return super.updateTitles();
 		return list.then(children -> Async.forEach(Item::updateTitles, children)).then(v -> super.updateTitles());
 	}
@@ -198,15 +198,15 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	@NonNull
 	@Override
 	public FutureSupplier<Void> updateSorting() {
-		FutureSupplier<List<Item>> list = children.get(this);
+		FutureSupplier<List<Item>> list = CHILDREN.get(this);
 		if (list == null) return completedVoid();
-		return list.map(ArrayList::new).thenReplaceOrClear(children, this, list).then(v -> updateTitles());
+		return list.map(ArrayList::new).thenReplaceOrClear(CHILDREN, this, list).then(v -> updateTitles());
 	}
 
 	void setChildren(List<Item> c) {
 		SortedItems sorted = new SortedItems(c);
 		setSeqNum(sorted);
-		children.set(this, completed(sorted));
+		CHILDREN.set(this, completed(sorted));
 		updateTitles();
 	}
 

@@ -21,12 +21,10 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { url 'https://storage.googleapis.com/r8-releases/raw' }
     }
 
     dependencies {
-        classpath 'com.android.tools:r8:2.0.64'
-        classpath 'com.android.tools.build:gradle:4.0.0-beta03'
+        classpath 'com.android.tools.build:gradle:4.0.0-beta05'
         classpath 'com.google.gms:google-services:4.3.3'
     }
 }
@@ -71,6 +69,10 @@ subprojects {
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_1_8
             targetCompatibility = JavaVersion.VERSION_1_8
+        }
+
+        testOptions {
+            unitTests.returnDefaultValues = true
         }
     }
 

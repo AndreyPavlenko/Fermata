@@ -440,8 +440,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			init();
 			fireBroadcastEvent(SERVICE_BOUND);
 
-			goToCurrent().onSuccess(ok -> {
-				if (!ok) showFragment(R.id.nav_folders);
+			goToCurrent().onCompletion((ok, fail) -> {
+				if (fail != null) {
+					Log.e(getClass().getName(), "Last played track not found", fail);
+					showFragment(R.id.nav_folders);
+				} else if (!ok) {
+					showFragment(R.id.nav_folders);
+				}
 			});
 
 			a.checkPermissions(getRequiredPermissions());

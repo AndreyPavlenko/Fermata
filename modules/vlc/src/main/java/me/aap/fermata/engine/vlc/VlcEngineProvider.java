@@ -94,7 +94,11 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			media.parse(ParseLocal | ParseNetwork | FetchLocal | FetchNetwork);
 
 			String m = media.getMeta(IMedia.Meta.Title);
-			if ((m != null) && (fd != null) && m.startsWith("fd://")) m = null;
+
+			if (m != null) {
+				if (m.startsWith("vfs?resource=") || ((fd != null) && m.startsWith("fd://"))) m = null;
+			}
+
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
 			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
 

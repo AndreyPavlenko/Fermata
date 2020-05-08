@@ -3,14 +3,14 @@ package me.aap.fermata;
 import android.content.SharedPreferences;
 
 import me.aap.utils.app.App;
-import me.aap.utils.app.SplitCompatApp;
+import me.aap.utils.app.NetSplitCompatApp;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
 /**
  * @author Andrey Pavlenko
  */
-public class FermataApplication extends SplitCompatApp {
+public class FermataApplication extends NetSplitCompatApp {
 	private volatile SharedPreferenceStore preferenceStore;
 
 	public static FermataApplication get() {
@@ -37,6 +37,6 @@ public class FermataApplication extends SplitCompatApp {
 
 	@Override
 	protected int getMaxNumberOfThreads() {
-		return 2;
+		return 5;
 	}
 }

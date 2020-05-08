@@ -12,7 +12,6 @@ import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.fermata.BuildConfig.DEBUG;
-import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 
@@ -21,39 +20,39 @@ import static me.aap.utils.async.Completed.completedVoid;
  */
 class CueTrackItem extends PlayableItemBase {
 	public static final String SCHEME = "cuetrack";
+	private final String title;
+	private final String performer;
+	private final String writer;
+	private final String albumTitle;
 	private final int trackNumber;
 	private final long offset;
+	private long duration;
 	private final boolean isVideo;
-	private MediaMetadataCompat.Builder metaBuilder;
 
 	CueTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file, String title,
 							 String performer, String writer, String albumTitle, long offset, boolean isVideo) {
 		super(id, parent, file);
 
-		MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder();
-		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
-
-		if (performer != null) {
-			meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, performer);
-		}
-		if (writer != null) {
-			meta.putString(MediaMetadataCompat.METADATA_KEY_WRITER, writer);
-		}
-		if (albumTitle != null) {
-			meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, albumTitle);
-		}
-
+		this.title = title;
+		this.performer = performer;
+		this.writer = writer;
+		this.albumTitle = albumTitle;
 		this.trackNumber = trackNumber;
 		this.offset = offset;
 		this.isVideo = isVideo;
 	}
 
-	private CueTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
-											 long offset, boolean isVideo) {
-		super(id, parent, file);
-		this.trackNumber = trackNumber;
-		this.offset = offset;
-		this.isVideo = isVideo;
+	private CueTrackItem(String id, BrowsableItem parent, CueTrackItem item) {
+		super(id, parent, item.getFile());
+		this.title = item.title;
+		this.performer = item.performer;
+		this.writer = item.writer;
+		this.albumTitle = item.albumTitle;
+		this.trackNumber = item.trackNumber;
+		this.offset = item.offset;
+		this.isVideo = item.isVideo;
+		this.duration = item.duration;
+		setMeta(item.getMediaData());
 	}
 
 	@NonNull
@@ -88,7 +87,20 @@ class CueTrackItem extends PlayableItemBase {
 	@NonNull
 	@Override
 	FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
-		return completed(meta.build());
+		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
+		meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+
+		if (performer != null) {
+			meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, performer);
+		}
+		if (writer != null) {
+			meta.putString(MediaMetadataCompat.METADATA_KEY_WRITER, writer);
+		}
+		if (albumTitle != null) {
+			meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, albumTitle);
+		}
+
+		return super.buildMeta(meta);
 	}
 
 	@Override
@@ -96,10 +108,8 @@ class CueTrackItem extends PlayableItemBase {
 		return offset;
 	}
 
-	void build(long duration) {
-		metaBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
-		setMeta(metaBuilder.build());
-		metaBuilder = null;
+	void duration(long duration) {
+		this.duration = duration;
 	}
 
 	@NonNull
@@ -128,7 +138,7 @@ class CueTrackItem extends PlayableItemBase {
 				if (DEBUG && !getFile().equals(c.getFile())) throw new AssertionError();
 				return c;
 			} else {
-				exported = new CueTrackItem(exportId, parent, trackNumber, getFile(), offset, isVideo);
+				exported = new CueTrackItem(exportId, parent, this);
 			}
 		}
 

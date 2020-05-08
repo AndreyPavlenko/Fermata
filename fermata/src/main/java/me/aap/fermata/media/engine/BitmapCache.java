@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.ReferenceQueue;
@@ -26,8 +27,11 @@ import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 
+import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.text.SharedTextBuilder;
@@ -43,14 +47,17 @@ import static me.aap.utils.ui.UiUtils.resizedBitmap;
  * @author Andrey Pavlenko
  */
 public class BitmapCache {
+	private final MediaLib lib;
 	private final File iconsCache;
 	private final File imageCache;
 	private final String iconsCacheUri;
 	private final String imageCacheUri;
 	private final Map<String, Ref> cache = new HashMap<>();
 	private final ReferenceQueue<Bitmap> refQueue = new ReferenceQueue<>();
+	private final PromiseQueue queue = new PromiseQueue(App.get().getExecutor());
 
-	public BitmapCache() {
+	public BitmapCache(MediaLib lib) {
+		this.lib = lib;
 		File cache = App.get().getExternalCacheDir();
 		iconsCache = new File(cache, "icons").getAbsoluteFile();
 		imageCache = new File(cache, "images").getAbsoluteFile();
@@ -91,7 +98,7 @@ public class BitmapCache {
 		}
 
 		if (bm != null) return completed(bm);
-		return App.get().execute(() -> loadBitmap(ctx, uri, iconUri, cache, size));
+		return queue.enqueue(() -> loadBitmap(ctx, uri, iconUri, cache, size));
 	}
 
 	private Bitmap loadBitmap(Context ctx, String uri, String iconUri, boolean cache, int size) {
@@ -112,36 +119,46 @@ public class BitmapCache {
 	}
 
 	private Bitmap loadBitmap(Context ctx, String uri, String cacheUri, int size) {
-		Bitmap bm = null;
+		try {
+			Bitmap bm = null;
+			Uri u = Uri.parse(uri);
+			String scheme = u.getScheme();
+			if (scheme == null) return null;
 
-		if (uri.startsWith("http://") || uri.startsWith("https://")) {
-			try (InputStream in = new URL(uri).openStream()) {
-				bm = BitmapFactory.decodeStream(in);
-			} catch (Exception ex) {
-				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+			switch (scheme) {
+				case "file":
+					try (ParcelFileDescriptor fd = ctx.getContentResolver().openFileDescriptor(Uri.parse(uri), "r")) {
+						if (fd != null) bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
+					}
+					break;
+				case ContentResolver.SCHEME_ANDROID_RESOURCE:
+					Resources res = ctx.getResources();
+					String[] s = uri.split("/");
+					int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
+					Drawable d = res.getDrawable(id, ctx.getTheme());
+					if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
+					break;
+				case "http":
+				case "http:":
+					bm = loadHttpBitmap(uri);
+				default:
+					FermataVfsManager vfs = lib.getVfsManager();
+					if (vfs.isSupportedScheme(scheme)) bm = loadHttpBitmap(vfs.getHttpUri(u).toString());
 			}
-		} else if (uri.startsWith(ContentResolver.SCHEME_ANDROID_RESOURCE)) {
-			try {
-				Resources res = ctx.getResources();
-				String[] s = uri.split("/");
-				int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
-				Drawable d = res.getDrawable(id, ctx.getTheme());
-				if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
-			} catch (Exception ex) {
-				Log.e(getClass().getName(), "Failed to load bitmap: " + uri, ex);
-			}
-		} else {
-			ContentResolver cr = ctx.getContentResolver();
-			try (ParcelFileDescriptor fd = cr.openFileDescriptor(Uri.parse(uri), "r")) {
-				if (fd != null) bm = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor());
-			} catch (Exception ex) {
-				Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
-			}
+
+			if (bm == null) return null;
+			if (size != 0) bm = resizedBitmap(bm, size);
+			return (cacheUri != null) ? cacheBitmap(cacheUri, bm) : bm;
+		} catch (Exception ex) {
+			Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+			return null;
 		}
+	}
 
-		if (bm == null) return null;
-		if (size != 0) bm = resizedBitmap(bm, size);
-		return (cacheUri != null) ? cacheBitmap(cacheUri, bm) : bm;
+	private Bitmap loadHttpBitmap(String uri) throws IOException {
+		try (InputStream in = new URL(uri).openStream()) {
+			return BitmapFactory.decodeStream(in);
+		}
 	}
 
 	private Bitmap cacheBitmap(String uri, Bitmap bm) {
@@ -175,10 +192,6 @@ public class BitmapCache {
 			default:
 				return 192;
 		}
-	}
-
-	public FutureSupplier<String> addBitmap(Bitmap bm) {
-		return App.get().execute(() -> saveBitmap(bm));
 	}
 
 	private String saveBitmap(Bitmap bm) {

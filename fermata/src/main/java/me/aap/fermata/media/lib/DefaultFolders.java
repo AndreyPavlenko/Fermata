@@ -3,6 +3,7 @@ package me.aap.fermata.media.lib;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -120,18 +121,23 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		List<Item> children = new ArrayList<>(pref.length);
 		Set<String> names = new HashSet<>((int) (pref.length * 1.5));
 
-		return Async.forEach(u -> vfsManager.getResource(Uri.parse(u)).then(res -> {
-			if (!(res instanceof VirtualFolder)) return completedVoid();
+		return Async.forEach(u -> vfsManager.getResource(Uri.parse(u))
+				.ifFail(fail -> {
+					Log.e(getClass().getName(), "Failed to load folder " + u, fail);
+					return null;
+				})
+				.then(res -> {
+					if (!(res instanceof VirtualFolder)) return completedVoid();
 
-			VirtualFolder folder = (VirtualFolder) res;
-			String name = folder.getName();
-			if (!names.add(name)) name = sha1String(u);
+					VirtualFolder folder = (VirtualFolder) res;
+					String name = folder.getName();
+					if (!names.add(name)) name = sha1String(u);
 
-			String id = SharedTextBuilder.get().append(FolderItem.SCHEME).append(':').append(name).releaseString();
-			FolderItem i = FolderItem.create(id, this, folder, lib);
-			children.add(i);
-			return completedVoid();
-		}), pref).then(v -> completed(children));
+					String id = SharedTextBuilder.get().append(FolderItem.SCHEME).append(':').append(name).releaseString();
+					FolderItem i = FolderItem.create(id, this, folder, lib);
+					children.add(i);
+					return completedVoid();
+				}), pref).then(v -> completed(children));
 	}
 
 	@Override

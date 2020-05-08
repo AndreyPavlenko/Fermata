@@ -11,6 +11,7 @@ import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_AR
 public class MetadataBuilder {
 	private final MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
 	private String imageUri;
+	private long duration;
 
 	public String getImageUri() {
 		return imageUri;
@@ -21,11 +22,16 @@ public class MetadataBuilder {
 		builder.putString(METADATA_KEY_ALBUM_ART_URI, imageUri);
 	}
 
+	public long getDuration() {
+		return duration;
+	}
+
 	public void putString(String key, String value) {
 		builder.putString(key, value);
 	}
 
 	public void putLong(String key, long value) {
+		if (MediaMetadataCompat.METADATA_KEY_DURATION.equals(key)) duration = value;
 		builder.putLong(key, value);
 	}
 

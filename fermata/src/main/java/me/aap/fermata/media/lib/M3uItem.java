@@ -20,10 +20,10 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VfsManager;
+import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualResource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -40,9 +40,8 @@ class M3uItem extends BrowsableItemBase {
 	private final String cover;
 	private FutureSupplier<Uri> iconUri;
 
-	private M3uItem(String id, BrowsableItem parent, VirtualResource dir, VirtualResource m3uFile) {
+	private M3uItem(String id, BrowsableItem parent, VirtualResource dir, VirtualFile m3uFile) {
 		super(id, parent, m3uFile);
-		Context ctx = parent.getLib().getContext();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
 		String idPath = id.substring(SCHEME.length());
@@ -65,8 +64,8 @@ class M3uItem extends BrowsableItemBase {
 		byte type = 0;
 		boolean first = true;
 
-		try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(
-				ctx.getContentResolver().openInputStream(m3uFile.getUri())), UTF_8));
+		try (BufferedReader r = new BufferedReader(new InputStreamReader(
+				m3uFile.getInputStream().asInputStream(), UTF_8));
 				 SharedTextBuilder tb = SharedTextBuilder.get()) {
 			read:
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
@@ -102,7 +101,7 @@ class M3uItem extends BrowsableItemBase {
 						i = indexOfChar(l, start, len, "\",");
 						if (i == -1) continue read;
 						if (l.charAt(i) != '\"') continue;
-						String value = l.substring(start, i).trim();
+						String value = trim(l.substring(start, i));
 
 						switch (key) {
 							case "logo":
@@ -115,26 +114,26 @@ class M3uItem extends BrowsableItemBase {
 						}
 					}
 				} else if (l.startsWith("#EXTGRP:")) {
-					group = l.substring(8);
+					group = trim(l.substring(8));
 					continue;
 				} else if (l.startsWith("#PLAYLIST:")) {
-					m3uName = l.substring(10).trim();
+					m3uName = trim(l.substring(10));
 					continue;
 				} else if (l.startsWith("#EXTALB:")) {
-					if (first) m3uAlbum = l.substring(8).trim();
-					else album = l.substring(8).trim();
+					if (first) m3uAlbum = trim(l.substring(8));
+					else album = trim(l.substring(8));
 					continue;
 				} else if (l.startsWith("#EXTART:")) {
-					if (first) m3uArtist = l.substring(8).trim();
-					else artist = l.substring(8).trim();
+					if (first) m3uArtist = trim(l.substring(8));
+					else artist = trim(l.substring(8));
 					continue;
 				} else if (l.startsWith("#EXTGENRE:")) {
-					if (first) m3uGenre = l.substring(8).trim();
-					else genre = l.substring(8).trim();
+					if (first) m3uGenre = trim(l.substring(8));
+					else genre = trim(l.substring(8));
 					continue;
 				} else if (l.startsWith("#EXTIMG:")) {
-					if (first) cover = l.substring(8).trim();
-					else logo = l.substring(8).trim();
+					if (first) cover = trim(l.substring(8));
+					else logo = trim(l.substring(8));
 					continue;
 				} else if (l.startsWith("#EXT-X-MEDIA:")) {
 					byte t = 0;
@@ -223,7 +222,7 @@ class M3uItem extends BrowsableItemBase {
 	}
 
 	@NonNull
-	static M3uItem create(String id, BrowsableItem parent, VirtualResource dir, VirtualResource m3uFile,
+	static M3uItem create(String id, BrowsableItem parent, VirtualResource dir, VirtualFile m3uFile,
 												DefaultMediaLib lib) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
@@ -249,7 +248,7 @@ class M3uItem extends BrowsableItemBase {
 			if (file == null) return null;
 
 			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, parent.getFile(), file.getFile(), lib);
+			return create(id, parent, parent.getFile(), (VirtualFile) file.getFile(), lib);
 		});
 	}
 
@@ -319,5 +318,9 @@ class M3uItem extends BrowsableItemBase {
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
 		return completed(subtitle);
+	}
+
+	private static String trim(String s) {
+		return (s = s.trim()).isEmpty() ? null : s;
 	}
 }

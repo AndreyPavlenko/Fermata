@@ -27,12 +27,12 @@ import static me.aap.utils.async.Completed.completedVoid;
  */
 abstract class PlayableItemBase extends ItemBase implements PlayableItem, PlayableItemPrefs {
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static final AtomicReferenceFieldUpdater<PlayableItemBase, FutureSupplier<MediaMetadataCompat>> meta =
-			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(PlayableItemBase.class, FutureSupplier.class, "metaHolder");
+	private static final AtomicReferenceFieldUpdater<PlayableItemBase, FutureSupplier<MediaMetadataCompat>> META =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(PlayableItemBase.class, FutureSupplier.class, "meta");
 
 	@Keep
 	@SuppressWarnings("unused")
-	private volatile FutureSupplier<MediaMetadataCompat> metaHolder;
+	private volatile FutureSupplier<MediaMetadataCompat> meta;
 
 	public PlayableItemBase(String id, @NonNull BrowsableItem parent, @NonNull VirtualResource file) {
 		super(id, parent, file);
@@ -53,17 +53,17 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	@NonNull
 	@Override
 	public FutureSupplier<MediaMetadataCompat> getMediaData() {
-		FutureSupplier<MediaMetadataCompat> m = meta.get(this);
+		FutureSupplier<MediaMetadataCompat> m = META.get(this);
 		if (m != null) return m;
 
-		Promise<MediaMetadataCompat> load = getLib().newPromise();
+		Promise<MediaMetadataCompat> load = new Promise<>();
 
-		for (; !meta.compareAndSet(this, null, load); m = meta.get(this)) {
+		for (; !META.compareAndSet(this, null, load); m = META.get(this)) {
 			if (m != null) return m;
 		}
 
-		loadMeta().thenReplaceOrClear(meta, this, load);
-		m = meta.get(this);
+		loadMeta().thenReplaceOrClear(META, this, load);
+		m = META.get(this);
 		return (m != null) ? m : load;
 	}
 
@@ -71,9 +71,11 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	@Override
 	public FutureSupplier<Void> setDuration(long duration) {
 		return getMediaData().then(md -> {
-			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
+			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(md);
 			b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
 			setMeta(completed(b.build()));
+			updateTitles();
+			getLib().getMetadataRetriever().updateDuration(this, duration);
 			return completedVoid();
 		});
 	}
@@ -100,17 +102,17 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	}
 
 	void setMeta(FutureSupplier<MediaMetadataCompat> m) {
-		meta.set(this, m);
-		m.thenReplaceOrClear(meta, this);
+		META.set(this, m);
+		m.thenReplaceOrClear(META, this);
 	}
 
 	void setMeta(MetadataBuilder mb) {
-		FutureSupplier<MediaMetadataCompat> m = meta.get(this);
+		FutureSupplier<MediaMetadataCompat> m = META.get(this);
 		if (m != null) return;
 
 		m = buildMeta(mb);
 
-		if (meta.compareAndSet(this, null, m)) m.thenReplace(meta, this);
+		if (META.compareAndSet(this, null, m)) m.thenReplace(META, this);
 		else m.cancel();
 	}
 

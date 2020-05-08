@@ -32,11 +32,13 @@ import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.async.Promise;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
+import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.vfs.content.ContentFileSystem;
+import me.aap.utils.vfs.generic.GenericFileSystem;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static java.util.Objects.requireNonNull;
@@ -121,15 +123,6 @@ public interface MediaLib {
 
 	default long getDefaultTimeout() {
 		return 15000;
-	}
-
-	default <T> Promise<T> newPromise() {
-		return new Promise<T>() {
-			@Override
-			protected long getTimeout() {
-				return getDefaultTimeout();
-			}
-		};
 	}
 
 	interface Item {
@@ -272,7 +265,8 @@ public interface MediaLib {
 		boolean isVideo();
 
 		default boolean isStream() {
-			return !getFile().isLocalFile();
+			VirtualFileSystem.Provider p = getFile().getVirtualFileSystem().getProvider();
+			return (p instanceof GenericFileSystem.Provider) || (p instanceof ContentFileSystem.Provider);
 		}
 
 		@NonNull
@@ -289,7 +283,13 @@ public interface MediaLib {
 
 		@NonNull
 		default Uri getLocation() {
-			return getFile().getUri();
+			VirtualResource file = getFile();
+			if (file.isLocalFile()) return file.getUri();
+
+			VirtualFileSystem.Provider p = getFile().getVirtualFileSystem().getProvider();
+			if (p instanceof GenericFileSystem.Provider) return file.getUri();
+
+			return getLib().getVfsManager().getHttpUri(file);
 		}
 
 		@NonNull

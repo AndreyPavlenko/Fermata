@@ -631,7 +631,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 		PreparedSource prepare() {
 			PlayableItem pi = getItem();
-			boolean stream = (media.getType() == IMedia.Type.Stream) || !pi.getFile().isLocalFile();
+			boolean stream = pi.isStream();
 
 			if (pi.isVideo()) {
 				ArrayList<AudioStreamInfo> audio = new ArrayList<>();

@@ -31,11 +31,11 @@ import static me.aap.utils.misc.Assert.assertNotEquals;
  */
 abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static final AtomicReferenceFieldUpdater<ItemBase, FutureSupplier<MediaDescriptionCompat>> description =
-			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class, FutureSupplier.class, "descriptionHolder");
+	private static final AtomicReferenceFieldUpdater<ItemBase, FutureSupplier<MediaDescriptionCompat>> MD =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class, FutureSupplier.class, "description");
 	@Keep
 	@SuppressWarnings("unused")
-	private volatile FutureSupplier<MediaDescriptionCompat> descriptionHolder;
+	private volatile FutureSupplier<MediaDescriptionCompat> description;
 	private final String id;
 	private final BrowsableItem parent;
 	private final VirtualResource file;
@@ -63,12 +63,12 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@NonNull
 	@Override
 	public FutureSupplier<MediaDescriptionCompat> getMediaDescription() {
-		FutureSupplier<MediaDescriptionCompat> d = description.get(this);
+		FutureSupplier<MediaDescriptionCompat> d = MD.get(this);
 		if (d != null) return d;
 
-		Promise<MediaDescriptionCompat> load = getLib().newPromise();
+		Promise<MediaDescriptionCompat> load = new Promise<>();
 
-		for (; !description.compareAndSet(this, null, load); d = description.get(this)) {
+		for (; !MD.compareAndSet(this, null, load); d = MD.get(this)) {
 			if (d != null) return d;
 		}
 
@@ -86,7 +86,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 			MediaDescriptionCompat dsc = b.build();
 			load.complete(dsc);
 			d = completed(dsc);
-			return description.compareAndSet(this, load, d) ? d : getMediaDescription();
+			return MD.compareAndSet(this, load, d) ? d : getMediaDescription();
 		}
 
 		title.then(t -> {
@@ -100,9 +100,9 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 					return completed(b.build());
 				});
 			});
-		}).thenReplaceOrClear(description, this, load);
+		}).thenReplaceOrClear(MD, this, load);
 
-		d = description.get(this);
+		d = MD.get(this);
 		return (d != null) ? d : load;
 	}
 
@@ -111,8 +111,8 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	void setMediaDescription(FutureSupplier<MediaDescriptionCompat> dsc) {
-		description.set(this, dsc);
-		dsc.thenReplaceOrClear(description, this);
+		MD.set(this, dsc);
+		dsc.thenReplaceOrClear(MD, this);
 	}
 
 	protected FutureSupplier<String> buildTitle() {
@@ -138,7 +138,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@NonNull
 	@Override
 	public FutureSupplier<Void> updateTitles() {
-		description.set(this, null);
+		MD.set(this, null);
 		return completedVoid();
 	}
 

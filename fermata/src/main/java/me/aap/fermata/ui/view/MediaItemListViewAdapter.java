@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.view;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -17,6 +18,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
@@ -56,7 +58,12 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 
 		parent.getChildren().withMainHandler().addConsumer((result, fail, progress, total) -> {
 			if (this.parent != parent) return;
-			setChildren(result);
+			if (fail != null) {
+				Log.e(getClass().getName(), "Failed to load children", fail);
+				Utils.showAlert(getListView().getContext(), fail.getLocalizedMessage());
+			} else {
+				setChildren(result);
+			}
 		});
 	}
 

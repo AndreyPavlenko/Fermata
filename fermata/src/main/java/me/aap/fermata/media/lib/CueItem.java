@@ -1,7 +1,6 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
-import android.media.MediaMetadataRetriever;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.util.Log;
 
@@ -13,16 +12,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 
@@ -33,7 +33,7 @@ class CueItem extends BrowsableItemBase {
 	public static final String SCHEME = "cue";
 	private final List<CueTrackItem> tracks;
 
-	private CueItem(String id, BrowsableItem parent, VirtualFolder dir, VirtualResource cueFile) {
+	private CueItem(String id, BrowsableItem parent, VirtualFolder dir, VirtualFile cueFile) {
 		super(id, parent, cueFile);
 
 		Context ctx = parent.getLib().getContext();
@@ -50,10 +50,9 @@ class CueItem extends BrowsableItemBase {
 		String albumWriter = null;
 		boolean isVideo = false;
 		boolean wasTrack = false;
-		MediaMetadataRetriever mmr = null;
 
-		try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(
-				ctx.getContentResolver().openInputStream(cueFile.getUri())), UTF_8));
+		try (BufferedReader r = new BufferedReader(new InputStreamReader(
+				cueFile.getInputStream().asInputStream(), UTF_8));
 				 SharedTextBuilder tb = SharedTextBuilder.get()) {
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
@@ -115,17 +114,12 @@ class CueItem extends BrowsableItemBase {
 
 			if (size > 0) {
 				CueTrackItem last = tracks.get(size - 1);
-				mmr = new MediaMetadataRetriever();
-				mmr.setDataSource(ctx, last.getFile().getUri());
-				String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-				if (dur != null) {
-					last.build(Long.parseLong(dur) - last.getOffset());
-				}
+				MetadataBuilder md = getLib().getMetadataRetriever().getMediaMetadata(last).getOrThrow();
+				long dur = md.getDuration();
+				if (dur > 0) last.duration(dur - last.getOffset());
 			}
 		} catch (Exception ex) {
 			Log.e("CueItem", "Failed to parse cue file: " + getFile(), ex);
-		} finally {
-			if (mmr != null) mmr.release();
 		}
 
 		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
@@ -135,7 +129,7 @@ class CueItem extends BrowsableItemBase {
 		this.tracks = tracks;
 	}
 
-	static CueItem create(String id, BrowsableItem parent, VirtualFolder dir, VirtualResource cueFile,
+	static CueItem create(String id, BrowsableItem parent, VirtualFolder dir, VirtualFile cueFile,
 												DefaultMediaLib lib) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
@@ -162,7 +156,7 @@ class CueItem extends BrowsableItemBase {
 			if (file == null) return null;
 
 			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, parent.getFile(), file.getFile(), lib);
+			return create(id, parent, parent.getFile(), (VirtualFile) file.getFile(), lib);
 		});
 	}
 
@@ -212,7 +206,7 @@ class CueItem extends BrowsableItemBase {
 
 		if (trackNum > 1) {
 			CueTrackItem prev = tracks.get(trackNum - 2);
-			prev.build(offset - prev.getOffset());
+			prev.duration(offset - prev.getOffset());
 		}
 	}
 

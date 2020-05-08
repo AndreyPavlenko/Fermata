@@ -114,6 +114,7 @@ public class FermataVfsManager extends VfsManager {
 
 		if (p != null) {
 			if (isSupportedScheme(scheme)) return completed(p);
+			FermataApplication.get().getPreferenceStore().applyBooleanPref(pref, true);
 			return addProvider(p, moduleName).map(fs -> p);
 		} else {
 			return installModule(className, moduleId, moduleName, pref)
