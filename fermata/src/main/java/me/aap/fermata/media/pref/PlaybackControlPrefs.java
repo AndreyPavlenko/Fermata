@@ -4,11 +4,10 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 
+import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
-
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.event.BasicEventBroadcaster;
 
 /**
  * @author Andrey Pavlenko
@@ -24,6 +23,10 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 	Pref<IntSupplier> PREV_NEXT_LONG_TIME = Pref.i("PREV_NEXT_LONG_TIME", 5);
 	Pref<IntSupplier> PREV_NEXT_LONG_TIME_UNIT = Pref.i("PREV_NEXT_LONG_TIME_UNIT", TIME_UNIT_PERCENT);
 	Pref<BooleanSupplier> PLAY_PAUSE_STOP = Pref.b("PLAY_PAUSE_STOP", true);
+	Pref<IntSupplier> VIDEO_CONTROL_START_DELAY = Pref.i("VIDEO_CONTROL_START_DELAY", 0);
+	Pref<IntSupplier> VIDEO_CONTROL_TOUCH_DELAY = Pref.i("VIDEO_CONTROL_TOUCH_DELAY", 5);
+	Pref<IntSupplier> VIDEO_CONTROL_SEEK_DELAY = Pref.i("VIDEO_CONTROL_SEEK_DELAY", 3);
+	Pref<BooleanSupplier> VIDEO_AA_SHOW_STATUS = Pref.b("VIDEO_AA_SHOW_STATUS", false);
 
 	default int getRwFfTimePref() {
 		return getIntPref(RW_FF_TIME);
@@ -51,6 +54,22 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 
 	default boolean getPlayPauseStopPref() {
 		return getBooleanPref(PLAY_PAUSE_STOP);
+	}
+
+	default int getVideoControlStartDelayPref() {
+		return getIntPref(VIDEO_CONTROL_START_DELAY);
+	}
+
+	default int getVideoControlTouchDelayPref() {
+		return getIntPref(VIDEO_CONTROL_TOUCH_DELAY);
+	}
+
+	default int getVideoControlSeekDelayPref() {
+		return getIntPref(VIDEO_CONTROL_SEEK_DELAY);
+	}
+
+	default boolean getVideoAaShowStatusPref() {
+		return getBooleanPref(VIDEO_AA_SHOW_STATUS);
 	}
 
 	static long getTimeMillis(long dur, int time, int unit) {

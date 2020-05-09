@@ -25,14 +25,19 @@ import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityBase;
 
+import static me.aap.fermata.media.pref.MediaLibPrefs.EXO_ENABLED;
+import static me.aap.fermata.media.pref.MediaLibPrefs.VLC_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
+import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_ENGINE;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MediaEngineManager implements PreferenceStore.Listener {
+	private static final String EXO_PROV_CLASS = "me.aap.fermata.engine.exoplayer.ExoPlayerEngineProvider";
+	private static final String VLC_PROV_CLASS = "me.aap.fermata.engine.vlc.VlcEngineProvider";
 	private static final String MODULE_EXO = "exoplayer";
 	private static final String MODULE_VLC = "vlc";
 	final MediaLib lib;
@@ -41,6 +46,18 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	MediaEngineProvider vlcPlayer;
 
 	public MediaEngineManager(MediaLib lib) {
+		MediaLibPrefs prefs = lib.getPrefs();
+
+		if (!prefs.hasPref(EXO_ENABLED) && isProviderAvailable(EXO_PROV_CLASS)) {
+			prefs.applyBooleanPref(EXO_ENABLED, true);
+		}
+		if (!prefs.hasPref(VLC_ENABLED) && isProviderAvailable(VLC_PROV_CLASS)) {
+			prefs.applyBooleanPref(VLC_ENABLED, true);
+		}
+		if (!prefs.hasPref(VIDEO_ENGINE) && isProviderAvailable(VLC_PROV_CLASS)) {
+			prefs.setVideoEnginePref(MEDIA_ENG_VLC);
+		}
+
 		this.lib = lib;
 		mediaPlayer = new MediaPlayerEngineProvider();
 		mediaPlayer.init(lib.getContext());
@@ -106,11 +123,19 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		return null;
 	}
 
+	private boolean isProviderAvailable(String providerClass) {
+		try {
+			Class.forName(providerClass);
+			return true;
+		} catch (Throwable ex) {
+			return false;
+		}
+	}
+
 	private void setExoPlayer(boolean install) {
 		if (lib.getPrefs().getExoEnabledPref()) {
 			try {
-				exoPlayer = (MediaEngineProvider) Class.forName(
-						"me.aap.fermata.engine.exoplayer.ExoPlayerEngineProvider").newInstance();
+				exoPlayer = (MediaEngineProvider) Class.forName(EXO_PROV_CLASS).newInstance();
 				exoPlayer.init(lib.getContext());
 				return;
 			} catch (Throwable ex) {
@@ -129,8 +154,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private void setVlcPlayer(boolean install) {
 		if (lib.getPrefs().getVlcEnabledPref()) {
 			try {
-				vlcPlayer = (MediaEngineProvider) Class.forName(
-						"me.aap.fermata.engine.vlc.VlcEngineProvider").newInstance();
+				vlcPlayer = (MediaEngineProvider) Class.forName(VLC_PROV_CLASS).newInstance();
 				vlcPlayer.init(lib.getContext());
 				return;
 			} catch (Throwable ex) {
@@ -148,7 +172,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MediaLibPrefs.EXO_ENABLED)) {
+		if (prefs.contains(EXO_ENABLED)) {
 			if (lib.getPrefs().getExoEnabledPref()) {
 				exoPlayer = null;
 				FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);

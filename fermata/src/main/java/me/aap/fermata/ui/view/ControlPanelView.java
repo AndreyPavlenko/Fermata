@@ -26,11 +26,13 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.pref.BasicPreferenceStore;
@@ -50,6 +52,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	private static final byte MASK_VISIBLE = 1;
 	private static final byte MASK_VIDEO_MODE = 2;
 	private final ImageButton showHideBars;
+	private PlaybackControlPrefs prefs;
 	private HideTimer hideTimer;
 	private byte mask;
 
@@ -99,6 +102,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	}
 
 	public void bind(FermataServiceUiBinder b) {
+		prefs = b.getMediaSessionCallback().getPlaybackControlPrefs();
 		b.bindControlPanel(this);
 		b.bindPrevButton(findViewById(R.id.control_prev));
 		b.bindRwButton(findViewById(R.id.control_rw));
@@ -119,7 +123,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	public boolean onInterceptTouchEvent(MotionEvent e) {
 		if (hideTimer != null) {
 			hideTimer = new HideTimer(hideTimer.views);
-			FermataApplication.get().getHandler().postDelayed(hideTimer, 5000);
+			FermataApplication.get().getHandler().postDelayed(hideTimer, getTouchDelay());
 		}
 		return getActivity().interceptTouchEvent(e, super::onTouchEvent);
 	}
@@ -150,16 +154,31 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	public void enableVideoMode() {
+	public void enableVideoMode(VideoView v) {
 		if ((mask & MASK_VISIBLE) == 0) return;
 
 		MainActivityDelegate a = getActivity();
 		hideTimer = null;
 		mask |= MASK_VIDEO_MODE;
-		super.setVisibility(GONE);
-		a.getFloatingButton().setVisibility(GONE);
+
 		a.setBarsHidden(true);
 		setShowHideBarsIcon(a);
+
+		View title = v.getTitle();
+		View fb = a.getFloatingButton();
+		int delay = getStartDelay();
+
+		if (delay == 0) {
+			fb.setVisibility(GONE);
+			title.setVisibility(GONE);
+			super.setVisibility(GONE);
+		} else {
+			fb.setVisibility(VISIBLE);
+			title.setVisibility(VISIBLE);
+			super.setVisibility(VISIBLE);
+			hideTimer = new HideTimer(title, fb);
+			App.get().getHandler().postDelayed(hideTimer, delay);
+		}
 	}
 
 	public void disableVideoMode() {
@@ -180,6 +199,9 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	}
 
 	public void onVideoViewTouch(VideoView view) {
+		int delay = getTouchDelay();
+		if (delay == 0) return;
+
 		MainActivityDelegate a = getActivity();
 		View title = view.getTitle();
 		View fb = a.getFloatingButton();
@@ -194,7 +216,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			fb.setVisibility(VISIBLE);
 			clearFocus();
 			hideTimer = new HideTimer(title, fb);
-			FermataApplication.get().getHandler().postDelayed(hideTimer, 5000);
+			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
 	}
 
@@ -210,7 +232,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		fb.setVisibility(VISIBLE);
 		clearFocus();
 		hideTimer = new HideTimer(title, fb);
-		FermataApplication.get().getHandler().postDelayed(hideTimer, 3000);
+		App.get().getHandler().postDelayed(hideTimer, getSeekDelay());
 	}
 
 	@Override
@@ -526,6 +548,18 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				if (cb.isPlaying()) cb.onSetPlaybackSpeed(value);
 			}
 		}
+	}
+
+	private int getStartDelay() {
+		return (prefs == null) ? 0 : prefs.getVideoControlStartDelayPref() * 1000;
+	}
+
+	private int getTouchDelay() {
+		return (prefs == null) ? 5000 : prefs.getVideoControlTouchDelayPref() * 1000;
+	}
+
+	private int getSeekDelay() {
+		return (prefs == null) ? 3000 : prefs.getVideoControlSeekDelayPref() * 1000;
 	}
 
 	private final class HideTimer implements Runnable {

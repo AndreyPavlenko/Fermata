@@ -39,6 +39,12 @@
     <string name="time_unit_minute">Minute</string>
     <string name="time_unit_percent">Percent</string>
 
+    <string name="video_control">Video control</string>
+    <string name="video_control_start_delay">Show on start</string>
+    <string name="video_control_touch_delay">Show on touch</string>
+    <string name="video_control_seek_delay">Show on seek</string>
+    <string name="video_aa_show_status">Show status bar in Android Auto</string>
+
     <string name="enable_exoplayer">Enable ExoPlayer</string>
     <string name="enable_vlcplayer">Enable VLC</string>
     <string name="preferred_audio_engine">Preferred audio engine</string>

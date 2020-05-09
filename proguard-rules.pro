@@ -2,4 +2,5 @@
 -keepnames class me.aap.** { *; }
 -keep class org.videolan.libvlc.** { *; }
 
-# -dontoptimize
+-keep class me.aap.fermata.vfs.sftp.** { *; }
+-keep class com.jcraft.jsch.** { *; }

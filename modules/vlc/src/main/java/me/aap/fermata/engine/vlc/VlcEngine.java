@@ -632,6 +632,12 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 		PreparedSource prepare() {
 			PlayableItem pi = getItem();
 			boolean stream = pi.isStream();
+			long dur = media.getDuration();
+
+			if (dur == -1) {
+				Long itemDur = getItem().getDuration().peek();
+				if (itemDur != null) dur = itemDur;
+			}
 
 			if (pi.isVideo()) {
 				ArrayList<AudioStreamInfo> audio = new ArrayList<>();
@@ -651,11 +657,11 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 				audio.trimToSize();
 				subtitle.trimToSize();
-				return new VideoSource(pi, fd, media.getDuration(), stream,
+				return new VideoSource(pi, fd, dur, stream,
 						audio.isEmpty() ? Collections.emptyList() : audio,
 						subtitle.isEmpty() ? Collections.emptyList() : subtitle);
 			} else {
-				return new PreparedSource(pi, fd, media.getDuration(), stream);
+				return new PreparedSource(pi, fd, dur, stream);
 			}
 		}
 

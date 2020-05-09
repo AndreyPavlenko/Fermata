@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Locale;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
@@ -250,6 +251,34 @@ public class SettingsFragment extends MainActivityFragment {
 			o.pref = PlaybackControlPrefs.PLAY_PAUSE_STOP;
 			o.title = R.string.play_pause_stop;
 		});
+
+		sub2 = sub1.subSet(o -> o.title = R.string.video_control);
+		sub2.addIntPref(o -> {
+			o.store = a.getPlaybackControlPrefs();
+			o.pref = PlaybackControlPrefs.VIDEO_CONTROL_START_DELAY;
+			o.title = R.string.video_control_start_delay;
+			o.seekMax = 60;
+		});
+		sub2.addIntPref(o -> {
+			o.store = a.getPlaybackControlPrefs();
+			o.pref = PlaybackControlPrefs.VIDEO_CONTROL_TOUCH_DELAY;
+			o.title = R.string.video_control_touch_delay;
+			o.seekMax = 60;
+		});
+		sub2.addIntPref(o -> {
+			o.store = a.getPlaybackControlPrefs();
+			o.pref = PlaybackControlPrefs.VIDEO_CONTROL_SEEK_DELAY;
+			o.title = R.string.video_control_seek_delay;
+			o.seekMax = 60;
+		});
+
+		if (BuildConfig.AUTO) {
+			sub2.addBooleanPref(o -> {
+				o.store = a.getPlaybackControlPrefs();
+				o.pref = PlaybackControlPrefs.VIDEO_AA_SHOW_STATUS;
+				o.title = R.string.video_aa_show_status;
+			});
+		}
 
 		Consumer<PreferenceView.ListOpts> initList = o -> {
 			PrefCondition<BooleanSupplier> exoCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.EXO_ENABLED);

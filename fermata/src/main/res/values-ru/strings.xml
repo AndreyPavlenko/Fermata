@@ -29,6 +29,12 @@
     <string name="time_unit_minute">Минута</string>
     <string name="time_unit_percent">Процент</string>
 
+    <string name="video_control">Управление видео</string>
+    <string name="video_control_start_delay">Показывать при старте</string>
+    <string name="video_control_touch_delay">Показывать при касании</string>
+    <string name="video_control_seek_delay">Показывать при перемотке</string>
+    <string name="video_aa_show_status">Показывать статус бар в Android Auto</string>
+
     <string name="enable_exoplayer">Включить ExoPlayer</string>
     <string name="enable_vlcplayer">Включить VLC</string>
     <string name="preferred_audio_engine">Предпочтительный аудио движок</string>

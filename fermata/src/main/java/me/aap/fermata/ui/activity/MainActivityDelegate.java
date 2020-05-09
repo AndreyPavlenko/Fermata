@@ -42,6 +42,7 @@ import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.VideoFragment;
 import me.aap.fermata.ui.view.ControlPanelView;
+import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Supplier;
@@ -174,7 +175,17 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	@Override
 	public boolean isFullScreen() {
-		return videoMode || getPrefs().getFullscreenPref();
+		if (videoMode || getPrefs().getFullscreenPref()) {
+			if (isCarActivity()) {
+				FermataServiceUiBinder b = getMediaServiceBinder();
+				return (b == null) || !(b.getMediaSessionCallback().getPlaybackControlPrefs())
+						.getVideoAaShowStatusPref();
+			} else {
+				return true;
+			}
+		} else {
+			return false;
+		}
 	}
 
 	public FermataServiceUiBinder getMediaServiceBinder() {
@@ -222,12 +233,12 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		getNavBar().setVisibility(visibility);
 	}
 
-	public void setVideoMode(boolean videoMode) {
+	public void setVideoMode(boolean videoMode, VideoView v) {
 		if (videoMode) {
 			this.videoMode = true;
 			setSystemUiVisibility();
 			getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
-			getControlPanel().enableVideoMode();
+			getControlPanel().enableVideoMode(v);
 		} else {
 			this.videoMode = false;
 			setSystemUiVisibility();

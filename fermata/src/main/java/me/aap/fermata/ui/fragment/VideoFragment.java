@@ -40,8 +40,10 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 	@Override
 	public void onResume() {
 		super.onResume();
+		VideoView v = (VideoView) getView();
+		if (v == null) return;
 		MainActivityDelegate a = getMainActivity();
-		if (a != null) a.setVideoMode(!isHidden());
+		if (a != null) a.setVideoMode(!isHidden(), v);
 	}
 
 	@Override
@@ -59,9 +61,9 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 		}
 
 		if (hidden) {
-			a.setVideoMode(false);
+			a.setVideoMode(false, v);
 		} else {
-			a.setVideoMode(true);
+			a.setVideoMode(true, v);
 			v.showVideo();
 		}
 	}
@@ -73,12 +75,12 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 		MainActivityDelegate a = getMainActivity();
 		if (a == null) return;
 
-		a.setVideoMode(false);
+		a.setVideoMode(false, null);
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		if (b == null) return;
 
 		b.removeBroadcastListener(this);
-		b.getLib().getPrefs().removeBroadcastListener((VideoView) getView());
+		b.getLib().getPrefs().removeBroadcastListener(getVideoView());
 	}
 
 	@Override
@@ -86,18 +88,22 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 		return R.id.video;
 	}
 
+	public VideoView getVideoView() {
+		return (VideoView) requireNonNull(getView());
+	}
+
 	@Override
 	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
 		if (isHidden()) return;
 		MainActivityDelegate a = getMainActivity();
-		VideoView v = (VideoView) requireNonNull(getView());
+		VideoView v = getVideoView();
 
 		if ((newItem == null) || !newItem.isVideo()) {
-			a.setVideoMode(false);
+			a.setVideoMode(false, v);
 			a.backToNavFragment();
 		} else {
-			a.setVideoMode(true);
 			v.showVideo();
+			a.setVideoMode(true, v);
 		}
 	}
 
