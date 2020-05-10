@@ -25,6 +25,7 @@ import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
+import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.utils.async.Completed.completedEmptyMap;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -96,8 +97,12 @@ public class MetadataRetriever implements Closeable {
 
 		MetaBuilder mb = new MetaBuilder();
 		MediaEngineProvider vlcPlayer = mgr.vlcPlayer;
+		VirtualResource file = item.getFile();
 
-		if ((vlcPlayer != null) && (!"content".equals(item.getLocation().getScheme()))) {
+		if (file.isLocalFile() && file.getName().endsWith(".flac")) {
+			// VLC does not extract images from flac, thus prefer Android extractor for local files
+			mgr.mediaPlayer.getMediaMetadata(mb, item);
+		} else if ((vlcPlayer != null) && (!"content".equals(item.getLocation().getScheme()))) {
 			if (!vlcPlayer.getMediaMetadata(mb, item)) mgr.mediaPlayer.getMediaMetadata(mb, item);
 		} else {
 			mgr.mediaPlayer.getMediaMetadata(mb, item);

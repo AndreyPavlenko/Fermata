@@ -45,7 +45,10 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	FutureSupplier<List<Item>> listChildren(String[] ids) {
 		MediaLib lib = getLib();
 		List children = new ArrayList<>(ids.length);
-		return forEach(id -> lib.getItem(id).map(c -> children.add(toChildItem(c))), ids).map(v -> children);
+		return forEach(id -> lib.getItem(id).map(c -> {
+			if (c != null) children.add(toChildItem(c));
+			return null;
+		}), ids).map(v -> children);
 	}
 
 	public void addItem(C i) {

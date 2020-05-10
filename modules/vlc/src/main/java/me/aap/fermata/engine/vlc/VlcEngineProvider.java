@@ -11,6 +11,7 @@ import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.interfaces.IMedia;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +22,9 @@ import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
+import me.aap.utils.security.SecurityUtils;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
@@ -33,6 +36,7 @@ import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseNetwork;
 public class VlcEngineProvider implements MediaEngineProvider {
 	private LibVLC vlc;
 	private int audioSessionId;
+	private String artUri;
 
 	@Override
 	public void init(Context ctx) {
@@ -93,29 +97,46 @@ public class VlcEngineProvider implements MediaEngineProvider {
 
 			media.parse(ParseLocal | ParseNetwork | FetchLocal | FetchNetwork);
 
-			String m = media.getMeta(IMedia.Meta.Title);
+			String title = media.getMeta(IMedia.Meta.Title);
+			String artist = media.getMeta(IMedia.Meta.Artist);
+			String album = media.getMeta(IMedia.Meta.Album);
 
-			if (m != null) {
-				if (m.startsWith("vfs?resource=") || ((fd != null) && m.startsWith("fd://"))) m = null;
+			if (title != null) {
+				if (!title.startsWith("vfs?resource=") && !title.startsWith("fd://")) {
+					meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
+				} else {
+					meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
+				}
+			} else {
+				meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
 			}
 
-			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
-			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
+			if (artist != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
+			if (album != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
 
-			m = media.getMeta(IMedia.Meta.Artist);
-			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, m);
-
-			m = media.getMeta(IMedia.Meta.AlbumArtist);
+			String m = media.getMeta(IMedia.Meta.AlbumArtist);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, m);
-
-			m = media.getMeta(IMedia.Meta.Album);
-			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
 
 			m = media.getMeta(IMedia.Meta.Genre);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
 
 			m = media.getMeta(IMedia.Meta.ArtworkURL);
-			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+
+			if (m != null) {
+				if (m.startsWith("file://")) {
+					meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+				} else if (m.startsWith("attachment://")) {
+					if (((artist != null) && !artist.isEmpty() && !"Unknown Artist".equals(artist)) &&
+							((album != null) && !album.isEmpty() && !"Unknown Album".equals(artist))) {
+						m = getArtUri() + "artistalbum/" + artist + "/" + album + "/art.png";
+					} else {
+						String hash = SecurityUtils.md5String(UTF_8, m, title);
+						m = getArtUri() + "arturl/" + hash + "/art.png";
+					}
+
+					meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+				}
+			}
 
 			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, media.getDuration());
 			return true;
@@ -141,6 +162,15 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		if (vlc != null) {
 			vlc.release();
 			vlc = null;
+			artUri = null;
 		}
+	}
+
+	private String getArtUri() {
+		if (artUri == null) {
+			File dir = vlc.getAppContext().getDir("vlc", Context.MODE_PRIVATE);
+			artUri = "file://" + dir.getAbsolutePath() + "/.cache/art/";
+		}
+		return artUri;
 	}
 }
