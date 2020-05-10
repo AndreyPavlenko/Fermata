@@ -6,7 +6,6 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
-import android.util.Log;
 
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
@@ -21,6 +20,7 @@ import me.aap.fermata.media.engine.MediaEngineProvider;
 import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.io.IoUtils;
+import me.aap.utils.log.Log;
 
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
@@ -120,7 +120,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, media.getDuration());
 			return true;
 		} catch (Throwable ex) {
-			Log.d(getClass().getName(), "Failed to retrieve media metadata of " + item.getLocation(), ex);
+			Log.d(ex, "Failed to retrieve media metadata of " + item.getLocation());
 			return false;
 		} finally {
 			if (media != null) media.release();

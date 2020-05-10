@@ -7,13 +7,13 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Parcelable;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import java.util.Collections;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.utils.log.Log;
 
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
@@ -35,7 +35,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 
 	@Override
 	public void handleMessage(@NonNull Message msg) {
-		Log.d(getClass().getName(), "Message received: " + msg);
+		Log.d("Message received: ", msg);
 
 		switch (msg.what) {
 			case MSG_MEDIA_BTN_EVENT:
@@ -93,7 +93,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 				getService().callback.onCustomAction(requireNonNull(b.getString(KEY)), null);
 				break;
 			default:
-				Log.e(getClass().getName(), "Unknown message received: " + msg.what);
+				Log.e("Unknown message received: ", msg.what);
 		}
 	}
 
@@ -104,7 +104,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 				return;
 			}
 		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to send message", ex);
+			Log.e(ex, "Failed to send message");
 		}
 
 		reconnect();
@@ -124,7 +124,7 @@ class FermataToControlConnection extends ControlServiceConnection {
 			i.setComponent(new ComponentName(PKG_ID, "me.aap.fermata.auto.control.FermataMediaServiceControl"));
 			getService().bindService(i, this, Context.BIND_AUTO_CREATE);
 		} catch (Exception ex) {
-			Log.d(getClass().getName(), "Failed to connect to remote service", ex);
+			Log.d(ex, "Failed to connect to remote service");
 		}
 	}
 

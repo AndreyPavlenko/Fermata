@@ -10,7 +10,6 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,6 +33,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.io.MemOutputStream;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.ui.UiUtils;
@@ -150,7 +150,7 @@ public class BitmapCache {
 			if (size != 0) bm = resizedBitmap(bm, size);
 			return (cacheUri != null) ? cacheBitmap(cacheUri, bm) : bm;
 		} catch (Exception ex) {
-			Log.d(getClass().getName(), "Failed to load bitmap: " + uri, ex);
+			Log.d(ex, "Failed to load bitmap: ", uri);
 			return null;
 		}
 	}
@@ -238,7 +238,7 @@ public class BitmapCache {
 
 			return digest;
 		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to save image", ex);
+			Log.e(ex, "Failed to save image");
 			return null;
 		}
 	}
@@ -250,7 +250,7 @@ public class BitmapCache {
 		try (OutputStream out = new FileOutputStream(f)) {
 			bm.compress(Bitmap.CompressFormat.JPEG, 100, out);
 		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to save icon: " + uri, ex);
+			Log.e(ex, "Failed to save icon: ", uri);
 		}
 	}
 

@@ -3,7 +3,6 @@ package me.aap.fermata.ui.fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
@@ -27,6 +26,7 @@ import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.fermata.util.Utils;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
@@ -205,7 +205,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 		App.get().getHandler().post(() -> {
 			String n = getString(name);
-			Log.e(getClass().getName(), "Failed to load add folder: " + name, ex);
+			Log.e(ex, "Failed to load add folder: ", name);
 
 			if (ex instanceof InstallException) {
 				Utils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));

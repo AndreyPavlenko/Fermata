@@ -4,9 +4,10 @@ import android.media.audiofx.AudioEffect;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
 import android.media.audiofx.Virtualizer;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
+
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
@@ -56,13 +57,13 @@ public class AudioEffects {
 			return new AudioEffects(priority, audioSessionId);
 		} catch (Exception ex) {
 			// Sometimes it fails with RuntimeException: AudioEffect: set/get parameter error
-			Log.w(AudioEffects.class.getName(), "Failed to create AudioEffects - retrying...");
+			Log.w("Failed to create AudioEffects - retrying...");
 
 			try {
 				Thread.sleep(300);
 				return new AudioEffects(priority, audioSessionId);
 			} catch (Exception ex1) {
-				Log.e(AudioEffects.class.getName(), "Failed to create AudioEffects", ex1);
+				Log.e(ex1, "Failed to create AudioEffects");
 				return null;
 			}
 		}

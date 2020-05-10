@@ -2,7 +2,6 @@ package me.aap.fermata.engine.exoplayer;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -25,6 +24,7 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.log.Log;
 
 import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
 
@@ -181,7 +181,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 		try {
 			audioEffects = AudioEffects.create(0, audioSessionId);
 		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to create audio effects", ex);
+			Log.e(ex, "Failed to create audio effects");
 		}
 
 		if (preparingState == 2) {

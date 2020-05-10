@@ -1,8 +1,6 @@
 package me.aap.fermata.media.lib;
 
-import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -17,6 +15,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VfsManager;
@@ -196,7 +195,7 @@ class M3uItem extends BrowsableItemBase {
 				type = 0;
 			}
 		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to parse m3u file: " + m3uFile, ex);
+			Log.e(ex, "Failed to parse m3u file: ", m3uFile);
 		}
 
 		int ngroups = groups.size();

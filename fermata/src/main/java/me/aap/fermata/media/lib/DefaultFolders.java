@@ -3,7 +3,6 @@ package me.aap.fermata.media.lib;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -22,6 +21,7 @@ import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
@@ -123,7 +123,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 
 		return Async.forEach(u -> vfsManager.getResource(Uri.parse(u))
 				.ifFail(fail -> {
-					Log.e(getClass().getName(), "Failed to load folder " + u, fail);
+					Log.e(fail, "Failed to load folder ", u);
 					return null;
 				})
 				.then(res -> {

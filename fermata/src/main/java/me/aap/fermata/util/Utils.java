@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.Gravity;
 
 import androidx.annotation.StringRes;
@@ -23,6 +22,7 @@ import com.google.android.material.textview.MaterialTextView;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.io.FileUtils;
+import me.aap.utils.log.Log;
 import me.aap.utils.ui.menu.OverlayMenu;
 
 import static android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
@@ -59,7 +59,7 @@ public class Utils {
 				}
 			}
 		} catch (Exception ex) {
-			Log.d("Utils", "Failed to get audio Uri for " + documentUri, ex);
+			Log.d(ex, "Failed to get audio Uri for ", documentUri);
 		}
 
 		return null;

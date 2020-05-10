@@ -21,7 +21,6 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
@@ -55,6 +54,7 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.holder.Holder;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 
@@ -115,7 +115,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		MediaEngine.Listener, AudioManager.OnAudioFocusChangeListener,
 		EventBroadcaster<MediaSessionCallback.Listener>, Closeable {
 	public static final String EXTRA_POS = "me.aap.fermata.extra.pos";
-	private static final String TAG = "MediaSessionCallback";
 	private static final long SUPPORTED_ACTIONS = ACTION_PLAY | ACTION_STOP | ACTION_PAUSE | ACTION_PLAY_PAUSE
 			| ACTION_PLAY_FROM_MEDIA_ID | ACTION_PLAY_FROM_SEARCH | ACTION_PLAY_FROM_URI
 			| ACTION_SKIP_TO_PREVIOUS | ACTION_SKIP_TO_NEXT | ACTION_SKIP_TO_QUEUE_ITEM
@@ -352,7 +351,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			if ((i == null) || i.isVideo() || i.isStream()) return completedVoid();
 
 			engine = getEngineManager().createEngine(engine, i, this);
-			Log.d(getClass().getName(), "MediaEngine " + engine + " created for " + i);
+			Log.d("MediaEngine ", engine + " created for ", i);
 			if (engine == null) return completedVoid();
 
 			playOnPrepared = false;
@@ -372,7 +371,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@SuppressLint("SwitchIntDef")
 	private FutureSupplier<Void> play() {
 		if (!requestAudioFocus()) {
-			Log.i(getClass().getName(), "Audio focus request failed");
+			Log.i("Audio focus request failed");
 			return completedVoid();
 		}
 
@@ -412,7 +411,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
 		if (!requestAudioFocus()) {
-			Log.i(getClass().getName(), "Audio focus request failed");
+			Log.i("Audio focus request failed");
 			return completedVoid();
 		}
 
@@ -430,7 +429,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				playItem(pi, pos);
 			} else {
 				String msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, mediaId);
-				Log.w(TAG, msg);
+				Log.w(msg);
 				PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 						.setState(PlaybackStateCompat.STATE_ERROR, 0, 1.0f)
 						.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
@@ -790,12 +789,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		try {
 			setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
 		} catch (Exception ex) {
-			Log.w(getClass().getName(), "Failed to set audio effects. Retrying...");
+			Log.w("Failed to set audio effects. Retrying...");
 
 			try {
 				setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
 			} catch (Exception ex1) {
-				Log.w(getClass().getName(), "Failed to set audio effects!", ex1);
+				Log.w(ex1, "Failed to set audio effects!");
 			}
 		}
 
@@ -930,13 +929,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 					i, ex.getLocalizedMessage());
 		}
 
-		Log.w(TAG, msg, ex);
+		Log.w(ex, msg);
 
 		if (tryAnotherEngine) {
 			this.engine = getEngineManager().createAnotherEngine(engine, this);
 
 			if (this.engine != null) {
-				Log.i(getClass().getName(), "Trying another engine: " + this.engine);
+				Log.i("Trying another engine: ", this.engine);
 				tryAnotherEngine = false;
 				this.engine.prepare(i);
 				return;
@@ -1130,7 +1129,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 							}
 						}
 					} catch (Exception ex) {
-						Log.e(getClass().getName(), "Failed to configure Equalizer", ex);
+						Log.e(ex, "Failed to configure Equalizer");
 					}
 				} else {
 					eq.setEnabled(false);
@@ -1144,7 +1143,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 						virt.setStrength((short) s.getIntPref(VIRT_STRENGTH));
 						virt.forceVirtualizationMode(s.getIntPref(VIRT_MODE));
 					} catch (Exception ex) {
-						Log.e(getClass().getName(), "Failed to configure Virtualizer", ex);
+						Log.e(ex, "Failed to configure Virtualizer");
 					}
 				} else {
 					virt.setEnabled(false);
@@ -1157,7 +1156,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 						bass.setEnabled(true);
 						bass.setStrength((short) s.getIntPref(BASS_STRENGTH));
 					} catch (Exception ex) {
-						Log.e(getClass().getName(), "Failed to configure BassBoost", ex);
+						Log.e(ex, "Failed to configure BassBoost");
 					}
 				} else {
 					bass.setEnabled(false);
@@ -1211,7 +1210,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				Drawable d = app.getPackageManager().getApplicationIcon(app.getPackageName());
 				defaultImage = UiUtils.getBitmap(d);
 			} catch (Exception ex) {
-				Log.e(getClass().getName(), "Failed to get application icon", ex);
+				Log.e(ex, "Failed to get application icon");
 			}
 		}
 		return defaultImage;

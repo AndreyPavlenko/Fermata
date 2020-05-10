@@ -3,7 +3,6 @@ package me.aap.fermata.media.lib;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -25,6 +24,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
@@ -336,7 +336,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	}
 
 	private void log(Throwable ex) {
-		Log.e(getClass().getName(), "Error occurred", ex);
+		Log.e(ex, "Error occurred");
 	}
 
 	private static final class WeakRef<V> extends WeakReference<V> {

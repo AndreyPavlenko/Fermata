@@ -9,7 +9,6 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -46,6 +45,7 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -453,7 +453,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 			goToCurrent().onCompletion((ok, fail) -> {
 				if (fail != null) {
-					Log.e(getClass().getName(), "Last played track not found", fail);
+					Log.e(fail, "Last played track not found");
 					showFragment(R.id.nav_folders);
 				} else if (!ok) {
 					showFragment(R.id.nav_folders);
@@ -467,7 +467,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				onPlayableChanged(null, b.getCurrentItem());
 			});
 		} else {
-			Log.e(getClass().getName(), err.getMessage(), err);
+			Log.e(err);
 			new AlertDialog.Builder(a.getContext())
 					.setIcon(android.R.drawable.ic_dialog_alert)
 					.setTitle(android.R.string.dialog_alert_title)

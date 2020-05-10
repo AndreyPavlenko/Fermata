@@ -2,7 +2,6 @@ package me.aap.fermata.media.lib;
 
 import android.content.Context;
 import android.support.v4.media.MediaDescriptionCompat;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -17,6 +16,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
@@ -119,7 +119,7 @@ class CueItem extends BrowsableItemBase {
 				if (dur > 0) last.duration(dur - last.getOffset());
 			}
 		} catch (Exception ex) {
-			Log.e("CueItem", "Failed to parse cue file: " + getFile(), ex);
+			Log.e(ex, "Failed to parse cue file: ", getFile());
 		}
 
 		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();

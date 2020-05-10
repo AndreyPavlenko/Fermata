@@ -1,7 +1,6 @@
 package me.aap.fermata.vfs;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.StringRes;
 
@@ -13,6 +12,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
@@ -96,15 +96,14 @@ public class FermataVfsManager extends VfsManager {
 		try {
 			return (VfsProvider) Class.forName(className).newInstance();
 		} catch (Throwable ex) {
-			Log.e(FermataVfsManager.class.getName(), "Failed to load module " + moduleId);
+			Log.e("Failed to load module ", moduleId);
 			return null;
 		}
 	}
 
 	private void initProvider(PreferenceStore ps, Pref<BooleanSupplier> p, String scheme) {
 		if (!ps.getBooleanPref(p) || isSupportedScheme(scheme)) return;
-		getProvider(scheme).onFailure(fail -> Log.e(getClass().getName(),
-				"Failed to initiate provider " + scheme, fail));
+		getProvider(scheme).onFailure(fail -> Log.e(fail, "Failed to initiate provider ", scheme));
 	}
 
 	private FutureSupplier<VfsProvider> getProvider(

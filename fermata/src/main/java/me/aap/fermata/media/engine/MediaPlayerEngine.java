@@ -4,13 +4,13 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
@@ -109,7 +109,7 @@ public class MediaPlayerEngine implements MediaEngine,
 			p.setSpeed(speed);
 			player.setPlaybackParams(p);
 		} catch (Exception ex) {
-			Log.e(getClass().getName(), "Failed to set speed: " + speed, ex);
+			Log.e(ex, "Failed to set speed: ", speed);
 		}
 	}
 
@@ -118,7 +118,7 @@ public class MediaPlayerEngine implements MediaEngine,
 		try {
 			player.setDisplay((view == null) ? null : view.getVideoSurface().getHolder());
 		} catch (IllegalStateException | IllegalArgumentException ex) {
-			Log.e(getClass().getName(), "Failed to set display", ex);
+			Log.e(ex, "Failed to set display");
 		}
 	}
 

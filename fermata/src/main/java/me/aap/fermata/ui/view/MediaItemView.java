@@ -7,7 +7,6 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.view.animation.Animation;
@@ -28,6 +27,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 
@@ -74,7 +74,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					if (wrapper != getItemWrapper()) return;
 
 					if (fail != null) {
-						Log.e(getClass().getName(), "Failed to load media description: " + i, fail);
+						Log.e(fail, "Failed to load media description: ", i);
 						setDefaults(i, false);
 						return;
 					}

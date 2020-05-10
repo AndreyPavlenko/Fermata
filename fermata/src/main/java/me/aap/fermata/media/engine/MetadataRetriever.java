@@ -9,7 +9,6 @@ import android.media.MediaMetadata;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -23,6 +22,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 
@@ -64,13 +64,12 @@ public class MetadataRetriever implements Closeable {
 		try {
 			db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
 		} catch (Exception ex) {
-			Log.w(getClass().getName(), "Failed to create database: " + dbFile + ": "
-					+ ex + ". Retrying ...");
+			Log.w("Failed to create database: ", dbFile, ": ", ex, ". Retrying ...");
 
 			try {
 				db = SQLiteDatabase.openOrCreateDatabase(dbFile, null);
 			} catch (Exception ex1) {
-				Log.e(getClass().getName(), "Failed to create database: " + dbFile, ex1);
+				Log.e(ex1, "Failed to create database: ", dbFile);
 			}
 		}
 
@@ -107,7 +106,7 @@ public class MetadataRetriever implements Closeable {
 		try {
 			insertMetadata(mb, item);
 		} catch (Throwable ex) {
-			Log.e(getClass().getName(), "Failed to update MediaStore", ex);
+			Log.e(ex, "Failed to update MediaStore");
 		}
 
 		return mb;
@@ -148,7 +147,7 @@ public class MetadataRetriever implements Closeable {
 
 			return result;
 		} catch (Throwable ex) {
-			Log.d(MetadataRetriever.class.getName(), "Failed to query media metadata", ex);
+			Log.d(ex, "Failed to query media metadata");
 			return Collections.emptyMap();
 		}
 	}
@@ -164,7 +163,7 @@ public class MetadataRetriever implements Closeable {
 			readMetadata(meta, c, tb);
 			return meta;
 		} catch (Throwable ex) {
-			Log.d(MetadataRetriever.class.getName(), "Failed to query media metadata", ex);
+			Log.d(ex, "Failed to query media metadata");
 			return null;
 		}
 	}

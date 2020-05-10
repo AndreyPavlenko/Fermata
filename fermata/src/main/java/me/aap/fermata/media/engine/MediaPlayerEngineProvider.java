@@ -6,10 +6,10 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.support.v4.media.MediaMetadataCompat;
-import android.util.Log;
 
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
@@ -68,7 +68,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 				if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 			}
 		} catch (Throwable ex) {
-			Log.d(getClass().getName(), "Failed to retrieve media metadata of " + item.getLocation(), ex);
+			Log.d(ex, "Failed to retrieve media metadata of ", item.getLocation());
 
 			MediaPlayer mp = null;
 			try {
@@ -77,7 +77,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 
 				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
 			} catch (Throwable ex2) {
-				Log.d(getClass().getName(), "Failed to retrieve duration of " + item.getLocation(), ex2);
+				Log.d(ex2, "Failed to retrieve duration of ", item.getLocation());
 				return false;
 			} finally {
 				if (mp != null) mp.release();

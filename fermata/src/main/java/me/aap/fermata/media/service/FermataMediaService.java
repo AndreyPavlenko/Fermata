@@ -23,7 +23,6 @@ import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.util.Log;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -43,6 +42,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
 import static java.util.Objects.requireNonNull;
@@ -290,7 +290,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 			Intent i = new Intent(this, Class.forName("me.aap.fermata.ui.activity.MainActivity"));
 			notifContentIntent = PendingIntent.getActivity(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
 		} catch (ClassNotFoundException ex) {
-			Log.e(getClass().getName(), ex.getMessage(), ex);
+			Log.e(ex);
 			notifContentIntent = session.getController().getSessionActivity();
 		}
 

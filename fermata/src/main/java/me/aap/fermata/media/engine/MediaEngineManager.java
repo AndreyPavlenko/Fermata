@@ -1,7 +1,6 @@
 package me.aap.fermata.media.engine;
 
 import android.content.Context;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -21,6 +20,7 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityBase;
@@ -139,7 +139,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				exoPlayer.init(lib.getContext());
 				return;
 			} catch (Throwable ex) {
-				Log.e(getClass().getName(), "ExoPlayer not found", ex);
+				Log.e(ex, "ExoPlayer not found");
 				if (install) {
 					exoPlayer = null;
 					FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);
@@ -158,7 +158,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				vlcPlayer.init(lib.getContext());
 				return;
 			} catch (Throwable ex) {
-				Log.e(getClass().getName(), "VlcPlayer not found", ex);
+				Log.e(ex, "VlcPlayer not found");
 				if (install) {
 					vlcPlayer = null;
 					FutureSupplier<Void> i = installPlayer(MODULE_VLC, R.string.engine_vlc_name);
@@ -179,7 +179,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				i.withMainHandler().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
 			} else {
 				exoPlayer = null;
-				Log.i(getClass().getName(), "Uninstalling module " + MODULE_EXO);
+				Log.i("Uninstalling module ", MODULE_EXO);
 				SplitInstallManager sm = SplitInstallManagerFactory.create(lib.getContext());
 				sm.deferredUninstall(Collections.singletonList(MODULE_EXO)).addOnSuccessListener(
 						r -> toast(R.string.engine_uninstalled, R.string.engine_exo_name));
@@ -191,7 +191,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				i.withMainHandler().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
 			} else {
 				vlcPlayer = null;
-				Log.i(getClass().getName(), "Uninstalling module " + MODULE_VLC);
+				Log.i("Uninstalling module ", MODULE_VLC);
 				SplitInstallManager sm = SplitInstallManagerFactory.create(lib.getContext());
 				sm.deferredUninstall(Collections.singletonList(MODULE_VLC)).addOnSuccessListener(
 						r -> toast(R.string.engine_uninstalled, R.string.engine_vlc_name));
@@ -228,7 +228,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private void installExoFailed(Throwable ex) {
 		setExoPlayer(false);
 		if (exoPlayer == null) {
-			Log.e(getClass().getName(), "Failed to install ExoPlayer", ex);
+			Log.e(ex, "Failed to install ExoPlayer");
 			toast(R.string.err_failed_install_module, R.string.engine_exo_name);
 		}
 	}
@@ -236,7 +236,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private void installVlcFailed(Throwable ex) {
 		setVlcPlayer(false);
 		if (vlcPlayer == null) {
-			Log.e(getClass().getName(), "Failed to install VlcPlayer", ex);
+			Log.e(ex, "Failed to install VlcPlayer");
 			toast(R.string.err_failed_install_module, R.string.engine_vlc_name);
 		}
 	}
