@@ -283,34 +283,32 @@ public class SettingsFragment extends MainActivityFragment {
 		Consumer<PreferenceView.ListOpts> initList = o -> {
 			PrefCondition<BooleanSupplier> exoCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.EXO_ENABLED);
 			PrefCondition<BooleanSupplier> vlcCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
-			boolean exoEnabled = exoCond.get();
-			boolean vlcEnabled = vlcCond.get();
 			if (o.visibility == null) o.visibility = exoCond.or(vlcCond);
 
-			if (exoEnabled && vlcEnabled) {
-				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name, R.string.engine_vlc_name};
-				o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_EXO, MEDIA_ENG_VLC};
-			} else if (exoEnabled) {
-				o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name};
-				o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_EXO};
-			} else {
-				o.values = new int[]{R.string.engine_mp_name, R.string.engine_vlc_name};
-				o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_VLC};
-			}
+			o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name, R.string.engine_vlc_name};
+			o.valuesMap = new int[]{MEDIA_ENG_MP, MEDIA_ENG_EXO, MEDIA_ENG_VLC};
+			o.valuesFilter = i -> {
+				if (i == 1) return exoCond.get();
+				if (i == 2) return vlcCond.get();
+				return true;
+			};
 		};
 		sub1 = set.subSet(o -> o.title = R.string.engine_prefs);
 		sub1.addBooleanPref(o -> {
 			o.store = mediaPrefs;
+			o.removeDefault = false;
 			o.pref = MediaLibPrefs.EXO_ENABLED;
 			o.title = R.string.enable_exoplayer;
 		});
 		sub1.addBooleanPref(o -> {
 			o.store = mediaPrefs;
+			o.removeDefault = false;
 			o.pref = MediaLibPrefs.VLC_ENABLED;
 			o.title = R.string.enable_vlcplayer;
 		});
 		sub1.addListPref(o -> {
 			o.store = mediaPrefs;
+			o.removeDefault = false;
 			o.pref = MediaLibPrefs.AUDIO_ENGINE;
 			o.title = R.string.preferred_audio_engine;
 			o.subtitle = R.string.string_format;
@@ -319,6 +317,7 @@ public class SettingsFragment extends MainActivityFragment {
 		});
 		sub1.addListPref(o -> {
 			o.store = mediaPrefs;
+			o.removeDefault = false;
 			o.pref = MediaLibPrefs.VIDEO_ENGINE;
 			o.title = R.string.preferred_video_engine;
 			o.subtitle = R.string.string_format;
