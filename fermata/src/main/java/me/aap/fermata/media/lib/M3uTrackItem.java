@@ -38,7 +38,7 @@ class M3uTrackItem extends PlayableItemBase {
 		} else if (type == 2) {
 			isVideo = true;
 		} else {
-			String ext = getFileExtension(file.getUri().getPath());
+			String ext = getFileExtension(file.getRid().getPath().toString());
 			if (ext == null) isVideo = true;
 			else isVideo = ext.startsWith("m3u") || isVideoMimeType(getMimeTypeFromExtension(ext));
 		}
@@ -116,7 +116,7 @@ class M3uTrackItem extends PlayableItemBase {
 			return getM3uItem().getFile().getParent().then(dir -> {
 				if (dir == null) return super.buildMeta(meta);
 				return getLib().getVfsManager().resolve(logo, dir).then(f -> {
-					if (f != null) meta.setImageUri(f.getUri().toString());
+					if (f != null) meta.setImageUri(f.getRid().toString());
 					return super.buildMeta(meta);
 				});
 			});

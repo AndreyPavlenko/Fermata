@@ -233,7 +233,8 @@ public class FoldersFragment extends MediaLibFragment {
 		MainActivityDelegate a = getMainActivity();
 		if (folder instanceof VirtualFolder) {
 			Folders folders = a.getLib().getFolders();
-			folders.addItem(folder.getUri()).withMainHandler().thenRun(() -> getAdapter().setParent(folders));
+			folders.addItem(folder.getRid().toAndroidUri()).withMainHandler()
+					.thenRun(() -> getAdapter().setParent(folders));
 		}
 		a.showFragment(getFragmentId());
 	}

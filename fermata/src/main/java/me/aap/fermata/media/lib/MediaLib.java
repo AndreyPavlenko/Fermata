@@ -284,12 +284,12 @@ public interface MediaLib {
 		@NonNull
 		default Uri getLocation() {
 			VirtualResource file = getFile();
-			if (file.isLocalFile()) return file.getUri();
+			if (file.isLocalFile()) return file.getRid().toAndroidUri();
 
 			VirtualFileSystem.Provider p = getFile().getVirtualFileSystem().getProvider();
-			if (p instanceof GenericFileSystem.Provider) return file.getUri();
+			if (p instanceof GenericFileSystem.Provider) return file.getRid().toAndroidUri();
 
-			return getLib().getVfsManager().getHttpUri(file);
+			return getLib().getVfsManager().getHttpRid(file).toAndroidUri();
 		}
 
 		@NonNull

@@ -111,7 +111,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 			if (name.startsWith(".")) continue;
 
 			if (isIcon(name)) {
-				iconUri = completed(f.getUri());
+				iconUri = completed(f.getRid().toAndroidUri());
 				continue;
 			}
 
@@ -189,10 +189,10 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 	public FutureSupplier<Uri> getIconUri() {
 		if (iconUri == null) {
 			return getFile().getChild("cover.jpg").then(cover -> {
-				if (cover != null) return iconUri = completed(cover.getUri());
+				if (cover != null) return iconUri = completed(cover.getRid().toAndroidUri());
 
 				return getFile().getChild("folder.jpg").then(folder -> {
-					if (folder != null) return iconUri = completed(folder.getUri());
+					if (folder != null) return iconUri = completed(folder.getRid().toAndroidUri());
 					else return iconUri = completedNull();
 				});
 			});

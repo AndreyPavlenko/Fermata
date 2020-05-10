@@ -64,8 +64,7 @@ class M3uItem extends BrowsableItemBase {
 		boolean first = true;
 
 		try (BufferedReader r = new BufferedReader(new InputStreamReader(
-				m3uFile.getInputStream().asInputStream(), UTF_8));
-				 SharedTextBuilder tb = SharedTextBuilder.get()) {
+				m3uFile.getInputStream().asInputStream(), UTF_8))) {
 			read:
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
@@ -160,28 +159,28 @@ class M3uItem extends BrowsableItemBase {
 
 					if (group == null) {
 						int tid = tracks.size();
-						tb.setLength(0);
+						SharedTextBuilder tb = SharedTextBuilder.get();
 						tb.append(M3uTrackItem.SCHEME).append(':').append(-1).append(':')
 								.append(tid).append(idPath);
-						tracks.add(new M3uTrackItem(tb.toString(), this, tid, file, name, album, artist, genre,
+						tracks.add(new M3uTrackItem(tb.releaseString(), this, tid, file, name, album, artist, genre,
 								logo, duration, type));
 					} else {
 						M3uGroupItem g = groups.get(group);
 
 						if (g == null) {
 							int gid = groups.size();
-							tb.setLength(0);
+							SharedTextBuilder tb = SharedTextBuilder.get();
 							tb.append(M3uGroupItem.SCHEME).append(':').append(gid).append(idPath);
-							g = new M3uGroupItem(tb.toString(), this, group, gid);
+							g = new M3uGroupItem(tb.releaseString(), this, group, gid);
 							groups.put(group, g);
 						}
 
 						int tid = g.tracks.size();
-						tb.setLength(0);
+						SharedTextBuilder tb = SharedTextBuilder.get();
 						tb.append(M3uTrackItem.SCHEME).append(':').append(g.getGroupId()).append(':')
 								.append(tid).append(idPath);
-						g.tracks.add(new M3uTrackItem(tb.toString(), g, tid, file, name, album, artist, genre,
-								logo, duration, type));
+						g.tracks.add(new M3uTrackItem(tb.releaseString(), g, tid, file, name, album, artist,
+								genre, logo, duration, type));
 					}
 				}
 
@@ -270,7 +269,7 @@ class M3uItem extends BrowsableItemBase {
 				return getFile().getParent().then(folder -> {
 					if (folder == null) return iconUri = completedNull();
 					return getLib().getVfsManager().resolve(cover, folder).then(file ->
-							iconUri = (file != null) ? completed(file.getUri()) : completedNull());
+							iconUri = (file != null) ? completed(file.getRid().toAndroidUri()) : completedNull());
 				});
 			}
 		}

@@ -34,6 +34,7 @@ import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.log.Log;
+import me.aap.utils.resource.Rid;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.ui.UiUtils;
@@ -143,7 +144,8 @@ public class BitmapCache {
 					bm = loadHttpBitmap(uri);
 				default:
 					FermataVfsManager vfs = lib.getVfsManager();
-					if (vfs.isSupportedScheme(scheme)) bm = loadHttpBitmap(vfs.getHttpUri(u).toString());
+					if (vfs.isSupportedScheme(scheme))
+						bm = loadHttpBitmap(vfs.getHttpRid(Rid.create(u)).toString());
 			}
 
 			if (bm == null) return null;

@@ -52,8 +52,7 @@ class CueItem extends BrowsableItemBase {
 		boolean wasTrack = false;
 
 		try (BufferedReader r = new BufferedReader(new InputStreamReader(
-				cueFile.getInputStream().asInputStream(), UTF_8));
-				 SharedTextBuilder tb = SharedTextBuilder.get()) {
+				cueFile.getInputStream().asInputStream(), UTF_8))) {
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
 
@@ -63,7 +62,7 @@ class CueItem extends BrowsableItemBase {
 				} else if (l.startsWith("TRACK ")) {
 					if (wasTrack) {
 						addTrack(id, tracks, file, track, title, performer, writer, index, albumTitle,
-								albumPerformer, albumWriter, isVideo, tb);
+								albumPerformer, albumWriter, isVideo);
 						title = performer = writer = albumTitle = albumPerformer = albumWriter = null;
 					} else {
 						wasTrack = true;
@@ -93,7 +92,7 @@ class CueItem extends BrowsableItemBase {
 				} else if (l.startsWith("FILE ")) {
 					if (wasTrack) {
 						addTrack(id, tracks, file, track, title, performer, writer, index, albumTitle,
-								albumPerformer, albumWriter, isVideo, tb);
+								albumPerformer, albumWriter, isVideo);
 						track = title = performer = writer = index = albumTitle = albumPerformer = albumWriter = null;
 					}
 
@@ -108,7 +107,7 @@ class CueItem extends BrowsableItemBase {
 			}
 
 			addTrack(id, tracks, file, track, title, performer, writer, index, albumTitle,
-					albumPerformer, albumWriter, isVideo, tb);
+					albumPerformer, albumWriter, isVideo);
 
 			int size = tracks.size();
 
@@ -172,8 +171,7 @@ class CueItem extends BrowsableItemBase {
 
 	private void addTrack(String id, List<CueTrackItem> tracks, VirtualResource file, String track, String title,
 												String performer, String writer, String index, String albumTitle,
-												String albumPerformer, String albumWriter, boolean isVideo,
-												SharedTextBuilder tb) {
+												String albumPerformer, String albumWriter, boolean isVideo) {
 		if ((file == null) || (track == null) || (index == null)) return;
 
 		String[] i = index.split(":");
@@ -197,10 +195,10 @@ class CueItem extends BrowsableItemBase {
 		}
 
 		int trackNum = tracks.size() + 1;
-		tb.setLength(0);
+		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(CueTrackItem.SCHEME).append(':').append(trackNum)
 				.append(id, SCHEME.length(), id.length());
-		CueTrackItem t = new CueTrackItem(tb.toString(), this, trackNum, file, title,
+		CueTrackItem t = new CueTrackItem(tb.releaseString(), this, trackNum, file, title,
 				performer, writer, albumTitle, offset, isVideo);
 		tracks.add(t);
 

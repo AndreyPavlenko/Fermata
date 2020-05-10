@@ -24,6 +24,7 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.resource.Rid;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualFolder;
 
@@ -121,9 +122,9 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		List<Item> children = new ArrayList<>(pref.length);
 		Set<String> names = new HashSet<>((int) (pref.length * 1.5));
 
-		return Async.forEach(u -> vfsManager.getResource(Uri.parse(u))
+		return Async.forEach(rid -> vfsManager.getResource(rid)
 				.ifFail(fail -> {
-					Log.e(fail, "Failed to load folder ", u);
+					Log.e(fail, "Failed to load folder ", rid);
 					return null;
 				})
 				.then(res -> {
@@ -131,7 +132,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 
 					VirtualFolder folder = (VirtualFolder) res;
 					String name = folder.getName();
-					if (!names.add(name)) name = sha1String(u);
+					if (!names.add(name)) name = sha1String(rid);
 
 					String id = SharedTextBuilder.get().append(FolderItem.SCHEME).append(':').append(name).releaseString();
 					FolderItem i = FolderItem.create(id, this, folder, lib);
@@ -161,7 +162,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	public FutureSupplier<Item> addItem(Uri uri) {
 		List<FolderItem> children = list();
 
-		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getUri()))) {
+		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getRid()))) {
 			return completedNull();
 		}
 
@@ -188,9 +189,9 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 
 	@Override
 	public void removeItem(Item item) {
-		Uri uri = item.getFile().getUri();
+		Rid rid = item.getFile().getRid();
 		List<FolderItem> newChildren = new ArrayList<>(list());
-		if (!CollectionUtils.remove(newChildren, u -> uri.equals(u.getFile().getUri()))) return;
+		if (!CollectionUtils.remove(newChildren, u -> rid.equals(u.getFile().getRid()))) return;
 
 		getLib().removeFromCache(item);
 		setNewChildren(newChildren);
@@ -206,12 +207,12 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	}
 
 	private void saveChildren(List<? extends Item> children) {
-		setFoldersPref(mapToArray(children, i -> i.getFile().getUri().toString(), String[]::new));
+		setFoldersPref(mapToArray(children, i -> i.getFile().getRid().toString(), String[]::new));
 	}
 
 	@NonNull
 	private FutureSupplier<FolderItem> toFolderItem(Uri u, List<FolderItem> children) {
-		return vfsManager.getResource(u).map(res -> {
+		return vfsManager.getResource(Rid.create(u)).map(res -> {
 			if (!(res instanceof VirtualFolder)) return null;
 
 			VirtualFolder folder = (VirtualFolder) res;
