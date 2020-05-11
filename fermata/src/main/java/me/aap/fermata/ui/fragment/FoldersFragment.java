@@ -41,6 +41,7 @@ import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
 import static me.aap.fermata.vfs.FermataVfsManager.SFTP_ID;
+import static me.aap.fermata.vfs.FermataVfsManager.SMB_ID;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
@@ -52,7 +53,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 	@Override
 	ListAdapter createAdapter(FermataServiceUiBinder b) {
-		return new FoldersAdapter(b.getLib().getFolders());
+		return new FoldersAdapter(getMainActivity(), b.getLib().getFolders());
 	}
 
 	@Override
@@ -151,6 +152,7 @@ public class FoldersFragment extends MediaLibFragment {
 			b.addItem(R.id.vfs_content, R.string.vfs_content);
 			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
+			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
 //			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
 		});
 	}
@@ -168,6 +170,9 @@ public class FoldersFragment extends MediaLibFragment {
 				return true;
 			case R.id.vfs_sftp:
 				addFolderVfs(SFTP_ID, R.string.vfs_sftp);
+				return true;
+			case R.id.vfs_smb:
+				addFolderVfs(SMB_ID, R.string.vfs_smb);
 				return true;
 			default:
 				return false;
@@ -263,8 +268,8 @@ public class FoldersFragment extends MediaLibFragment {
 
 	private final class FoldersAdapter extends ListAdapter {
 
-		FoldersAdapter(BrowsableItem parent) {
-			super(parent);
+		FoldersAdapter(MainActivityDelegate activity, BrowsableItem parent) {
+			super(activity, parent);
 			animateAddButton(parent);
 		}
 

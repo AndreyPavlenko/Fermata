@@ -1,0 +1,23 @@
+android {
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        mobile {
+            dimension "version"
+        }
+        auto {
+            dimension "version"
+            applicationIdSuffix '.auto'
+        }
+    }
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+}

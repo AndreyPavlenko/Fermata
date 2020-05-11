@@ -1,6 +1,6 @@
 ext {
-    VERSION_CODE = 56
-    VERSION_NAME = "1.6.0"
+    VERSION_CODE = 57
+    VERSION_NAME = "1.6.1"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 29
     SDK_COMPILE_VERSION = 29
@@ -47,6 +47,7 @@ subprojects {
         case 'exoplayer':
         case 'gdrive':
         case 'sftp':
+        case 'smb':
             apply plugin: 'com.android.dynamic-feature'
             break
         default:

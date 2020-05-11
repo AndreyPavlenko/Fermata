@@ -25,9 +25,11 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.holder.IntHolder;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
+import static java.util.Collections.emptyList;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -150,15 +152,20 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		return getUnsortedChildren().map(children -> {
-			int files = 0;
-			int folders = 0;
-			for (Item i : children) {
-				if (i instanceof PlayableItem) files++;
-				else folders++;
-			}
-			return getLib().getContext().getResources().getString(R.string.folder_subtitle, files, folders);
-		});
+		return getUnsortedChildren().ifFail(fail -> {
+			Log.e(fail);
+			return emptyList();
+		}).map(this::buildSubtitle);
+	}
+
+	protected String buildSubtitle(List<Item> children) {
+		int files = 0;
+		int folders = 0;
+		for (Item i : children) {
+			if (i instanceof PlayableItem) files++;
+			else folders++;
+		}
+		return getLib().getContext().getResources().getString(R.string.folder_subtitle, files, folders);
 	}
 
 	@NonNull

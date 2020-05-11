@@ -10,6 +10,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.FavoritesPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -26,7 +27,7 @@ public class FavoritesFragment extends MediaLibFragment {
 
 	@Override
 	ListAdapter createAdapter(FermataServiceUiBinder b) {
-		return new FavoritesAdapter(b.getLib().getFavorites());
+		return new FavoritesAdapter(getMainActivity(), b.getLib().getFavorites());
 	}
 
 	@Override
@@ -100,8 +101,8 @@ public class FavoritesFragment extends MediaLibFragment {
 
 	private class FavoritesAdapter extends ListAdapter {
 
-		FavoritesAdapter(BrowsableItem parent) {
-			super(parent);
+		FavoritesAdapter(MainActivityDelegate activity, BrowsableItem parent) {
+			super(activity, parent);
 		}
 
 		@Override

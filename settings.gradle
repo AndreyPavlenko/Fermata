@@ -6,10 +6,12 @@ include ':utils'
 include ':vlc'
 //include ':gdrive'
 include ':sftp'
+include ':smb'
 project(':utils').projectDir = new File('depends/utils')
 project(':vlc').projectDir = new File('modules/vlc')
 //project(':gdrive').projectDir = new File('modules/gdrive')
 project(':sftp').projectDir = new File('modules/sftp')
+project(':smb').projectDir = new File('modules/smb')
 
 def exoRoot = file('depends/ExoPlayer')
 

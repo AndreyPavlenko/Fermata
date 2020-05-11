@@ -122,15 +122,14 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		List<Item> children = new ArrayList<>(pref.length);
 		Set<String> names = new HashSet<>((int) (pref.length * 1.5));
 
-		return Async.forEach(rid -> vfsManager.getResource(rid)
+		return Async.forEach(rid -> vfsManager.getFolder(rid).withMainHandler()
 				.ifFail(fail -> {
 					Log.e(fail, "Failed to load folder ", rid);
 					return null;
 				})
-				.then(res -> {
-					if (!(res instanceof VirtualFolder)) return completedVoid();
+				.then(folder -> {
+					if (folder == null) return completedVoid();
 
-					VirtualFolder folder = (VirtualFolder) res;
 					String name = folder.getName();
 					if (!names.add(name)) name = sha1String(rid);
 
@@ -162,7 +161,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	public FutureSupplier<Item> addItem(Uri uri) {
 		List<FolderItem> children = list();
 
-		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getRid()))) {
+		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getRid().toAndroidUri()))) {
 			return completedNull();
 		}
 

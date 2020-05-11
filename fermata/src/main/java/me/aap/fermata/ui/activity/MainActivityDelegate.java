@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -73,6 +74,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	private NavBarView navBar;
 	private ControlPanelView controlPanel;
 	private FloatingButton floatingButton;
+	private ContentLoadingProgressBar progressBar;
+	private FutureSupplier<?> contentLoading;
 	private boolean bind = true;
 	private boolean barsHidden;
 	private boolean videoMode;
@@ -249,6 +252,26 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public boolean isVideoMode() {
 		return videoMode;
+	}
+
+	public void setContentLoading(FutureSupplier<?> contentLoading) {
+		if (this.contentLoading != null) {
+			this.contentLoading.cancel();
+			this.contentLoading = null;
+		}
+
+		if (contentLoading.isDone()) return;
+
+		this.contentLoading = contentLoading;
+		contentLoading.onCompletion((r, f) -> {
+			if (f != null) Log.d(f);
+			if (this.contentLoading == contentLoading) {
+				contentLoading.cancel();
+				this.contentLoading = null;
+				progressBar.hide();
+			}
+		});
+		progressBar.show();
 	}
 
 	public void backToNavFragment() {
@@ -433,6 +456,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		AppActivity a = getAppActivity();
 		a.setContentView(R.layout.main_activity);
 		toolBar = a.findViewById(R.id.tool_bar);
+		progressBar = a.findViewById(R.id.content_loading_progress);
 		navBar = a.findViewById(R.id.nav_bar);
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
@@ -450,16 +474,15 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			b.getMediaSessionCallback().onPrepare();
 			init();
 			fireBroadcastEvent(SERVICE_BOUND);
+			showFragment(R.id.nav_folders);
 
-			goToCurrent().onCompletion((ok, fail) -> {
+			FutureSupplier<?> f = goToCurrent().onCompletion((ok, fail) -> {
 				if (fail != null) {
 					Log.e(fail, "Last played track not found");
-					showFragment(R.id.nav_folders);
-				} else if (!ok) {
-					showFragment(R.id.nav_folders);
 				}
 			});
 
+			setContentLoading(f);
 			a.checkPermissions(getRequiredPermissions());
 
 			FermataApplication.get().getHandler().post(() -> {

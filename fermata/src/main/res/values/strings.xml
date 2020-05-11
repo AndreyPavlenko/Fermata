@@ -9,6 +9,7 @@
 
     <string name="module_name_gdrive" translatable="false">Google Drive</string>
     <string name="module_name_sftp" translatable="false">SFTP</string>
+    <string name="module_name_smb" translatable="false">SMB</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="playback_prefs">Playback control</string>
@@ -172,6 +173,7 @@
     <string name="vfs_file_system">File system</string>
     <string name="vfs_gdrive">Google drive</string>
     <string name="vfs_sftp" translatable="false">SFTP</string>
+    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
 
     <string name="eq_manual">Manual</string>
     <string name="eq_normal">Normal</string>
@@ -188,6 +190,8 @@
     <string name="host">Host</string>
     <string name="port">Port</string>
     <string name="path">Path</string>
+    <string name="share_name">Share name</string>
+    <string name="domain">Domain</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="private_key">Private key</string>

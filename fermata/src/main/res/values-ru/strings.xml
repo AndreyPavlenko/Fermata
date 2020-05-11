@@ -173,6 +173,8 @@
     <string name="host">Хост</string>
     <string name="port">Порт</string>
     <string name="path">Путь</string>
+    <string name="share_name">Имя директории</string>
+    <string name="domain">Домен</string>
     <string name="username">Имя пользователя</string>
     <string name="password">Пароль</string>
     <string name="private_key">Приватный ключ</string>

@@ -74,7 +74,7 @@ class M3uItem extends BrowsableItemBase {
 				} else if (l.startsWith("#EXTINF:")) {
 					first = false;
 					int len = l.length();
-					int i = indexOfChar(l, 8, len, " ,");
+					int i = indexOfChar(l, " ,", 8, len);
 					if (i == -1) continue;
 
 					duration = TextUtils.toLong(l, 8, i, 0);
@@ -86,17 +86,17 @@ class M3uItem extends BrowsableItemBase {
 						}
 
 						int start = i + 1;
-						i = indexOfChar(l, start, len, "=,");
+						i = indexOfChar(l, "=,", start, len);
 						if (i == -1) continue read;
 						if (l.charAt(i) != '=') continue;
 
 						String key = l.substring(start, i).trim();
-						i = indexOfChar(l, i + 1, len, "\",");
+						i = indexOfChar(l, "\",", i + 1, len);
 						if (i == -1) continue read;
 						if (l.charAt(i) != '\"') continue;
 
 						start = i + 1;
-						i = indexOfChar(l, start, len, "\",");
+						i = indexOfChar(l, "\",", start, len);
 						if (i == -1) continue read;
 						if (l.charAt(i) != '\"') continue;
 						String value = trim(l.substring(start, i));

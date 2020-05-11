@@ -34,11 +34,14 @@ import static me.aap.utils.async.Completed.failed;
 public class FermataVfsManager extends VfsManager {
 	public static final String GDRIVE_ID = "gdrive";
 	public static final String SFTP_ID = "sftp";
+	public static final String SMB_ID = "smb";
 	private static final String CHANNEL_ID = "fermata.vfs.install";
 	private static final Pref<BooleanSupplier> ENABLE_GDRIVE = Pref.b("ENABLE_GDRIVE", false);
 	private static final Pref<BooleanSupplier> ENABLE_SFTP = Pref.b("ENABLE_SFTP", false);
+	private static final Pref<BooleanSupplier> ENABLE_SMB = Pref.b("ENABLE_SMB", false);
 	private static final String GDRIVE_CLASS = "me.aap.fermata.vfs.gdrive.Provider";
 	private static final String SFTP_CLASS = "me.aap.fermata.vfs.sftp.Provider";
+	private static final String SMB_CLASS = "me.aap.fermata.vfs.smb.Provider";
 
 	public FermataVfsManager() {
 		super(filesystems());
@@ -46,6 +49,7 @@ public class FermataVfsManager extends VfsManager {
 		PreferenceStore ps = FermataApplication.get().getPreferenceStore();
 		initProvider(ps, ENABLE_GDRIVE, GDRIVE_ID);
 		initProvider(ps, ENABLE_SFTP, SFTP_ID);
+		initProvider(ps, ENABLE_SMB, SMB_ID);
 	}
 
 	public FutureSupplier<VfsProvider> getProvider(String scheme) {
@@ -54,6 +58,8 @@ public class FermataVfsManager extends VfsManager {
 				return getProvider(scheme, ENABLE_GDRIVE, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
 			case SFTP_ID:
 				return getProvider(scheme, ENABLE_SFTP, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
+			case SMB_ID:
+				return getProvider(scheme, ENABLE_SMB, SMB_CLASS, SMB_ID, R.string.vfs_smb);
 			default:
 				return completedNull();
 		}
@@ -69,12 +75,13 @@ public class FermataVfsManager extends VfsManager {
 	private static List<VirtualFileSystem> filesystems() {
 		FermataApplication app = FermataApplication.get();
 		PreferenceStore ps = app.getPreferenceStore();
-		List<VirtualFileSystem> p = new ArrayList<>(5);
+		List<VirtualFileSystem> p = new ArrayList<>(6);
 		p.add(LocalFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(GenericFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(ContentFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		addFileSystem(p, ps, ENABLE_GDRIVE, app, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
 		addFileSystem(p, ps, ENABLE_SFTP, app, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
+		addFileSystem(p, ps, ENABLE_SMB, app, SMB_CLASS, SMB_ID, R.string.vfs_smb);
 		return p;
 	}
 

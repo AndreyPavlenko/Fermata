@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.view;
 
+import android.support.v4.media.MediaDescriptionCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -17,7 +18,9 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
@@ -30,11 +33,16 @@ import static me.aap.utils.collection.CollectionUtils.filterMap;
  */
 public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaItemViewHolder>
 		implements OnClickListener {
+	private final MainActivityDelegate activity;
 	private BrowsableItem parent;
 	private String filterText = "";
 	private Pattern filter;
 	private MediaItemListView listView;
 	private List<MediaItemWrapper> list = Collections.emptyList();
+
+	public MediaItemListViewAdapter(MainActivityDelegate activity) {
+		this.activity = activity;
+	}
 
 	@NonNull
 	public MediaItemListView getListView() {
@@ -56,11 +64,13 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		notifyDataSetChanged();
 		if (parent == null) return;
 
-		parent.getChildren().withMainHandler().addConsumer((result, fail, progress, total) -> {
+		FutureSupplier<List<Item>> f = parent.getChildren().withMainHandler();
+		activity.setContentLoading(f);
+		f.addConsumer((result, fail, progress, total) -> {
 			if (this.parent != parent) return;
 			if (fail != null) {
 				Log.e(fail, "Failed to load children");
-				Utils.showAlert(getListView().getContext(), fail.getLocalizedMessage());
+				Utils.showAlert(activity.getContext(), fail.getLocalizedMessage());
 			} else {
 				setChildren(result);
 			}
@@ -182,7 +192,18 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	}
 
 	private boolean filter(Item i) {
-		return (filter == null) ||
-				filter.matcher(requireNonNull(i.getMediaDescription().getOrThrow().getTitle())).find();
+		if (filter == null) return true;
+		MediaDescriptionCompat dsc = i.getMediaDescription().peek();
+		CharSequence title;
+
+		if (dsc != null) {
+			title = requireNonNull(dsc.getTitle());
+		} else if (i instanceof BrowsableItem) {
+			title = ((BrowsableItem) i).getName();
+		} else {
+			title = i.getFile().getName();
+		}
+
+		return filter.matcher(title).find();
 	}
 }

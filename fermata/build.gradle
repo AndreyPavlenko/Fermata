@@ -67,6 +67,7 @@ android {
     dynamicFeatures.add(':vlc')
 //    dynamicFeatures.add(':gdrive')
     dynamicFeatures.add(':sftp')
+    dynamicFeatures.add(':smb')
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

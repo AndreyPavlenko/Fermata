@@ -313,7 +313,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	public class ListAdapter extends MediaItemListViewAdapter {
 
-		ListAdapter(BrowsableItem parent) {
+		ListAdapter(MainActivityDelegate activity, BrowsableItem parent) {
+			super(activity);
 			super.setParent(parent);
 		}
 

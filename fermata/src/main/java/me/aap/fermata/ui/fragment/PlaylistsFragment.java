@@ -11,6 +11,7 @@ import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.PlaylistPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -26,7 +27,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 
 	@Override
 	ListAdapter createAdapter(FermataServiceUiBinder b) {
-		return new PlaylistsAdapter(b.getLib().getPlaylists());
+		return new PlaylistsAdapter(getMainActivity(), b.getLib().getPlaylists());
 	}
 
 	@Override
@@ -116,8 +117,8 @@ public class PlaylistsFragment extends MediaLibFragment {
 
 	private class PlaylistsAdapter extends ListAdapter {
 
-		PlaylistsAdapter(BrowsableItem parent) {
-			super(parent);
+		PlaylistsAdapter(MainActivityDelegate activity, BrowsableItem parent) {
+			super(activity, parent);
 		}
 
 		@Override

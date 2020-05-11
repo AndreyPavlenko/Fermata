@@ -30,6 +30,8 @@ import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED
  * @author Andrey Pavlenko
  */
 public abstract class VfsProviderBase implements VfsProvider {
+	@SuppressWarnings("FieldCanBeLocal")
+	private PreferenceStore.Listener prefsListener;
 
 	protected abstract FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs);
 
@@ -111,7 +113,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 		});
 		f.setDialogValidator(() -> validate(ps));
 
-		ps.addBroadcastListener((s, p) ->
+		ps.addBroadcastListener(prefsListener = (s, p) ->
 				f.getToolBarMediator().onActivityEvent(a.getToolBar(), a, FRAGMENT_CONTENT_CHANGED));
 
 		Promise<Boolean> p = new Promise<>();

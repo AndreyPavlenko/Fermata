@@ -14,6 +14,7 @@ import me.aap.fermata.media.pref.FolderItemPrefs;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.io.FileUtils;
+import me.aap.utils.resource.Rid;
 import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
@@ -87,8 +88,21 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 	}
 
 	@Override
+	protected String buildSubtitle(List<Item> children) {
+		String sub = super.buildSubtitle(children);
+		if (getParent() instanceof MediaLib.Folders) {
+			VirtualResource f = getFile();
+			if (!f.isLocalFile()) {
+				Rid rid = f.getRid();
+				return sub + " (" + rid.getScheme() + '@' + rid.getHost() + ')';
+			}
+		}
+		return sub;
+	}
+
+	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
-		return getFile().getChildren().map(this::ls);
+		return getFile().getChildren().withMainHandler().map(this::ls);
 	}
 
 	private List<Item> ls(List<VirtualResource> ls) {

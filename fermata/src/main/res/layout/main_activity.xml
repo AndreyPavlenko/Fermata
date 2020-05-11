@@ -62,6 +62,17 @@
         app:layout_constraintVertical_weight="1"
         tools:context=".ui.activity.MainActivity" />
 
+    <androidx.core.widget.ContentLoadingProgressBar
+        android:id="@+id/content_loading_progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:visibility="visible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tool_bar" />
+
     <me.aap.utils.ui.view.FloatingButton
         android:id="@+id/floating_button"
         android:layout_width="wrap_content"
