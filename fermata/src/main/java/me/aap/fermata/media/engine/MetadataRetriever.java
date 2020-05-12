@@ -45,6 +45,7 @@ public class MetadataRetriever implements Closeable {
 	private static final String COL_GENRE = "Genre";
 	private static final String COL_ART = "Art";
 	private static final String COL_DURATION = "Duration";
+	private static final String COL_ID_PATTERN = COL_ID + " LIKE ? AND NOT " + COL_ID + " LIKE ?";
 	private static final String[] QUERY_COLUMNS = {COL_ID, COL_TITLE, COL_ALBUM, COL_ARTIST,
 			COL_DURATION, COL_ART};
 
@@ -121,6 +122,10 @@ public class MetadataRetriever implements Closeable {
 		return (db != null) ? queue.enqueue(() -> query(idPattern)) : completedEmptyMap();
 	}
 
+	public FutureSupplier<Void> clearMetadata(String idPattern) {
+		return (db != null) ? queue.enqueue(() -> clear(idPattern)) : completedVoid();
+	}
+
 	public FutureSupplier<Void> updateDuration(PlayableItem item, long duration) {
 		if (db == null) return completedVoid();
 
@@ -136,7 +141,7 @@ public class MetadataRetriever implements Closeable {
 		assert db != null;
 
 		try (SharedTextBuilder tb = SharedTextBuilder.get().append(idPattern).append("%/%");
-				 Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID + " LIKE ? AND NOT " + COL_ID + " LIKE ?",
+				 Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID_PATTERN,
 						 new String[]{idPattern, tb.toString()}, null, null, null)) {
 			int count = c.getCount();
 			if (count == 0) return Collections.emptyMap();
@@ -155,6 +160,17 @@ public class MetadataRetriever implements Closeable {
 			Log.d(ex, "Failed to query media metadata");
 			return Collections.emptyMap();
 		}
+	}
+
+	private Void clear(String idPattern) {
+		try {
+			String not = SharedTextBuilder.get().append(idPattern).append("%/%").releaseString();
+			assert db != null;
+			db.delete(TABLE, COL_ID_PATTERN, new String[]{idPattern, not});
+		} catch (Throwable ex) {
+			Log.d(ex, "Failed to clear media metadata");
+		}
+		return null;
 	}
 
 	private MetadataBuilder queryMetadata(PlayableItem item) {

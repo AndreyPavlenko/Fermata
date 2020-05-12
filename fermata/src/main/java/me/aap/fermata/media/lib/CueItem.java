@@ -1,7 +1,6 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
-import android.support.v4.media.MediaDescriptionCompat;
 
 import androidx.annotation.NonNull;
 
@@ -31,6 +30,8 @@ import static me.aap.utils.async.Completed.completed;
  */
 class CueItem extends BrowsableItemBase {
 	public static final String SCHEME = "cue";
+	private final String name;
+	private final String subtitle;
 	private final List<CueTrackItem> tracks;
 
 	private CueItem(String id, BrowsableItem parent, VirtualFolder dir, VirtualFile cueFile) {
@@ -121,11 +122,9 @@ class CueItem extends BrowsableItemBase {
 			Log.e(ex, "Failed to parse cue file: ", getFile());
 		}
 
-		MediaDescriptionCompat.Builder dsc = new MediaDescriptionCompat.Builder();
-		dsc.setTitle((albumTitle != null) ? albumTitle : cueFile.getName());
-		dsc.setSubtitle(ctx.getResources().getString(R.string.browsable_subtitle, tracks.size()));
-		setMediaDescription(dsc.build());
 		this.tracks = tracks;
+		this.name = (albumTitle != null) ? albumTitle : cueFile.getName();
+		this.subtitle = ctx.getResources().getString(R.string.browsable_subtitle, tracks.size());
 	}
 
 	static CueItem create(String id, BrowsableItem parent, VirtualFolder dir, VirtualFile cueFile,
@@ -219,6 +218,16 @@ class CueItem extends BrowsableItemBase {
 		}
 
 		return null;
+	}
+
+	@Override
+	public String getName() {
+		return name;
+	}
+
+	@Override
+	protected FutureSupplier<String> buildSubtitle() {
+		return completed(subtitle);
 	}
 
 	@Override

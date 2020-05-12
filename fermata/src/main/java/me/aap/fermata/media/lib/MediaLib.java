@@ -284,12 +284,13 @@ public interface MediaLib {
 		@NonNull
 		default Uri getLocation() {
 			VirtualResource file = getFile();
-			if (file.isLocalFile()) return file.getRid().toAndroidUri();
+			if (!isNetResource()) return file.getRid().toAndroidUri();
+			else return getLib().getVfsManager().getHttpRid(file).toAndroidUri();
+		}
 
-			VirtualFileSystem.Provider p = getFile().getVirtualFileSystem().getProvider();
-			if (p instanceof GenericFileSystem.Provider) return file.getRid().toAndroidUri();
-
-			return getLib().getVfsManager().getHttpRid(file).toAndroidUri();
+		default boolean isNetResource() {
+			VirtualResource file = getFile();
+			return !file.isLocalFile() && !(file.getVirtualFileSystem() instanceof GenericFileSystem);
 		}
 
 		@NonNull
@@ -468,6 +469,16 @@ public interface MediaLib {
 
 		default boolean sortChildrenEnabled() {
 			return true;
+		}
+
+		@NonNull
+		default FutureSupplier<Void> refresh() {
+			return completedVoid();
+		}
+
+		@NonNull
+		default FutureSupplier<Void> rescan() {
+			return completedVoid();
 		}
 
 		@NonNull

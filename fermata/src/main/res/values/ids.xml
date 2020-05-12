@@ -33,6 +33,9 @@
     <item name="folders_add" type="id" />
     <item name="folders_remove" type="id" />
 
+    <item name="refresh" type="id" />
+    <item name="rescan" type="id" />
+
     <item name="favorites_add" type="id" />
     <item name="favorites_remove" type="id" />
 

@@ -347,7 +347,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			return completedVoid();
 		}
 
-		return lib.getLastPlayedItem().withMainHandler().then(i -> {
+		return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
 			if ((i == null) || i.isVideo() || i.isStream()) return completedVoid();
 
 			engine = getEngineManager().createEngine(engine, i, this);
@@ -381,7 +381,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			case PlaybackStateCompat.STATE_NONE:
 			case PlaybackStateCompat.STATE_STOPPED:
 			case PlaybackStateCompat.STATE_ERROR:
-				return lib.getLastPlayedItem().withMainHandler().then(i -> {
+				return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
 					if (i != null) playItem(i, lib.getLastPlayedPosition(i));
 					return completedVoid();
 				});
@@ -415,7 +415,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			return completedVoid();
 		}
 
-		return lib.getItem(mediaId).withMainHandler().then(i -> {
+		return lib.getItem(mediaId).then(i -> {
 			if (i instanceof PlayableItem) {
 				return completed((PlayableItem) i);
 			} else if (i instanceof BrowsableItem) {
@@ -423,7 +423,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			} else {
 				return completedNull();
 			}
-		}).then(pi -> {
+		}).then(this::prepareItem).then(pi -> {
 			if (pi != null) {
 				long pos = (extras == null) ? 0 : extras.getLong(EXTRA_POS, 0);
 				playItem(pi, pos);
@@ -523,7 +523,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		PlayableItem i = getCurrentItem();
 		if (i == null) return completedVoid();
 
-		return (next ? i.getNextPlayable() : i.getPrevPlayable()).withMainHandler().then(pi -> {
+		return (next ? i.getNextPlayable() : i.getPrevPlayable()).then(this::prepareItem).then(pi -> {
 			if (pi != null) skipTo(next, pi);
 			return completedVoid();
 		});
@@ -691,14 +691,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private FutureSupplier<Void> skipToQueueItem(PlayableItem pi, long queueId) {
-		return pi.getParent().getChildren().withMainHandler().then(children -> {
+		return pi.getParent().getChildren().then(children -> {
 			if ((queueId < 0) || (queueId >= children.size())) return completedNull();
 
 			Item i = children.get((int) queueId);
 			if (i instanceof PlayableItem) return completed((PlayableItem) i);
 			else if (i instanceof BrowsableItem) return ((BrowsableItem) i).getFirstPlayable();
 			else return completedNull();
-		}).then(i -> {
+		}).then(this::prepareItem).then(i -> {
 			if (i == null) return completedVoid();
 
 			PlaybackStateCompat state = getPlaybackState();
@@ -896,7 +896,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (i != null) {
 			if (i.isVideo()) i.getPrefs().setWatchedPref(true);
 
-			return i.getNextPlayable().withMainHandler().then(next -> {
+			return i.getNextPlayable().then(this::prepareItem).then(next -> {
 				if (next != null) {
 					skipTo(true, next);
 				} else {
@@ -1182,6 +1182,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
 	}
 
+	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {
+		if (i == null) return completedNull();
+
+		// Make sure metadata is loaded
+		FutureSupplier<Long> dur = i.getDuration();
+
+		// Make sure HTTP server is started
+		if (i.isNetResource()) lib.getVfsManager().getNetServer();
+
+		dur.get(null);
+		return completed(i).withMainHandler();
+	}
+
 	private Runnable timer;
 
 	private void startTimer(PlayableItem i, long pos, float speed) {
@@ -1195,7 +1208,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		long delay = (long) ((i.getDuration().get(() -> 0L) - pos) / speed);
 		handler.postDelayed(timer, delay);
 	}
-
 
 	private void stopTimer() {
 		timer = null;

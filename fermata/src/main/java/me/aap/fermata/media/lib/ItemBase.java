@@ -34,7 +34,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	private static final AtomicReferenceFieldUpdater<ItemBase, FutureSupplier<MediaDescriptionCompat>> MD =
 			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class, FutureSupplier.class, "description");
 	@Keep
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "FieldCanBeLocal"})
 	private volatile FutureSupplier<MediaDescriptionCompat> description;
 	private final String id;
 	private final BrowsableItem parent;
@@ -89,7 +89,12 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 			return MD.compareAndSet(this, load, d) ? d : getMediaDescription();
 		}
 
-		title.then(t -> {
+		title.onProgress((t, progress, total) -> {
+			MediaDescriptionCompat.Builder build = new MediaDescriptionCompat.Builder();
+			build.setMediaId(getId());
+			build.setTitle(t);
+			load.setProgress(build.build(), 1, 3);
+		}).then(t -> {
 			b.setTitle(t);
 			load.setProgress(b.build(), 1, 3);
 			return subtitle.then(s -> {
@@ -106,15 +111,6 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		return (d != null) ? d : load;
 	}
 
-	void setMediaDescription(MediaDescriptionCompat dsc) {
-		setMediaDescription(completed(dsc));
-	}
-
-	void setMediaDescription(FutureSupplier<MediaDescriptionCompat> dsc) {
-		MD.set(this, dsc);
-		dsc.thenReplaceOrClear(MD, this);
-	}
-
 	protected FutureSupplier<String> buildTitle() {
 		BrowsableItem parent = requireNonNull(getParent());
 		BrowsableItemPrefs prefs = parent.getPrefs();
@@ -122,11 +118,16 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 
 		if (prefs.getTitleSeqNumPref()) {
 			if (seq == 0) {
-				return parent.getChildren().then(children -> {
+				Promise<String> load = new Promise<>();
+
+				parent.getChildren().then(children -> {
 					int s = seqNum;
 					assertNotEquals(s, 0);
 					return buildTitle(s, prefs);
-				});
+				}).thenComplete(load);
+
+				buildTitle(0, prefs).onSuccess(t -> load.setProgress(t, 1, 2));
+				return load;
 			} else {
 				return buildTitle(seq, prefs);
 			}
@@ -222,5 +223,9 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@Override
 	public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
 		return getLib().getBroadcastEventListeners();
+	}
+
+	void reset() {
+		description = null;
 	}
 }

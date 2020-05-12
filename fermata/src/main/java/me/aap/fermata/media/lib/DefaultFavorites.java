@@ -91,7 +91,8 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	@Override
 	public boolean isFavoriteItem(PlayableItem i) {
 		String id = toChildItemId(i.getOrigId());
-		return CollectionUtils.contains(getUnsortedChildren().getOrThrow(), c -> id.equals(c.getId()));
+		List<Item> list = getUnsortedChildren().peek();
+		return (list != null) && CollectionUtils.contains(list, c -> id.equals(c.getId()));
 	}
 
 	@Override

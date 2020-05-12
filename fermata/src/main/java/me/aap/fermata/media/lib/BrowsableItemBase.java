@@ -204,6 +204,28 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 	@NonNull
 	@Override
+	public FutureSupplier<Void> refresh() {
+		updateTitles();
+		CHILDREN.set(this, null);
+		return updateTitles();
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<Void> rescan() {
+		FutureSupplier<List<Item>> list = CHILDREN.get(this);
+		String pattern = getChildrenIdPattern();
+		if (pattern != null) getLib().getMetadataRetriever().clearMetadata(pattern);
+		if (list == null) return refresh();
+		CHILDREN.set(this, null);
+		return list.then(children -> Async.forEach(i -> {
+			if (i instanceof ItemBase) ((ItemBase) i).reset();
+			return completedVoid();
+		}, children)).then(v -> super.updateTitles());
+	}
+
+	@NonNull
+	@Override
 	public FutureSupplier<Void> updateSorting() {
 		FutureSupplier<List<Item>> list = CHILDREN.get(this);
 		if (list == null) return completedVoid();

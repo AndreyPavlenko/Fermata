@@ -191,6 +191,16 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		getAdapter().reload();
 	}
 
+	public void refresh() {
+		getAdapter().getParent().refresh();
+		reload();
+	}
+
+	public void rescan() {
+		getAdapter().getParent().rescan();
+		reload();
+	}
+
 	@Override
 	public void onHiddenChanged(boolean hidden) {
 		super.onHiddenChanged(hidden);

@@ -90,6 +90,9 @@ public class FoldersFragment extends MediaLibFragment {
 			} else {
 				b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
 			}
+
+			b.addItem(R.id.refresh, R.drawable.refresh, R.string.refresh);
+			b.addItem(R.id.rescan, R.drawable.loading, R.string.rescan);
 		}
 
 		super.contributeToNavBarMenu(builder);
@@ -114,6 +117,12 @@ public class FoldersFragment extends MediaLibFragment {
 				discardSelection();
 				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
 				if (f != null) f.reload();
+				return true;
+			case R.id.refresh:
+				refresh();
+				return true;
+			case R.id.rescan:
+				rescan();
 				return true;
 		}
 

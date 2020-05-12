@@ -117,6 +117,12 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	}
 
 	@Override
+	void reset() {
+		super.reset();
+		meta = null;
+	}
+
+	@Override
 	protected FutureSupplier<String> buildSubtitle() {
 		return getMediaData().map(md -> {
 			try (SharedTextBuilder tb = SharedTextBuilder.get()) {

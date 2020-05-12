@@ -20,13 +20,14 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
-import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
+import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
 
 /**
  * @author Andrey Pavlenko
@@ -64,17 +65,24 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		notifyDataSetChanged();
 		if (parent == null) return;
 
-		FutureSupplier<List<Item>> f = parent.getChildren().withMainHandler();
-		activity.setContentLoading(f);
-		f.addConsumer((result, fail, progress, total) -> {
-			if (this.parent != parent) return;
+		Promise<Void> promise = new Promise<>();
+		parent.getChildren().withMainHandler().addConsumer((result, fail, progress, total) -> {
+			if (this.parent != parent) {
+				promise.complete(null);
+				return;
+			}
+
 			if (fail != null) {
+				promise.complete(null);
 				Log.e(fail, "Failed to load children");
 				Utils.showAlert(activity.getContext(), fail.getLocalizedMessage());
 			} else {
 				setChildren(result);
 			}
+
+			if (progress == PROGRESS_DONE) promise.complete(null);
 		});
+		activity.setContentLoading(promise);
 	}
 
 	@CallSuper
