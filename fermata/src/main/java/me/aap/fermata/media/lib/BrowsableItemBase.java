@@ -106,7 +106,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		if (children == null) return false;
 		if (children.isDone()) {
 			List<Item> list = children.peek();
-			return (list instanceof SortedItems) || list.isEmpty();
+			return (list != null) && ((list instanceof SortedItems) || list.isEmpty());
 		} else {
 			return children instanceof LoadChildren;
 		}

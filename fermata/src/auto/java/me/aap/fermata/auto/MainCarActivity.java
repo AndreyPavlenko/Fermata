@@ -1,13 +1,11 @@
 package me.aap.fermata.auto;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.apps.auto.sdk.CarActivity;
@@ -18,8 +16,10 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.AppActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
-import me.aap.utils.function.BiConsumer;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.activity.ActivityDelegate;
+
+import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
@@ -95,7 +95,9 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 		getActivityDelegate().onActivityFinish();
 	}
 
-	public void startActivityForResult(BiConsumer<Integer, Intent> resultHandler, Intent intent) {
+	@Override
+	public FutureSupplier<Intent> startActivityForResult(Intent intent) {
+		return failed(new UnsupportedOperationException());
 	}
 
 	public void checkPermissions(String... perms) {

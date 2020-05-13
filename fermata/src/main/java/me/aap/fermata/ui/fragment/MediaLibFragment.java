@@ -31,6 +31,7 @@ import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
@@ -325,26 +326,30 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		ListAdapter(MainActivityDelegate activity, BrowsableItem parent) {
 			super(activity);
-			super.setParent(parent);
+			super.setParent(parent, false);
 		}
 
 		@Override
-		public void setParent(BrowsableItem parent) {
+		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
 			BrowsableItem prev = super.getParent();
-			super.setParent(parent);
+			FutureSupplier<?> set = super.setParent(parent, userAction);
 
 			if (!isHidden()) {
-				if (parent != null) {
-					int idx = indexOf(getList(), prev);
-
-					if (idx != -1) {
-						scrollPosition = idx;
-						scrollToPosition();
-					}
-				}
-
 				getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+
+				if (parent != null) {
+					return set.onSuccess(v -> {
+						int idx = indexOf(getList(), prev);
+
+						if (idx != -1) {
+							scrollPosition = idx;
+							scrollToPosition();
+						}
+					});
+				}
 			}
+
+			return set;
 		}
 
 		@Override

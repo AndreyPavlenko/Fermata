@@ -2,21 +2,46 @@ package me.aap.fermata.vfs.gdrive;
 
 import android.content.Context;
 
-import me.aap.fermata.vfs.VfsProvider;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.vfs.VfsProviderBase;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.vfs.VirtualFileSystem;
+import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.gdrive.GdriveFileSystem;
+
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.vfs.gdrive.GdriveFileSystem.Provider.GOOGLE_TOKEN;
 
 /**
  * @author Andrey Pavlenko
  */
-public class Provider implements VfsProvider {
+public class Provider extends VfsProviderBase {
 
 	@Override
-	public VirtualFileSystem.Provider getProvider(Context ctx, Supplier<FutureSupplier<? extends AppActivity>> activitySupplier) {
-		return GdriveFileSystem.Provider.create(ctx.getString(me.aap.fermata.R.string.google_app_id),
-				activitySupplier);
+	public FutureSupplier<VirtualFileSystem> createFileSystem(
+			Context ctx, Supplier<FutureSupplier<? extends AppActivity>> activitySupplier, PreferenceStore ps) {
+		BasicPreferenceStore store = new BasicPreferenceStore();
+		store.applyStringPref(GOOGLE_TOKEN, ctx.getString(me.aap.fermata.R.string.default_web_client_id));
+		return new GdriveFileSystem.Provider(activitySupplier).createFileSystem(store);
+	}
+
+	@Override
+	protected boolean addRemoveSupported() {
+		return false;
+	}
+
+	@Override
+	protected FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
+		return completedNull();
+	}
+
+	@Override
+	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualFolder folder) {
+		return completedVoid();
 	}
 }

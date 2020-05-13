@@ -75,8 +75,8 @@ public class FavoritesFragment extends MediaLibFragment {
 				requireNonNull(getLib()).getFavorites().removeItems(filterMap(getAdapter().getList(),
 						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
 						ArrayList::new));
-				getAdapter().setParent(getAdapter().getParent());
 				discardSelection();
+				getAdapter().setParent(getAdapter().getParent());
 				return true;
 		}
 
@@ -115,12 +115,6 @@ public class FavoritesFragment extends MediaLibFragment {
 		protected boolean onItemMove(int fromPosition, int toPosition) {
 			getFavorites().moveItem(fromPosition, toPosition);
 			return super.onItemMove(fromPosition, toPosition);
-		}
-
-		@Override
-		public void setParent(BrowsableItem parent) {
-			assert (parent == getLib().getFavorites());
-			super.setParent(parent);
 		}
 	}
 }

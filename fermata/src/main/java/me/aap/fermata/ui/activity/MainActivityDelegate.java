@@ -43,8 +43,8 @@ import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.VideoFragment;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
@@ -61,6 +61,7 @@ import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.activity.ActivityListener.SERVICE_BOUND;
 
@@ -263,14 +264,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if (contentLoading.isDone()) return;
 
 		this.contentLoading = contentLoading;
-		contentLoading.onCompletion((r, f) -> {
-			if (f != null) Log.d(f);
+		contentLoading.onCompletion((r, f) -> App.get().run(() -> {
+			if ((f != null) && !isCancellation(f)) Log.d(f);
 			if (this.contentLoading == contentLoading) {
-				contentLoading.cancel();
 				this.contentLoading = null;
 				progressBar.hide();
 			}
-		});
+		}));
 		progressBar.show();
 	}
 
@@ -443,8 +443,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if (f instanceof MainActivityFragment) ((MainActivityFragment) f).discardSelection();
 	}
 
-	public void startActivityForResult(BiConsumer<Integer, Intent> resultHandler, Intent intent) {
-		getAppActivity().startActivityForResult(resultHandler, intent);
+	public FutureSupplier<Intent> startActivityForResult(Intent intent) {
+		return getAppActivity().startActivityForResult(intent);
 	}
 
 	@Override
@@ -477,7 +477,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			showFragment(R.id.nav_folders);
 
 			FutureSupplier<?> f = goToCurrent().onCompletion((ok, fail) -> {
-				if (fail != null) {
+				if ((fail != null) && !isCancellation(fail)) {
 					Log.e(fail, "Last played track not found");
 				}
 			});

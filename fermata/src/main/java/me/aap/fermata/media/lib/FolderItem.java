@@ -94,7 +94,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 			VirtualResource f = getFile();
 			if (!f.isLocalFile()) {
 				Rid rid = f.getRid();
-				return sub + " (" + rid.getScheme() + '@' + rid.getHost() + ')';
+				return sub + " (" + rid.getScheme() + "://" + rid.getAuthority() + ')';
 			}
 		}
 		return sub;
@@ -102,7 +102,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 
 	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
-		return getFile().getChildren().withMainHandler().map(this::ls);
+		return getFile().getChildren().map(this::ls);
 	}
 
 	private List<Item> ls(List<VirtualResource> ls) {

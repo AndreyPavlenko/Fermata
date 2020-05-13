@@ -26,6 +26,7 @@ import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.fermata.util.Utils;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -73,9 +74,11 @@ public class FoldersFragment extends MediaLibFragment {
 					.setHandler(this::navBarMenuItemSelected);
 		} else {
 			FoldersAdapter a = getAdapter();
-			if (!a.hasSelectable()) return;
-
 			OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+			b.addItem(R.id.refresh, R.drawable.refresh, R.string.refresh);
+			b.addItem(R.id.rescan, R.drawable.loading, R.string.rescan);
+
+			if (!a.hasSelectable()) return;
 
 			if (a.getListView().isSelectionActive()) {
 				boolean hasSelected = a.hasSelected();
@@ -90,9 +93,6 @@ public class FoldersFragment extends MediaLibFragment {
 			} else {
 				b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
 			}
-
-			b.addItem(R.id.refresh, R.drawable.refresh, R.string.refresh);
-			b.addItem(R.id.rescan, R.drawable.loading, R.string.rescan);
 		}
 
 		super.contributeToNavBarMenu(builder);
@@ -162,7 +162,7 @@ public class FoldersFragment extends MediaLibFragment {
 			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
-//			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
+			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
 		});
 	}
 
@@ -190,7 +190,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 	private void addFolderIntent() throws ActivityNotFoundException {
 		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		getMainActivity().startActivityForResult(this::addFolderResult, intent);
+		getMainActivity().startActivityForResult(intent).onSuccess(this::addFolderResult);
 	}
 
 	public void addFolderPicker() {
@@ -224,13 +224,14 @@ public class FoldersFragment extends MediaLibFragment {
 			if (ex instanceof InstallException) {
 				Utils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
 			} else {
+				String msg = ex.getLocalizedMessage();
 				Utils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
-						ex.getLocalizedMessage()));
+						(msg != null) ? msg : ex.toString()));
 			}
 		});
 	}
 
-	private void addFolderResult(int result, Intent data) {
+	private void addFolderResult(Intent data) {
 		if (data == null) return;
 
 		Uri uri = data.getData();
@@ -283,9 +284,8 @@ public class FoldersFragment extends MediaLibFragment {
 		}
 
 		@Override
-		public void setParent(BrowsableItem parent) {
-			super.setParent(parent);
-			animateAddButton(parent);
+		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
+			return super.setParent(parent, userAction).onSuccess(v -> animateAddButton(parent));
 		}
 
 		public boolean isLongPressDragEnabled() {

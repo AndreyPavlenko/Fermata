@@ -20,14 +20,15 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
-import me.aap.utils.async.Promise;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
-import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 /**
  * @author Andrey Pavlenko
@@ -58,31 +59,32 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		return parent;
 	}
 
+	public FutureSupplier<?> setParent(BrowsableItem parent) {
+		return setParent(parent, true);
+	}
+
 	@CallSuper
-	public void setParent(BrowsableItem parent) {
+	public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
 		this.parent = parent;
 		list = Collections.emptyList();
 		notifyDataSetChanged();
-		if (parent == null) return;
+		if (parent == null) completedVoid();
 
-		Promise<Void> promise = new Promise<>();
-		parent.getChildren().withMainHandler().addConsumer((result, fail, progress, total) -> {
-			if (this.parent != parent) {
-				promise.complete(null);
-				return;
-			}
+		FutureSupplier<?> f = parent.getChildren().withMainHandler()
+				.addConsumer((result, fail, progress, total) -> {
+					if (this.parent != parent) return;
 
-			if (fail != null) {
-				promise.complete(null);
-				Log.e(fail, "Failed to load children");
-				Utils.showAlert(activity.getContext(), fail.getLocalizedMessage());
-			} else {
-				setChildren(result);
-			}
+					if (fail != null) {
+						if (isCancellation(fail)) return;
+						Log.e(fail, "Failed to load children");
+						Utils.showAlert(activity.getContext(), fail.getLocalizedMessage());
+					} else {
+						setChildren(result);
+					}
+				});
 
-			if (progress == PROGRESS_DONE) promise.complete(null);
-		});
-		activity.setContentLoading(promise);
+		if (userAction) activity.setContentLoading(f);
+		return f;
 	}
 
 	@CallSuper

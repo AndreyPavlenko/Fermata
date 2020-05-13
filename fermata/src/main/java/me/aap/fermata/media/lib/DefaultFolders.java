@@ -26,7 +26,6 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.text.SharedTextBuilder;
-import me.aap.utils.vfs.VirtualFolder;
 
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -122,7 +121,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 		List<Item> children = new ArrayList<>(pref.length);
 		Set<String> names = new HashSet<>((int) (pref.length * 1.5));
 
-		return Async.forEach(rid -> vfsManager.getFolder(rid).withMainHandler()
+		return Async.forEach(rid -> vfsManager.getFolder(rid)
 				.ifFail(fail -> {
 					Log.e(fail, "Failed to load folder ", rid);
 					return null;
@@ -211,10 +210,9 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 
 	@NonNull
 	private FutureSupplier<FolderItem> toFolderItem(Uri u, List<FolderItem> children) {
-		return vfsManager.getResource(Rid.create(u)).map(res -> {
-			if (!(res instanceof VirtualFolder)) return null;
+		return vfsManager.getFolder(Rid.create(u)).map(folder -> {
+			if (folder == null) return null;
 
-			VirtualFolder folder = (VirtualFolder) res;
 			String name = folder.getName();
 
 			for (FolderItem c : children) {

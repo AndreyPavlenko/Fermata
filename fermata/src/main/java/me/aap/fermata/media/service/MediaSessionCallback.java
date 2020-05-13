@@ -55,6 +55,7 @@ import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.holder.Holder;
 import me.aap.utils.log.Log;
+import me.aap.utils.net.NetServer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 
@@ -370,11 +371,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@SuppressLint("SwitchIntDef")
 	private FutureSupplier<Void> play() {
-		if (!requestAudioFocus()) {
-			Log.i("Audio focus request failed");
-			return completedVoid();
-		}
-
 		PlaybackStateCompat state = getPlaybackState();
 
 		switch (state.getState()) {
@@ -386,6 +382,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 					return completedVoid();
 				});
 			case PlaybackStateCompat.STATE_PAUSED:
+				if (!requestAudioFocus()) {
+					Log.i("Audio focus request failed");
+					return completedVoid();
+				}
+
 				assert (engine != null);
 				assert (engine.getSource() != null);
 				long pos = state.getPosition();
@@ -410,11 +411,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private FutureSupplier<Void> playFromMediaId(String mediaId, Bundle extras) {
-		if (!requestAudioFocus()) {
-			Log.i("Audio focus request failed");
-			return completedVoid();
-		}
-
 		return lib.getItem(mediaId).then(i -> {
 			if (i instanceof PlayableItem) {
 				return completed((PlayableItem) i);
@@ -973,6 +969,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private void playItem(PlayableItem i, long pos) {
+		if (!requestAudioFocus()) {
+			Log.i("Audio focus request failed");
+			return;
+		}
+
 		PlayableItem current = getCurrentItem();
 		long currentPos = (current != null) ? engine.getPosition() : 0;
 		engine = getEngineManager().createEngine(engine, i, this);
@@ -1189,9 +1190,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		FutureSupplier<Long> dur = i.getDuration();
 
 		// Make sure HTTP server is started
-		if (i.isNetResource()) lib.getVfsManager().getNetServer();
+		if (i.isNetResource()) {
+			FutureSupplier<NetServer> start = lib.getVfsManager().getNetServer();
+			if (!start.isDone()) return start.then(s -> dur).map(d -> i).withMainHandler();
+		}
 
-		dur.get(null);
+		if (!dur.isDone()) return dur.map(d -> i).withMainHandler();
 		return completed(i).withMainHandler();
 	}
 

@@ -24,27 +24,34 @@ import me.aap.utils.vfs.VirtualResource;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.utils.async.Completed.cancelled;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 /**
  * @author Andrey Pavlenko
  */
 public abstract class VfsProviderBase implements VfsProvider {
-	@SuppressWarnings("FieldCanBeLocal")
+	@SuppressWarnings({"FieldCanBeLocal", "unused"})
 	private PreferenceStore.Listener prefsListener;
 
-	protected abstract FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs);
+	protected FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
+		return completedNull();
+	}
 
-	protected abstract FutureSupplier<Void> removeFolder(
-			MainActivityDelegate a, VirtualFileSystem fs, VirtualFolder folder);
+	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualFolder folder) {
+		return completedVoid();
+	}
 
 	@Override
 	public FutureSupplier<VirtualFolder> select(MainActivityDelegate a, List<VirtualFileSystem> fs) {
 		if (fs.isEmpty()) return Completed.failed(new VfsException("No file system found"));
 
 		VirtualFileSystem f = fs.get(0);
-		return f.getRoots().then(roots -> {
-			if (roots.isEmpty()) {
+		FutureSupplier<List<VirtualFolder>> getRoots = f.getRoots();
+		a.setContentLoading(getRoots);
+		return getRoots.then(roots -> {
+			if (roots.isEmpty() && addRemoveSupported()) {
 				return addFolder(a, f).then(folder -> {
 					if (folder != null) {
 						return folder.getChildren().withMainHandler().then(c -> pickFolder(a, f, folder, c));
@@ -66,35 +73,39 @@ public abstract class VfsProviderBase implements VfsProvider {
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setResources(parent, children);
 		f.setFileConsumer(r -> p.complete((VirtualFolder) r));
-		f.setCreateFolder(new FilePickerFragment.CreateFolder() {
-			@Override
-			public int getIcon() {
-				return R.drawable.add_folder;
-			}
 
-			@Override
-			public boolean isAvailable(VirtualResource parent, List<? extends VirtualResource> children) {
-				return parent == null;
-			}
+		if (addRemoveSupported()) {
+			f.setCreateFolder(new FilePickerFragment.CreateFolder() {
+				@Override
+				public int getIcon() {
+					return R.drawable.add_folder;
+				}
 
-			@Override
-			public FutureSupplier<BiHolder<? extends VirtualResource, List<? extends VirtualResource>>>
-			create(VirtualResource parent, List<? extends VirtualResource> children) {
-				return addFolder(a, fs).then(f -> fs.getRoots().map(roots -> new BiHolder<>(null, roots)));
-			}
-		});
-		f.setOnLongClick(item -> {
-			a.getContextMenu().show(b -> {
-				b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
-				b.setSelectionHandler(i -> {
-					if (i.getItemId() != R.id.folders_remove) return false;
-					removeFolder(a, fs, (VirtualFolder) item).thenRun(() -> f.setFileSystem(fs));
-					return true;
-				});
+				@Override
+				public boolean isAvailable(VirtualResource parent, List<? extends VirtualResource> children) {
+					return parent == null;
+				}
+
+				@Override
+				public FutureSupplier<BiHolder<? extends VirtualResource, List<? extends VirtualResource>>>
+				create(VirtualResource parent, List<? extends VirtualResource> children) {
+					return addFolder(a, fs).then(f -> fs.getRoots().map(roots -> new BiHolder<>(null, roots)));
+				}
 			});
 
-			return true;
-		});
+			f.setOnLongClick(item -> {
+				a.getContextMenu().show(b -> {
+					b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
+					b.setSelectionHandler(i -> {
+						if (i.getItemId() != R.id.folders_remove) return false;
+						removeFolder(a, fs, (VirtualFolder) item).thenRun(() -> f.setFileSystem(fs));
+						return true;
+					});
+				});
+
+				return true;
+			});
+		}
 
 		return p;
 	}
@@ -125,6 +136,11 @@ public abstract class VfsProviderBase implements VfsProvider {
 		return true;
 	}
 
+	protected boolean addRemoveSupported() {
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
 	protected boolean allSet(PreferenceStore ps, PreferenceStore.Pref<Supplier<String>>... prefs) {
 		for (PreferenceStore.Pref<Supplier<String>> p : prefs) {
 			String v = ps.getStringPref(p);
@@ -133,6 +149,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected boolean anySet(PreferenceStore ps, PreferenceStore.Pref<Supplier<String>>... prefs) {
 		for (PreferenceStore.Pref<Supplier<String>> p : prefs) {
 			String v = ps.getStringPref(p);

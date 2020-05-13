@@ -10,7 +10,9 @@ import java.util.List;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.module.DynamicModuleInstaller;
@@ -148,7 +150,8 @@ public class FermataVfsManager extends VfsManager {
 			i.setDownloadingMessage(a.getString(R.string.downloading, name));
 			i.setInstallingMessage(a.getString(R.string.installing, name));
 
-			return i.install(moduleId).then(v -> {
+			Promise<VfsProvider> contentLoading = new Promise<>();
+			FutureSupplier<VfsProvider> install = i.install(moduleId).withMainHandler().then(v -> {
 				VfsProvider p = loadProvider(className, moduleId);
 
 				if (p != null) {
@@ -157,7 +160,10 @@ public class FermataVfsManager extends VfsManager {
 				} else {
 					return failed(new VfsException("Failed to install module " + moduleId));
 				}
-			});
+			}).thenComplete(contentLoading);
+
+			((MainActivityDelegate) a.getActivityDelegate()).setContentLoading(contentLoading);
+			return install;
 		});
 	}
 }
