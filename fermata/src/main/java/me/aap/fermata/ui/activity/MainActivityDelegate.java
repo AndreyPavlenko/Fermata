@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -473,21 +474,30 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), 0));
 			b.getMediaSessionCallback().onPrepare();
 			init();
-			fireBroadcastEvent(SERVICE_BOUND);
-			showFragment(R.id.nav_folders);
 
-			FutureSupplier<?> f = goToCurrent().onCompletion((ok, fail) -> {
-				if ((fail != null) && !isCancellation(fail)) {
-					Log.e(fail, "Last played track not found");
+			String[] perms = getRequiredPermissions();
+			a.checkPermissions(perms).onCompletion((result, fail) -> {
+				if (fail != null) {
+					if (!isCarActivity()) Log.e(fail);
+				} else {
+					Log.i("Requested permissions: " + Arrays.toString(perms) + ". Result: " + Arrays.toString(result));
 				}
-			});
 
-			setContentLoading(f);
-			a.checkPermissions(getRequiredPermissions());
+				fireBroadcastEvent(SERVICE_BOUND);
+				showFragment(R.id.nav_folders);
 
-			FermataApplication.get().getHandler().post(() -> {
-				b.addBroadcastListener(this);
-				onPlayableChanged(null, b.getCurrentItem());
+				FutureSupplier<?> f = goToCurrent().onCompletion((ok, fail1) -> {
+					if ((fail1 != null) && !isCancellation(fail1)) {
+						Log.e(fail1, "Last played track not found");
+					}
+				});
+
+				setContentLoading(f);
+
+				FermataApplication.get().getHandler().post(() -> {
+					b.addBroadcastListener(this);
+					onPlayableChanged(null, b.getCurrentItem());
+				});
 			});
 		} else {
 			Log.e(err);
@@ -502,14 +512,12 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private static String[] getRequiredPermissions() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE,
-					permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION,
-					permission.USE_FULL_SCREEN_INTENT};
+			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE,
+					permission.ACCESS_MEDIA_LOCATION, permission.USE_FULL_SCREEN_INTENT};
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE,
-					permission.FOREGROUND_SERVICE};
+			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE};
 		} else {
-			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.WRITE_EXTERNAL_STORAGE};
+			return new String[]{permission.READ_EXTERNAL_STORAGE};
 		}
 	}
 

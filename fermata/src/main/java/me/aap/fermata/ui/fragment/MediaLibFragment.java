@@ -290,7 +290,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			BrowsableItemPrefs.SUBTITLE_ALBUM,
 			BrowsableItemPrefs.SUBTITLE_ARTIST,
 			BrowsableItemPrefs.SUBTITLE_DURATION,
-			BrowsableItemPrefs.SORT_BY
+			BrowsableItemPrefs.SORT_BY,
+			BrowsableItemPrefs.SORT_DESC
 	));
 
 	@Override

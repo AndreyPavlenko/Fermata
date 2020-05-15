@@ -148,7 +148,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 					}
 
 					cueBuf.append(name);
-					i = CueItem.create(cueBuf.toString(), this, getFile(), (VirtualFile) f, lib);
+					i = CueItem.create(cueBuf.toString(), this, (VirtualFile) f, lib);
 				} else if (M3uItem.isM3uFile(name)) {
 					if (m3uBuf == null) {
 						m3uBuf = new StringBuilder(id.length() + name.length() + 1);
@@ -159,7 +159,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 					}
 
 					m3uBuf.append(name);
-					i = M3uItem.create(m3uBuf.toString(), this, getFile(), (VirtualFile) f, lib);
+					i = M3uItem.create(m3uBuf.toString(), this, (VirtualFile) f, lib);
 				} else {
 					if (fileBuf == null) {
 						fileBuf = new StringBuilder(id.length() + name.length() + 64);

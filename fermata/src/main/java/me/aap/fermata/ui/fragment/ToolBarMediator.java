@@ -18,6 +18,7 @@ import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_DATE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NONE;
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_RND;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
@@ -159,9 +160,10 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 			b.addItem(R.id.tool_sort_name, R.string.track_name).setChecked(sort == SORT_BY_NAME, true);
 			b.addItem(R.id.tool_sort_file_name, R.string.file_name).setChecked(sort == SORT_BY_FILE_NAME, true);
 			b.addItem(R.id.tool_sort_date, R.string.date).setChecked(sort == SORT_BY_DATE, true);
+			b.addItem(R.id.tool_sort_random, R.string.random).setChecked(sort == SORT_BY_RND, true);
 			b.addItem(R.id.tool_sort_none, R.string.do_not_sort).setChecked(sort == SORT_BY_NONE, true);
 
-			if (sort != SORT_BY_NONE) {
+			if ((sort != SORT_BY_NONE) && (sort != SORT_BY_RND)) {
 				b.addItem(R.id.tool_sort_desc, R.string.descending).setChecked(prefs.getSortDescPref());
 			}
 		});
@@ -174,35 +176,35 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 
 		MediaLibFragment f = (MediaLibFragment) mf;
 		MediaLibFragment.ListAdapter adapter = f.getAdapter();
-		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
 
 		switch (item.getItemId()) {
 			case R.id.tool_sort_name:
-				prefs.setSortByPref(SORT_BY_NAME);
-				sortPrefChanged(adapter);
+				setSortBy(adapter, SORT_BY_NAME);
 				return true;
 			case R.id.tool_sort_file_name:
-				prefs.setSortByPref(SORT_BY_FILE_NAME);
-				sortPrefChanged(adapter);
+				setSortBy(adapter, SORT_BY_FILE_NAME);
 				return true;
 			case R.id.tool_sort_date:
-				prefs.setSortByPref(SORT_BY_DATE);
-				sortPrefChanged(adapter);
+				setSortBy(adapter, SORT_BY_DATE);
+				return true;
+			case R.id.tool_sort_random:
+				setSortBy(adapter, SORT_BY_RND);
 				return true;
 			case R.id.tool_sort_none:
-				prefs.setSortByPref(SORT_BY_NONE);
-				sortPrefChanged(adapter);
+				setSortBy(adapter, SORT_BY_NONE);
 				return true;
 			case R.id.tool_sort_desc:
-				prefs.setSortDescPref(!prefs.getSortDescPref());
-				sortPrefChanged(adapter);
+				BrowsableItem p = adapter.getParent();
+				p.updateSorting().withMainHandler()
+						.thenRun(() -> p.getPrefs().setSortDescPref(!p.getPrefs().getSortDescPref()));
 				return true;
 			default:
 				return false;
 		}
 	}
 
-	private static void sortPrefChanged(MediaLibFragment.ListAdapter adapter) {
-		adapter.getParent().updateSorting().thenRun(() -> adapter.setParent(adapter.getParent()));
+	private static void setSortBy(MediaLibFragment.ListAdapter adapter, int sortBy) {
+		BrowsableItem p = adapter.getParent();
+		p.updateSorting().withMainHandler().thenRun(() -> p.getPrefs().setSortByPref(sortBy));
 	}
 }

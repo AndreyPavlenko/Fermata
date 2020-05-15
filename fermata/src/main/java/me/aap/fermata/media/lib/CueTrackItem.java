@@ -66,9 +66,9 @@ class CueTrackItem extends PlayableItemBase {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(CueItem.SCHEME).append(id, i2, id.length());
 
-		return lib.getItem(tb.releaseString()).map(i -> {
+		return lib.getItem(tb.releaseString()).then(i -> {
 			CueItem cue = (CueItem) i;
-			if (cue == null) return null;
+			if (cue == null) return completedNull();
 
 			int n = Integer.parseInt(id.substring(i1 + 1, i2));
 			return cue.getTrack(n);

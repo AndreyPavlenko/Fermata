@@ -14,12 +14,15 @@ import java.util.Map;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.utils.app.App;
+import me.aap.utils.async.FutureRef;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VfsManager;
 import me.aap.utils.vfs.VirtualFile;
+import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -33,14 +36,22 @@ import static me.aap.utils.text.TextUtils.indexOfChar;
  */
 class M3uItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3u";
-	private final String name;
-	private final String subtitle;
-	private final List<Item> tracks;
-	private final String cover;
 	private FutureSupplier<Uri> iconUri;
+	private final FutureRef<Data> data = new FutureRef<Data>() {
+		@Override
+		protected FutureSupplier<Data> create() {
+			return App.get().execute(M3uItem.this::parse);
+		}
+	};
 
-	private M3uItem(String id, BrowsableItem parent, VirtualResource dir, VirtualFile m3uFile) {
+	private M3uItem(String id, BrowsableItem parent, VirtualFile m3uFile) {
 		super(id, parent, m3uFile);
+	}
+
+	private Data parse() {
+		String id = getId();
+		VirtualFile m3uFile = (VirtualFile) getFile();
+		VirtualFolder dir = m3uFile.getParent().getOrThrow();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
 		String idPath = id.substring(SCHEME.length());
@@ -212,15 +223,14 @@ class M3uItem extends BrowsableItemBase {
 			children.addAll(tracks);
 		}
 
-		this.name = (m3uName == null) ? m3uFile.getName() : m3uName;
-		this.cover = cover;
-		this.tracks = children;
-		this.subtitle = getLib().getContext().getResources().getString(R.string.folder_subtitle,
+		String title = (m3uName == null) ? m3uFile.getName() : m3uName;
+		String subtitle = getLib().getContext().getResources().getString(R.string.folder_subtitle,
 				ntracks, ngroups);
+		return new Data(title, subtitle, children, cover);
 	}
 
 	@NonNull
-	static M3uItem create(String id, BrowsableItem parent, VirtualResource dir, VirtualFile m3uFile,
+	static M3uItem create(String id, BrowsableItem parent, VirtualFile m3uFile,
 												DefaultMediaLib lib) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
@@ -231,7 +241,7 @@ class M3uItem extends BrowsableItemBase {
 				if (DEBUG && !m3uFile.equals(c.getFile())) throw new AssertionError();
 				return c;
 			} else {
-				return new M3uItem(id, parent, dir, m3uFile);
+				return new M3uItem(id, parent, m3uFile);
 			}
 		}
 	}
@@ -246,7 +256,7 @@ class M3uItem extends BrowsableItemBase {
 			if (file == null) return null;
 
 			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, parent.getFile(), (VirtualFile) file.getFile(), lib);
+			return create(id, parent, (VirtualFile) file.getFile(), lib);
 		});
 	}
 
@@ -256,51 +266,57 @@ class M3uItem extends BrowsableItemBase {
 
 	@Override
 	public String getName() {
-		return name;
+		Data d = data.get().peek();
+		return (d == null) ? super.getName() : d.name;
 	}
 
 	@NonNull
 	@Override
 	public FutureSupplier<Uri> getIconUri() {
 		if (iconUri == null) {
-			if (cover == null) {
-				iconUri = completedNull();
-			} else {
-				return getFile().getParent().then(folder -> {
-					if (folder == null) return iconUri = completedNull();
-					return getLib().getVfsManager().resolve(cover, folder).then(file ->
-							iconUri = (file != null) ? completed(file.getRid().toAndroidUri()) : completedNull());
-				});
-			}
+			return data.get().then(d -> {
+				if (d.cover == null) {
+					return iconUri = completedNull();
+				} else {
+					return getFile().getParent().then(folder -> {
+						if (folder == null) return iconUri = completedNull();
+						return getLib().getVfsManager().resolve(d.cover, folder).then(file ->
+								iconUri = (file != null) ? completed(file.getRid().toAndroidUri()) : completedNull());
+					});
+				}
+			});
 		}
 
 		return iconUri;
 	}
 
-	public M3uTrackItem getTrack(int id) {
-		for (Item c : tracks) {
-			if (c instanceof M3uTrackItem) {
-				M3uTrackItem t = (M3uTrackItem) c;
-				if (t.getTrackNumber() == id) return t;
+	public FutureSupplier<Item> getTrack(int id) {
+		return data.get().map(d -> {
+			for (Item c : d.tracks) {
+				if (c instanceof M3uTrackItem) {
+					M3uTrackItem t = (M3uTrackItem) c;
+					if (t.getTrackNumber() == id) return t;
+				}
 			}
-		}
-		return null;
+			return null;
+		});
 	}
 
-	public M3uTrackItem getTrack(int gid, int tid) {
+	public FutureSupplier<Item> getTrack(int gid, int tid) {
 		if (gid == -1) return getTrack(tid);
-		M3uGroupItem g = getGroup(gid);
-		return (g != null) ? g.getTrack(tid) : null;
+		return getGroup(gid).map(g -> (g != null) ? ((M3uGroupItem) g).getTrack(tid) : null);
 	}
 
-	public M3uGroupItem getGroup(int id) {
-		for (Item c : tracks) {
-			if (c instanceof M3uGroupItem) {
-				M3uGroupItem g = (M3uGroupItem) c;
-				if (g.getGroupId() == id) return g;
+	public FutureSupplier<Item> getGroup(int id) {
+		return data.get().map(d -> {
+			for (Item c : d.tracks) {
+				if (c instanceof M3uGroupItem) {
+					M3uGroupItem g = (M3uGroupItem) c;
+					if (g.getGroupId() == id) return g;
+				}
 			}
-		}
-		return null;
+			return null;
+		});
 	}
 
 	@Override
@@ -310,15 +326,29 @@ class M3uItem extends BrowsableItemBase {
 
 	@Override
 	public FutureSupplier<List<Item>> listChildren() {
-		return completed(tracks);
+		return data.get().map(d -> d.tracks);
 	}
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		return completed(subtitle);
+		return data.get().map(d -> d.subtitle);
 	}
 
 	private static String trim(String s) {
 		return (s = s.trim()).isEmpty() ? null : s;
+	}
+
+	private static final class Data {
+		final String name;
+		final String subtitle;
+		final List<Item> tracks;
+		final String cover;
+
+		Data(String name, String subtitle, List<Item> tracks, String cover) {
+			this.name = name;
+			this.subtitle = subtitle;
+			this.tracks = tracks;
+			this.cover = cover;
+		}
 	}
 }

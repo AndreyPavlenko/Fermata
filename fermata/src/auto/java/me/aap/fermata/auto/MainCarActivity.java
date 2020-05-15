@@ -100,7 +100,8 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 		return failed(new UnsupportedOperationException());
 	}
 
-	public void checkPermissions(String... perms) {
+	public FutureSupplier<int[]> checkPermissions(String... perms) {
+		return failed(new UnsupportedOperationException());
 	}
 
 	@Override

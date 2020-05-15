@@ -14,6 +14,8 @@ import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.util.Utils;
+import me.aap.utils.app.App;
+import me.aap.utils.async.FutureRef;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
@@ -23,21 +25,28 @@ import me.aap.utils.vfs.VirtualResource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static me.aap.fermata.BuildConfig.DEBUG;
-import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
  */
 class CueItem extends BrowsableItemBase {
 	public static final String SCHEME = "cue";
-	private final String name;
-	private final String subtitle;
-	private final List<CueTrackItem> tracks;
+	private final FutureRef<Data> data = new FutureRef<Data>() {
+		@Override
+		protected FutureSupplier<Data> create() {
+			return App.get().execute(CueItem.this::parse);
+		}
+	};
 
-	private CueItem(String id, BrowsableItem parent, VirtualFolder dir, VirtualFile cueFile) {
+	private CueItem(String id, BrowsableItem parent, VirtualFile cueFile) {
 		super(id, parent, cueFile);
+	}
 
-		Context ctx = parent.getLib().getContext();
+	private Data parse() {
+		String id = getId();
+		VirtualFile cueFile = (VirtualFile) getFile();
+		VirtualFolder dir = cueFile.getParent().getOrThrow();
+		Context ctx = getLib().getContext();
 		List<CueTrackItem> tracks = new ArrayList<>();
 		VirtualResource file = null;
 		String fileName = null;
@@ -122,12 +131,12 @@ class CueItem extends BrowsableItemBase {
 			Log.e(ex, "Failed to parse cue file: ", getFile());
 		}
 
-		this.tracks = tracks;
-		this.name = (albumTitle != null) ? albumTitle : cueFile.getName();
-		this.subtitle = ctx.getResources().getString(R.string.browsable_subtitle, tracks.size());
+		String name = (albumTitle != null) ? albumTitle : cueFile.getName();
+		String subtitle = ctx.getResources().getString(R.string.browsable_subtitle, tracks.size());
+		return new Data(name, subtitle, tracks);
 	}
 
-	static CueItem create(String id, BrowsableItem parent, VirtualFolder dir, VirtualFile cueFile,
+	static CueItem create(String id, BrowsableItem parent, VirtualFile cueFile,
 												DefaultMediaLib lib) {
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(id);
@@ -138,7 +147,7 @@ class CueItem extends BrowsableItemBase {
 				if (DEBUG && !cueFile.equals(c.getFile())) throw new AssertionError();
 				return c;
 			} else {
-				return new CueItem(id, parent, dir, cueFile);
+				return new CueItem(id, parent, cueFile);
 			}
 		}
 	}
@@ -154,7 +163,7 @@ class CueItem extends BrowsableItemBase {
 			if (file == null) return null;
 
 			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, parent.getFile(), (VirtualFile) file.getFile(), lib);
+			return create(id, parent, (VirtualFile) file.getFile(), lib);
 		});
 	}
 
@@ -207,27 +216,30 @@ class CueItem extends BrowsableItemBase {
 		}
 	}
 
-	public CueTrackItem getTrack(int id) {
-		if (id > tracks.size()) return null;
+	FutureSupplier<Item> getTrack(int id) {
+		return data.get().map(d -> {
+			if (id > d.tracks.size()) return null;
 
-		CueTrackItem t = tracks.get(id - 1);
-		if (t.getTrackNumber() == id) return t;
+			CueTrackItem t = d.tracks.get(id - 1);
+			if (t.getTrackNumber() == id) return t;
 
-		for (CueTrackItem c : tracks) {
-			if (c.getTrackNumber() == id) return c;
-		}
+			for (CueTrackItem c : d.tracks) {
+				if (c.getTrackNumber() == id) return c;
+			}
 
-		return null;
+			return null;
+		});
 	}
 
 	@Override
 	public String getName() {
-		return name;
+		Data d = data.get().peek();
+		return (d == null) ? super.getName() : d.name;
 	}
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		return completed(subtitle);
+		return data.get().map(d -> d.subtitle);
 	}
 
 	@Override
@@ -238,6 +250,18 @@ class CueItem extends BrowsableItemBase {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public FutureSupplier<List<Item>> listChildren() {
-		return completed((List) tracks);
+		return data.get().map(d -> (List) d.tracks);
+	}
+
+	private static final class Data {
+		final String name;
+		final String subtitle;
+		final List<CueTrackItem> tracks;
+
+		Data(String name, String subtitle, List<CueTrackItem> tracks) {
+			this.name = name;
+			this.subtitle = subtitle;
+			this.tracks = tracks;
+		}
 	}
 }

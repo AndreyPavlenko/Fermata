@@ -143,10 +143,10 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	}
 
 	protected FutureSupplier<String> buildTitle(int seqNum, BrowsableItemPrefs parentPrefs) {
+		String name = getName();
 		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
 			if (seqNum != 0) tb.append(seqNum).append(". ");
-			tb.append(getName());
-			return completed(tb.toString());
+			return completed(tb.append(name).toString());
 		}
 	}
 
@@ -173,14 +173,8 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	public FutureSupplier<Iterator<PlayableItem>> getShuffleIterator() {
 		if ((shuffle == null) || (shuffle.isDone() && !shuffle.get(null).hasNext())) {
 			shuffle = getPlayableChildren(false, false, Integer.MAX_VALUE).map(list -> {
-				Random rnd = ThreadLocalRandom.current();
 				List<PlayableItem> l = new ArrayList<>(list);
-
-				for (int i = 0, s = l.size(); i < s; i++) {
-					int next = rnd.nextInt(s - i);
-					Collections.swap(l, i, next);
-				}
-
+				shuffle(l);
 				Iterator<PlayableItem> it = l.iterator();
 				shuffle = completed(it);
 				return it;
@@ -199,29 +193,12 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	public FutureSupplier<Void> updateTitles() {
 		FutureSupplier<List<Item>> list = CHILDREN.get(this);
 		if (list == null) return super.updateTitles();
-		return list.then(children -> Async.forEach(Item::updateTitles, children)).then(v -> super.updateTitles());
-	}
-
-	@NonNull
-	@Override
-	public FutureSupplier<Void> refresh() {
-		updateTitles();
-		CHILDREN.set(this, null);
-		return updateTitles();
-	}
-
-	@NonNull
-	@Override
-	public FutureSupplier<Void> rescan() {
-		FutureSupplier<List<Item>> list = CHILDREN.get(this);
-		String pattern = getChildrenIdPattern();
-		if (pattern != null) getLib().getMetadataRetriever().clearMetadata(pattern);
-		if (list == null) return refresh();
-		CHILDREN.set(this, null);
-		return list.then(children -> Async.forEach(i -> {
-			if (i instanceof ItemBase) ((ItemBase) i).reset();
-			return completedVoid();
-		}, children)).then(v -> super.updateTitles());
+		return list.then(children -> {
+			for (Item i : children) {
+				i.updateTitles();
+			}
+			return super.updateTitles();
+		});
 	}
 
 	@NonNull
@@ -229,7 +206,30 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	public FutureSupplier<Void> updateSorting() {
 		FutureSupplier<List<Item>> list = CHILDREN.get(this);
 		if (list == null) return completedVoid();
-		return list.map(ArrayList::new).thenReplaceOrClear(CHILDREN, this, list).then(v -> updateTitles());
+		return updateTitles().onSuccess(v -> CHILDREN.compareAndSet(this, list, null));
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<Void> refresh() {
+		FutureSupplier<List<Item>> list = CHILDREN.get(this);
+		if (list == null) return super.updateTitles();
+		return list.then(children -> {
+			for (Item i : children) {
+				if (i instanceof ItemBase) ((ItemBase) i).reset();
+				else i.updateTitles();
+			}
+			CHILDREN.compareAndSet(this, list, null);
+			return super.updateTitles();
+		});
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<Void> rescan() {
+		String pattern = getChildrenIdPattern();
+		if (pattern != null) getLib().getMetadataRetriever().clearMetadata(pattern);
+		return refresh();
 	}
 
 	void setChildren(List<Item> c) {
@@ -263,6 +263,9 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 					setSeqNum(sorted);
 					return completed(sorted);
 				});
+			case BrowsableItemPrefs.SORT_BY_RND:
+				shuffle(sorted);
+				break;
 		}
 
 		setSeqNum(sorted);
@@ -272,6 +275,15 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	private void setSeqNum(SortedItems sorted) {
 		for (int i = 0; i < sorted.size(); i++) {
 			((ItemBase) sorted.get(i)).setSeqNum(i + 1);
+		}
+	}
+
+	private void shuffle(List<?> l) {
+		Random rnd = ThreadLocalRandom.current();
+
+		for (int i = 0, s = l.size(); i < s; i++) {
+			int next = rnd.nextInt(s - i);
+			Collections.swap(l, i, next);
 		}
 	}
 

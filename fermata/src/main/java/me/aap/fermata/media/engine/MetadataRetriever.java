@@ -97,16 +97,20 @@ public class MetadataRetriever implements Closeable {
 		if (meta != null) return meta;
 
 		MetaBuilder mb = new MetaBuilder();
-		MediaEngineProvider vlcPlayer = mgr.vlcPlayer;
+		MediaEngineProvider mp = mgr.mediaPlayer;
+		MediaEngineProvider vlc = mgr.vlcPlayer;
 		VirtualResource file = item.getFile();
 
 		if (file.isLocalFile() && file.getName().endsWith(".flac")) {
 			// VLC does not extract images from flac, thus prefer Android extractor for local files
-			mgr.mediaPlayer.getMediaMetadata(mb, item);
-		} else if ((vlcPlayer != null) && (!"content".equals(item.getLocation().getScheme()))) {
-			if (!vlcPlayer.getMediaMetadata(mb, item)) mgr.mediaPlayer.getMediaMetadata(mb, item);
+			if (!mp.getMediaMetadata(mb, item) && (vlc != null)) {
+				// Seems flac is not supported, trying VLC
+				vlc.getMediaMetadata(mb, item);
+			}
+		} else if (vlc != null) {
+			if (!vlc.getMediaMetadata(mb, item)) mp.getMediaMetadata(mb, item);
 		} else {
-			mgr.mediaPlayer.getMediaMetadata(mb, item);
+			mp.getMediaMetadata(mb, item);
 		}
 
 		try {

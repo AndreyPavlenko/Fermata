@@ -15,6 +15,7 @@
     <item name="tool_sort_name" type="id" />
     <item name="tool_sort_file_name" type="id" />
     <item name="tool_sort_date" type="id" />
+    <item name="tool_sort_random" type="id" />
     <item name="tool_sort_desc" type="id" />
     <item name="tool_sort_none" type="id" />
 

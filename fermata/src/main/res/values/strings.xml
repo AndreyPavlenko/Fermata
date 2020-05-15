@@ -118,6 +118,7 @@
     <string name="track_name">Name</string>
     <string name="file_name">File name</string>
     <string name="date">Date</string>
+    <string name="random">Random</string>
     <string name="descending">Descending</string>
     <string name="album">Album</string>
     <string name="artist">Artist</string>

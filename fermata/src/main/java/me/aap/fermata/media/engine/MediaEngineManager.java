@@ -125,7 +125,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 
 	private boolean isProviderAvailable(String providerClass) {
 		try {
-			Class.forName(providerClass);
+			Class.forName(providerClass).newInstance();
 			return true;
 		} catch (Throwable ex) {
 			return false;

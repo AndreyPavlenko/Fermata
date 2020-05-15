@@ -14,6 +14,7 @@ import me.aap.utils.text.SharedTextBuilder;
 
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 
 /**
  * @author Andrey Pavlenko
@@ -43,9 +44,9 @@ class M3uGroupItem extends BrowsableItemBase {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uItem.SCHEME).append(id, end, id.length());
 
-		return lib.getItem(tb.releaseString()).map(i -> {
+		return lib.getItem(tb.releaseString()).then(i -> {
 			M3uItem m3u = (M3uItem) i;
-			return (m3u != null) ? m3u.getGroup(gid) : null;
+			return (m3u != null) ? m3u.getGroup(gid) : completedNull();
 		});
 	}
 

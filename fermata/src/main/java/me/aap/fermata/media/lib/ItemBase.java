@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -114,22 +115,20 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	protected FutureSupplier<String> buildTitle() {
 		BrowsableItem parent = requireNonNull(getParent());
 		BrowsableItemPrefs prefs = parent.getPrefs();
-		int seq = seqNum;
 
 		if (prefs.getTitleSeqNumPref()) {
-			if (seq == 0) {
+			FutureSupplier<List<Item>> getChildren = parent.getChildren();
+
+			if (getChildren.isDone()) {
+				return buildTitle(seqNum, prefs);
+			} else {
 				Promise<String> load = new Promise<>();
-
 				parent.getChildren().then(children -> {
-					int s = seqNum;
-					assertNotEquals(s, 0);
-					return buildTitle(s, prefs);
+					assertNotEquals(seqNum, 0);
+					return buildTitle(seqNum, prefs);
 				}).thenComplete(load);
-
 				buildTitle(0, prefs).onSuccess(t -> load.setProgress(t, 1, 2));
 				return load;
-			} else {
-				return buildTitle(seq, prefs);
 			}
 		} else {
 			return buildTitle(0, prefs);

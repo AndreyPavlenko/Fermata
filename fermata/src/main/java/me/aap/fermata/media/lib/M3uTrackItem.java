@@ -12,6 +12,7 @@ import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.fermata.util.Utils.isVideoMimeType;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.io.FileUtils.getFileExtension;
 import static me.aap.utils.io.FileUtils.getMimeTypeFromExtension;
 
@@ -38,7 +39,7 @@ class M3uTrackItem extends PlayableItemBase {
 		} else if (type == 2) {
 			isVideo = true;
 		} else {
-			String ext = getFileExtension(file.getRid().getPath().toString());
+			String ext = getFileExtension(file.getRid().getPath());
 			if (ext == null) isVideo = true;
 			else isVideo = ext.startsWith("m3u") || isVideoMimeType(getMimeTypeFromExtension(ext));
 		}
@@ -77,9 +78,9 @@ class M3uTrackItem extends PlayableItemBase {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uItem.SCHEME).append(id, end, id.length());
 
-		return lib.getItem(tb.releaseString()).map(i -> {
+		return lib.getItem(tb.releaseString()).then(i -> {
 			M3uItem m3u = (M3uItem) i;
-			return (m3u != null) ? m3u.getTrack(gid, tid) : null;
+			return (m3u != null) ? m3u.getTrack(gid, tid) : completedNull();
 		});
 	}
 
