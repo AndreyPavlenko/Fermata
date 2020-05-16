@@ -79,7 +79,6 @@
     <string name="video_scaling_4" translatable="false">4x3</string>
     <string name="video_scaling_16" translatable="false">16x9</string>
 
-
     <string name="audio">Audio</string>
     <string name="audio_delay">Audio delay</string>
     <string name="preferred_audio_lang">Preferred audio stream languages</string>
@@ -203,6 +202,10 @@
     <string name="donate">Coffee for developer</string>
     <string name="donate_text">If you like the application, please consider buying me a coffee.</string>
     <string name="use_phone_for_donation">Please use your phone to buy a coffee.</string>
+
+    <string name="timer">Timer</string>
+    <string name="hours">Hours</string>
+    <string name="minutes">Minutes</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

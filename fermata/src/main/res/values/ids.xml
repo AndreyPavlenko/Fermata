@@ -94,6 +94,7 @@
     <item name="shuffle_disable" type="id" />
 
     <item name="speed" type="id" />
+    <item name="timer" type="id" />
 
     <item name="vfs_content" type="id" />
     <item name="vfs_file_system" type="id" />

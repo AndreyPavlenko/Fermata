@@ -35,6 +35,7 @@ import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
@@ -320,6 +321,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 			b.addItem(R.id.audio_effects, R.drawable.equalizer, R.string.audio_effects);
 			b.addItem(R.id.speed, R.drawable.speed, R.string.speed).setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
+			b.addItem(R.id.timer, R.drawable.timer, R.string.timer).setSubmenu(s -> new TimerMenuHandler(a).build(s));
 		}
 
 		@Override
@@ -547,6 +549,55 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				super.applyFloatPref(pref, value);
 				if (cb.isPlaying()) cb.onSetPlaybackSpeed(value);
 			}
+		}
+	}
+
+	private static final class TimerMenuHandler implements OverlayMenu.CloseHandler {
+		private final Pref<IntSupplier> H = Pref.i("H", 0);
+		private final Pref<IntSupplier> M = Pref.i("M", 0);
+		private PreferenceStore store = new BasicPreferenceStore();
+		private final MediaSessionCallback cb;
+
+		TimerMenuHandler(MainActivityDelegate activity) {
+			cb = activity.getMediaSessionCallback();
+		}
+
+		void build(OverlayMenu.Builder b) {
+			PreferenceSet set = new PreferenceSet();
+			int time = cb.getPlaybackTimer();
+
+			if (time > 0) {
+				int h = time / 3600;
+				int m = (time - h * 3600) / 60;
+				store.applyIntPref(H, h);
+				store.applyIntPref(M, m);
+			}
+
+			set.addIntPref(o -> {
+				o.title = R.string.hours;
+				o.store = store;
+				o.pref = H;
+				o.seekMin = 0;
+				o.seekMax = 12;
+			});
+			set.addIntPref(o -> {
+				o.title = R.string.minutes;
+				o.store = store;
+				o.pref = M;
+				o.seekMin = 0;
+				o.seekMax = 60;
+				o.seekScale = 5;
+			});
+
+			set.addToMenu(b, true);
+			b.setCloseHandlerHandler(this);
+		}
+
+		@Override
+		public void menuClosed(OverlayMenu menu) {
+			int h = store.getIntPref(H);
+			int m = store.getIntPref(M);
+			cb.setPlaybackTimer(h * 3600 + m * 60);
 		}
 	}
 

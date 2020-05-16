@@ -187,6 +187,10 @@
     <string name="donate_text">Если вам нравится приложение, вы можете купить мне кофе.</string>
     <string name="use_phone_for_donation">Пожалуйста, воспользуйтесь телефоном, чтобы купить кофе.</string>
 
+    <string name="timer">Таймер</string>
+    <string name="hours">Часы</string>
+    <string name="minutes">Минуты</string>
+
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player - это бесплатный, с открытым исходным кодом, аудио и видео плеер

@@ -1265,4 +1265,34 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			return view.hashCode();
 		}
 	}
+
+	private PlaybackTimer playbackTimer;
+
+	public int getPlaybackTimer() {
+		return (playbackTimer == null) ? 0
+				: Math.max((int) (playbackTimer.time - System.currentTimeMillis()) / 1000, 0);
+	}
+
+	public void setPlaybackTimer(int time) {
+		if (time == 0) {
+			playbackTimer = null;
+		} else {
+			int delay = time * 1000;
+			PlaybackTimer timer = this.playbackTimer = new PlaybackTimer(delay + System.currentTimeMillis());
+			handler.postDelayed(timer, delay);
+		}
+	}
+
+	private final class PlaybackTimer implements Runnable {
+		final long time;
+
+		public PlaybackTimer(long time) {
+			this.time = time;
+		}
+
+		@Override
+		public void run() {
+			if (playbackTimer == this) onStop();
+		}
+	}
 }
