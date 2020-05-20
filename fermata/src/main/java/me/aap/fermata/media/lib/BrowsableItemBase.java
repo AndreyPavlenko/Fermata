@@ -48,8 +48,8 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	private volatile FutureSupplier<List<Item>> children;
 	private FutureSupplier<Iterator<PlayableItem>> shuffle;
 
-	public BrowsableItemBase(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
-		super(id, parent, file);
+	public BrowsableItemBase(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource resource) {
+		super(id, parent, resource);
 	}
 
 	protected abstract FutureSupplier<List<Item>> listChildren();
@@ -290,8 +290,8 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	private int compareByFile(Item i1, Item i2, boolean desc) {
 		if (i1 instanceof BrowsableItem) {
 			if (i2 instanceof BrowsableItem) {
-				VirtualResource f1 = i1.getFile();
-				VirtualResource f2 = i2.getFile();
+				VirtualResource f1 = i1.getResource();
+				VirtualResource f2 = i2.getResource();
 				return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc) :
 						compareNatural(name(i1), name(i2), desc);
 			} else {
@@ -300,8 +300,8 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		} else if (i2 instanceof BrowsableItem) {
 			return 1;
 		} else {
-			VirtualResource f1 = i1.getFile();
-			VirtualResource f2 = i2.getFile();
+			VirtualResource f1 = i1.getResource();
+			VirtualResource f2 = i2.getResource();
 			return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc) :
 					compareNatural(name(i1), name(i2), desc);
 		}
@@ -357,7 +357,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	private static FutureSupplier<long[]> getDates(List<Item> list) {
 		IntHolder i = new IntHolder();
 		long[] dates = new long[list.size()];
-		return Async.forEach(item -> item.getFile().getLastModified()
+		return Async.forEach(item -> item.getResource().getLastModified()
 				.onSuccess(d -> dates[i.value++] = d), list).map(v -> dates);
 	}
 
@@ -370,7 +370,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 			if (title != null) return title;
 		}
 
-		return i.getFile().getName();
+		return i.getResource().getName();
 	}
 
 	private static final class LoadChildren extends Promise<List<Item>> {

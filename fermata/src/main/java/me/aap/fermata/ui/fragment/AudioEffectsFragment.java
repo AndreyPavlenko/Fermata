@@ -28,7 +28,7 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 
 	@Override
 	public int getFragmentId() {
-		return R.id.audio_effects;
+		return R.id.audio_effects_fragment;
 	}
 
 	@Override

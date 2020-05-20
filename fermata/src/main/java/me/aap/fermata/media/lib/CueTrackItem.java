@@ -43,7 +43,7 @@ class CueTrackItem extends PlayableItemBase {
 	}
 
 	private CueTrackItem(String id, BrowsableItem parent, CueTrackItem item) {
-		super(id, parent, item.getFile());
+		super(id, parent, item.getResource());
 		this.title = item.title;
 		this.performer = item.performer;
 		this.writer = item.writer;
@@ -86,7 +86,7 @@ class CueTrackItem extends PlayableItemBase {
 
 	@NonNull
 	@Override
-	FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
+	protected FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
 		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
 		meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
 
@@ -135,7 +135,7 @@ class CueTrackItem extends PlayableItemBase {
 			if (i != null) {
 				CueTrackItem c = (CueTrackItem) i;
 				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-				if (DEBUG && !getFile().equals(c.getFile())) throw new AssertionError();
+				if (DEBUG && !getResource().equals(c.getResource())) throw new AssertionError();
 				return c;
 			} else {
 				exported = new CueTrackItem(exportId, parent, this);

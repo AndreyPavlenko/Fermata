@@ -26,7 +26,7 @@ class M3uGroupItem extends BrowsableItemBase {
 	private final int groupId;
 
 	M3uGroupItem(String id, M3uItem parent, String name, int groupId) {
-		super(id, parent, parent.getFile());
+		super(id, parent, parent.getResource());
 		this.name = name;
 		this.groupId = groupId;
 	}

@@ -140,8 +140,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	@Override
-	public AppActivity getAppActivity() {
-		return (AppActivity) super.getAppActivity();
+	public FermataActivity getAppActivity() {
+		return (FermataActivity) super.getAppActivity();
 	}
 
 	public boolean isCarActivity() {
@@ -234,21 +234,24 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	public void setBarsHidden(boolean barsHidden) {
 		this.barsHidden = barsHidden;
 		int visibility = barsHidden ? GONE : VISIBLE;
-		getToolBar().setVisibility(visibility);
+		ToolBarView tb = getToolBar();
+		if (tb.getMediator() != ToolBarView.Mediator.Invisible.instance) tb.setVisibility(visibility);
 		getNavBar().setVisibility(visibility);
 	}
 
-	public void setVideoMode(boolean videoMode, VideoView v) {
+	public void setVideoMode(boolean videoMode, @Nullable VideoView v) {
+		ControlPanelView cp = getControlPanel();
+
 		if (videoMode) {
 			this.videoMode = true;
 			setSystemUiVisibility();
 			getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
-			getControlPanel().enableVideoMode(v);
+			cp.enableVideoMode(v);
 		} else {
 			this.videoMode = false;
 			setSystemUiVisibility();
 			getWindow().clearFlags(FLAG_KEEP_SCREEN_ON);
-			getControlPanel().disableVideoMode();
+			if (cp != null) cp.disableVideoMode();
 		}
 	}
 
@@ -277,7 +280,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public void backToNavFragment() {
 		int id = getActiveNavItemId();
-		showFragment((id == ID_NULL) ? R.id.nav_folders : id);
+		showFragment((id == ID_NULL) ? R.id.folders_fragment : id);
 	}
 
 	@Override
@@ -285,22 +288,29 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return R.id.frame_layout;
 	}
 
+	@Override
+	public <F extends ActivityFragment> F showFragment(int id) {
+		setVideoMode(false, null);
+		return super.showFragment(id);
+	}
+
 	protected ActivityFragment createFragment(int id) {
 		switch (id) {
-			case R.id.nav_folders:
+			case R.id.folders_fragment:
 				return new FoldersFragment();
-			case R.id.nav_favorites:
+			case R.id.favorites_fragment:
 				return new FavoritesFragment();
-			case R.id.nav_playlist:
+			case R.id.playlists_fragment:
 				return new PlaylistsFragment();
-			case R.id.nav_settings:
+			case R.id.settings_fragment:
 				return new SettingsFragment();
-			case R.id.audio_effects:
+			case R.id.audio_effects_fragment:
 				return new AudioEffectsFragment();
 			case R.id.video:
 				return new VideoFragment();
 			default:
-				return super.createFragment(id);
+				ActivityFragment f = FermataApplication.get().getAddonManager().createFragment(id);
+				return (f != null) ? f : super.createFragment(id);
 		}
 	}
 
@@ -328,7 +338,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public FutureSupplier<Boolean> goToCurrent() {
 		PlayableItem pi = getMediaServiceBinder().getCurrentItem();
-		return (pi == null) ? getLib().getLastPlayedItem().withMainHandler().map(this::goToItem)
+		return (pi == null) ? getLib().getLastPlayedItem().main().map(this::goToItem)
 				: completed(goToItem(pi));
 	}
 
@@ -338,13 +348,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		MediaLib.BrowsableItem root = pi.getRoot();
 
 		if (root instanceof MediaLib.Folders) {
-			showFragment(R.id.nav_folders);
+			showFragment(R.id.folders_fragment);
 		} else if (root instanceof MediaLib.Favorites) {
-			showFragment(R.id.nav_favorites);
+			showFragment(R.id.favorites_fragment);
 		} else if (root instanceof MediaLib.Playlists) {
-			showFragment(R.id.nav_playlist);
+			showFragment(R.id.playlists_fragment);
 		} else {
-			throw new UnsupportedOperationException();
+			Log.d(new UnsupportedOperationException());
 		}
 
 		FermataApplication.get().getHandler().post(() -> {
@@ -405,9 +415,9 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 			Playlist pl = getLib().getPlaylists().addItem(name);
 			if (pl != null) {
-				selection.withMainHandler().onSuccess(items -> {
+				selection.main().onSuccess(items -> {
 					pl.addItems(items);
-					MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
+					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
 					if (f != null) f.getAdapter().reload();
 				});
 			}
@@ -421,9 +431,9 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			Playlist pl = (Playlist) i;
 
 			if (name.equals(pl.getName())) {
-				selection.withMainHandler().onSuccess(items -> {
+				selection.main().onSuccess(items -> {
 					pl.addItems(items);
-					MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
+					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
 					if (f != null) f.getAdapter().reload();
 				});
 				break;
@@ -435,7 +445,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	public void removeFromPlaylist(Playlist pl, List<PlayableItem> selection) {
 		discardSelection();
 		pl.removeItems(selection);
-		MediaLibFragment f = getMediaLibFragment(R.id.nav_playlist);
+		MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
 		if (f != null) f.getAdapter().reload();
 	}
 
@@ -454,7 +464,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	private void init() {
-		AppActivity a = getAppActivity();
+		FermataActivity a = getAppActivity();
 		a.setContentView(R.layout.main_activity);
 		toolBar = a.findViewById(R.id.tool_bar);
 		progressBar = a.findViewById(R.id.content_loading_progress);
@@ -465,7 +475,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	private void onMediaServiceBind(FermataServiceUiBinder b, Throwable err) {
-		AppActivity a = getAppActivity();
+		FermataActivity a = getAppActivity();
 
 		if (b != null) {
 			mediaServiceBinder = b;
@@ -484,7 +494,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				}
 
 				fireBroadcastEvent(SERVICE_BOUND);
-				showFragment(R.id.nav_folders);
+				showFragment(R.id.folders_fragment);
 
 				FutureSupplier<?> f = goToCurrent().onCompletion((ok, fail1) -> {
 					if ((fail1 != null) && !isCancellation(fail1)) {
@@ -533,7 +543,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	@Override
 	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
-		if ((newItem != null) && newItem.isVideo()) showFragment(R.id.video);
+		if ((newItem != null) && !newItem.isExternal() && newItem.isVideo()) showFragment(R.id.video);
 	}
 
 	private static final class Prefs implements MainActivityPrefs {

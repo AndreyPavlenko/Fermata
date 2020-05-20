@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="addons">Дополнения</string>
+    <string name="addon_name_web_browser">Веб браузер</string>
+
     <string name="interface_prefs">Интерфейс</string>
     <string name="playback_prefs">Управление воспроизведением</string>
     <string name="engine_prefs">Медиа движок</string>
@@ -190,6 +193,8 @@
     <string name="timer">Таймер</string>
     <string name="hours">Часы</string>
     <string name="minutes">Минуты</string>
+
+    <string name="enable">Включить</string>
 
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

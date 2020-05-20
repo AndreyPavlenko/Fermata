@@ -171,7 +171,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		if (!p.equals(a.getParent())) a.setParent(p);
 
 		// Make sure the list is loaded
-		p.getChildren().withMainHandler().onSuccess(l -> {
+		p.getChildren().main().onSuccess(l -> {
 			scrollPosition = indexOf(a.getList(), i);
 			FermataApplication.get().getHandler().post(this::scrollToPosition);
 		});
@@ -378,7 +378,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				scrollPosition = indexOf(getList(), current);
 				if (!isHidden()) scrollToPosition();
 			} else {
-				p.getLastPlayedItem().withMainHandler().onSuccess(last -> {
+				p.getLastPlayedItem().main().onSuccess(last -> {
 					scrollPosition = (last != null) ? indexOf(getList(), last) : -1;
 					if (!isHidden()) scrollToPosition();
 				});

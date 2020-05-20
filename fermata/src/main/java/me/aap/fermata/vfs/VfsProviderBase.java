@@ -54,7 +54,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 			if (roots.isEmpty() && addRemoveSupported()) {
 				return addFolder(a, f).then(folder -> {
 					if (folder != null) {
-						return folder.getChildren().withMainHandler().then(c -> pickFolder(a, f, folder, c));
+						return folder.getChildren().main().then(c -> pickFolder(a, f, folder, c));
 					} else {
 						return cancelled();
 					}

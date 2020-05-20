@@ -24,9 +24,11 @@ import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 
 import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
+import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
@@ -83,6 +85,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 	@Override
 	public void start() {
 		player.setPlayWhenReady(true);
+		listener.onEngineStarted(this);
 	}
 
 	@Override
@@ -102,13 +105,13 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 	}
 
 	@Override
-	public long getDuration() {
-		return !isHls && (source != null) ? player.getDuration() : 0;
+	public FutureSupplier<Long> getDuration() {
+		return completed(!isHls && (source != null) ? player.getDuration() : 0);
 	}
 
 	@Override
-	public long getPosition() {
-		return !isHls && (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0;
+	public FutureSupplier<Long> getPosition() {
+		return completed(!isHls && (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0);
 	}
 
 	@Override
@@ -117,8 +120,8 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 	}
 
 	@Override
-	public float getSpeed() {
-		return player.getPlaybackParameters().speed;
+	public FutureSupplier<Float> getSpeed() {
+		return completed(player.getPlaybackParameters().speed);
 	}
 
 	@Override

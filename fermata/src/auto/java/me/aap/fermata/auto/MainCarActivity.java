@@ -1,9 +1,13 @@
 package me.aap.fermata.auto;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextWatcher;
+import android.util.AttributeSet;
 import android.view.View;
 import android.view.Window;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
@@ -13,7 +17,7 @@ import com.google.android.apps.auto.sdk.CarUiController;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
-import me.aap.fermata.ui.activity.AppActivity;
+import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
@@ -24,8 +28,9 @@ import static me.aap.utils.async.Completed.failed;
 /**
  * @author Andrey Pavlenko
  */
-public class MainCarActivity extends CarActivity implements AppActivity {
+public class MainCarActivity extends CarActivity implements FermataActivity {
 	private static MainActivityDelegate delegate;
+	private CarEditText editText;
 
 	static {
 		ActivityDelegate.setContextToDelegate(c -> delegate);
@@ -107,5 +112,32 @@ public class MainCarActivity extends CarActivity implements AppActivity {
 	@Override
 	public Window getWindow() {
 		return c();
+	}
+
+	public EditText startInput(TextWatcher w) {
+		if (editText == null) editText = new CarEditText(this, null);
+		editText.addTextChangedListener(w);
+		a().startInput(editText);
+		return editText;
+	}
+
+	public void stopInput(TextWatcher w) {
+		if (editText != null) {
+			editText.removeTextChangedListener(w);
+			editText.setOnEditorActionListener(null);
+			a().stopInput();
+		}
+	}
+
+	public boolean isInputActive() {
+		return a().isInputActive();
+	}
+
+	public EditText createEditText(Context ctx, AttributeSet attrs) {
+		CarEditText et = new CarEditText(ctx, attrs);
+		et.setOnClickListener(v -> {
+			if (!a().isInputActive()) a().startInput(et);
+		});
+		return et;
 	}
 }

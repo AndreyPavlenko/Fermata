@@ -32,7 +32,7 @@ public class FavoritesFragment extends MediaLibFragment {
 
 	@Override
 	public int getFragmentId() {
-		return R.id.nav_favorites;
+		return R.id.favorites_fragment;
 	}
 
 	@Override

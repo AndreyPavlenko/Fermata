@@ -15,7 +15,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.Locale;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonInfo;
+import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
@@ -44,7 +48,7 @@ public class SettingsFragment extends MainActivityFragment {
 
 	@Override
 	public int getFragmentId() {
-		return R.id.nav_settings;
+		return R.id.settings_fragment;
 	}
 
 	@Override
@@ -348,6 +352,8 @@ public class SettingsFragment extends MainActivityFragment {
 		});
 		addSubtitlePrefs(sub2, mediaPrefs, isCar);
 
+		addAddons(set);
+
 		return new PreferenceViewAdapter(set) {
 			@Override
 			public void setPreferenceSet(PreferenceSet set) {
@@ -355,5 +361,59 @@ public class SettingsFragment extends MainActivityFragment {
 				a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 			}
 		};
+	}
+
+	private void addAddons(PreferenceSet set) {
+		AddonManager amgr = FermataApplication.get().getAddonManager();
+		PreferenceSet sub = set.subSet(o -> o.title = R.string.addons);
+		PreferenceStore store = FermataApplication.get().getPreferenceStore();
+
+		for (AddonInfo addon : BuildConfig.ADDONS) {
+			AddonPrefsBuilder b = new AddonPrefsBuilder(amgr, addon, store);
+			PreferenceSet sub1 = sub.subSet(b);
+			sub1.configure(b::configure);
+		}
+	}
+
+	private static final class AddonPrefsBuilder implements Consumer<PreferenceView.Opts>, AddonManager.Listener {
+		private final AddonManager amgr;
+		private final AddonInfo info;
+		private final PreferenceStore store;
+		private PreferenceSet set;
+
+		public AddonPrefsBuilder(AddonManager amgr, AddonInfo info, PreferenceStore store) {
+			this.amgr = amgr;
+			this.info = info;
+			this.store = store;
+			amgr.addBroadcastListener(this);
+		}
+
+		void configure(PreferenceSet set) {
+			this.set = set;
+
+			set.addBooleanPref(o -> {
+				o.title = R.string.enable;
+				o.pref = info.enabledPref;
+				o.store = store;
+			});
+
+			FermataAddon a = amgr.getAddon(info.className);
+
+			if (a != null) {
+				ChangeableCondition cond = PrefCondition.create(store, info.enabledPref);
+				a.contributeSettings(store, set, cond);
+			}
+		}
+
+		@Override
+		public void accept(PreferenceView.Opts o) {
+			o.title = info.addonName;
+			o.icon = info.icon;
+		}
+
+		@Override
+		public void addonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
+			if (set != null) set.configure(this::configure);
+		}
 	}
 }

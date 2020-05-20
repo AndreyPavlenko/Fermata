@@ -2,6 +2,7 @@ package me.aap.fermata;
 
 import android.content.SharedPreferences;
 
+import me.aap.fermata.addon.AddonManager;
 import me.aap.utils.app.App;
 import me.aap.utils.app.NetSplitCompatApp;
 import me.aap.utils.pref.PreferenceStore;
@@ -12,6 +13,7 @@ import me.aap.utils.pref.SharedPreferenceStore;
  */
 public class FermataApplication extends NetSplitCompatApp {
 	private volatile SharedPreferenceStore preferenceStore;
+	private volatile AddonManager addonManager;
 
 	public static FermataApplication get() {
 		return App.get();
@@ -33,6 +35,20 @@ public class FermataApplication extends NetSplitCompatApp {
 
 	public SharedPreferences getDefaultSharedPreferences() {
 		return ((SharedPreferenceStore) getPreferenceStore()).getSharedPreferences();
+	}
+
+	public AddonManager getAddonManager() {
+		AddonManager mgr = addonManager;
+
+		if (mgr == null) {
+			synchronized (this) {
+				if ((mgr = addonManager) == null) {
+					addonManager = mgr = new AddonManager(getPreferenceStore());
+				}
+			}
+		}
+
+		return mgr;
 	}
 
 	@Override

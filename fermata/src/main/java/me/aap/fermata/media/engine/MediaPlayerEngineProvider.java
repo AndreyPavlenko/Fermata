@@ -37,7 +37,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 
 			String m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
-			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
+			else meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getResource().getName());
 
 			m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, m);

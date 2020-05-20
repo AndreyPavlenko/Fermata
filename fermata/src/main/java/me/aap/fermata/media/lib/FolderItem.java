@@ -41,7 +41,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 			if (i != null) {
 				FolderItem f = (FolderItem) i;
 				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
-				if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
+				if (DEBUG && !file.equals(f.getResource())) throw new AssertionError();
 				return f;
 			} else {
 				return new FolderItem(id, parent, file);
@@ -70,15 +70,21 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 			FolderItem parent = (FolderItem) i;
 			if (parent == null) return completedNull();
 
-			return parent.getFile().getChild(name).map(folder -> (folder instanceof VirtualFolder)
+			return parent.getResource().getChild(name).map(folder -> (folder instanceof VirtualFolder)
 					? FolderItem.create(id, parent, (VirtualFolder) folder, lib) : null
 			);
 		});
 	}
 
+	@NonNull
 	@Override
-	public VirtualFolder getFile() {
-		return (VirtualFolder) super.getFile();
+	public DefaultMediaLib getLib() {
+		return (DefaultMediaLib) super.getLib();
+	}
+
+	@Override
+	public VirtualFolder getResource() {
+		return (VirtualFolder) super.getResource();
 	}
 
 	@NonNull
@@ -91,7 +97,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 	protected String buildSubtitle(List<Item> children) {
 		String sub = super.buildSubtitle(children);
 		if (getParent() instanceof MediaLib.Folders) {
-			VirtualResource f = getFile();
+			VirtualResource f = getResource();
 			if (!f.isLocalFile()) {
 				Rid rid = f.getRid();
 				return sub + " (" + rid.getScheme() + "://" + rid.getAuthority() + ')';
@@ -102,7 +108,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 
 	@Override
 	protected FutureSupplier<List<Item>> listChildren() {
-		return getFile().getChildren().map(this::ls);
+		return getResource().getChildren().map(this::ls);
 	}
 
 	private List<Item> ls(List<VirtualResource> ls) {
@@ -202,10 +208,10 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 	@Override
 	public FutureSupplier<Uri> getIconUri() {
 		if (iconUri == null) {
-			return getFile().getChild("cover.jpg").then(cover -> {
+			return getResource().getChild("cover.jpg").then(cover -> {
 				if (cover != null) return iconUri = completed(cover.getRid().toAndroidUri());
 
-				return getFile().getChild("folder.jpg").then(folder -> {
+				return getResource().getChild("folder.jpg").then(folder -> {
 					if (folder != null) return iconUri = completed(folder.getRid().toAndroidUri());
 					else return iconUri = completedNull();
 				});

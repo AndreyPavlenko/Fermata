@@ -37,6 +37,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.io.IoUtils;
@@ -48,6 +49,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
@@ -166,31 +168,31 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	}
 
 	@Override
-	public long getDuration() {
-		if (source.isStream()) return 0;
+	public FutureSupplier<Long> getDuration() {
+		if (source.isStream()) return completed(0L);
 
 		long dur = source.getDuration();
 
 		if (dur <= 0) {
 			if ((dur = player.getLength()) > 0) {
 				source.setDuration(dur);
-				return dur;
+				return completed(dur);
 			} else {
-				return 0;
+				return completed(0L);
 			}
 		}
 
-		return dur;
+		return completed(dur);
 	}
 
 	@Override
-	public long getPosition() {
+	public FutureSupplier<Long> getPosition() {
 		Source src = source;
 
 		if ((src != Source.NULL) && !src.isStream()) {
-			return (pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition;
+			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition);
 		} else {
-			return 0;
+			return completed(0L);
 		}
 	}
 
@@ -205,8 +207,8 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	}
 
 	@Override
-	public float getSpeed() {
-		return player.getRate();
+	public FutureSupplier<Float> getSpeed() {
+		return completed(player.getRate());
 	}
 
 	@Override
@@ -558,6 +560,8 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			setPosition(pendingPosition);
 			pendingPosition = -1;
 		}
+
+		listener.onEngineStarted(this);
 	}
 
 	private static class Source implements Closeable {

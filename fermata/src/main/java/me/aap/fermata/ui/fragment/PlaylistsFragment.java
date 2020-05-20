@@ -32,7 +32,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 
 	@Override
 	public int getFragmentId() {
-		return R.id.nav_playlist;
+		return R.id.playlists_fragment;
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 						MediaItemWrapper::isSelected, (i, w, l) -> l.add((MediaLib.PlayableItem) w.getItem()),
 						ArrayList::new));
 				discardSelection();
-				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 				if (f != null) f.reload();
 				return true;
 			case R.id.playlist_remove:

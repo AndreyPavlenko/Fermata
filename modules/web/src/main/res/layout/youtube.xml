@@ -1,0 +1,16 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <me.aap.fermata.addon.web.yt.YoutubeWebView
+        android:id="@+id/ytWebView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <me.aap.fermata.ui.view.VideoView
+        android:id="@+id/ytVideoView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</FrameLayout>

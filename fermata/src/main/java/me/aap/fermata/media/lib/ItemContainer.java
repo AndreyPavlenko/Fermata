@@ -1,5 +1,6 @@
 package me.aap.fermata.media.lib;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -30,6 +31,12 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	abstract String getScheme();
 
 	abstract void saveChildren(List<C> children);
+
+	@NonNull
+	@Override
+	public DefaultMediaLib getLib() {
+		return (DefaultMediaLib) super.getLib();
+	}
 
 	FutureSupplier<Item> getItem(String id) {
 		assert id.startsWith(getScheme());

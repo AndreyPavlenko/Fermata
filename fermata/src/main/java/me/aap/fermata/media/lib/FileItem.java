@@ -35,7 +35,7 @@ class FileItem extends PlayableItemBase {
 			if (i != null) {
 				FileItem f = (FileItem) i;
 				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
-				if (DEBUG && !file.equals(f.getFile())) throw new AssertionError();
+				if (DEBUG && !file.equals(f.getResource())) throw new AssertionError();
 				return f;
 			} else {
 				return new FileItem(id, parent, file, isVideo);
@@ -57,7 +57,7 @@ class FileItem extends PlayableItemBase {
 			FolderItem parent = (FolderItem) i;
 			if (parent == null) return completedNull();
 
-			return parent.getFile().getChild(name).map(file -> (file != null) ?
+			return parent.getResource().getChild(name).map(file -> (file != null) ?
 					create(id, parent, file, lib, isVideoFile(file.getName())) : null);
 		});
 	}
@@ -70,7 +70,7 @@ class FileItem extends PlayableItemBase {
 	@NonNull
 	@Override
 	public FileItem export(String exportId, BrowsableItem parent) {
-		FileItem f = create(exportId, parent, getFile(), (DefaultMediaLib) parent.getLib(), isVideo());
+		FileItem f = create(exportId, parent, getResource(), (DefaultMediaLib) parent.getLib(), isVideo());
 		f.setMeta(getMediaData());
 		return f;
 	}

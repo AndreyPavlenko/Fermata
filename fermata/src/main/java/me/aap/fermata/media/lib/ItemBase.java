@@ -18,6 +18,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.vfs.VirtualResource;
@@ -30,7 +31,7 @@ import static me.aap.utils.misc.Assert.assertNotEquals;
 /**
  * @author Andrey Pavlenko
  */
-abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
+public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static final AtomicReferenceFieldUpdater<ItemBase, FutureSupplier<MediaDescriptionCompat>> MD =
 			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class, FutureSupplier.class, "description");
@@ -42,13 +43,15 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	private final VirtualResource file;
 	protected int seqNum;
 
-	public ItemBase(String id, @Nullable BrowsableItem parent, VirtualResource file) {
+	public ItemBase(String id, @Nullable BrowsableItem parent, VirtualResource resource) {
 		this.id = id.intern();
 		this.parent = parent;
-		this.file = file;
-		DefaultMediaLib lib = getLib();
-		//noinspection ConstantConditions
-		if (lib != null) lib.addToCache(this);
+		this.file = resource;
+		MediaLib lib = getLib();
+
+		if (!isExternal() && (lib instanceof DefaultMediaLib)) {
+			((DefaultMediaLib) lib).addToCache(this);
+		}
 	}
 
 	protected abstract FutureSupplier<String> buildTitle(int seqNum, BrowsableItemPrefs parentPrefs);
@@ -81,7 +84,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		FutureSupplier<Uri> icon = getIconUri();
 
 		if (title.isDone() && subtitle.isDone() && icon.isDone()) {
-			b.setTitle(title.get(() -> getFile().getName()));
+			b.setTitle(title.get(() -> getResource().getName()));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
 			MediaDescriptionCompat dsc = b.build();
@@ -148,7 +151,7 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	@Override
-	public VirtualResource getFile() {
+	public VirtualResource getResource() {
 		return file;
 	}
 
@@ -159,8 +162,8 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	}
 
 	@NonNull
-	public DefaultMediaLib getLib() {
-		return (DefaultMediaLib) getRoot().getLib();
+	public MediaLib getLib() {
+		return getRoot().getLib();
 	}
 
 	@NonNull
@@ -172,7 +175,10 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@NonNull
 	@Override
 	public SharedPreferences getSharedPreferences() {
-		return getLib().getSharedPreferences();
+		MediaLib lib = getLib();
+		if (lib instanceof SharedPreferenceStore)
+			return ((SharedPreferenceStore) lib).getSharedPreferences();
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Nullable
@@ -219,9 +225,13 @@ abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 		this.seqNum = seqNum;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
-		return getLib().getBroadcastEventListeners();
+		MediaLib lib = getLib();
+		if (lib instanceof EventBroadcaster<?>)
+			return ((EventBroadcaster<Listener>) lib).getBroadcastEventListeners();
+		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	void reset() {

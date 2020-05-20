@@ -193,50 +193,53 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public void setLastPlayed(PlayableItem i, long position) {
-		String id;
-		BrowsableItemPrefs p;
-		long dur = i.getDuration().getOrThrow();
+		if (i.isExternal()) return;
 
-		if (dur <= 0) {
-			id = i.getId();
-			p = i.getParent().getPrefs();
-			setLastPlayedItemPref(id);
-			setLastPlayedPosPref(0);
-			p.setLastPlayedItemPref(id);
-			p.setLastPlayedPosPref(0);
-			return;
-		}
+		i.getDuration().main().onSuccess(dur -> {
+			String id;
+			BrowsableItemPrefs p;
 
-		if ((dur - position) <= 1000) {
-			i.getNextPlayable().onCompletion((next, fail) -> {
-				if (next == null) next = i;
-
-				String nextId = next.getId();
-				BrowsableItemPrefs nextPrefs = next.getParent().getPrefs();
-				setLastPlayedItemPref(nextId);
+			if (dur <= 0) {
+				id = i.getId();
+				p = i.getParent().getPrefs();
+				setLastPlayedItemPref(id);
 				setLastPlayedPosPref(0);
-				nextPrefs.setLastPlayedItemPref(nextId);
-				nextPrefs.setLastPlayedPosPref(0);
-			});
-
-			return;
-		} else {
-			id = i.getId();
-			p = i.getParent().getPrefs();
-		}
-
-		if (i.isVideo()) {
-			if (position > (dur * 0.9f)) {
-				i.getPrefs().setWatchedPref(true);
-			} else {
-				i.getPrefs().setPositionPref(position);
+				p.setLastPlayedItemPref(id);
+				p.setLastPlayedPosPref(0);
+				return;
 			}
-		}
 
-		setLastPlayedItemPref(id);
-		setLastPlayedPosPref(position);
-		p.setLastPlayedItemPref(id);
-		p.setLastPlayedPosPref(position);
+			if ((dur - position) <= 1000) {
+				i.getNextPlayable().onCompletion((next, fail) -> {
+					if (next == null) next = i;
+
+					String nextId = next.getId();
+					BrowsableItemPrefs nextPrefs = next.getParent().getPrefs();
+					setLastPlayedItemPref(nextId);
+					setLastPlayedPosPref(0);
+					nextPrefs.setLastPlayedItemPref(nextId);
+					nextPrefs.setLastPlayedPosPref(0);
+				});
+
+				return;
+			} else {
+				id = i.getId();
+				p = i.getParent().getPrefs();
+			}
+
+			if (i.isVideo()) {
+				if (position > (dur * 0.9f)) {
+					i.getPrefs().setWatchedPref(true);
+				} else {
+					i.getPrefs().setPositionPref(position);
+				}
+			}
+
+			setLastPlayedItemPref(id);
+			setLastPlayedPosPref(position);
+			p.setLastPlayedItemPref(id);
+			p.setLastPlayedPosPref(position);
+		});
 	}
 
 	@NonNull

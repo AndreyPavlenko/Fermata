@@ -4,20 +4,8 @@ android {
         versionName "1.0"
 
         ndk {
-            abiFilters=[]
+            abiFilters = []
             abiFilters.addAll(ABI)
-        }
-    }
-
-    flavorDimensions "version"
-
-    productFlavors {
-        mobile {
-            dimension "version"
-        }
-        auto {
-            dimension "version"
-            applicationIdSuffix '.auto'
         }
     }
 }
@@ -27,5 +15,5 @@ dependencies {
     implementation project(':fermata')
     implementation 'androidx.core:core:' + ANDROIDX_CORE_VERSION
     implementation 'androidx.appcompat:appcompat:' + ANDROIDX_APPCOMPAT_VERSION
-    implementation 'org.videolan.android:libvlc-all:3.3.0-eap11'
+    implementation 'org.videolan.android:libvlc-all:3.3.0-eap12'
 }

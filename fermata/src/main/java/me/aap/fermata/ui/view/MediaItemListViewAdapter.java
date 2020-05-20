@@ -70,7 +70,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		notifyDataSetChanged();
 		if (parent == null) completedVoid();
 
-		FutureSupplier<?> f = parent.getChildren().withMainHandler()
+		FutureSupplier<?> f = parent.getChildren().main()
 				.addConsumer((result, fail, progress, total) -> {
 					if (this.parent != parent) return;
 
@@ -118,7 +118,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@Override
 	protected void onItemDismiss(int position) {
 		list.remove(position);
-		getParent().updateTitles().withMainHandler().thenRun(this::refresh);
+		getParent().updateTitles().main().thenRun(this::refresh);
 	}
 
 	@CallSuper
@@ -128,7 +128,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		MediaItemViewHolder h = (MediaItemViewHolder) listView.getChildViewHolder(listView.getChildAt(fromPosition));
 		h.getItemView().hideMenu();
 		CollectionUtils.move(list, fromPosition, toPosition);
-		getParent().updateTitles().withMainHandler().thenRun(this::refresh);
+		getParent().updateTitles().main().thenRun(this::refresh);
 		return true;
 	}
 
@@ -211,7 +211,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		} else if (i instanceof BrowsableItem) {
 			title = ((BrowsableItem) i).getName();
 		} else {
-			title = i.getFile().getName();
+			title = i.getResource().getName();
 		}
 
 		return filter.matcher(title).find();

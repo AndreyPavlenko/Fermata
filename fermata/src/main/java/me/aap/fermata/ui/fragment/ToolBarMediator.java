@@ -143,7 +143,7 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 	}
 
 	private static void titlePrefChanged(MediaLibFragment.ListAdapter adapter) {
-		adapter.getParent().updateTitles().withMainHandler().thenRun(adapter::reload);
+		adapter.getParent().updateTitles().main().thenRun(adapter::reload);
 	}
 
 	private static void onSortButtonClick(View v) {
@@ -195,7 +195,7 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 				return true;
 			case R.id.tool_sort_desc:
 				BrowsableItem p = adapter.getParent();
-				p.updateSorting().withMainHandler()
+				p.updateSorting().main()
 						.thenRun(() -> p.getPrefs().setSortDescPref(!p.getPrefs().getSortDescPref()));
 				return true;
 			default:
@@ -205,6 +205,6 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 
 	private static void setSortBy(MediaLibFragment.ListAdapter adapter, int sortBy) {
 		BrowsableItem p = adapter.getParent();
-		p.updateSorting().withMainHandler().thenRun(() -> p.getPrefs().setSortByPref(sortBy));
+		p.updateSorting().main().thenRun(() -> p.getPrefs().setSortByPref(sortBy));
 	}
 }

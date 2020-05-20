@@ -44,7 +44,7 @@ class CueItem extends BrowsableItemBase {
 
 	private Data parse() {
 		String id = getId();
-		VirtualFile cueFile = (VirtualFile) getFile();
+		VirtualFile cueFile = (VirtualFile) getResource();
 		VirtualFolder dir = cueFile.getParent().getOrThrow();
 		Context ctx = getLib().getContext();
 		List<CueTrackItem> tracks = new ArrayList<>();
@@ -128,7 +128,7 @@ class CueItem extends BrowsableItemBase {
 				if (dur > 0) last.duration(dur - last.getOffset());
 			}
 		} catch (Exception ex) {
-			Log.e(ex, "Failed to parse cue file: ", getFile());
+			Log.e(ex, "Failed to parse cue file: ", getResource());
 		}
 
 		String name = (albumTitle != null) ? albumTitle : cueFile.getName();
@@ -144,7 +144,7 @@ class CueItem extends BrowsableItemBase {
 			if (i != null) {
 				CueItem c = (CueItem) i;
 				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-				if (DEBUG && !cueFile.equals(c.getFile())) throw new AssertionError();
+				if (DEBUG && !cueFile.equals(c.getResource())) throw new AssertionError();
 				return c;
 			} else {
 				return new CueItem(id, parent, cueFile);
@@ -163,7 +163,7 @@ class CueItem extends BrowsableItemBase {
 			if (file == null) return null;
 
 			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, (VirtualFile) file.getFile(), lib);
+			return create(id, parent, (VirtualFile) file.getResource(), lib);
 		});
 	}
 

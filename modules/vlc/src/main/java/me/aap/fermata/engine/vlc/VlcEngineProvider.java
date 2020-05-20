@@ -105,10 +105,10 @@ public class VlcEngineProvider implements MediaEngineProvider {
 				if (!title.startsWith("vfs?resource=") && !title.startsWith("fd://")) {
 					meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, title);
 				} else {
-					meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
+					meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getResource().getName());
 				}
 			} else {
-				meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getFile().getName());
+				meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.getResource().getName());
 			}
 
 			if (artist != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);

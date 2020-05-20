@@ -25,13 +25,13 @@ import static me.aap.utils.async.Completed.completedVoid;
 /**
  * @author Andrey Pavlenko
  */
-abstract class PlayableItemBase extends ItemBase implements PlayableItem, PlayableItemPrefs {
+public abstract class PlayableItemBase extends ItemBase implements PlayableItem, PlayableItemPrefs {
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static final AtomicReferenceFieldUpdater<PlayableItemBase, FutureSupplier<MediaMetadataCompat>> META =
 			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(PlayableItemBase.class, FutureSupplier.class, "meta");
 
 	@Keep
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "FieldCanBeLocal"})
 	private volatile FutureSupplier<MediaMetadataCompat> meta;
 
 	public PlayableItemBase(String id, @NonNull BrowsableItem parent, @NonNull VirtualResource file) {
@@ -81,12 +81,12 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 	}
 
 	@NonNull
-	FutureSupplier<MediaMetadataCompat> loadMeta() {
+	protected FutureSupplier<MediaMetadataCompat> loadMeta() {
 		return getLib().getMetadataRetriever().getMediaMetadata(this).then(this::buildMeta);
 	}
 
 	@NonNull
-	FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
+	protected FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
 		if (meta.getImageUri() == null) {
 			return getParent().getIconUri().then(icon -> {
 				if (icon != null) meta.setImageUri(icon.toString());
@@ -97,16 +97,16 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 		}
 	}
 
-	void setMeta(MediaMetadataCompat m) {
+	protected void setMeta(MediaMetadataCompat m) {
 		setMeta(completed(m));
 	}
 
-	void setMeta(FutureSupplier<MediaMetadataCompat> m) {
+	protected void setMeta(FutureSupplier<MediaMetadataCompat> m) {
 		META.set(this, m);
 		m.thenReplaceOrClear(META, this);
 	}
 
-	void setMeta(MetadataBuilder mb) {
+	protected void setMeta(MetadataBuilder mb) {
 		FutureSupplier<MediaMetadataCompat> m = META.get(this);
 		if (m != null) return;
 
@@ -137,14 +137,14 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 				try (SharedTextBuilder tb = SharedTextBuilder.get()) {
 					if (seqNum != 0) tb.append(seqNum).append(". ");
 					tb.append(getTitle(md));
-					if (parentPrefs.getTitleFileNamePref()) tb.append(" - ").append(getFile().getName());
+					if (parentPrefs.getTitleFileNamePref()) tb.append(" - ").append(getResource().getName());
 					return tb.toString();
 				}
 			});
 		} else {
 			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
 				if (seqNum != 0) tb.append(seqNum).append(". ");
-				tb.append(getFile().getName());
+				tb.append(getResource().getName());
 				return completed(tb.toString());
 			}
 		}
@@ -160,7 +160,7 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 
 		if (prefs.getSubtitleFileNamePref()) {
 			if (tb.length() != 0) tb.append(" - ");
-			tb.append(getFile().getName());
+			tb.append(getResource().getName());
 		}
 
 		if (prefs.getSubtitleAlbumPref()) {
@@ -193,7 +193,7 @@ abstract class PlayableItemBase extends ItemBase implements PlayableItem, Playab
 		String title = md.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
 		if ((title == null) || (title = title.trim()).isEmpty()) {
 			title = md.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE);
-			return ((title == null) || (title = title.trim()).isEmpty()) ? getFile().getName() : title;
+			return ((title == null) || (title = title.trim()).isEmpty()) ? getResource().getName() : title;
 		}
 		return title;
 	}

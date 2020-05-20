@@ -1,6 +1,10 @@
 package me.aap.fermata.media.engine;
 
+import android.media.AudioManager;
+
 import androidx.annotation.Nullable;
+import androidx.media.AudioFocusRequestCompat;
+import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
 import java.util.Collections;
@@ -8,6 +12,10 @@ import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.ui.menu.OverlayMenu;
+
+import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
 
 /**
  * @author Andrey Pavlenko
@@ -31,13 +39,13 @@ public interface MediaEngine extends Closeable {
 
 	PlayableItem getSource();
 
-	long getDuration();
+	FutureSupplier<Long> getDuration();
 
-	long getPosition();
+	FutureSupplier<Long> getPosition();
 
 	void setPosition(long position);
 
-	float getSpeed();
+	FutureSupplier<Float> getSpeed();
 
 	void setSpeed(float speed);
 
@@ -103,9 +111,25 @@ public interface MediaEngine extends Closeable {
 		return false;
 	}
 
+	default boolean requestAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
+		return (audioManager == null) ||
+				(AudioManagerCompat.requestAudioFocus(audioManager, audioFocusReq) == AUDIOFOCUS_REQUEST_GRANTED);
+	}
+
+	default void releaseAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
+		if (audioManager != null)
+			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
+	}
+
+	default void contributeToMenu(OverlayMenu.Builder b) {
+	}
+
 	interface Listener {
 
 		default void onEnginePrepared(MediaEngine engine) {
+		}
+
+		default void onEngineStarted(MediaEngine engine) {
 		}
 
 		default void onEngineEnded(MediaEngine engine) {

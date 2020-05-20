@@ -54,7 +54,7 @@ class M3uTrackItem extends PlayableItemBase {
 	}
 
 	private M3uTrackItem(String id, BrowsableItem parent, M3uTrackItem i) {
-		super(id, parent, i.getFile());
+		super(id, parent, i.getResource());
 		this.trackNumber = i.trackNumber;
 		this.name = i.name;
 		this.album = i.album;
@@ -100,21 +100,21 @@ class M3uTrackItem extends PlayableItemBase {
 
 	@NonNull
 	@Override
-	FutureSupplier<MediaMetadataCompat> loadMeta() {
-		if (getFile().isLocalFile()) return super.loadMeta();
+	protected FutureSupplier<MediaMetadataCompat> loadMeta() {
+		if (getResource().isLocalFile()) return super.loadMeta();
 		return buildMeta(new MetadataBuilder());
 	}
 
 	@NonNull
 	@Override
-	FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
+	protected FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
 		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, name);
 		if (album != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
 		if (artist != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
 		if (genre != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, genre);
 
 		if (logo != null) {
-			return getM3uItem().getFile().getParent().then(dir -> {
+			return getM3uItem().getResource().getParent().then(dir -> {
 				if (dir == null) return super.buildMeta(meta);
 				return getLib().getVfsManager().resolve(logo, dir).then(f -> {
 					if (f != null) meta.setImageUri(f.getRid().toString());
@@ -129,7 +129,7 @@ class M3uTrackItem extends PlayableItemBase {
 	@NonNull
 	@Override
 	public M3uTrackItem export(String exportId, BrowsableItem parent) {
-		DefaultMediaLib lib = getLib();
+		DefaultMediaLib lib = (DefaultMediaLib) getLib();
 
 		synchronized (lib.cacheLock()) {
 			Item i = lib.getFromCache(exportId);

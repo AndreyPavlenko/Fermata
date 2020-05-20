@@ -19,13 +19,19 @@
     <item name="tool_sort_desc" type="id" />
     <item name="tool_sort_none" type="id" />
 
-    <item name="nav_folders" type="id" />
-    <item name="nav_favorites" type="id" />
-    <item name="nav_playlist" type="id" />
+    <item name="menu" type="id" />
+
+    <item name="folders_fragment" type="id" />
+    <item name="favorites_fragment" type="id" />
+    <item name="playlists_fragment" type="id" />
+    <item name="settings_fragment" type="id" />
+    <item name="audio_effects_fragment" type="id" />
+    <item name="youtube_fragment" type="id" />
+    <item name="web_browser_fragment" type="id" />
+
     <item name="nav_got_to_current" type="id" />
     <item name="nav_donate" type="id" />
     <item name="nav_about" type="id" />
-    <item name="nav_settings" type="id" />
     <item name="nav_exit" type="id" />
     <item name="nav_select" type="id" />
     <item name="nav_select_all" type="id" />
@@ -68,7 +74,6 @@
 
     <item name="audio_delay" type="id" />
     <item name="audio_prefs" type="id" />
-    <item name="audio_effects" type="id" />
     <item name="select_audio_stream" type="id" />
 
     <item name="subtitle_delay" type="id" />
@@ -101,5 +106,7 @@
     <item name="vfs_gdrive" type="id" />
     <item name="vfs_sftp" type="id" />
     <item name="vfs_smb" type="id" />
+
+    <item name="car_edit_text" type="id" />
 
 </resources>

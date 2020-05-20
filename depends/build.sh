@@ -69,7 +69,8 @@ if [ -d libopus ]; then
     git clean -xfd && git reset --hard && git pull
     cd -
 else
-    git clone 'https://git.xiph.org/opus.git' libopus
+#    git clone 'https://git.xiph.org/opus.git' libopus
+    git clone 'https://github.com/xiph/opus.git' libopus
 fi
 
 ./convert_android_asm.sh

@@ -10,6 +10,11 @@
     <string name="module_name_gdrive" translatable="false">Google Drive</string>
     <string name="module_name_sftp" translatable="false">SFTP</string>
     <string name="module_name_smb" translatable="false">SMB</string>
+    <string name="module_name_web" translatable="false">Web</string>
+
+    <string name="addons">Addons</string>
+    <string name="addon_name_web_browser">Web browser</string>
+    <string name="addon_name_youtube" translatable="false">Youtube</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="playback_prefs">Playback control</string>
@@ -206,6 +211,8 @@
     <string name="timer">Timer</string>
     <string name="hours">Hours</string>
     <string name="minutes">Minutes</string>
+
+    <string name="enable">Enable</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

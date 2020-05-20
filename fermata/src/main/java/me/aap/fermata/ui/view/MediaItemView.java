@@ -69,7 +69,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		wrapper.setView(this);
 		Item i = wrapper.getItem();
 
-		FutureSupplier<MediaDescriptionCompat> load = i.getMediaDescription().withMainHandler()
+		FutureSupplier<MediaDescriptionCompat> load = i.getMediaDescription().main()
 				.addConsumer((result, fail, progress, total) -> {
 					if (wrapper != getItemWrapper()) return;
 
@@ -80,7 +80,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					}
 
 					CharSequence sub = result.getSubtitle();
-					getTitle().setText(MiscUtils.ifNull(result.getTitle(), () -> i.getFile().getName()));
+					getTitle().setText(MiscUtils.ifNull(result.getTitle(), () -> i.getResource().getName()));
 					if (sub != null) getSubtitle().setText(sub);
 
 					if (progress != PROGRESS_DONE) return;
@@ -89,7 +89,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 					if (uri != null) {
 						FutureSupplier<Bitmap> loadIcon = i.getLib().getBitmap(uri.toString(), true, true)
-								.withMainHandler().onCompletion((bm, err) -> {
+								.main().onCompletion((bm, err) -> {
 									if (wrapper != getItemWrapper()) return;
 
 									ImageView icon = getIcon();
@@ -125,7 +125,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (i instanceof BrowsableItem) {
 			getTitle().setText(((BrowsableItem) i).getName());
 		} else {
-			getTitle().setText(i.getFile().getName());
+			getTitle().setText(i.getResource().getName());
 		}
 
 		ImageView icon = getIcon();

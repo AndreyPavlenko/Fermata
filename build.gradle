@@ -1,6 +1,6 @@
 ext {
-    VERSION_CODE = 61
-    VERSION_NAME = "1.6.2"
+    VERSION_CODE = 62
+    VERSION_NAME = "1.7.0"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 29
     SDK_COMPILE_VERSION = 29
@@ -38,21 +38,20 @@ allprojects {
 }
 
 subprojects {
+    def isDynFeature = false
+
     switch (name) {
         case 'fermata':
         case 'control':
             apply plugin: 'com.android.application'
             break
-        case 'vlc':
-        case 'exoplayer':
-        case 'gdrive':
-        case 'sftp':
-        case 'smb':
-            apply plugin: 'com.android.dynamic-feature'
-            break
         default:
-            apply plugin: 'com.android.library'
-            break
+            if (gradle.ext.modules.contains(':' + name)) {
+                isDynFeature = true
+                apply plugin: 'com.android.dynamic-feature'
+            } else {
+                apply plugin: 'com.android.library'
+            }
     }
 
     android {
@@ -65,6 +64,20 @@ subprojects {
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
             resConfigs "en", "ru"
+        }
+
+        if (isDynFeature) {
+            flavorDimensions "version"
+
+            productFlavors {
+                mobile {
+                    dimension "version"
+                }
+                auto {
+                    dimension "version"
+                    applicationIdSuffix '.auto'
+                }
+            }
         }
 
         compileOptions {
@@ -81,6 +94,32 @@ subprojects {
         testImplementation 'junit:junit:4.12'
         androidTestImplementation 'androidx.test.ext:junit:1.1.1'
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    }
+}
+
+gradle.projectsEvaluated {
+    gradle.ext.modules.forEach {
+        def p = project(it)
+
+        if (p.ext.has('addons')) {
+            p.ext.addons.forEach {
+                if (gradle.ext.addonInfo.length() == 0) {
+                    gradle.ext.addonInfo.append('new me.aap.fermata.addon.AddonInfo[] {\n')
+                } else {
+                    gradle.ext.addonInfo.append(',\n')
+                }
+
+                gradle.ext.addonInfo.append(
+                        "new me.aap.fermata.addon.AddonInfo(\"${p.name}\", \"${it['class']}\", R.string.addon_name_${it['name']}, R.drawable.${it['icon']})")
+            }
+        }
+    }
+
+    if (gradle.ext.addonInfo.length() != 0) {
+        gradle.ext.addonInfo.append('\n}')
+        project(':fermata').android.productFlavors.forEach {
+            it.buildConfigField 'me.aap.fermata.addon.AddonInfo[]', 'ADDONS', gradle.ext.addonInfo.toString()
+        }
     }
 }
 

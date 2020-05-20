@@ -155,9 +155,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	public void enableVideoMode(VideoView v) {
-		if ((mask & MASK_VISIBLE) == 0) return;
-
+	public void enableVideoMode(@Nullable VideoView v) {
 		MainActivityDelegate a = getActivity();
 		hideTimer = null;
 		mask |= MASK_VIDEO_MODE;
@@ -165,17 +163,17 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		a.setBarsHidden(true);
 		setShowHideBarsIcon(a);
 
-		View title = v.getTitle();
+		View title = (v != null) ? v.getTitle() : null;
 		View fb = a.getFloatingButton();
 		int delay = getStartDelay();
 
 		if (delay == 0) {
 			fb.setVisibility(GONE);
-			title.setVisibility(GONE);
+			if (title != null) title.setVisibility(GONE);
 			super.setVisibility(GONE);
 		} else {
 			fb.setVisibility(VISIBLE);
-			title.setVisibility(VISIBLE);
+			if (title != null) title.setVisibility(VISIBLE);
 			super.setVisibility(VISIBLE);
 			hideTimer = new HideTimer(title, fb);
 			App.get().getHandler().postDelayed(hideTimer, delay);
@@ -299,27 +297,35 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
 																		 boolean initRepeat) {
 			super.buildPlayableMenu(a, b, pi, false);
+
 			BrowsableItemPrefs p = pi.getParent().getPrefs();
 			MediaEngine eng = a.getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 
-			if (pi.isRepeatItemEnabled() || p.getRepeatPref()) {
-				b.addItem(R.id.repeat, R.drawable.repeat_filled, R.string.repeat)
-						.setSubmenu(s -> {
-							buildRepeatMenu(s);
-							s.addItem(R.id.repeat_disable_all, R.string.repeat_disable);
-						});
-			} else {
-				b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat).setSubmenu(this::buildRepeatMenu);
+			eng.contributeToMenu(b);
+
+			if (!pi.isExternal()) {
+				if (pi.isRepeatItemEnabled() || p.getRepeatPref()) {
+					b.addItem(R.id.repeat, R.drawable.repeat_filled, R.string.repeat)
+							.setSubmenu(s -> {
+								buildRepeatMenu(s);
+								s.addItem(R.id.repeat_disable_all, R.string.repeat_disable);
+							});
+				} else {
+					b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat).setSubmenu(this::buildRepeatMenu);
+				}
+
+				if (p.getShufflePref()) {
+					b.addItem(R.id.shuffle_disable, R.drawable.shuffle_filled, R.string.shuffle_disable);
+				} else {
+					b.addItem(R.id.shuffle_enable, R.drawable.shuffle, R.string.shuffle);
+				}
 			}
 
-			if (p.getShufflePref()) {
-				b.addItem(R.id.shuffle_disable, R.drawable.shuffle_filled, R.string.shuffle_disable);
-			} else {
-				b.addItem(R.id.shuffle_enable, R.drawable.shuffle, R.string.shuffle);
+			if (eng.getAudioEffects() != null) {
+				b.addItem(R.id.audio_effects_fragment, R.drawable.equalizer, R.string.audio_effects);
 			}
 
-			b.addItem(R.id.audio_effects, R.drawable.equalizer, R.string.audio_effects);
 			b.addItem(R.id.speed, R.drawable.speed, R.string.speed).setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
 			b.addItem(R.id.timer, R.drawable.timer, R.string.timer).setSubmenu(s -> new TimerMenuHandler(a).build(s));
 		}
@@ -417,10 +423,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			MediaEngine eng;
 
 			switch (id) {
-				case R.id.audio_effects:
+				case R.id.audio_effects_fragment:
 					eng = getActivity().getMediaSessionCallback().getEngine();
 					if ((eng != null) && (eng.getAudioEffects() != null))
-						getActivity().showFragment(R.id.audio_effects);
+						getActivity().showFragment(R.id.audio_effects_fragment);
 					return true;
 				case R.id.repeat_track:
 				case R.id.repeat_folder:

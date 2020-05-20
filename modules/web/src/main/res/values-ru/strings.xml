@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="force_dark">Форсировать темный стиль, если поддерживается</string>
+    <string name="go_forward">Вперед</string>
+    <string name="full_screen">Полноэкранный режим</string>
+    <string name="full_screen_exit">Выйти из полноэкранного режима</string>
+    <string name="video_scaling_fill_proportional">Заполнить пропорционально</string>
+</resources>

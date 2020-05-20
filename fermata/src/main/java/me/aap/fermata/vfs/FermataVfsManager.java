@@ -151,7 +151,7 @@ public class FermataVfsManager extends VfsManager {
 			i.setInstallingMessage(a.getString(R.string.installing, name));
 
 			Promise<VfsProvider> contentLoading = new Promise<>();
-			FutureSupplier<VfsProvider> install = i.install(moduleId).withMainHandler().then(v -> {
+			FutureSupplier<VfsProvider> install = i.install(moduleId).main().then(v -> {
 				VfsProvider p = loadProvider(className, moduleId);
 
 				if (p != null) {

@@ -50,6 +50,7 @@
             android:resource="@style/AppTheme.Dark" />
 
         <activity
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:name="me.aap.fermata.ui.activity.MainActivity"
             android:launchMode="singleTop">
             <intent-filter>

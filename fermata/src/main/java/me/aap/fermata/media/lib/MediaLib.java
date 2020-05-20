@@ -119,10 +119,7 @@ public interface MediaLib {
 	}
 
 	default void clearCache() {
-	}
-
-	default long getDefaultTimeout() {
-		return 15000;
+		// TODO: implement
 	}
 
 	interface Item {
@@ -130,7 +127,7 @@ public interface MediaLib {
 		@NonNull
 		String getId();
 
-		VirtualResource getFile();
+		VirtualResource getResource();
 
 		@NonNull
 		MediaLib getLib();
@@ -152,6 +149,10 @@ public interface MediaLib {
 
 		@NonNull
 		FutureSupplier<MediaDescriptionCompat> getMediaDescription();
+
+		default boolean isExternal() {
+			return false;
+		}
 
 		default FutureSupplier<MediaDescriptionCompat> getMediaItemDescription() {
 			return getMediaDescription().then(md -> {
@@ -265,7 +266,7 @@ public interface MediaLib {
 		boolean isVideo();
 
 		default boolean isStream() {
-			VirtualFileSystem.Provider p = getFile().getVirtualFileSystem().getProvider();
+			VirtualFileSystem.Provider p = getResource().getVirtualFileSystem().getProvider();
 			return (p instanceof GenericFileSystem.Provider) || (p instanceof ContentFileSystem.Provider);
 		}
 
@@ -283,13 +284,13 @@ public interface MediaLib {
 
 		@NonNull
 		default Uri getLocation() {
-			VirtualResource file = getFile();
+			VirtualResource file = getResource();
 			if (!isNetResource()) return file.getRid().toAndroidUri();
 			else return getLib().getVfsManager().getHttpRid(file).toAndroidUri();
 		}
 
 		default boolean isNetResource() {
-			VirtualResource file = getFile();
+			VirtualResource file = getResource();
 			return !file.isLocalFile() && !(file.getVirtualFileSystem() instanceof GenericFileSystem);
 		}
 
@@ -423,7 +424,7 @@ public interface MediaLib {
 		FutureSupplier<Iterator<PlayableItem>> getShuffleIterator();
 
 		default String getName() {
-			return getFile().getName();
+			return getResource().getName();
 		}
 
 		@Override

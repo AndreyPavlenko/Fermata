@@ -1,0 +1,31 @@
+android {
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+ext {
+    addons = [
+            [
+                    name : 'youtube',
+                    icon : 'youtube',
+                    class: 'me.aap.fermata.addon.web.yt.YoutubeAddon'
+            ],
+            [
+                    name : 'web_browser',
+                    icon : 'web',
+                    class: 'me.aap.fermata.addon.web.WebBrowserAddon'
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation 'androidx.media:media:' + ANDROIDX_MEDIA_VERSION
+    implementation 'androidx.appcompat:appcompat:' + ANDROIDX_APPCOMPAT_VERSION
+    implementation 'com.google.android.material:material:' + ANDROID_MATERIAL_VERSION
+    implementation "androidx.constraintlayout:constraintlayout:" + ANDROIDX_CONSTRAINTLAYOUT_VERSION
+    implementation 'androidx.webkit:webkit:1.2.0'
+}

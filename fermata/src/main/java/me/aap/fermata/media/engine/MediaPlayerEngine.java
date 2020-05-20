@@ -10,7 +10,10 @@ import androidx.annotation.NonNull;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
+
+import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
@@ -63,6 +66,7 @@ public class MediaPlayerEngine implements MediaEngine,
 	@Override
 	public void start() {
 		player.start();
+		listener.onEngineStarted(this);
 	}
 
 	@Override
@@ -83,13 +87,13 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
-	public long getDuration() {
-		return (source == null) || source.isStream() ? 0 : player.getDuration();
+	public FutureSupplier<Long> getDuration() {
+		return completed((source == null) || source.isStream() ? 0L : player.getDuration());
 	}
 
 	@Override
-	public long getPosition() {
-		return (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0;
+	public FutureSupplier<Long> getPosition() {
+		return completed((source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0);
 	}
 
 	@Override
@@ -98,8 +102,8 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
-	public float getSpeed() {
-		return player.getPlaybackParams().getSpeed();
+	public FutureSupplier<Float> getSpeed() {
+		return completed(player.getPlaybackParams().getSpeed());
 	}
 
 	@Override

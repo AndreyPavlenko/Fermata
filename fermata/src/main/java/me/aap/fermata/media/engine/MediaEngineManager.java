@@ -74,12 +74,12 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		return vlcPlayer != null;
 	}
 
-	public boolean isExternalPlayerSupported() {
+	public boolean isAdditionalPlayerSupported() {
 		return isExoPlayerSupported() || isVlcPlayerSupported();
 	}
 
 	public MediaEngine createEngine(MediaEngine current, PlayableItem i, Listener listener) {
-		if (!isExternalPlayerSupported()) {
+		if (!isAdditionalPlayerSupported()) {
 			if (current != null) {
 				if (current.getId() == MEDIA_ENG_MP) return current;
 				current.close();
@@ -143,7 +143,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				if (install) {
 					exoPlayer = null;
 					FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);
-					i.withMainHandler().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
+					i.main().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
 				}
 			}
 		}
@@ -162,7 +162,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 				if (install) {
 					vlcPlayer = null;
 					FutureSupplier<Void> i = installPlayer(MODULE_VLC, R.string.engine_vlc_name);
-					i.withMainHandler().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
+					i.main().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
 				}
 			}
 		}
@@ -176,7 +176,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			if (lib.getPrefs().getExoEnabledPref()) {
 				exoPlayer = null;
 				FutureSupplier<Void> i = installPlayer(MODULE_EXO, R.string.engine_exo_name);
-				i.withMainHandler().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
+				i.main().onSuccess(v -> setExoPlayer(false)).onFailure(this::installExoFailed);
 			} else {
 				exoPlayer = null;
 				Log.i("Uninstalling module ", MODULE_EXO);
@@ -188,7 +188,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			if (lib.getPrefs().getVlcEnabledPref()) {
 				vlcPlayer = null;
 				FutureSupplier<Void> i = installPlayer(MODULE_VLC, R.string.engine_vlc_name);
-				i.withMainHandler().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
+				i.main().onSuccess(v -> setVlcPlayer(false)).onFailure(this::installVlcFailed);
 			} else {
 				vlcPlayer = null;
 				Log.i("Uninstalling module ", MODULE_VLC);

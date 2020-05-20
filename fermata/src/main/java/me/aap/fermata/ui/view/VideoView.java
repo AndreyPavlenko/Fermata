@@ -54,12 +54,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	private boolean prefListenerRegistered;
 
 	public VideoView(Context context) {
-		this(context, null);
-		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
-	}
-
-	public VideoView(Context context, AttributeSet attrs) {
-		super(context, attrs);
+		super(context, null);
 		setBackgroundColor(Color.BLACK);
 		addView(new SurfaceView(getContext()) {
 			{
@@ -70,6 +65,13 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			}
 		});
 
+		addTitle(context);
+		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+	}
+
+	public VideoView(Context context, AttributeSet attrs) { // Used by Youtube addon
+		super(context, attrs);
+		addView(new FrameLayout(context), new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 		addTitle(context);
 	}
 
@@ -116,7 +118,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		if (surfaceCreated) {
 			MainActivityDelegate a = getActivity();
 			MediaSessionCallback cb = a.getMediaSessionCallback();
-			MediaEngine eng = cb.getCurrentEngine();
+			MediaEngine eng = cb.getEngine();
 			if (eng == null) return;
 
 			PlayableItem i = eng.getSource();
@@ -128,7 +130,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			TextView title = getTitle();
 			title.setVisibility(GONE);
 
-			i.getMediaDescription().withMainHandler().onSuccess(dsc -> {
+			i.getMediaDescription().main().onSuccess(dsc -> {
 				if (cb.getCurrentItem() != i) return;
 				title.setText(dsc.getTitle());
 			});

@@ -90,6 +90,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
 																	 boolean initRepeat) {
+		if (pi.isExternal()) return;
+
 		if (pi.isFavoriteItem()) {
 			b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
 		} else {
@@ -124,7 +126,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	private FutureSupplier<Void> buildBrowsableMenu(MainActivityDelegate a, OverlayMenu.Builder b, BrowsableItem bi) {
-		return bi.getUnsortedChildren().withMainHandler().then(children -> {
+		return bi.getUnsortedChildren().main().then(children -> {
 			boolean hasBookmarks = false;
 			BrowsableItem parent = bi.getParent();
 
@@ -154,7 +156,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	private void addMediaEngineMenu(MainActivityDelegate a, OverlayMenu.Builder builder) {
-		if (a.getMediaSessionCallback().getEngineManager().isExternalPlayerSupported()) {
+		if (a.getMediaSessionCallback().getEngineManager().isAdditionalPlayerSupported()) {
 			builder.addItem(R.id.preferred_media_engine, R.drawable.media_engine,
 					R.string.preferred_media_engine).setSubmenu(this::buildMediaEngineMenu);
 		}
@@ -245,7 +247,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		});
 
 		if (item instanceof BrowsableItem) {
-			return ((BrowsableItem) item).getPlayableChildren(true).withMainHandler().then(items -> {
+			return ((BrowsableItem) item).getPlayableChildren(true).main().then(items -> {
 				addBookmarks(b, items);
 				return completedVoid();
 			});
@@ -335,21 +337,21 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				break;
 			case R.id.favorites_add:
 				if (item instanceof BrowsableItem) {
-					((BrowsableItem) item).getPlayableChildren(true).withMainHandler().onSuccess(list -> {
+					((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
 						item.getLib().getFavorites().addItems(list);
-						MediaLibFragment mf = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+						MediaLibFragment mf = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 						if (mf != null) mf.reload();
 					});
 				} else {
 					item.getLib().getFavorites().addItem((PlayableItem) item);
-					f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+					f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 					if (f != null) f.reload();
 				}
 
 				break;
 			case R.id.favorites_remove:
 				item.getLib().getFavorites().removeItem((PlayableItem) item);
-				f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+				f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 				if (f != null) f.reload();
 				break;
 			case R.id.playlist_remove:
@@ -359,7 +361,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				break;
 			case R.id.bookmark_remove_all_confirm:
 				if ((item instanceof BrowsableItem)) {
-					((BrowsableItem) item).getPlayableChildren(true).withMainHandler().onSuccess(list -> {
+					((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
 						for (PlayableItem pi : list) {
 							pi.getPrefs().removePref(BOOKMARKS);
 						}
@@ -437,7 +439,15 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	private void buildCreateBookmarkMenu(OverlayMenu.Builder b) {
 		MediaEngine eng = getMainActivity().getMediaServiceBinder().getCurrentEngine();
-		int pos = ((eng == null) || !item.equals(eng.getSource())) ? 0 : (int) (eng.getPosition() / 1000);
+
+		if ((eng != null) && item.equals(eng.getSource())) {
+			eng.getPosition().onSuccess(pos -> buildCreateBookmarkMenu(b, (int) (pos / 1000)));
+		} else {
+			buildCreateBookmarkMenu(b, 0);
+		}
+	}
+
+	private void buildCreateBookmarkMenu(OverlayMenu.Builder b, int pos) {
 		PreferenceStore store = new BasicPreferenceStore();
 		Pref<Supplier<String>> name = Pref.s("name", TextUtils.timeToString(pos));
 		Pref<IntSupplier> time = Pref.i("time", pos);

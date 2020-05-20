@@ -59,7 +59,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 	@Override
 	public int getFragmentId() {
-		return R.id.nav_folders;
+		return R.id.folders_fragment;
 	}
 
 	@Override
@@ -115,7 +115,7 @@ public class FoldersFragment extends MediaLibFragment {
 						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
 						ArrayList::new));
 				discardSelection();
-				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.nav_favorites);
+				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 				if (f != null) f.reload();
 				return true;
 			case R.id.refresh:
@@ -188,9 +188,15 @@ public class FoldersFragment extends MediaLibFragment {
 		}
 	}
 
-	private void addFolderIntent() throws ActivityNotFoundException {
-		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		getMainActivity().startActivityForResult(intent).onSuccess(this::addFolderResult);
+	private void addFolderIntent() {
+		try {
+			Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+			getMainActivity().startActivityForResult(intent).onSuccess(this::addFolderResult);
+		} catch (ActivityNotFoundException ex) {
+			String msg = ex.getLocalizedMessage();
+			Utils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
+					(msg != null) ? msg : ex.toString()));
+		}
 	}
 
 	public void addFolderPicker() {
@@ -208,13 +214,13 @@ public class FoldersFragment extends MediaLibFragment {
 		FermataVfsManager mgr = getLib().getVfsManager();
 		mgr.getProvider(provId)
 				.then(p -> p.select(getMainActivity(), mgr.getFileSystems(provId)))
-				.withMainHandler()
+				.main()
 				.onFailure(fail -> failedToLoadModule(name, fail))
 				.onSuccess(this::addFolderResult);
 	}
 
 	private void failedToLoadModule(@StringRes int name, Throwable ex) {
-		getMainActivity().showFragment(R.id.nav_folders);
+		getMainActivity().showFragment(R.id.folders_fragment);
 		if (isCancellation(ex)) return;
 
 		App.get().getHandler().post(() -> {
@@ -241,14 +247,14 @@ public class FoldersFragment extends MediaLibFragment {
 		requireNonNull(a.getContext()).getContentResolver()
 				.takePersistableUriPermission(uri, FLAG_GRANT_READ_URI_PERMISSION);
 		Folders folders = getLib().getFolders();
-		folders.addItem(uri).withMainHandler().thenRun(() -> getAdapter().setParent(folders));
+		folders.addItem(uri).main().thenRun(() -> getAdapter().setParent(folders));
 	}
 
 	private void addFolderResult(VirtualResource folder) {
 		MainActivityDelegate a = getMainActivity();
 		if (folder instanceof VirtualFolder) {
 			Folders folders = a.getLib().getFolders();
-			folders.addItem(folder.getRid().toAndroidUri()).withMainHandler()
+			folders.addItem(folder.getRid().toAndroidUri()).main()
 					.thenRun(() -> getAdapter().setParent(folders));
 		}
 		a.showFragment(getFragmentId());
@@ -316,7 +322,7 @@ public class FoldersFragment extends MediaLibFragment {
 			parent.getUnsortedChildren().onSuccess(c -> {
 				if (!c.isEmpty()) return;
 
-				Animation shake = AnimationUtils.loadAnimation(getContext(), R.anim.shake);
+				Animation shake = AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
 				getMainActivity().getFloatingButton().startAnimation(shake);
 			});
 		}

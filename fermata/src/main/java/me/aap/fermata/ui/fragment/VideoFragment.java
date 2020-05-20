@@ -94,7 +94,7 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 
 	@Override
 	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
-		if (isHidden()) return;
+		if (isHidden() || ((newItem != null) && (newItem.isExternal()))) return;
 		MainActivityDelegate a = getMainActivity();
 		VideoView v = getVideoView();
 

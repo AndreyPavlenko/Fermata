@@ -11,7 +11,7 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.ui.activity.ActivityBase;
 
-public class MainActivity extends ActivityBase implements AppActivity {
+public class MainActivity extends ActivityBase implements FermataActivity {
 	private boolean exitPressed;
 
 	@Override

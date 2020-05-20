@@ -24,6 +24,7 @@ import android.text.TextUtils;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.media.AudioAttributesCompat;
 import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
@@ -47,6 +48,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
@@ -60,7 +62,6 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
-import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
@@ -107,6 +108,7 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.function.CheckedRunnable.runWithRetry;
 import static me.aap.utils.misc.Assert.assertNotNull;
 
 /**
@@ -148,7 +150,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private PlaybackStateCompat currentState;
 	private MediaMetadataCompat currentMetadata;
 	private List<VideoViewWraper> videoView;
-	private FutureSupplier<Void> playerTask = completedVoid();
+	private FutureSupplier<?> playerTask = completedVoid();
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
 															PlaybackControlPrefs playbackControlPrefs, Handler handler) {
@@ -212,12 +214,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		return lib;
 	}
 
-	public MediaEngine getCurrentEngine() {
+	public MediaEngineManager getEngineManager() {
+		return lib.getMediaEngineManager();
+	}
+
+	@Nullable
+	public MediaEngine getEngine() {
 		return engine;
 	}
 
+	public void setEngine(MediaEngine engine) {
+		if (this.engine == engine) return;
+		playerTask.cancel();
+		onStop();
+		this.engine = engine;
+	}
+
+	@Nullable
 	public PlayableItem getCurrentItem() {
-		return (engine == null) ? null : engine.getSource();
+		MediaEngine eng = getEngine();
+		return (eng == null) ? null : eng.getSource();
 	}
 
 	public MediaSessionCompat getSession() {
@@ -234,14 +250,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		return listeners;
 	}
 
-	public MediaEngine getEngine() {
-		return engine;
-	}
-
-	public MediaEngineManager getEngineManager() {
-		return lib.getMediaEngineManager();
-	}
-
 	public void addVideoView(VideoView view, int priority) {
 		if (this.videoView == null) {
 			videoView = new ArrayList<>(2);
@@ -255,19 +263,23 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			Collections.sort(videoView);
 		}
 
-		if (engine != null) {
-			PlayableItem i = engine.getSource();
-			if (i.isVideo()) engine.setVideoView(videoView.get(0).view);
+		MediaEngine eng = getEngine();
+
+		if (eng != null) {
+			PlayableItem i = eng.getSource();
+			if (i.isVideo()) eng.setVideoView(videoView.get(0).view);
 		}
 	}
 
 	public void removeVideoView(VideoView view) {
+		MediaEngine eng = getEngine();
+
 		if ((videoView != null) && videoView.remove(new VideoViewWraper(view, 0))) {
 			if (videoView.isEmpty()) {
 				videoView = null;
-				if (engine != null) engine.setVideoView(null);
-			} else if (engine != null) {
-				engine.setVideoView(videoView.get(0).view);
+				if (eng != null) eng.setVideoView(null);
+			} else if (eng != null) {
+				eng.setVideoView(videoView.get(0).view);
 			}
 		}
 	}
@@ -382,20 +394,23 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 					return completedVoid();
 				});
 			case PlaybackStateCompat.STATE_PAUSED:
-				if (!requestAudioFocus()) {
+				MediaEngine eng = getEngine();
+				assert (eng != null);
+				assert (eng.getSource() != null);
+
+				if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 					Log.i("Audio focus request failed");
 					return completedVoid();
 				}
 
-				assert (engine != null);
-				assert (engine.getSource() != null);
+
 				long pos = state.getPosition();
 				float speed = getSpeed(engine.getSource());
 				state = new PlaybackStateCompat.Builder(state)
 						.setState(PlaybackStateCompat.STATE_PLAYING, pos, speed).build();
 				setPlaybackState(state);
-				engine.setPosition(pos);
-				start(engine, speed);
+				eng.setPosition(pos);
+				start(eng, speed);
 				break;
 			default:
 				break;
@@ -446,21 +461,24 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onPause() {
-		playerTask.cancel();
-		PlayableItem i = getCurrentItem();
-		if (i == null) return;
+		PlayableItem i;
+		MediaEngine eng = getEngine();
+		if ((eng == null) || ((i = eng.getSource()) == null)) return;
 
-		if (!engine.canPause()) {
+		if (!eng.canPause()) {
 			onStop();
 			return;
 		}
 
-		engine.pause();
-		long pos = engine.getPosition();
-		long qid = currentState.getActiveQueueItemId();
-		lib.setLastPlayed(i, pos);
-		PlaybackStateCompat state = createPlayingState(i, true, qid, pos, engine.getSpeed());
-		setPlaybackState(state);
+		eng.pause();
+
+		eng.getPosition().and(eng.getSpeed()).main().onSuccess(h -> {
+			if (eng != getEngine()) return;
+			long qid = currentState.getActiveQueueItemId();
+			lib.setLastPlayed(i, h.value1);
+			PlaybackStateCompat state = createPlayingState(i, true, qid, h.value1, h.value2);
+			setPlaybackState(state);
+		});
 	}
 
 	@Override
@@ -469,38 +487,56 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private void onStop(boolean setPosition) {
+		MediaEngine eng = getEngine();
+
+		if (setPosition && (eng != null)) {
+			PlayableItem i = eng.getSource();
+			if ((i != null) && i.isExternal()) onStop(eng, -1);
+			else eng.getPosition().main().onSuccess(pos -> onStop(eng, pos));
+		} else {
+			onStop(eng, -1);
+		}
+	}
+
+	private void onStop(MediaEngine eng, long pos) {
+		if (eng != null) {
+			if (pos != -1) {
+				PlayableItem i = eng.getSource();
+				if (i != null) lib.setLastPlayed(i, pos);
+			}
+
+			eng.stop();
+			eng.releaseAudioFocus(audioManager, audioFocusReq);
+			eng.close();
+			if (eng == engine) engine = null;
+		}
+
+		stopped();
+	}
+
+	private void stopped() {
 		if (getPlaybackState().getState() != PlaybackStateCompat.STATE_STOPPED) {
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 					.setState(PlaybackStateCompat.STATE_STOPPED, 0, 1.0f).build();
 			setPlaybackState(state, null, Collections.emptyList(), REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
 		}
 
-		if (engine != null) {
-			if (setPosition) {
-				PlayableItem i = engine.getSource();
-				if (i != null) lib.setLastPlayed(i, engine.getPosition());
-			}
-
-			engine.stop();
-			engine.close();
-			engine = null;
-		}
-
-		releaseAudioFocus();
 		session.setQueue(null);
 		session.setActive(false);
 	}
 
 	@Override
 	public void onSeekTo(long position) {
-		PlayableItem i = getCurrentItem();
-		if (i == null) return;
+		MediaEngine eng = getEngine();
+		if ((eng == null) || (eng.getSource() == null)) return;
 
-		PlaybackStateCompat state = getPlaybackState();
-		engine.setPosition(position);
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-		b.setState(state.getState(), engine.getPosition(), engine.getSpeed());
-		setPlaybackState(b.build());
+		eng.getSpeed().onSuccess(speed -> {
+			PlaybackStateCompat state = getPlaybackState();
+			eng.setPosition(position);
+			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
+			b.setState(state.getState(), position, speed);
+			setPlaybackState(b.build());
+		});
 	}
 
 	@Override
@@ -516,8 +552,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private FutureSupplier<Void> skipTo(boolean next) {
-		PlayableItem i = getCurrentItem();
-		if (i == null) return completedVoid();
+		PlayableItem i;
+		MediaEngine eng = getEngine();
+		if ((eng == null) || ((i = eng.getSource()) == null)) return completedVoid();
 
 		return (next ? i.getNextPlayable() : i.getPrevPlayable()).then(this::prepareItem).then(pi -> {
 			if (pi != null) skipTo(next, pi);
@@ -550,8 +587,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	public void rewindFastForward(boolean ff, int time, int timeUnit, int multiply) {
-		PlayableItem i = getCurrentItem();
-		if (i == null) return;
+		playerTask.cancel();
+		PlayableItem i;
+		MediaEngine eng = getEngine();
+		if ((eng == null) || ((i = eng.getSource()) == null)) return;
+
+		playerTask = eng.getDuration().and(eng.getPosition()).main().onSuccess(h ->
+				eng.getSpeed().onSuccess(speed ->
+						rewindFastForward(eng, i, h.value2, speed, h.value1, ff, time, timeUnit, multiply)));
+	}
+
+	private void rewindFastForward(MediaEngine eng, PlayableItem i, long pos, float speed, long dur,
+																 boolean ff, int time, int timeUnit, int multiply) {
+		if (getCurrentItem() != i) return;
 
 		PlaybackStateCompat state = getPlaybackState();
 		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
@@ -559,20 +607,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				state.getPlaybackSpeed());
 		setPlaybackState(b.build());
 
-		long dur = i.getDuration().get(() -> 0L);
 		long timeShift = getTimeMillis(dur, time, timeUnit) * multiply;
 
 		if (ff) {
 			dur -= 1000;
 			if (dur <= 0) return;
-			long pos = engine.getPosition() + timeShift;
-			engine.setPosition(Math.min(pos, dur));
+			pos = Math.min(pos + timeShift, dur);
 		} else {
-			long pos = engine.getPosition() - timeShift;
-			engine.setPosition(pos > 0 ? pos : 0);
+			pos -= timeShift;
+			if (pos < 0) pos = 0;
 		}
 
-		setPlaybackState(b.setState(state.getState(), engine.getPosition(), engine.getSpeed()).build());
+		eng.setPosition(pos);
+		setPlaybackState(b.setState(state.getState(), pos, speed).build());
 	}
 
 	private void progressiveRwFF(long time, boolean ff) {
@@ -661,7 +708,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		else favorites.removeItem(i);
 
 		if (i.getParent() == favorites) {
-			favorites.getQueue().withMainHandler().onSuccess(q -> {
+			favorites.getQueue().main().onSuccess(q -> {
 				if (i != getCurrentItem()) return;
 				session.setQueue(q);
 				String id = i.getId();
@@ -739,64 +786,79 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onSetPlaybackSpeed(float speed) {
-		if (engine != null) engine.setSpeed(speed);
+		MediaEngine eng = getEngine();
+		if (eng != null) eng.setSpeed(speed);
 	}
 
 	@Override
 	public void onEngineBuffering(MediaEngine engine, int percent) {
-		PlaybackStateCompat state = getPlaybackState();
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state)
-				.setState(PlaybackStateCompat.STATE_BUFFERING, engine.getPosition(), engine.getSpeed());
-		setPlaybackState(b.build());
-		if (preBufferingState == -1) preBufferingState = state.getState();
+		engine.getSpeed().and(engine.getPosition()).main().onSuccess(h -> {
+			PlaybackStateCompat state = getPlaybackState();
+			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state)
+					.setState(PlaybackStateCompat.STATE_BUFFERING, h.value2, h.value1);
+			setPlaybackState(b.build());
+			if (preBufferingState == -1) preBufferingState = state.getState();
+		});
 	}
 
 	@Override
 	public void onEngineBufferingCompleted(MediaEngine engine) {
-		PlaybackStateCompat state = getPlaybackState();
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state)
-				.setState(preBufferingState, engine.getPosition(), engine.getSpeed());
-		setPlaybackState(b.build());
-		preBufferingState = -1;
+		engine.getSpeed().and(engine.getPosition()).main().onSuccess(h -> {
+			PlaybackStateCompat state = getPlaybackState();
+			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state)
+					.setState(preBufferingState, h.value2, h.value1);
+			setPlaybackState(b.build());
+			preBufferingState = -1;
+		});
 	}
 
 	@Override
 	public void onEnginePrepared(MediaEngine engine) {
+		playerTask.cancel();
 		PlayableItem i = engine.getSource();
 		if (i == null) return;
 
+		playerTask = i.getDuration().main().onSuccess(dur -> {
+			if (this.engine == engine) onEnginePrepared(engine, i, dur);
+		});
+	}
+
+	private void onEnginePrepared(MediaEngine engine, PlayableItem i, long dur) {
 		long pos = lib.getLastPlayedPosition(i);
-		long dur = engine.getDuration();
 		float speed = getSpeed(i);
+
+		PlayableItemPrefs prefs = i.getPrefs();
+		BrowsableItemPrefs parentPrefs = i.getParent().getPrefs();
+		PlaybackControlPrefs playbackPrefs = getPlaybackControlPrefs();
+		runWithRetry(() -> setAudiEffects(engine, prefs, parentPrefs, playbackPrefs));
 		engine.setPosition((pos > dur) ? 0 : pos);
-
-		BrowsableItemPrefs p = i.getParent().getPrefs();
-		int shuffle = p.getShufflePref() ? SHUFFLE_MODE_ALL : SHUFFLE_MODE_NONE;
-		int repeat;
-
-		if (p.getRepeatPref()) {
-			repeat = REPEAT_MODE_ALL;
-		} else if (i.getId().equals(p.getRepeatItemPref())) {
-			repeat = REPEAT_MODE_ONE;
-		} else {
-			repeat = REPEAT_MODE_NONE;
-		}
-
-		try {
-			setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
-		} catch (Exception ex) {
-			Log.w("Failed to set audio effects. Retrying...");
-
-			try {
-				setAudiEffects(engine, i.getPrefs(), i.getParent().getPrefs(), getPlaybackControlPrefs());
-			} catch (Exception ex1) {
-				Log.w(ex1, "Failed to set audio effects!");
-			}
-		}
 
 		if (playOnPrepared) {
 			lib.setLastPlayed(i, pos);
 			start(engine, speed);
+		} else {
+			setPlayingState(engine, false, pos, speed);
+		}
+	}
+
+	@Override
+	public void onEngineStarted(MediaEngine engine) {
+		engine.getPosition().and(engine.getSpeed()).main().onSuccess(
+				h -> setPlayingState(engine, true, h.value1, h.value2));
+	}
+
+	private void setPlayingState(MediaEngine engine, boolean playing, long pos, float speed) {
+		PlayableItem i = engine.getSource();
+		BrowsableItemPrefs prefs = i.getParent().getPrefs();
+		int shuffle = prefs.getShufflePref() ? SHUFFLE_MODE_ALL : SHUFFLE_MODE_NONE;
+		int repeat;
+
+		if (prefs.getRepeatPref()) {
+			repeat = REPEAT_MODE_ALL;
+		} else if (i.getId().equals(prefs.getRepeatItemPref())) {
+			repeat = REPEAT_MODE_ONE;
+		} else {
+			repeat = REPEAT_MODE_NONE;
 		}
 
 		session.setRepeatMode(repeat);
@@ -806,10 +868,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		Holder<MediaMetadataCompat> mdHolder = new Holder<>();
 		Holder<Consumer<MediaMetadataCompat>> update = new Holder<>(mdHolder::set);
 
-		FutureSupplier<Void> load = i.getMediaData().withMainHandler().then(md1 -> {
+		FutureSupplier<Void> load = i.getMediaData().main().then(md1 -> {
 			update.get().accept(md1);
 
-			return getQid.then(qid -> i.getMediaDescription().withMainHandler().then(dsc -> {
+			return getQid.then(qid -> i.getMediaDescription().main().then(dsc -> {
 						if (getCurrentItem() != i) return completedVoid();
 						MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder(md1);
 						FutureSupplier<MediaMetadataCompat> md2 = buildMetadata(b, md1, dsc);
@@ -819,7 +881,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 							return completedVoid();
 						} else {
 							update.get().accept(b.build());
-							return md2.withMainHandler().then(md3 -> {
+							return md2.main().then(md3 -> {
 								update.get().accept(md3);
 								return completedVoid();
 							});
@@ -835,17 +897,17 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			assertNotNull(md);
 		} else {
 			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
-			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getFile().getName());
+			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getResource().getName());
 			md = b.build();
-			update.set(m -> {
+			update.set(m -> engine.getPosition().main().onSuccess(position -> {
 				if (getCurrentItem() != i) return;
-				PlaybackStateCompat s = createPlayingState(i, !isPlaying(), getQid.peek(0L), engine.getPosition(), speed);
+				PlaybackStateCompat s = createPlayingState(i, !isPlaying(), getQid.peek(0L), position, speed);
 				session.setMetadata(m);
 				setPlaybackState(s, m, null, repeat, shuffle);
-			});
+			}));
 		}
 
-		PlaybackStateCompat s = createPlayingState(i, !playOnPrepared, getQid.peek(0L), engine.getPosition(), speed);
+		PlaybackStateCompat s = createPlayingState(i, !playing, getQid.peek(0L), pos, speed);
 		session.setMetadata(md);
 		setPlaybackState(s, md, null, repeat, shuffle);
 	}
@@ -969,16 +1031,25 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	private void playItem(PlayableItem i, long pos) {
-		if (!requestAudioFocus()) {
-			Log.i("Audio focus request failed");
-			return;
+		MediaEngine eng = getEngine();
+
+		if (eng != null) {
+			PlayableItem current = eng.getSource();
+
+			if ((current != null) && !current.isExternal()) {
+				eng.getPosition().main().onSuccess(currentPos
+						-> playItem(eng, i, pos, current, currentPos));
+				return;
+			}
 		}
 
-		PlayableItem current = getCurrentItem();
-		long currentPos = (current != null) ? engine.getPosition() : 0;
-		engine = getEngineManager().createEngine(engine, i, this);
+		playItem(eng, i, pos, null, -1);
+	}
 
-		if (engine == null) {
+	private void playItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current, long currentPos) {
+		engine = eng = getEngineManager().createEngine(eng, i, this);
+
+		if (eng == null) {
 			if (current != null) lib.setLastPlayed(current, currentPos);
 			String msg = lib.getContext().getResources().getString(R.string.err_unsupported_source_type, i);
 			PlaybackStateCompat state = new PlaybackStateCompat.Builder()
@@ -1007,10 +1078,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
-		engine.prepare(i);
+
+		if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
+			Log.i("Audio focus request failed");
+			return;
+		}
+
+		eng.prepare(i);
 
 		if (updateQueue) {
-			p.getQueue().withMainHandler().onSuccess(q -> {
+			p.getQueue().main().onSuccess(q -> {
 				if ((engine == null) || (engine.getSource() != i)) return;
 				session.setQueue(q);
 				service.updateSessionState(null, null, q, REPEAT_MODE_INVALID, SHUFFLE_MODE_INVALID);
@@ -1052,6 +1129,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		if (state.getState() == STATE_PLAYING) {
 			MediaEngine engine = getEngine();
+			assert (engine != null);
 			PlayableItem i = engine.getSource();
 			if (i.isTimerRequired()) startTimer(i, state.getPosition(), state.getPlaybackSpeed());
 		} else {
@@ -1060,7 +1138,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	@NonNull
-	PlaybackStateCompat getPlaybackState() {
+	public PlaybackStateCompat getPlaybackState() {
 		return currentState;
 	}
 
@@ -1172,45 +1250,37 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (bass != null) bass.setEnabled(false);
 	}
 
-	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
-	private boolean requestAudioFocus() {
-		return (audioManager == null) ||
-				(AudioManagerCompat.requestAudioFocus(audioManager, audioFocusReq) == AUDIOFOCUS_REQUEST_GRANTED);
-	}
-
-	private void releaseAudioFocus() {
-		if (audioManager != null)
-			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
-	}
-
 	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {
 		if (i == null) return completedNull();
 
 		// Make sure metadata is loaded
-		FutureSupplier<Long> dur = i.getDuration();
+		FutureSupplier<Long> getDur = i.getDuration();
 
 		// Make sure HTTP server is started
 		if (i.isNetResource()) {
 			FutureSupplier<NetServer> start = lib.getVfsManager().getNetServer();
-			if (!start.isDone()) return start.then(s -> dur).map(d -> i).withMainHandler();
+			if (!start.isDone()) return start.and(getDur, (s, d) -> {
+			}).map(v -> i).main();
 		}
 
-		if (!dur.isDone()) return dur.map(d -> i).withMainHandler();
-		return completed(i).withMainHandler();
+		if (!getDur.isDone()) return getDur.map(d -> i).main();
+		return completed(i).main();
 	}
 
 	private Runnable timer;
 
 	private void startTimer(PlayableItem i, long pos, float speed) {
-		timer = new Runnable() {
-			@Override
-			public void run() {
-				if (timer == this) onSkipToNext();
-			}
-		};
+		i.getDuration().main().onSuccess(dur -> {
+			timer = new Runnable() {
+				@Override
+				public void run() {
+					if (timer == this) onSkipToNext();
+				}
+			};
 
-		long delay = (long) ((i.getDuration().get(() -> 0L) - pos) / speed);
-		handler.postDelayed(timer, delay);
+			long delay = (long) ((dur - pos) / speed);
+			handler.postDelayed(timer, delay);
+		});
 	}
 
 	private void stopTimer() {

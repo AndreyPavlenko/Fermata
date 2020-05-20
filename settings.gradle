@@ -1,28 +1,26 @@
 rootProject.name = 'Fermata Music Player'
-
-include ':fermata'
-include ':control'
-include ':utils'
-include ':vlc'
-include ':gdrive'
-include ':sftp'
-include ':smb'
-project(':utils').projectDir = new File('depends/utils')
-project(':vlc').projectDir = new File('modules/vlc')
-project(':gdrive').projectDir = new File('modules/gdrive')
-project(':sftp').projectDir = new File('modules/sftp')
-project(':smb').projectDir = new File('modules/smb')
-
+gradle.ext.modules = []
+gradle.ext.addonInfo = new StringBuilder(512)
+gradle.ext.localProps = new Properties()
+def localPropsFile = file('local.properties')
+if (localPropsFile.isFile()) gradle.ext.localProps.load(localPropsFile.newDataInputStream())
 def exoRoot = file('depends/ExoPlayer')
 
 if (exoRoot.isDirectory()) {
-    include ':exoplayer'
-    project(':exoplayer').projectDir = new File('modules/exoplayer')
     gradle.ext.exoplayerRoot = exoRoot
     gradle.ext.exoplayerModulePrefix = 'exoplayer-'
     apply from: new File(exoRoot, 'core_settings.gradle')
 }
 
-gradle.ext.localProps = new Properties()
-def localPropsFile = file('local.properties')
-if (localPropsFile.isFile()) gradle.ext.localProps.load(localPropsFile.newDataInputStream())
+include ':fermata'
+include ':control'
+include ':utils'
+project(':utils').projectDir = new File('depends/utils')
+
+new File('modules').eachDir {
+    def name = ':' + it.name
+    if ((':exoplayer' == name) && !exoRoot.isDirectory()) return
+    gradle.ext.modules.add(name)
+    include name
+    project(name).projectDir = it
+}

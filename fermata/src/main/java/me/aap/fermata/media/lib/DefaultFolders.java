@@ -160,13 +160,13 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	public FutureSupplier<Item> addItem(Uri uri) {
 		List<FolderItem> children = list();
 
-		if (CollectionUtils.contains(children, u -> uri.equals(u.getFile().getRid().toAndroidUri()))) {
+		if (CollectionUtils.contains(children, u -> uri.equals(u.getResource().getRid().toAndroidUri()))) {
 			return completedNull();
 		}
 
 		List<FolderItem> newChildren = new ArrayList<>(children.size() + 1);
 		newChildren.addAll(children);
-		return toFolderItem(uri, newChildren).withMainHandler().map(folder -> {
+		return toFolderItem(uri, newChildren).main().map(folder -> {
 			if (folder == null) return null;
 
 			newChildren.add(folder);
@@ -187,9 +187,9 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 
 	@Override
 	public void removeItem(Item item) {
-		Rid rid = item.getFile().getRid();
+		Rid rid = item.getResource().getRid();
 		List<FolderItem> newChildren = new ArrayList<>(list());
-		if (!CollectionUtils.remove(newChildren, u -> rid.equals(u.getFile().getRid()))) return;
+		if (!CollectionUtils.remove(newChildren, u -> rid.equals(u.getResource().getRid()))) return;
 
 		getLib().removeFromCache(item);
 		setNewChildren(newChildren);
@@ -205,7 +205,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 	}
 
 	private void saveChildren(List<? extends Item> children) {
-		setFoldersPref(mapToArray(children, i -> i.getFile().getRid().toString(), String[]::new));
+		setFoldersPref(mapToArray(children, i -> i.getResource().getRid().toString(), String[]::new));
 	}
 
 	@NonNull
@@ -216,7 +216,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders,
 			String name = folder.getName();
 
 			for (FolderItem c : children) {
-				if (name.equals(c.getFile().getName())) {
+				if (name.equals(c.getResource().getName())) {
 					name = sha1String(u.toString());
 					break;
 				}

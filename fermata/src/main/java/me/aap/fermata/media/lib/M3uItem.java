@@ -50,7 +50,7 @@ class M3uItem extends BrowsableItemBase {
 
 	private Data parse() {
 		String id = getId();
-		VirtualFile m3uFile = (VirtualFile) getFile();
+		VirtualFile m3uFile = (VirtualFile) getResource();
 		VirtualFolder dir = m3uFile.getParent().getOrThrow();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
@@ -238,7 +238,7 @@ class M3uItem extends BrowsableItemBase {
 			if (i != null) {
 				M3uItem c = (M3uItem) i;
 				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-				if (DEBUG && !m3uFile.equals(c.getFile())) throw new AssertionError();
+				if (DEBUG && !m3uFile.equals(c.getResource())) throw new AssertionError();
 				return c;
 			} else {
 				return new M3uItem(id, parent, m3uFile);
@@ -256,7 +256,7 @@ class M3uItem extends BrowsableItemBase {
 			if (file == null) return null;
 
 			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, (VirtualFile) file.getFile(), lib);
+			return create(id, parent, (VirtualFile) file.getResource(), lib);
 		});
 	}
 
@@ -278,7 +278,7 @@ class M3uItem extends BrowsableItemBase {
 				if (d.cover == null) {
 					return iconUri = completedNull();
 				} else {
-					return getFile().getParent().then(folder -> {
+					return getResource().getParent().then(folder -> {
 						if (folder == null) return iconUri = completedNull();
 						return getLib().getVfsManager().resolve(d.cover, folder).then(file ->
 								iconUri = (file != null) ? completed(file.getRid().toAndroidUri()) : completedNull());
