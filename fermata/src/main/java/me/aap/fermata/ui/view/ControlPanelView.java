@@ -544,9 +544,9 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			}
 
 			@Override
-			public void applyFloatPref(Pref<? extends DoubleSupplier> pref, float value) {
+			public void applyFloatPref(boolean removeDefault, Pref<? extends DoubleSupplier> pref, float value) {
 				if (value == 0.0f) value = 0.1f;
-				super.applyFloatPref(pref, value);
+				super.applyFloatPref(removeDefault, pref, value);
 				if (cb.isPlaying()) cb.onSetPlaybackSpeed(value);
 			}
 		}
