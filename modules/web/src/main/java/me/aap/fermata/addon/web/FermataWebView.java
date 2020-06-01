@@ -27,7 +27,6 @@ import me.aap.utils.ui.view.ToolBarView;
 
 import static androidx.webkit.WebViewFeature.FORCE_DARK;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
-import static me.aap.fermata.addon.web.FermataJsInterface.JS_ERR;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
 
 /**
@@ -102,11 +101,8 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if (m instanceof WebToolBarMediator) ((WebToolBarMediator) m).setAddress(a.getToolBar(), uri);
 	}
 
-	protected void requestFullScreen() {
-		loadUrl("javascript: var v = document.body;\n" +
-				"if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
-				"else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
-				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen() not found in ' + v);");
+	protected boolean requestFullScreen() {
+		return false;
 	}
 
 	@SuppressLint("ClickableViewAccessibility")
@@ -202,5 +198,12 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		}
 
 		return false;
+	}
+
+	@Override
+	public boolean onInterceptTouchEvent(MotionEvent ev) {
+		FermataChromeClient chrome = getWebChromeClient();
+		if ((chrome != null) && chrome.isFullScreen()) chrome.onTouchEvent(this, ev);
+		return super.onInterceptTouchEvent(ev);
 	}
 }

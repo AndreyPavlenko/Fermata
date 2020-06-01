@@ -30,6 +30,7 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				break;
 			case JS_VIDEO_PAUSED:
 				Log.d("Video paused");
+				engine.paused();
 				break;
 			case JS_VIDEO_ENDED:
 				Log.d("Video ended");

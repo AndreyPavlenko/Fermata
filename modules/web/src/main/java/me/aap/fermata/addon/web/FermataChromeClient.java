@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
+import android.widget.FrameLayout;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
@@ -17,7 +18,6 @@ import me.aap.utils.ui.view.FloatingButton;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.view.MotionEvent.ACTION_DOWN;
-import static android.view.MotionEvent.ACTION_UP;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
@@ -136,7 +136,12 @@ public class FermataChromeClient extends WebChromeClient {
 		}
 
 		fullScreenReq = req = new Promise<>();
-		web.requestFullScreen();
+
+		if (!web.requestFullScreen()) {
+			onShowCustomView(new FrameLayout(web.getContext()), () -> {
+			});
+		}
+
 		return req;
 	}
 
@@ -156,25 +161,18 @@ public class FermataChromeClient extends WebChromeClient {
 	}
 
 	protected boolean onTouchEvent(View v, MotionEvent event) {
-		if (!isFullScreen()) return false;
-
-		int action = event.getAction();
-		if ((action != ACTION_UP) && (action != ACTION_DOWN)) return false;
+		if (!isFullScreen() || (event.getAction() != ACTION_DOWN)) return false;
 
 		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
 		FloatingButton fb = a.getFloatingButton();
 		long st = touchStamp = System.currentTimeMillis();
 
-		if (action == ACTION_DOWN) {
-			fb.setVisibility(GONE);
-		} else {
-			fb.setVisibility(VISIBLE);
-			App.get().getHandler().postDelayed(() -> {
-				if (st == touchStamp) fb.setVisibility(GONE);
-			}, 3000);
-		}
+		fb.setVisibility(VISIBLE);
+		App.get().getHandler().postDelayed(() -> {
+			if (st == touchStamp) fb.setVisibility(GONE);
+		}, 3000);
 
-		return false;
+		return true;
 	}
 
 	@Override

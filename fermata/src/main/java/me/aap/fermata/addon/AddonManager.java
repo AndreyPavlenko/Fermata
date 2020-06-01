@@ -1,5 +1,7 @@
 package me.aap.fermata.addon;
 
+import android.app.Activity;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 
@@ -10,6 +12,7 @@ import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.app.App;
 import me.aap.utils.event.BasicEventBroadcaster;
@@ -18,6 +21,8 @@ import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityBase;
 import me.aap.utils.ui.fragment.ActivityFragment;
+
+import static java.util.Collections.singletonList;
 
 /**
  * @author Andrey Pavlenko
@@ -50,6 +55,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		return addons.get(className);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Nullable
 	public <A extends FermataAddon> A getAddon(Class<A> c) {
 		return (A) addons.get(c.getName());
@@ -85,8 +91,10 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		if (!addons.containsKey(i.className)) {
 			try {
 				FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();
+				PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
 				addons.put(i.className, a);
 				fireBroadcastEvent(c -> c.addonChanged(this, i, true));
+				prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
 				return;
 			} catch (Exception ignore) {
 			}
@@ -95,18 +103,23 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon,
 					i.moduleName, null, MainActivity.class).onSuccess(a -> {
-				DynamicModuleInstaller inst = new DynamicModuleInstaller(a);
-				inst.install(i.moduleName).onSuccess(v -> fireBroadcastEvent(c -> {
+				DynamicModuleInstaller inst = createInstaller(a, i);
+				inst.install(i.moduleName).onSuccess(v -> {
 					Log.i("Module installed: ", i.moduleName);
-					install(i, false);
-				}));
+
+					for (AddonInfo ai : BuildConfig.ADDONS) {
+						if (i.moduleName.equals(ai.moduleName)) install(ai, false);
+					}
+				});
 			});
 		}
 	}
 
 	private void uninstall(AddonInfo i) {
 		if (addons.remove(i.className) != null) {
+			PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
 			fireBroadcastEvent(c -> c.addonChanged(this, i, false));
+			prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
 
 			for (AddonInfo ai : BuildConfig.ADDONS) {
 				if (ai.moduleName.equals(i.moduleName)) return;
@@ -114,10 +127,22 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon,
 					i.moduleName, null, MainActivity.class).onSuccess(a -> {
-				DynamicModuleInstaller inst = new DynamicModuleInstaller(a);
+				DynamicModuleInstaller inst = createInstaller(a, i);
 				inst.uninstall(i.moduleName).onSuccess(v -> Log.i("Module uninstalled: ", i.moduleName));
 			});
 		}
+	}
+
+	private static DynamicModuleInstaller createInstaller(Activity a, AddonInfo ai) {
+		DynamicModuleInstaller i = new DynamicModuleInstaller(a);
+		String name = a.getString(ai.addonName);
+		i.setSmallIcon(R.drawable.ic_notification);
+		i.setTitle(a.getString(R.string.module_installation, name));
+		i.setNotificationChannel(CHANNEL_ID, a.getString(R.string.installing, name));
+		i.setPendingMessage(a.getString(R.string.install_pending, name));
+		i.setDownloadingMessage(a.getString(R.string.downloading, name));
+		i.setInstallingMessage(a.getString(R.string.installing, name));
+		return i;
 	}
 
 	public interface Listener {

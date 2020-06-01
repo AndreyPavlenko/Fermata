@@ -73,11 +73,12 @@ public class YoutubeWebView extends FermataWebView {
 				"findVideo();");
 	}
 
-	protected void requestFullScreen() {
+	protected boolean requestFullScreen() {
 		loadUrl("javascript: var v = document.querySelector('video');\n" +
 				"if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
 				"else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
 				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);");
+		return true;
 	}
 
 	void play() {

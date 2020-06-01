@@ -44,6 +44,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private final YoutubeItem prev;
 	private final YoutubeItem end;
 	private YoutubeItem current;
+	private boolean ignorePause;
 
 	public YoutubeMediaEngine(YoutubeWebView web, MainActivityDelegate a) {
 		this.web = web;
@@ -70,6 +71,12 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	void ended() {
 		current = end;
 		cb.onEngineEnded(this);
+	}
+
+	void paused() {
+		ignorePause = true;
+		cb.onPause();
+		ignorePause = false;
 	}
 
 	@Override
@@ -102,7 +109,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void pause() {
-		web.pause();
+		if (!ignorePause) web.pause();
 	}
 
 	@Override

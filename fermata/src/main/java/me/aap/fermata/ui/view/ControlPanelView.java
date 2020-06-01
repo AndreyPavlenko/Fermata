@@ -135,8 +135,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	@Override
 	public void setVisibility(int visibility) {
 		if (visibility == VISIBLE) {
-			if ((mask & MASK_VIDEO_MODE) != 0) return;
 			mask |= MASK_VISIBLE;
+			if ((mask & MASK_VIDEO_MODE) != 0) return;
 
 			MainActivityDelegate a = getActivity();
 			super.setVisibility(VISIBLE);
@@ -146,8 +146,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				setShowHideBarsIcon(a);
 			}
 		} else {
+			mask &= ~MASK_VISIBLE;
 			MainActivityDelegate a = getActivity();
-			mask = 0;
 			super.setVisibility(GONE);
 			a.getFloatingButton().setVisibility(VISIBLE);
 
