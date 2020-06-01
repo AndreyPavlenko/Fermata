@@ -4,7 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -97,11 +96,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	@NonNull
-	public MediaControllerCompat getMediaController() {
-		return mediaController;
-	}
-
-	@NonNull
 	public MediaLib getLib() {
 		return getMediaSessionCallback().getMediaLib();
 	}
@@ -126,19 +120,12 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public void playItem(PlayableItem i, long pos) {
-		MediaControllerCompat mediaController = getMediaController();
-
 		if (i.equals(getCurrentItem()) && (pos <= 0)) {
-			PlaybackStateCompat st = mediaController.getPlaybackState();
-			if ((st != null) && (st.getState() == PlaybackStateCompat.STATE_PAUSED)) {
-				mediaController.getTransportControls().play();
+			if (sessionCallback.getPlaybackState().getState() == PlaybackStateCompat.STATE_PAUSED) {
+				sessionCallback.onPlay();
 			}
-		} else if (pos > 0) {
-			Bundle b = new Bundle();
-			b.putLong(MediaSessionCallback.EXTRA_POS, pos);
-			mediaController.getTransportControls().playFromMediaId(i.getId(), b);
 		} else {
-			mediaController.getTransportControls().playFromMediaId(i.getId(), null);
+			sessionCallback.playItem(i, pos);
 		}
 	}
 
@@ -166,22 +153,14 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 	public void bindPrevButton(View v) {
 		prevButton = v;
-		v.setOnClickListener(this::onPrevButtonClick);
+		v.setOnClickListener(this::onPrevNextButtonClick);
 		v.setOnLongClickListener(this::onPrevNextButtonLongClick);
-	}
-
-	private void onPrevButtonClick(View v) {
-		mediaController.getTransportControls().skipToPrevious();
 	}
 
 	public void bindNextButton(View v) {
 		nextButton = v;
-		v.setOnClickListener(this::onNextButtonClick);
+		v.setOnClickListener(this::onPrevNextButtonClick);
 		v.setOnLongClickListener(this::onPrevNextButtonLongClick);
-	}
-
-	private void onNextButtonClick(View v) {
-		mediaController.getTransportControls().skipToNext();
 	}
 
 	public void bindRwButton(View v) {
@@ -194,6 +173,37 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		ffButton = v;
 		v.setOnClickListener(this::onRwFfButtonClick);
 		v.setOnLongClickListener(this::onRwFfButtonLongClick);
+	}
+
+	private void onPrevNextButtonClick(View v) {
+		onPrevNextButtonClick(v == nextButton);
+	}
+
+	public void onPrevNextButtonClick(boolean next) {
+		if (next) mediaController.getTransportControls().skipToNext();
+		else mediaController.getTransportControls().skipToPrevious();
+	}
+
+	private boolean onPrevNextButtonLongClick(View v) {
+		onPrevNextButtonLongClick(v == nextButton);
+		return true;
+	}
+
+	public void onPrevNextButtonLongClick(boolean next) {
+		MediaSessionCallback cb = getMediaSessionCallback();
+		PlaybackControlPrefs pp = cb.getPlaybackControlPrefs();
+		cb.rewindFastForward(next, pp.getPrevNextLongTimePref(),
+				pp.getPrevNextLongTimeUnitPref(), 1);
+	}
+
+	public void onPrevNextFolderClick(boolean next) {
+		PlayableItem i = sessionCallback.getCurrentItem();
+		if (i == null) return;
+		MediaLib.BrowsableItem p = i.getParent();
+		FutureSupplier<PlayableItem> f = next ? p.getNextPlayable() : p.getPrevPlayable();
+		f.onSuccess(pi -> {
+			if (pi != null) sessionCallback.playItem(pi, 0);
+		});
 	}
 
 	private void onRwFfButtonClick(View v) {
@@ -217,14 +227,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		MediaSessionCallback cb = getMediaSessionCallback();
 		PlaybackControlPrefs pp = cb.getPlaybackControlPrefs();
 		cb.rewindFastForward(ff, pp.getRwFfLongTimePref(), pp.getRwFfLongTimeUnitPref(), 1);
-	}
-
-	private boolean onPrevNextButtonLongClick(View v) {
-		MediaSessionCallback cb = getMediaSessionCallback();
-		PlaybackControlPrefs pp = cb.getPlaybackControlPrefs();
-		cb.rewindFastForward(v == nextButton, pp.getPrevNextLongTimePref(),
-				pp.getPrevNextLongTimeUnitPref(), 1);
-		return true;
 	}
 
 	public void bindProgressBar(SeekBar progressBar) {

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -13,6 +14,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.LinearLayoutCompat;
+import androidx.core.view.GestureDetectorCompat;
 
 import java.util.List;
 
@@ -43,23 +45,33 @@ import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.ui.view.GestureListener;
 import me.aap.utils.ui.view.ImageButton;
+
+import static android.media.AudioManager.ADJUST_LOWER;
+import static android.media.AudioManager.ADJUST_RAISE;
+import static android.media.AudioManager.FLAG_SHOW_UI;
+import static android.media.AudioManager.STREAM_MUSIC;
 
 /**
  * @author Andrey Pavlenko
  */
 public class ControlPanelView extends LinearLayoutCompat implements MainActivityListener,
-		PreferenceStore.Listener, OverlayMenu.SelectionHandler {
+		PreferenceStore.Listener, OverlayMenu.SelectionHandler, GestureListener {
 	private static final byte MASK_VISIBLE = 1;
 	private static final byte MASK_VIDEO_MODE = 2;
+	private final GestureDetectorCompat gestureDetector;
 	private final ImageButton showHideBars;
 	private PlaybackControlPrefs prefs;
 	private HideTimer hideTimer;
 	private byte mask;
+	private View gestureSource;
+	private long scrollStamp;
 
 	@SuppressLint("PrivateResource")
 	public ControlPanelView(Context context, AttributeSet attrs) {
 		super(context, attrs, R.attr.appControlPanelStyle);
+		gestureDetector = new GestureDetectorCompat(context, this);
 		setOrientation(VERTICAL);
 		inflate(context, R.layout.control_panel_view, this);
 
@@ -118,15 +130,6 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 	public boolean isActive() {
 		return mask != 0;
-	}
-
-	@Override
-	public boolean onInterceptTouchEvent(MotionEvent e) {
-		if (hideTimer != null) {
-			hideTimer = new HideTimer(hideTimer.views);
-			FermataApplication.get().getHandler().postDelayed(hideTimer, getTouchDelay());
-		}
-		return getActivity().interceptTouchEvent(e, super::onTouchEvent);
 	}
 
 	@Override
@@ -197,12 +200,102 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		setShowHideBarsIcon(a);
 	}
 
-	public void onVideoViewTouch(VideoView view) {
+	@Override
+	public boolean onInterceptTouchEvent(MotionEvent e) {
+		if (hideTimer != null) {
+			hideTimer = new HideTimer(hideTimer.views);
+			FermataApplication.get().getHandler().postDelayed(hideTimer, getTouchDelay());
+		}
+		return getActivity().interceptTouchEvent(e, me -> {
+			gestureSource = this;
+			gestureDetector.onTouchEvent(me);
+			return super.onTouchEvent(me);
+		});
+	}
+
+	@Override
+	public boolean onSwipeLeft(MotionEvent e1, MotionEvent e2) {
+		getActivity().getMediaServiceBinder().onPrevNextButtonClick(true);
+		return true;
+	}
+
+	@Override
+	public boolean onSwipeRight(MotionEvent e1, MotionEvent e2) {
+		getActivity().getMediaServiceBinder().onPrevNextButtonClick(false);
+		return true;
+	}
+
+	@Override
+	public boolean onSwipeUp(MotionEvent e1, MotionEvent e2) {
+		getActivity().getMediaServiceBinder().onPrevNextFolderClick(false);
+		return true;
+	}
+
+	@Override
+	public boolean onSwipeDown(MotionEvent e1, MotionEvent e2) {
+		getActivity().getMediaServiceBinder().onPrevNextFolderClick(true);
+		return true;
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+		boolean horizontal = Math.abs(distanceX) >= Math.abs(distanceY);
+		long time = System.currentTimeMillis();
+		long diff;
+
+		if (horizontal) {
+			diff = time - scrollStamp;
+			if (diff < 100) return true;
+			scrollStamp = time;
+		} else {
+			diff = time + scrollStamp;
+			if (diff < 100) return true;
+			scrollStamp = -time;
+		}
+
+		if (diff > 500) return true;
+
+		if (horizontal) {
+			FermataServiceUiBinder b = getActivity().getMediaServiceBinder();
+
+			switch (e2.getPointerCount()) {
+				case 1:
+					b.onRwFfButtonClick(distanceX < 0);
+					break;
+				case 2:
+					b.onRwFfButtonLongClick(distanceX < 0);
+					break;
+				default:
+					b.onPrevNextButtonLongClick(distanceX < 0);
+					break;
+			}
+
+			onVideoSeek();
+		} else {
+			AudioManager amgr = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+			if (amgr == null) return false;
+			amgr.adjustStreamVolume(STREAM_MUSIC, (distanceY > 0) ? ADJUST_RAISE : ADJUST_LOWER, FLAG_SHOW_UI);
+		}
+
+		return true;
+	}
+
+	@Override
+	public boolean onDoubleTap(MotionEvent e) {
+		if (!(gestureSource instanceof VideoView)) return false;
+		getActivity().getMediaServiceBinder().onPlayPauseButtonClick();
+		return true;
+	}
+
+	@Override
+	public boolean onSingleTapConfirmed(MotionEvent e) {
+		if (!(gestureSource instanceof VideoView)) return false;
+
 		int delay = getTouchDelay();
-		if (delay == 0) return;
+		if (delay == 0) return false;
 
 		MainActivityDelegate a = getActivity();
-		View title = view.getTitle();
+		View title = ((VideoView) gestureSource).getTitle();
 		View fb = a.getFloatingButton();
 
 		if (getVisibility() == VISIBLE) {
@@ -217,12 +310,23 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			hideTimer = new HideTimer(title, fb);
 			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
+
+		return true;
+	}
+
+	public void onVideoViewTouch(VideoView view, MotionEvent e) {
+		gestureSource = view;
+		gestureDetector.onTouchEvent(e);
 	}
 
 	public void onVideoSeek() {
 		MainActivityDelegate a = getActivity();
 		VideoView vv = a.getMediaServiceBinder().getMediaSessionCallback().getVideoView();
-		if (vv == null) return;
+
+		if (vv == null) {
+			if (gestureSource instanceof VideoView) vv = (VideoView) gestureSource;
+			else return;
+		}
 
 		View title = vv.getTitle();
 		View fb = a.getFloatingButton();

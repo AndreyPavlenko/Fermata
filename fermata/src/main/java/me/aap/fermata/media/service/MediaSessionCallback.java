@@ -390,7 +390,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			case PlaybackStateCompat.STATE_STOPPED:
 			case PlaybackStateCompat.STATE_ERROR:
 				return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
-					if (i != null) playItem(i, lib.getLastPlayedPosition(i));
+					if (i != null) playPreparedItem(i, lib.getLastPlayedPosition(i));
 					return completedVoid();
 				});
 			case PlaybackStateCompat.STATE_PAUSED:
@@ -437,7 +437,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}).then(this::prepareItem).then(pi -> {
 			if (pi != null) {
 				long pos = (extras == null) ? 0 : extras.getLong(EXTRA_POS, 0);
-				playItem(pi, pos);
+				playPreparedItem(pi, pos);
 			} else {
 				String msg = lib.getContext().getResources().getString(R.string.err_failed_to_play, mediaId);
 				Log.w(msg);
@@ -568,7 +568,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		b.setState(next ? STATE_SKIPPING_TO_NEXT : STATE_SKIPPING_TO_PREVIOUS, state.getPosition(),
 				state.getPlaybackSpeed());
 		setPlaybackState(b.build());
-		playItem(i, 0);
+		playPreparedItem(i, 0);
 	}
 
 	@Override
@@ -749,7 +749,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			b.setState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, state.getPosition(),
 					state.getPlaybackSpeed());
 			setPlaybackState(b.build());
-			playItem(i, 0);
+			playPreparedItem(i, 0);
 			return completedVoid();
 		});
 	}
@@ -1030,7 +1030,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 	}
 
-	private void playItem(PlayableItem i, long pos) {
+	public void playItem(PlayableItem i, long pos) {
+		playerTask.cancel();
+		playerTask = prepareItem(i).onSuccess(pi -> playPreparedItem(i, pos));
+	}
+
+	private void playPreparedItem(PlayableItem i, long pos) {
 		MediaEngine eng = getEngine();
 
 		if (eng != null) {
@@ -1038,15 +1043,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 			if ((current != null) && !current.isExternal()) {
 				eng.getPosition().main().onSuccess(currentPos
-						-> playItem(eng, i, pos, current, currentPos));
+						-> playPreparedItem(eng, i, pos, current, currentPos));
 				return;
 			}
 		}
 
-		playItem(eng, i, pos, null, -1);
+		playPreparedItem(eng, i, pos, null, -1);
 	}
 
-	private void playItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current, long currentPos) {
+	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current, long currentPos) {
 		engine = eng = getEngineManager().createEngine(eng, i, this);
 
 		if (eng == null) {

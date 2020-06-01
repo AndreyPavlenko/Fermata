@@ -280,9 +280,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	private boolean onTouch(@NonNull MotionEvent e) {
-		if (e.getAction() == MotionEvent.ACTION_DOWN) {
-			getActivity().getControlPanel().onVideoViewTouch(this);
-		}
+		getActivity().getControlPanel().onVideoViewTouch(this, e);
 		return true;
 	}
 
