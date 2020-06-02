@@ -10,8 +10,9 @@ import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.ui.activity.ActivityBase;
+import me.aap.utils.ui.activity.SplitCompatActivityBase;
 
-public class MainActivity extends ActivityBase implements FermataActivity {
+public class MainActivity extends SplitCompatActivityBase implements FermataActivity {
 	private boolean exitPressed;
 
 	@Override

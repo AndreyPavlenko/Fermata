@@ -1,6 +1,11 @@
 package me.aap.fermata.ui.fragment;
 
+import android.content.Context;
+
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+
+import com.google.android.play.core.splitcompat.SplitCompat;
 
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;

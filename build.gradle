@@ -1,11 +1,12 @@
 ext {
-    VERSION_CODE = 63
+    def abi = project.properties['ABI']
+    VERSION_CODE = 66
     VERSION_NAME = "1.7.0"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 29
     SDK_COMPILE_VERSION = 29
     BUILD_TOOLS_VERSION = "29.0.2"
-    ABI = project.properties['ABI'] ?: ['arm64-v8a', 'armeabi-v7a', 'x86']
+    ABI_FILTERS = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86']
     localProps = gradle.ext.localProps
 
     ANDROID_MATERIAL_VERSION = '1.2.0-alpha05'

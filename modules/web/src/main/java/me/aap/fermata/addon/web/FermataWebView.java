@@ -36,6 +36,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		TextView.OnEditorActionListener {
 	private final boolean isCar;
 	private WebBrowserAddon addon;
+	private FermataChromeClient chrome;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -58,6 +59,11 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		setWebChromeClient(chromeClient);
 		WebSettings s = getSettings();
 		s.setJavaScriptEnabled(true);
+		s.setSupportZoom(true);
+		s.setDatabaseEnabled(true);
+		s.setDomStorageEnabled(true);
+		s.setLoadWithOverviewMode(true);
+		s.setAllowUniversalAccessFromFileURLs(true);
 		addJavascriptInterface(createJsInterface(), FermataJsInterface.NAME);
 
 		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
@@ -85,10 +91,15 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		return (FermataWebClient) super.getWebViewClient();
 	}
 
+	public void setWebChromeClient(FermataChromeClient chrome) {
+		this.chrome = chrome;
+		super.setWebChromeClient(chrome);
+	}
+
 	@Nullable
 	@Override
 	public FermataChromeClient getWebChromeClient() {
-		return (FermataChromeClient) super.getWebChromeClient();
+		return chrome;
 	}
 
 	protected void pageLoaded(String uri) {

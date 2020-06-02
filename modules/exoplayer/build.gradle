@@ -4,8 +4,7 @@ android {
         versionName "1.0"
 
         ndk {
-            abiFilters = []
-            abiFilters.addAll(ABI)
+            abiFilters = ABI_FILTERS
         }
     }
 }

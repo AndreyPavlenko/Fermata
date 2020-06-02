@@ -17,7 +17,7 @@ public class YoutubeWebClient extends FermataWebClient {
 
 	@Override
 	public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
-		if (!isYoutubeReq(request)) {
+		if (!isYoutubeUri(request.getUrl())) {
 			MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 
 			try {

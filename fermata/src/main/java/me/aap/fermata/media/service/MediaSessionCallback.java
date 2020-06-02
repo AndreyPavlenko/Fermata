@@ -203,6 +203,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				if (ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+					Log.i("Received ACTION_AUDIO_BECOMING_NOISY event");
 					onPause();
 				}
 			}
@@ -1009,6 +1010,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onAudioFocusChange(int focusChange) {
+		Log.i("Audio focus event received: ", focusChange);
+
 		switch (focusChange) {
 			case AudioManager.AUDIOFOCUS_GAIN:
 				if (playOnAudioFocus) {

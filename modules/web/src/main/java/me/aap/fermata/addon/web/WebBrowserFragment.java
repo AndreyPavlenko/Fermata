@@ -15,6 +15,8 @@ import androidx.annotation.Nullable;
 import java.util.Map;
 
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.web.yt.YoutubeFragment;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.BasicPreferenceStore;
@@ -24,6 +26,8 @@ import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ToolBarView;
+
+import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
 
 /**
  * @author Andrey Pavlenko
@@ -62,10 +66,16 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 			url = "http://" + url;
 		}
 
-		WebView v = getWebView();
+		FermataWebView v = getWebView();
 
 		if (v != null) {
-			v.loadUrl(url);
+			if (!(this instanceof YoutubeFragment) && isYoutubeUri(Uri.parse(url))) {
+				MainActivityDelegate a = MainActivityDelegate.get(getContext());
+				YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
+				f.loadUrl(url);
+			} else {
+				v.loadUrl(url);
+			}
 		} else {
 			WebBrowserAddon addon = AddonManager.get().getAddon(WebBrowserAddon.class);
 			if (addon != null) addon.setLastUrl(url);

@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.web;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 
@@ -42,10 +43,9 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	@Override
 	public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
-		if (isYoutubeReq(request)) {
-			MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
-
+		if (isYoutubeUri(request.getUrl())) {
 			try {
+				MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 				YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
 				f.loadUrl(request.getUrl().toString());
 				return true;
@@ -57,8 +57,8 @@ public class FermataWebClient extends WebViewClientCompat {
 		return false;
 	}
 
-	protected boolean isYoutubeReq(WebResourceRequest request) {
-		String host = request.getUrl().getHost();
+	public static boolean isYoutubeUri(Uri uri) {
+		String host = uri.getHost();
 		return ((host != null) && (host.endsWith("youtube.com") || host.equals("youtu.be")));
 	}
 
