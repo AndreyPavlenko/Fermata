@@ -50,7 +50,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 		VirtualFileSystem f = fs.get(0);
 		FutureSupplier<List<VirtualFolder>> getRoots = f.getRoots();
 		a.setContentLoading(getRoots);
-		return getRoots.then(roots -> {
+		return getRoots.main().then(roots -> {
 			if (roots.isEmpty() && addRemoveSupported()) {
 				return addFolder(a, f).then(folder -> {
 					if (folder != null) {

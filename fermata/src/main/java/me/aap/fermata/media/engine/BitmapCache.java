@@ -89,7 +89,7 @@ public class BitmapCache {
 		Bitmap bm;
 
 		if (resize) {
-			size = getIconSize(ctx);
+			size = 3 * getIconSize(ctx);
 			iconUri = toIconUri(uri, size);
 			bm = getCachedBitmap(iconUri);
 		} else {

@@ -11,6 +11,9 @@ import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.log.Log;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 /**
  * @author Andrey Pavlenko
  */
@@ -58,15 +61,26 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
 
 			m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-			if (m != null)
-				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, Long.parseLong(m));
+			long dur = 0;
+
+			if (m != null) {
+				dur = Long.parseLong(m);
+				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+			}
 
 			byte[] pic = mmr.getEmbeddedPicture();
+			Bitmap bm = null;
 
 			if (pic != null) {
-				Bitmap bm = BitmapFactory.decodeByteArray(pic, 0, pic.length);
-				if (bm != null) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+				bm = BitmapFactory.decodeByteArray(pic, 0, pic.length);
 			}
+
+			if ((bm == null) && item.isVideo()) {
+				dur = MICROSECONDS.convert(dur, MILLISECONDS);
+				bm = mmr.getFrameAtTime(dur / 2);
+			}
+
+			if (isValidBitmap(bm)) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 		} catch (Throwable ex) {
 			Log.d(ex, "Failed to retrieve media metadata of ", item.getLocation());
 

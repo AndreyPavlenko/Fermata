@@ -9,6 +9,7 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.View.OnLongClickListener;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.widget.CompoundButton;
@@ -21,39 +22,62 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
 
+import java.util.List;
+
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.misc.MiscUtils;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.menu.OverlayMenu;
 
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
+import static me.aap.utils.ui.UiUtils.toPx;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MediaItemView extends ConstraintLayout implements OnLongClickListener,
-		OnCheckedChangeListener {
+		OnCheckedChangeListener, PreferenceStore.Listener {
 	private static final RotateAnimation rotate = new RotateAnimation(0, 360,
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 	private final ColorStateList iconTint;
 	private MediaItemWrapper itemWrapper;
 	private MediaItemListView listView;
 
-	public MediaItemView(Context context, AttributeSet attrs) {
-		super(context, attrs, R.attr.appMediaItemStyle);
-		inflate(getContext(), R.layout.media_item_layout, this);
+	public MediaItemView(Context ctx, AttributeSet attrs) {
+		super(ctx, attrs, R.attr.appMediaItemStyle);
+		applyLayout(ctx);
 		iconTint = getIcon().getImageTintList();
 		setLongClickable(true);
 		setOnLongClickListener(this);
 		getCheckBox().setOnCheckedChangeListener(this);
 		setBackgroundResource(R.drawable.media_item_bg);
-		setPadding(5, 5, 5, 5);
 		setFocusable(true);
+		getMainActivity().getPrefs().addBroadcastListener(this);
+	}
+
+	private void applyLayout(Context ctx) {
+		MainActivityDelegate a = MainActivityDelegate.get(ctx);
+		if (a == null) return;
+
+		boolean grid = a.getPrefs().getGridViewPref();
+		removeAllViews();
+
+		if (grid) {
+			inflate(ctx, R.layout.media_item_grid_layout, this);
+		} else {
+			inflate(ctx, R.layout.media_item_list_layout, this);
+			int iconSize = (int) (getTitle().getTextSize() + getSubtitle().getTextSize() + toPx(ctx, 10));
+			ViewGroup.LayoutParams lp = getIcon().getLayoutParams();
+			lp.height = iconSize;
+			lp.width = iconSize;
+		}
 	}
 
 	public MediaItemWrapper getItemWrapper() {
@@ -247,6 +271,13 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		getListView().discardSelection();
 		handler.show();
 		return true;
+	}
+
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (prefs.contains(MainActivityPrefs.GRID_VIEW)) {
+			applyLayout(getContext());
+		}
 	}
 
 	void hideMenu() {

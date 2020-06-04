@@ -494,15 +494,17 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				}
 
 				fireBroadcastEvent(SERVICE_BOUND);
-				showFragment(R.id.folders_fragment);
 
-				FutureSupplier<?> f = goToCurrent().onCompletion((ok, fail1) -> {
+				FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
 					if ((fail1 != null) && !isCancellation(fail1)) {
 						Log.e(fail1, "Last played track not found");
 					}
 				});
 
-				setContentLoading(f);
+				if (!f.isDone() || !f.peek()) {
+					showFragment(R.id.folders_fragment);
+					setContentLoading(f);
+				}
 
 				FermataApplication.get().getHandler().post(() -> {
 					b.addBroadcastListener(this);

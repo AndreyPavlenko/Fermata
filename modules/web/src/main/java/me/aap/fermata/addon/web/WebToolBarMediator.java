@@ -59,7 +59,6 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		t.setTextAppearance(getPathTextAppearance(ctx));
 		t.setBackgroundResource(me.aap.utils.R.drawable.tool_bar_edittext_bg);
 		t.setOnKeyListener((v, keyCode, event) -> onKey(f, t, keyCode, event));
-		t.setOnEditorActionListener((v, actionId, event) -> onEditorAction(f, t, actionId, event));
 		t.setMaxLines(1);
 		t.setSingleLine(true);
 		t.setPadding(p, p, p, p);
@@ -88,16 +87,5 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 			default:
 				return UiUtils.dpadFocusHelper(text, keyCode, event);
 		}
-	}
-
-	private boolean onEditorAction(WebBrowserFragment f, EditText text, int actionId, @Nullable KeyEvent event) {
-		if (!BuildConfig.AUTO) return false;
-
-		if ((actionId == EditorInfo.IME_ACTION_DONE) || (actionId == EditorInfo.IME_ACTION_GO)
-				|| (event == null) || (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-			f.loadUrl(text.getText().toString());
-		}
-
-		return false;
 	}
 }

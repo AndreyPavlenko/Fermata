@@ -13,6 +13,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
+import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistPrefs;
 import me.aap.utils.async.FutureSupplier;
@@ -20,6 +21,7 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 
+import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
@@ -56,6 +58,12 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 
 	public int getPlaylistId() {
 		return playlistId;
+	}
+
+	@NonNull
+	@Override
+	public Playlists getParent() {
+		return (Playlists) requireNonNull(super.getParent());
 	}
 
 	@NonNull

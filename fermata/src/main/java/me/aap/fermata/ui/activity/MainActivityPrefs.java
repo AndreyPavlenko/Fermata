@@ -1,11 +1,10 @@
 package me.aap.fermata.ui.activity;
 
+import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
-
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.event.EventBroadcaster;
 
 /**
  * @author Andrey Pavlenko
@@ -18,6 +17,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<IntSupplier> THEME = Pref.i("THEME", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
+	Pref<BooleanSupplier> GRID_VIEW = Pref.b("GRID_VIEW", false);
 
 	default int getThemePref() {
 		return getIntPref(THEME);
@@ -41,5 +41,13 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default void setFullscreenPref(boolean value) {
 		applyBooleanPref(FULLSCREEN, value);
+	}
+
+	default boolean getGridViewPref() {
+		return getBooleanPref(GRID_VIEW);
+	}
+
+	default void setGridViewPref(boolean value) {
+		applyBooleanPref(GRID_VIEW, value);
 	}
 }

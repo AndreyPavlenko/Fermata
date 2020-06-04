@@ -60,14 +60,14 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
-
 		MainActivityDelegate a = getActivityDelegate();
 
 		if (a != null) {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			if (b != null) b.getMediaSessionCallback().onPause();
 		}
+
+		super.onDestroy();
 	}
 
 	@Override

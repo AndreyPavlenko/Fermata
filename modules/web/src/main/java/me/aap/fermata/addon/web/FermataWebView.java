@@ -202,10 +202,14 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	public boolean onEditorAction(TextView v, int actionId, @Nullable KeyEvent event) {
 		if (!BuildConfig.AUTO) return false;
 
-		if ((actionId == EditorInfo.IME_ACTION_DONE) || (actionId == EditorInfo.IME_ACTION_GO)
-				|| (event == null) || (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-			sendEnterEvent();
-			hideKeyboard();
+		switch (actionId) {
+			case EditorInfo.IME_ACTION_GO:
+			case EditorInfo.IME_ACTION_SEARCH:
+			case EditorInfo.IME_ACTION_SEND:
+			case EditorInfo.IME_ACTION_NEXT:
+			case EditorInfo.IME_ACTION_DONE:
+				sendEnterEvent();
+				hideKeyboard();
 		}
 
 		return false;

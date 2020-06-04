@@ -2,7 +2,9 @@ package me.aap.fermata.engine.vlc;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
@@ -12,6 +14,7 @@ import org.videolan.libvlc.Media;
 import org.videolan.libvlc.interfaces.IMedia;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +28,8 @@ import me.aap.utils.log.Log;
 import me.aap.utils.security.SecurityUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
@@ -83,6 +88,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	public boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
 		Media media = null;
 		ParcelFileDescriptor fd = null;
+		MediaMetadataRetriever mmr = null;
 
 		try {
 			Uri uri = item.getLocation();
@@ -120,11 +126,16 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			m = media.getMeta(IMedia.Meta.Genre);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
 
+			long dur = media.getDuration();
+			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+
 			m = media.getMeta(IMedia.Meta.ArtworkURL);
+			boolean iconSet = false;
 
 			if (m != null) {
 				if (m.startsWith("file://")) {
 					meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+					iconSet = true;
 				} else if (m.startsWith("attachment://")) {
 					if (((artist != null) && !artist.isEmpty() && !"Unknown Artist".equals(artist)) &&
 							((album != null) && !album.isEmpty() && !"Unknown Album".equals(artist))) {
@@ -134,17 +145,28 @@ public class VlcEngineProvider implements MediaEngineProvider {
 						m = getArtUri() + "arturl/" + hash + "/art.png";
 					}
 
-					meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+					if (new File(new URI(m)).isFile()) {
+						meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
+						iconSet = true;
+					}
 				}
 			}
 
-			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, media.getDuration());
+			if (!iconSet && item.isVideo() && item.getResource().isLocalFile()) {
+				mmr = new MediaMetadataRetriever();
+				mmr.setDataSource(vlc.getAppContext(), item.getLocation());
+				dur = MICROSECONDS.convert(dur, MILLISECONDS);
+				Bitmap bm = mmr.getFrameAtTime(dur / 2);
+				if (isValidBitmap(bm)) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+			}
+
 			return true;
 		} catch (Throwable ex) {
 			Log.d(ex, "Failed to retrieve media metadata of " + item.getLocation());
 			return false;
 		} finally {
 			if (media != null) media.release();
+			if (mmr != null) mmr.release();
 			IoUtils.close(fd);
 		}
 	}

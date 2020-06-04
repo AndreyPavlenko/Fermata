@@ -134,8 +134,9 @@
     <string name="by_default">По умолчанию</string>
 
     <string name="playlist_add">Добавить в плейлист</string>
-    <string name="playlist_remove">Удалть из плейлиста</string>
+    <string name="playlist_remove_item">Удалть из плейлиста</string>
     <string name="playlist_create">Создать плейлист</string>
+    <string name="playlist_remove">Удалить плейлист</string>
     <string name="playlist_name">Название плейлиста</string>
 
     <string name="bookmarks">Закладки</string>

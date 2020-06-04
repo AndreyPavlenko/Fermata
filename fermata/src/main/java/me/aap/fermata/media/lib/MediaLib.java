@@ -539,6 +539,8 @@ public interface MediaLib {
 
 		void removeItem(int idx);
 
+		void removeItems(List<Playlist> items);
+
 		void moveItem(int fromPosition, int toPosition);
 
 		@Override
@@ -552,6 +554,10 @@ public interface MediaLib {
 	}
 
 	interface Playlist extends BrowsableItem {
+
+		@NonNull
+		@Override
+		Playlists getParent();
 
 		String getName();
 

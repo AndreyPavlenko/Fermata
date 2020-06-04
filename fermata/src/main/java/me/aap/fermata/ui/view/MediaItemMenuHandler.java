@@ -6,6 +6,7 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Folders;
@@ -117,7 +118,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		}
 
 		if ((pi.getParent() instanceof Playlist)) {
-			b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove);
+			b.addItem(R.id.playlist_remove_item, R.drawable.playlist_remove, R.string.playlist_remove_item);
 		} else {
 			a.addPlaylistMenu(b, completed(Collections.singletonList(pi)));
 		}
@@ -139,6 +140,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 			if (!(parent instanceof Favorites)) {
 				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+
+				if ((bi instanceof Playlist)) {
+					b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove).setData(bi);
+				}
 			}
 			if (hasBookmarks) {
 				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
@@ -354,10 +359,14 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 				if (f != null) f.reload();
 				break;
-			case R.id.playlist_remove:
+			case R.id.playlist_remove_item:
 				getMainActivity().removeFromPlaylist(
 						(Playlist) requireNonNull(item.getParent()),
 						Collections.singletonList((PlayableItem) item));
+				break;
+			case R.id.playlist_remove:
+				Playlist p = i.getData();
+				((MediaLib.Playlists) p.getParent()).removeItems(Collections.singletonList(p));
 				break;
 			case R.id.bookmark_remove_all_confirm:
 				if ((item instanceof BrowsableItem)) {

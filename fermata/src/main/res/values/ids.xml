@@ -11,6 +11,7 @@
     <item name="tool_sub_album" type="id" />
     <item name="tool_sub_artist" type="id" />
     <item name="tool_sub_dur" type="id" />
+    <item name="tool_grid" type="id" />
     <item name="tool_sort" type="id" />
     <item name="tool_sort_name" type="id" />
     <item name="tool_sort_file_name" type="id" />
@@ -49,6 +50,7 @@
     <item name="playlist_add" type="id" />
     <item name="playlist_create" type="id" />
     <item name="playlist_remove" type="id" />
+    <item name="playlist_remove_item" type="id" />
 
     <item name="video" type="id" />
     <item name="video_scaling" type="id" />

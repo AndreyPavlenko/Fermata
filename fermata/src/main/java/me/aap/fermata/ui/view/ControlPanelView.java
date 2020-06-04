@@ -11,10 +11,14 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.LinearLayoutCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GestureDetectorCompat;
+
+import com.google.android.material.textview.MaterialTextView;
 
 import java.util.List;
 
@@ -42,6 +46,8 @@ import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
@@ -52,6 +58,7 @@ import static android.media.AudioManager.ADJUST_LOWER;
 import static android.media.AudioManager.ADJUST_RAISE;
 import static android.media.AudioManager.FLAG_SHOW_UI;
 import static android.media.AudioManager.STREAM_MUSIC;
+import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
 
 /**
  * @author Andrey Pavlenko
@@ -62,10 +69,12 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	private static final byte MASK_VIDEO_MODE = 2;
 	private final GestureDetectorCompat gestureDetector;
 	private final ImageButton showHideBars;
+	private final int timerTextAppearance;
 	private PlaybackControlPrefs prefs;
 	private HideTimer hideTimer;
 	private byte mask;
 	private View gestureSource;
+	private TextView playbackTimer;
 	private long scrollStamp;
 
 	@SuppressLint("PrivateResource")
@@ -75,9 +84,11 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		setOrientation(VERTICAL);
 		inflate(context, R.layout.control_panel_view, this);
 
-		TypedArray ta = context.obtainStyledAttributes(attrs, new int[]{android.R.attr.colorBackground},
+		TypedArray ta = context.obtainStyledAttributes(attrs,
+				new int[]{android.R.attr.colorBackground, R.attr.textAppearanceBody1},
 				R.attr.appControlPanelStyle, R.style.AppTheme_ControlPanelStyle);
 		setBackgroundColor(ta.getColor(0, Color.TRANSPARENT));
+		timerTextAppearance = ta.getResourceId(1, R.style.TextAppearance_MaterialComponents_Body1);
 		ta.recycle();
 
 		MainActivityDelegate a = getActivity();
@@ -134,11 +145,12 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 	@Override
 	public void setVisibility(int visibility) {
+		MainActivityDelegate a = getActivity();
+
 		if (visibility == VISIBLE) {
 			mask |= MASK_VISIBLE;
 			if ((mask & MASK_VIDEO_MODE) != 0) return;
 
-			MainActivityDelegate a = getActivity();
 			super.setVisibility(VISIBLE);
 
 			if (a.getPrefs().getHideBarsPref()) {
@@ -147,7 +159,6 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			}
 		} else {
 			mask &= ~MASK_VISIBLE;
-			MainActivityDelegate a = getActivity();
 			super.setVisibility(GONE);
 			a.getFloatingButton().setVisibility(VISIBLE);
 
@@ -156,6 +167,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				setShowHideBarsIcon(a);
 			}
 		}
+
+		checkPlaybackTimer(a.getMediaSessionCallback());
 	}
 
 	public void enableVideoMode(@Nullable VideoView v) {
@@ -181,6 +194,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			hideTimer = new HideTimer(title, fb);
 			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
+
+		checkPlaybackTimer(a.getMediaSessionCallback());
 	}
 
 	public void disableVideoMode() {
@@ -311,6 +326,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
 
+		checkPlaybackTimer(a.getMediaSessionCallback());
 		return true;
 	}
 
@@ -336,6 +352,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		clearFocus();
 		hideTimer = new HideTimer(title, fb);
 		App.get().getHandler().postDelayed(hideTimer, getSeekDelay());
+		checkPlaybackTimer(a.getMediaSessionCallback());
 	}
 
 	@Override
@@ -374,8 +391,12 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		PlayableItem i = b.getCurrentItem();
 		if (i == null) return;
 
-		MenuHandler h = new MenuHandler(a.findViewById(R.id.control_menu), i);
+		MenuHandler h = new MenuHandler(getMenu(a), i);
 		h.show();
+	}
+
+	private OverlayMenu getMenu(MainActivityDelegate a) {
+		return a.findViewById(R.id.control_menu);
 	}
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
@@ -389,6 +410,52 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	@Override
 	public boolean menuItemSelected(OverlayMenuItem item) {
 		return true;
+	}
+
+	private void checkPlaybackTimer(MediaSessionCallback cb) {
+		int t = cb.getPlaybackTimer();
+
+		if (t <= 0) {
+			if (playbackTimer != null) {
+				((ViewGroup) getParent()).removeView(playbackTimer);
+				playbackTimer = null;
+			}
+		} else {
+			if (playbackTimer == null) {
+				Context ctx = getContext();
+				playbackTimer = new MaterialTextView(ctx);
+				((ViewGroup) getParent()).addView(playbackTimer);
+				playbackTimer.setBackgroundResource(R.drawable.playback_timer_bg);
+				playbackTimer.setTextAppearance(timerTextAppearance);
+				ViewGroup.LayoutParams lp = playbackTimer.getLayoutParams();
+
+				if (lp instanceof ConstraintLayout.LayoutParams) {
+					ConstraintLayout.LayoutParams clp = (ConstraintLayout.LayoutParams) lp;
+					clp.startToStart = PARENT_ID;
+					clp.endToEnd = PARENT_ID;
+					clp.bottomToTop = getId();
+					clp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
+				}
+
+				playbackTimer.setOnClickListener(v -> {
+					MainActivityDelegate a = getActivity();
+					getMenu(a).show(b -> new TimerMenuHandler(a).build(b));
+				});
+			}
+
+			if (getVisibility() != VISIBLE) {
+				playbackTimer.setVisibility(GONE);
+				return;
+			}
+
+			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+				TextUtils.timeToString(tb, t);
+				playbackTimer.setText(tb);
+			}
+
+			playbackTimer.setVisibility(VISIBLE);
+			App.get().getHandler().postDelayed(() -> checkPlaybackTimer(cb), 1000);
+		}
 	}
 
 	private final class MenuHandler extends MediaItemMenuHandler {
@@ -662,11 +729,12 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		}
 	}
 
-	private static final class TimerMenuHandler implements OverlayMenu.CloseHandler {
+	private final class TimerMenuHandler extends BasicPreferenceStore implements OverlayMenu.CloseHandler {
 		private final Pref<IntSupplier> H = Pref.i("H", 0);
 		private final Pref<IntSupplier> M = Pref.i("M", 0);
-		private PreferenceStore store = new BasicPreferenceStore();
 		private final MediaSessionCallback cb;
+		private boolean changed;
+		private boolean closed;
 
 		TimerMenuHandler(MainActivityDelegate activity) {
 			cb = activity.getMediaSessionCallback();
@@ -679,20 +747,20 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 			if (time > 0) {
 				int h = time / 3600;
 				int m = (time - h * 3600) / 60;
-				store.applyIntPref(H, h);
-				store.applyIntPref(M, m);
+				applyIntPref(H, h);
+				applyIntPref(M, m);
 			}
 
 			set.addIntPref(o -> {
 				o.title = R.string.hours;
-				o.store = store;
+				o.store = this;
 				o.pref = H;
 				o.seekMin = 0;
 				o.seekMax = 12;
 			});
 			set.addIntPref(o -> {
 				o.title = R.string.minutes;
-				o.store = store;
+				o.store = this;
 				o.pref = M;
 				o.seekMin = 0;
 				o.seekMax = 60;
@@ -701,13 +769,31 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 			set.addToMenu(b, true);
 			b.setCloseHandlerHandler(this);
+			changed = false;
+			startTimer();
+		}
+
+		@Override
+		public void applyIntPref(boolean removeDefault, Pref<? extends IntSupplier> pref, int value) {
+			super.applyIntPref(removeDefault, pref, value);
+			changed = true;
+			startTimer();
 		}
 
 		@Override
 		public void menuClosed(OverlayMenu menu) {
-			int h = store.getIntPref(H);
-			int m = store.getIntPref(M);
+			closed = true;
+			if (!changed) return;
+			int h = getIntPref(H);
+			int m = getIntPref(M);
 			cb.setPlaybackTimer(h * 3600 + m * 60);
+			checkPlaybackTimer(cb);
+		}
+
+		private void startTimer() {
+			App.get().getHandler().postDelayed(() -> {
+				if (!closed) getMenu(getActivity()).hide();
+			}, 60000);
 		}
 	}
 

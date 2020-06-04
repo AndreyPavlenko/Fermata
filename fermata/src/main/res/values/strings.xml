@@ -150,8 +150,9 @@
     <string name="by_default">Default</string>
 
     <string name="playlist_add">Add to playlist</string>
-    <string name="playlist_remove">Remove from playlist</string>
+    <string name="playlist_remove_item">Remove from playlist</string>
     <string name="playlist_create">Create playlist</string>
+    <string name="playlist_remove">Remove playlist</string>
     <string name="playlist_name">Playlist name</string>
 
     <string name="bookmarks">Bookmarks</string>

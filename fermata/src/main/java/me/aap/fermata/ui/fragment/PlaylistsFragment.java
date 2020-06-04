@@ -58,7 +58,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 
 			if (a.hasSelected()) {
 				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
-				b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove);
+				b.addItem(R.id.playlist_remove_item, R.drawable.playlist_remove, R.string.playlist_remove_item);
 			}
 		} else {
 			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
@@ -84,7 +84,7 @@ public class PlaylistsFragment extends MediaLibFragment {
 				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 				if (f != null) f.reload();
 				return true;
-			case R.id.playlist_remove:
+			case R.id.playlist_remove_item:
 				getMainActivity().removeFromPlaylist((Playlist) getAdapter().getParent(), getAdapter().getSelectedItems());
 				return true;
 		}

@@ -1,27 +1,55 @@
 package me.aap.fermata.ui.view;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.util.AttributeSet;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.utils.pref.PreferenceStore;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andrey Pavlenko
  */
-public class MediaItemListView extends RecyclerView {
+public class MediaItemListView extends RecyclerView implements PreferenceStore.Listener {
 	private boolean isSelectionActive;
 
-	public MediaItemListView(Context context, AttributeSet attrs) {
-		super(context, attrs);
+	public MediaItemListView(Context ctx, AttributeSet attrs) {
+		super(ctx, attrs);
+		configure(ctx.getResources().getConfiguration());
+		MainActivityDelegate.get(ctx).getPrefs().addBroadcastListener(this);
+	}
+
+	@Override
+	protected void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		configure(newConfig);
+	}
+
+	private void configure(Configuration cfg) {
+		Context ctx = getContext();
+		MainActivityDelegate a = MainActivityDelegate.get(ctx);
+		if (a == null) return;
+
+		boolean grid = a.getPrefs().getGridViewPref();
+
+		if (grid) {
+			int span = Math.max(cfg.screenWidthDp / 128, 2);
+			setLayoutManager(new GridLayoutManager(ctx, span));
+		} else {
+			setLayoutManager(new LinearLayoutManager(ctx));
+		}
 	}
 
 	@NonNull
@@ -95,5 +123,12 @@ public class MediaItemListView extends RecyclerView {
 		}
 
 		return super.focusSearch(focused, direction);
+	}
+
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (prefs.contains(MainActivityPrefs.GRID_VIEW)) {
+			configure(getContext().getResources().getConfiguration());
+		}
 	}
 }

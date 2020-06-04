@@ -68,7 +68,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		this.parent = parent;
 		list = Collections.emptyList();
 		notifyDataSetChanged();
-		if (parent == null) completedVoid();
+		if (parent == null) return completedVoid();
 
 		FutureSupplier<?> f = parent.getChildren().main()
 				.addConsumer((result, fail, progress, total) -> {
@@ -125,7 +125,9 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@Override
 	protected boolean onItemMove(int fromPosition, int toPosition) {
 		MediaItemListView listView = getListView();
-		MediaItemViewHolder h = (MediaItemViewHolder) listView.getChildViewHolder(listView.getChildAt(fromPosition));
+		View c = listView.getChildAt(fromPosition);
+		if (c == null) return false;
+		MediaItemViewHolder h = (MediaItemViewHolder) listView.getChildViewHolder(c);
 		h.getItemView().hideMenu();
 		CollectionUtils.move(list, fromPosition, toPosition);
 		getParent().updateTitles().main().thenRun(this::refresh);

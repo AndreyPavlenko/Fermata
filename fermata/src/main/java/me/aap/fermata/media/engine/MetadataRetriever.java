@@ -18,11 +18,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.vfs.VirtualResource;
@@ -245,6 +250,15 @@ public class MetadataRetriever implements Closeable {
 
 	private void createTable() {
 		if (db == null) return;
+
+		PreferenceStore ps = FermataApplication.get().getPreferenceStore();
+		Pref<IntSupplier> version = Pref.i("METADATA_VERSION", 0);
+
+		if (ps.getIntPref(version) < 70) {
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE);
+			ps.applyIntPref(version, BuildConfig.VERSION_CODE);
+		}
+
 		db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE + "(" +
 				COL_ID + " VARCHAR NOT NULL UNIQUE, " +
 				COL_TITLE + " VARCHAR, " +

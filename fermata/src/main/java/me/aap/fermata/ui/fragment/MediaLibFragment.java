@@ -9,7 +9,6 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,7 +43,6 @@ import static me.aap.utils.misc.Assert.assertTrue;
 public abstract class MediaLibFragment extends MainActivityFragment implements MainActivityListener,
 		PreferenceStore.Listener, FermataServiceUiBinder.Listener {
 	private ListAdapter adapter;
-	private MediaItemListView listView;
 	private int scrollPosition;
 
 	abstract ListAdapter createAdapter(FermataServiceUiBinder b);
@@ -87,10 +85,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		listView = view.findViewById(R.id.media_items_list_view);
-		listView.setHasFixedSize(true);
-		listView.setLayoutManager(new LinearLayoutManager(getContext()));
-
 		if (adapter != null) {
 			attachTouchHelper();
 		} else {
@@ -104,12 +98,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				a.addBroadcastListener(this, SERVICE_BOUND | FILTER_CHANGED | ACTIVITY_FINISH);
 			}
 		}
-	}
-
-	@Override
-	public void onDestroyView() {
-		super.onDestroyView();
-		listView = null;
 	}
 
 	@Override
@@ -138,8 +126,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	private void attachTouchHelper() {
+		MediaItemListView listView = getListView();
+		assert listView != null;
 		assertTrue(adapter != null);
-		assertTrue(listView != null);
 		adapter.setListView(listView);
 		listView.setAdapter(adapter);
 		ItemTouchHelper touchHelper = new ItemTouchHelper(adapter.getItemTouchCallback());
@@ -263,8 +252,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return (A) adapter;
 	}
 
+	@Nullable
 	public MediaItemListView getListView() {
-		return listView;
+		return (MediaItemListView) getView();
 	}
 
 	public void discardSelection() {

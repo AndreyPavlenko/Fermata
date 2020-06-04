@@ -6,10 +6,12 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.ui.view.ImageButton;
 import me.aap.utils.ui.view.ToolBarView;
 
 import static android.view.View.GONE;
@@ -25,26 +27,30 @@ import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED
 /**
  * @author Andrey Pavlenko
  */
-public class ToolBarMediator implements ToolBarView.Mediator {
-	public static final ToolBarView.Mediator instance = BackTitleFilter.instance.join(new ToolBarMediator());
+public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
+	public static final ToolBarView.Mediator instance = new ToolBarMediator();
 
 	private ToolBarMediator() {
 	}
 
 	@Override
 	public void enable(ToolBarView tb, ActivityFragment f) {
+		ToolBarView.Mediator.BackTitleFilter.super.enable(tb, f);
+		boolean grid = MainActivityDelegate.get(tb.getContext()).getPrefs().getGridViewPref();
+		int gridIcon = grid ? R.drawable.view_list : R.drawable.view_grid;
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
 		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
+		addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
 		setSortButtonVisibility(tb, f);
 	}
 
 	@Override
 	public void onActivityEvent(ToolBarView view, ActivityDelegate a, long e) {
-		ToolBarView.Mediator.super.onActivityEvent(view, a, e);
+		ToolBarView.Mediator.BackTitleFilter.super.onActivityEvent(view, a, e);
 
 		if ((e == FRAGMENT_CHANGED) || e == FRAGMENT_CONTENT_CHANGED) {
 			ActivityFragment f = a.getActiveFragment();
-			if (f != null) setSortButtonVisibility((ToolBarView) view, f);
+			if (f != null) setSortButtonVisibility(view, f);
 		}
 	}
 
@@ -144,6 +150,13 @@ public class ToolBarMediator implements ToolBarView.Mediator {
 
 	private static void titlePrefChanged(MediaLibFragment.ListAdapter adapter) {
 		adapter.getParent().updateTitles().main().thenRun(adapter::reload);
+	}
+
+	private static void onGridButtonClick(View v) {
+		MainActivityPrefs prefs = MainActivityDelegate.get(v.getContext()).getPrefs();
+		boolean grid = prefs.getGridViewPref();
+		((ImageButton) v).setImageResource(grid ? R.drawable.view_grid : R.drawable.view_list);
+		prefs.setGridViewPref(!grid);
 	}
 
 	private static void onSortButtonClick(View v) {

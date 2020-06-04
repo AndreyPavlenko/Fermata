@@ -144,7 +144,11 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void close() {
-		if (player.isPlaying()) player.stop();
+		try {
+			if (player.isPlaying()) player.stop();
+		} catch (IllegalStateException ignore) {
+		}
+
 		if (audioEffects != null) audioEffects.release();
 		player.release();
 		source = null;
