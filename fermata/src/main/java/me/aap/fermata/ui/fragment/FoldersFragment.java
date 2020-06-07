@@ -23,12 +23,12 @@ import me.aap.fermata.media.pref.FoldersPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.MediaItemWrapper;
-import me.aap.fermata.util.Utils;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -149,16 +149,12 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	public void addFolder() {
-		if (getMainActivity().isCarActivity()) {
-			addFolderPicker();
-			return;
-		}
-
-		OverlayMenu menu = getMainActivity().getContextMenu();
+		MainActivityDelegate a = getMainActivity();
+		OverlayMenu menu = a.getContextMenu();
 		menu.show(b -> {
 			b.setTitle(R.string.add_folder);
 			b.setSelectionHandler(this::addFolder);
-			b.addItem(R.id.vfs_content, R.string.vfs_content);
+			if (!a.isCarActivity()) b.addItem(R.id.vfs_content, R.string.vfs_content);
 			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
@@ -194,7 +190,7 @@ public class FoldersFragment extends MediaLibFragment {
 			getMainActivity().startActivityForResult(intent).onSuccess(this::addFolderResult);
 		} catch (ActivityNotFoundException ex) {
 			String msg = ex.getLocalizedMessage();
-			Utils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
+			UiUtils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
 					(msg != null) ? msg : ex.toString()));
 		}
 	}
@@ -228,10 +224,10 @@ public class FoldersFragment extends MediaLibFragment {
 			Log.e(ex, "Failed to load add folder: ", name);
 
 			if (ex instanceof InstallException) {
-				Utils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
+				UiUtils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
 			} else {
 				String msg = ex.getLocalizedMessage();
-				Utils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
+				UiUtils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
 						(msg != null) ? msg : ex.toString()));
 			}
 		});

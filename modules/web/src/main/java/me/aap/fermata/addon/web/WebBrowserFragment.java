@@ -61,6 +61,11 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 		webView.loadUrl(addon.getLastUrl());
 	}
 
+	@Override
+	public void setInput(Object input) {
+		loadUrl(input.toString());
+	}
+
 	public void loadUrl(String url) {
 		if (Uri.parse(url).getScheme() == null) {
 			url = "http://" + url;

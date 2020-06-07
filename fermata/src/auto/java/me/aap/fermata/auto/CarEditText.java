@@ -3,7 +3,6 @@ package me.aap.fermata.auto;
 import android.content.Context;
 import android.os.SystemClock;
 import android.support.car.input.CarRestrictedEditText;
-import android.util.AttributeSet;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
@@ -20,8 +19,8 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 public class CarEditText extends CarRestrictedEditText implements CarEditable {
 	private OnKeyListener keyListener;
 
-	public CarEditText(Context context, AttributeSet attrs) {
-		super(context, attrs);
+	public CarEditText(Context context) {
+		super(context, null);
 	}
 
 	@Override

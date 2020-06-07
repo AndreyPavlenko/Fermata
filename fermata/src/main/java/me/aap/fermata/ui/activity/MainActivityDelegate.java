@@ -13,7 +13,6 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
@@ -53,6 +52,7 @@ import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.view.DialogBuilder;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
@@ -289,9 +289,9 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	@Override
-	public <F extends ActivityFragment> F showFragment(int id) {
+	public <F extends ActivityFragment> F showFragment(int id, Object input) {
 		setVideoMode(false, null);
-		return super.showFragment(id);
+		return super.showFragment(id, input);
 	}
 
 	protected ActivityFragment createFragment(int id) {
@@ -378,15 +378,17 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return findViewById(R.id.tool_menu);
 	}
 
+	@Override
+	public DialogBuilder createDialogBuilder(Context ctx) {
+		return DialogBuilder.create(getContextMenu());
+	}
+
 	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection) {
 		addPlaylistMenu(builder, selection, () -> "");
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection,
 															Supplier<? extends CharSequence> initName) {
-		boolean visible = !isCarActivity() || getMediaServiceBinder().getLib().getPlaylists().hasPlaylists();
-		if (!visible) return;
-
 		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
 				.setSubmenu(b -> createPlaylistMenu(b, selection, initName));
 	}
@@ -395,10 +397,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 																	Supplier<? extends CharSequence> initName) {
 		List<Item> playlists = getLib().getPlaylists().getUnsortedChildren().getOrThrow();
 
-		if (!isCarActivity()) {
-			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
-					.setHandler(i -> createPlaylist(selection, initName));
-		}
+		b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
+				.setHandler(i -> createPlaylist(selection, initName));
 
 		for (int i = 0; i < playlists.size(); i++) {
 			Playlist pl = (Playlist) playlists.get(i);
@@ -513,12 +513,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			});
 		} else {
 			Log.e(err);
-			new AlertDialog.Builder(a.getContext())
-					.setIcon(android.R.drawable.ic_dialog_alert)
-					.setTitle(android.R.string.dialog_alert_title)
-					.setMessage(err.getMessage())
-					.setPositiveButton(android.R.string.ok, (d, i) -> a.finish())
-					.show();
+			UiUtils.showAlert(getContext(), String.valueOf(err));
 		}
 	}
 

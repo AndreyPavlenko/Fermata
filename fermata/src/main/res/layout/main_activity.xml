@@ -5,39 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <me.aap.utils.ui.menu.OverlayMenuView
-        android:id="@+id/tool_menu"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elevation="10dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/control_panel"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar"
-        app:layout_constraintVertical_bias="0" />
-
-    <me.aap.utils.ui.menu.OverlayMenuView
-        android:id="@+id/context_menu"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elevation="10dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/control_panel"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar" />
-
-    <me.aap.utils.ui.menu.OverlayMenuView
-        android:id="@+id/control_menu"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elevation="10dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/control_panel"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar"
-        app:layout_constraintVertical_bias="1" />
-
     <me.aap.utils.ui.view.ToolBarView
         android:id="@+id/tool_bar"
         android:layout_width="match_parent"
@@ -62,16 +29,25 @@
         app:layout_constraintVertical_weight="1"
         tools:context=".ui.activity.MainActivity" />
 
-    <androidx.core.widget.ContentLoadingProgressBar
-        android:id="@+id/content_loading_progress"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="wrap_content"
+    <me.aap.fermata.ui.view.ControlPanelView
+        android:id="@+id/control_panel"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
         android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/nav_bar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar" />
+        app:layout_constraintTop_toBottomOf="@id/frame_layout" />
+
+    <me.aap.utils.ui.view.NavBarView
+        android:id="@+id/nav_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:labelVisibilityMode="selected"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/control_panel" />
 
     <me.aap.utils.ui.view.FloatingButton
         android:id="@+id/floating_button"
@@ -83,15 +59,47 @@
         app:layout_constraintBottom_toTopOf="@id/control_panel"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <me.aap.fermata.ui.view.ControlPanelView
-        android:id="@+id/control_panel"
-        android:layout_width="match_parent"
+    <androidx.core.widget.ContentLoadingProgressBar
+        android:id="@+id/content_loading_progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/nav_bar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/frame_layout" />
+        app:layout_constraintTop_toBottomOf="@id/tool_bar" />
+
+    <me.aap.utils.ui.menu.OverlayMenuView
+        android:id="@+id/tool_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="10dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tool_bar"
+        app:layout_constraintVertical_bias="0" />
+
+    <me.aap.utils.ui.menu.OverlayMenuView
+        android:id="@+id/context_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="10dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="parent" />
+
+    <me.aap.utils.ui.menu.OverlayMenuView
+        android:id="@+id/control_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="10dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/control_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="1" />
 
     <me.aap.utils.ui.menu.OverlayMenuView
         android:id="@+id/nav_menu_view"
@@ -101,16 +109,6 @@
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/nav_bar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar"
         app:layout_constraintVertical_bias="1" />
 
-    <me.aap.utils.ui.view.NavBarView
-        android:id="@+id/nav_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:labelVisibilityMode="selected"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/control_panel" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -22,9 +22,9 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.util.Utils;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.holder.IntHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Compound;
@@ -45,7 +45,7 @@ import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 import static me.aap.fermata.BuildConfig.VERSION_CODE;
 import static me.aap.fermata.BuildConfig.VERSION_NAME;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
-import static me.aap.utils.ui.UiUtils.createAlertDialog;
+import static me.aap.utils.ui.UiUtils.showInfo;
 
 /**
  * @author Andrey Pavlenko
@@ -154,7 +154,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 					int pad = UiUtils.toIntPx(ctx, 10);
 					v.setPadding(pad, pad, pad, pad);
 					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
-					if (!a.isCarActivity()) v.setOnClickListener(t -> openUrl(t.getContext(), openUrl));
+					v.setOnClickListener(t -> openUrl(t.getContext(), openUrl));
 					g.addView(v);
 				});
 				return true;
@@ -169,33 +169,29 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 					Context ctx = item.getContext();
 					a = MainActivityDelegate.get(ctx);
 
-					if (a.isCarActivity()) {
-						Utils.showAlert(ctx, R.string.use_phone_for_donation);
-						return true;
-					}
-
 					DialogInterface.OnClickListener ok = (d, i) -> {
-						int[] selection = new int[]{0};
-						String[] wallets = new String[]{"CloudTips", "PayPal", "Yandex"};
+						IntHolder selection = new IntHolder();
+						String[] wallets = new String[]{"PayPal", "CloudTips", "Yandex",};
 						String[] urls = new String[]{
-								"https://pay.cloudtips.ru/p/a03a73da",
 								"https://paypal.me/AndrewPavlenko",
+								"https://pay.cloudtips.ru/p/a03a73da",
 								"https://money.yandex.ru/to/410014661137336"
 						};
 
-						createAlertDialog(ctx)
-								.setSingleChoiceItems(wallets, 0, (dlg, which) -> selection[0] = which)
+						a.createDialogBuilder()
+								.setTitle(R.drawable.coffee, R.string.donate)
+								.setSingleChoiceItems(wallets, 0, (dlg, which) -> selection.value = which)
 								.setNegativeButton(android.R.string.cancel, null)
-								.setPositiveButton(android.R.string.ok, (d1, w1) -> openUrl(ctx, urls[selection[0]]))
+								.setPositiveButton(android.R.string.ok, (d1, w1) -> openUrl(ctx, urls[selection.value]))
 								.show();
 					};
 
-					createAlertDialog(ctx)
-							.setIcon(R.drawable.coffee)
-							.setTitle(R.string.donate)
+					a.createDialogBuilder()
+							.setTitle(R.drawable.coffee, R.string.donate)
 							.setMessage(R.string.donate_text)
 							.setNegativeButton(android.R.string.cancel, null)
-							.setPositiveButton(android.R.string.ok, ok).show();
+							.setPositiveButton(android.R.string.ok, ok)
+							.show();
 
 					return true;
 				}
@@ -205,15 +201,35 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 	}
 
 	private static void openUrl(Context ctx, String url) {
+		MainActivityDelegate a = MainActivityDelegate.get(ctx);
+
+		if (a.isCarActivity()) {
+			if (!openUrlInBrowserFragment(a, url)) showInfo(ctx, R.string.use_phone_for_donation);
+			return;
+		}
+
 		Uri u = Uri.parse(url);
 		Intent intent = new Intent(Intent.ACTION_VIEW, u);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
 		try {
-			MainActivityDelegate.get(ctx).startActivity(intent);
+			a.startActivity(intent);
 		} catch (ActivityNotFoundException ex) {
+			if (openUrlInBrowserFragment(a, url)) return;
+
 			String msg = ctx.getResources().getString(R.string.err_failed_open_url, u);
-			createAlertDialog(ctx).setMessage(msg)
+			a.createDialogBuilder().setMessage(msg)
 					.setPositiveButton(android.R.string.ok, null).show();
+		}
+	}
+
+	private static boolean openUrlInBrowserFragment(MainActivityDelegate a, String url) {
+		try {
+			a.showFragment(R.id.web_browser_fragment).setInput(url);
+			return true;
+		} catch (Exception ex) {
+			Log.d(ex);
+			return false;
 		}
 	}
 

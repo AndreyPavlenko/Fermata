@@ -439,12 +439,8 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 		}
 	}
 
-	private void show(boolean checkCar, @IdRes int... ids) {
-		if (!checkCar || !MainActivityDelegate.get(getContext()).isCarActivity()) {
-			for (int id : ids) {
-				findViewById(id).setVisibility(VISIBLE);
-			}
-		}
+	private void show(@IdRes int id) {
+		findViewById(id).setVisibility(VISIBLE);
 	}
 
 	@Override
@@ -457,7 +453,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			int p = store.getIntPref(MediaPrefs.EQ_PRESET);
 
 			if (p == 0) {
-				show(true, R.id.equalizer_preset_save);
+				show(R.id.equalizer_preset_save);
 				hide(R.id.equalizer_preset_delete);
 				return;
 			}
@@ -469,8 +465,8 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			if (p > numPresets) {
 				p -= numPresets + 1;
 				String[] presets = requireNonNull(ctrlPrefs).getStringArrayPref(MediaPrefs.EQ_USER_PRESETS);
-				show(true, R.id.equalizer_preset_save);
-				show(false, R.id.equalizer_preset_delete);
+				show(R.id.equalizer_preset_save);
+				show(R.id.equalizer_preset_delete);
 				if (p < presets.length) setUserBandValues(eq, presets, p);
 				return;
 			}

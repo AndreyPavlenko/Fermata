@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextWatcher;
-import android.util.AttributeSet;
 import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
@@ -19,8 +18,8 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 
 import static me.aap.utils.async.Completed.failed;
@@ -93,7 +92,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 
 	public void recreate() {
-		Utils.showAlert(getContext(), R.string.please_restart_app);
+		UiUtils.showAlert(getContext(), R.string.please_restart_app);
 	}
 
 	public void finish() {
@@ -115,7 +114,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	public EditText startInput(TextWatcher w) {
-		if (editText == null) editText = new CarEditText(this, null);
+		if (editText == null) editText = new CarEditText(this);
 		editText.addTextChangedListener(w);
 		a().startInput(editText);
 		return editText;
@@ -133,8 +132,8 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		return a().isInputActive();
 	}
 
-	public EditText createEditText(Context ctx, AttributeSet attrs) {
-		CarEditText et = new CarEditText(ctx, attrs);
+	public EditText createEditText(Context ctx) {
+		CarEditText et = new CarEditText(ctx);
 		et.setOnClickListener(v -> {
 			if (!a().isInputActive()) a().startInput(et);
 		});

@@ -471,6 +471,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			return;
 		}
 
+		Log.d(new Throwable(), "onPause()");
 		eng.pause();
 
 		eng.getPosition().and(eng.getSpeed()).main().onSuccess(h -> {
@@ -506,6 +507,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				if (i != null) lib.setLastPlayed(i, pos);
 			}
 
+			Log.d(new Throwable(), "onStop()");
 			eng.stop();
 			eng.releaseAudioFocus(audioManager, audioFocusReq);
 			eng.close();

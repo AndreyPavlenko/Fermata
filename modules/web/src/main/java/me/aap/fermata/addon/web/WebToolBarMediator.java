@@ -3,15 +3,11 @@ package me.aap.fermata.addon.web;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.view.KeyEvent;
-import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import me.aap.fermata.BuildConfig;
-import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -53,8 +49,7 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 	private EditText createAddress(ToolBarView tb, WebBrowserFragment f) {
 		Context ctx = tb.getContext();
 		int p = (int) toPx(ctx, 2);
-		FermataActivity a = MainActivityDelegate.get(ctx).getAppActivity();
-		EditText t = a.createEditText(ctx, null);
+		EditText t = MainActivityDelegate.get(ctx).createEditText(ctx);
 		ConstraintLayout.LayoutParams lp = setLayoutParams(t, MATCH_PARENT, WRAP_CONTENT);
 		t.setTextAppearance(getPathTextAppearance(ctx));
 		t.setBackgroundResource(me.aap.utils.R.drawable.tool_bar_edittext_bg);

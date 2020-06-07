@@ -19,10 +19,10 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
 import static java.util.Objects.requireNonNull;
@@ -77,7 +77,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 					if (fail != null) {
 						if (isCancellation(fail)) return;
 						Log.e(fail, "Failed to load children");
-						Utils.showAlert(activity.getContext(), fail.getLocalizedMessage());
+						UiUtils.showAlert(activity.getContext(), fail.getLocalizedMessage());
 					} else {
 						setChildren(result);
 					}
