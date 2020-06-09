@@ -9,7 +9,9 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,6 +40,7 @@ import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
 import me.aap.fermata.ui.fragment.VideoFragment;
@@ -45,6 +48,7 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.IntObjectFunction;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
@@ -541,6 +545,48 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	@Override
 	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
 		if ((newItem != null) && !newItem.isExternal() && newItem.isVideo()) showFragment(R.id.video);
+	}
+
+	private boolean exitPressed;
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent keyEvent, IntObjectFunction<KeyEvent, Boolean> next) {
+		switch (keyCode) {
+			case KeyEvent.KEYCODE_BACK:
+			case KeyEvent.KEYCODE_ESCAPE:
+				onBackPressed();
+				return true;
+			case KeyEvent.KEYCODE_M:
+			case KeyEvent.KEYCODE_MENU:
+				if (keyEvent.isShiftPressed()) {
+					NavBarMediator.instance.showMenu(this);
+				} else {
+					ControlPanelView cp = getControlPanel();
+					if (cp.isActive()) cp.showMenu();
+					else NavBarMediator.instance.showMenu(this);
+				}
+				break;
+			case KeyEvent.KEYCODE_P:
+				getMediaServiceBinder().onPlayPauseButtonClick();
+				if (isVideoMode()) getControlPanel().onVideoSeek();
+				return true;
+			case KeyEvent.KEYCODE_S:
+			case KeyEvent.KEYCODE_DEL:
+				getMediaServiceBinder().getMediaSessionCallback().onStop();
+				return true;
+			case KeyEvent.KEYCODE_X:
+				if (exitPressed) {
+					finish();
+				} else {
+					exitPressed = true;
+					Toast.makeText(getContext(), R.string.press_x_again, Toast.LENGTH_SHORT).show();
+					FermataApplication.get().getHandler().postDelayed(() -> exitPressed = false, 2000);
+				}
+
+				return true;
+		}
+
+		return super.onKeyDown(keyCode, keyEvent, next);
 	}
 
 	private static final class Prefs implements MainActivityPrefs {

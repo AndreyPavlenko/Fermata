@@ -40,7 +40,10 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		int gridIcon = grid ? R.drawable.view_list : R.drawable.view_grid;
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
 		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
-		addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
+		View last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
+		View first = tb.findViewById(R.id.tool_bar_back_button);
+		last.setNextFocusRightId(R.id.tool_bar_back_button);
+		first.setNextFocusLeftId(R.id.tool_grid);
 		setSortButtonVisibility(tb, f);
 	}
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
@@ -138,5 +139,23 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			if (!a().isInputActive()) a().startInput(et);
 		});
 		return et;
+	}
+
+	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
+		return (delegate != null) ? delegate.onKeyUp(keyCode, keyEvent, super::onKeyUp)
+				: super.onKeyUp(keyCode, keyEvent);
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
+		return (delegate != null) ? delegate.onKeyDown(keyCode, keyEvent, super::onKeyDown)
+				: super.onKeyDown(keyCode, keyEvent);
+	}
+
+	@Override
+	public boolean onKeyLongPress(int keyCode, KeyEvent keyEvent) {
+		return (delegate != null) ? delegate.onKeyLongPress(keyCode, keyEvent, super::onKeyLongPress)
+				: super.onKeyLongPress(keyCode, keyEvent);
 	}
 }
