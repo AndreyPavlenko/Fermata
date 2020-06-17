@@ -14,10 +14,10 @@
         <item name="android:textColorPrimary">?attr/colorOnPrimary</item>
 
         <!-- List/Media items -->
-        <item name="colorSecondary">#080808</item>
-        <item name="colorOnSecondary">#043B61</item>
+        <item name="colorSecondary">#070707</item>
+        <item name="colorOnSecondary">#02304F</item>
         <item name="android:textColorSecondary">#bec2c8</item>
-        <item name="boxStrokeColor">#022943</item>
+        <item name="boxStrokeColor">#000E17</item>
 
         <!-- Active media item -->
         <item name="alpha">0.7</item>

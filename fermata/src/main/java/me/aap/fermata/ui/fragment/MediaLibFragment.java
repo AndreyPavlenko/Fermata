@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,7 +40,7 @@ import static me.aap.utils.misc.Assert.assertTrue;
  * @author Andrey Pavlenko
  */
 public abstract class MediaLibFragment extends MainActivityFragment implements MainActivityListener,
-		PreferenceStore.Listener, FermataServiceUiBinder.Listener {
+		PreferenceStore.Listener, FermataServiceUiBinder.Listener, ToolBarView.Listener {
 	private ListAdapter adapter;
 	private int scrollPosition;
 
@@ -84,18 +83,19 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		MainActivityDelegate a = getMainActivity();
+		a.getToolBar().addBroadcastListener(this);
 
 		if (adapter != null) {
 			attachTouchHelper();
 		} else {
-			MainActivityDelegate a = getMainActivity();
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 
 			if (b != null) {
 				bind(b);
-				a.addBroadcastListener(this, FILTER_CHANGED | ACTIVITY_FINISH);
+				a.addBroadcastListener(this, ACTIVITY_FINISH);
 			} else {
-				a.addBroadcastListener(this, SERVICE_BOUND | FILTER_CHANGED | ACTIVITY_FINISH);
+				a.addBroadcastListener(this, SERVICE_BOUND | ACTIVITY_FINISH);
 			}
 		}
 	}
@@ -286,16 +286,14 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
-		if (!handleActivityFinishEvent(a, e)) {
-			if (e == FILTER_CHANGED) {
-				if (adapter != null) {
-					EditText t = a.getToolBar().findViewById(R.id.tool_bar_filter);
-					adapter.setFilter(t.getText().toString());
-				}
-			} else if (e == SERVICE_BOUND) {
-				bind(a.getMediaServiceBinder());
-			}
+		if (!handleActivityFinishEvent(a, e) && (e == SERVICE_BOUND)) {
+			bind(a.getMediaServiceBinder());
 		}
+	}
+
+	@Override
+	public void onToolBarEvent(ToolBarView tb, byte event) {
+		adapter.setFilter(tb.getFilter().getText().toString());
 	}
 
 	@Override

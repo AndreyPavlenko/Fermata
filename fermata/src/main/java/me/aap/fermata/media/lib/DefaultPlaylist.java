@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
@@ -47,7 +48,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		int count = getUnsortedChildren().getOrThrow().size();
+		int count = getUnsortedChildren().peek(Collections::emptyList).size();
 		return completed(getLib().getContext().getResources().getString(R.string.browsable_subtitle, count));
 	}
 

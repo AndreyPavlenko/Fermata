@@ -792,7 +792,10 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 
 		private void startTimer() {
 			App.get().getHandler().postDelayed(() -> {
-				if (!closed) getMenu(getActivity()).hide();
+				if (!closed) {
+					MainActivityDelegate a = getActivity();
+					if (a != null) getMenu(a).hide();
+				}
 			}, 60000);
 		}
 	}

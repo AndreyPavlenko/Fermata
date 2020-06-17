@@ -103,7 +103,12 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public FutureSupplier<Float> getSpeed() {
-		return completed(player.getPlaybackParams().getSpeed());
+		try {
+			return completed(player.getPlaybackParams().getSpeed());
+		} catch (IllegalStateException ex) {
+			Log.d(ex);
+			return completed(1f);
+		}
 	}
 
 	@Override

@@ -1,14 +1,11 @@
 package me.aap.fermata.addon.web;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.view.KeyEvent;
 import android.widget.EditText;
 
-import androidx.annotation.StyleRes;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.ToolBarView;
@@ -49,9 +46,8 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 	private EditText createAddress(ToolBarView tb, WebBrowserFragment f) {
 		Context ctx = tb.getContext();
 		int p = (int) toPx(ctx, 2);
-		EditText t = MainActivityDelegate.get(ctx).createEditText(ctx);
+		EditText t = createEditText(tb);
 		ConstraintLayout.LayoutParams lp = setLayoutParams(t, MATCH_PARENT, WRAP_CONTENT);
-		t.setTextAppearance(getPathTextAppearance(ctx));
 		t.setBackgroundResource(me.aap.utils.R.drawable.tool_bar_edittext_bg);
 		t.setOnKeyListener((v, keyCode, event) -> onKey(f, t, keyCode, event));
 		t.setMaxLines(1);
@@ -59,15 +55,6 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		t.setPadding(p, p, p, p);
 		lp.horizontalWeight = 2;
 		return t;
-	}
-
-	@StyleRes
-	private int getPathTextAppearance(Context ctx) {
-		TypedArray ta = ctx.obtainStyledAttributes(null, new int[]{me.aap.utils.R.attr.textAppearanceBody1},
-				me.aap.utils.R.attr.toolbarStyle, me.aap.utils.R.style.Theme_Utils_Base_ToolBarStyle);
-		int style = ta.getResourceId(0, me.aap.utils.R.style.TextAppearance_MaterialComponents_Body1);
-		ta.recycle();
-		return style;
 	}
 
 	private boolean onKey(WebBrowserFragment f, EditText text, int keyCode, KeyEvent event) {

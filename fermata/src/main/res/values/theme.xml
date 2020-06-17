@@ -19,6 +19,7 @@
     <style name="AppTheme.MediaItemStyle">
         <item name="android:textColor">@color/media_item_text_color</item>
         <item name="tint">@color/media_item_tint</item>
+        <item name="elevation">20dp</item>
     </style>
 
     <style name="AppTheme.ControlPanelStyle">
@@ -28,6 +29,7 @@
     </style>
 
     <style name="AppTheme.SeekBarStyle">
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
         <item name="android:thumbTint">?attr/colorOnPrimary</item>
         <item name="android:progressTint">?attr/colorOnPrimary</item>
     </style>

@@ -2,8 +2,10 @@ package me.aap.fermata.ui.view;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.util.AttributeSet;
@@ -17,12 +19,15 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
 
 import java.util.List;
+import java.util.Objects;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -34,10 +39,12 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.menu.OverlayMenu;
 
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
 import static me.aap.utils.ui.UiUtils.toPx;
+import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
 /**
  * @author Andrey Pavlenko
@@ -46,12 +53,22 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		OnCheckedChangeListener, PreferenceStore.Listener {
 	private static final RotateAnimation rotate = new RotateAnimation(0, 360,
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+	private static Drawable loadingDrawable;
+	@ColorInt
+	private static int iconColor;
 	private final ColorStateList iconTint;
 	private MediaItemWrapper itemWrapper;
 	private MediaItemListView listView;
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
+		TypedArray ta = ctx.obtainStyledAttributes(attrs, new int[]{
+				R.attr.colorOnSecondary,
+				R.attr.elevation
+		}, R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
+		iconColor = ta.getColor(0, 0);
+		setElevation(ta.getDimension(1, 0));
+		ta.recycle();
 		applyLayout(ctx);
 		iconTint = getIcon().getImageTintList();
 		setLongClickable(true);
@@ -157,7 +174,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (loading) {
 			rotate.setDuration(1000);
 			rotate.setRepeatCount(Animation.INFINITE);
-			icon.setImageResource(R.drawable.loading);
+			icon.setImageDrawable(getLoadingDrawable(getContext()));
 			icon.startAnimation(rotate);
 			getSubtitle().setText(R.string.loading);
 		} else {
@@ -166,6 +183,20 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			icon.setImageResource(i.getIcon());
 			getSubtitle().setText("");
 		}
+	}
+
+	private static Drawable getLoadingDrawable(Context ctx) {
+		if (loadingDrawable == null) {
+			loadingDrawable = ContextCompat.getDrawable(ctx, R.drawable.loading);
+			Objects.requireNonNull(loadingDrawable).setTint(iconColor);
+			MainActivityDelegate.get(ctx).addBroadcastListener(MediaItemView::onActivityDestroyEvent, ACTIVITY_DESTROY);
+		}
+
+		return loadingDrawable;
+	}
+
+	private static void onActivityDestroyEvent(ActivityDelegate a, long e) {
+		loadingDrawable = null;
 	}
 
 	public void cancelLoading() {
