@@ -29,9 +29,9 @@
 
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
-
     <string name="fullscreen_mode">Fullscreen mode</string>
     <string name="show_track_icons">Show track icons</string>
+    <string name="text_icon_scale">Text and icon scale</string>
 
     <string name="rw_ff_click">RW/FF - click</string>
     <string name="rw_ff_long_click">RW/FF - long click</string>

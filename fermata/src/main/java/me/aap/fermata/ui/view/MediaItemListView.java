@@ -42,10 +42,12 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		MainActivityDelegate a = MainActivityDelegate.get(ctx);
 		if (a == null) return;
 
-		boolean grid = a.getPrefs().getGridViewPref();
+		MainActivityPrefs prefs = a.getPrefs();
+		boolean grid = prefs.getGridViewPref();
 
 		if (grid) {
-			int span = Math.max(cfg.screenWidthDp / 128, 2);
+			float scale = prefs.getMediaItemScalePref();
+			int span = (int) Math.max(cfg.screenWidthDp / (128 * scale), 2);
 			setLayoutManager(new GridLayoutManager(ctx, span));
 		} else {
 			setLayoutManager(new LinearLayoutManager(ctx));
@@ -127,7 +129,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MainActivityPrefs.GRID_VIEW)) {
+		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
 			configure(getContext().getResources().getConfiguration());
 		}
 	}

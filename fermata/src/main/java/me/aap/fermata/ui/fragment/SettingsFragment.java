@@ -199,6 +199,14 @@ public class SettingsFragment extends MainActivityFragment {
 			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
 			o.title = R.string.show_track_icons;
 		});
+		sub1.addFloatPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.MEDIA_ITEM_SCALE;
+			o.title = R.string.text_icon_scale;
+			o.scale = 0.1f;
+			o.seekMin = 1;
+			o.seekMax = 20;
+		});
 
 		sub1 = set.subSet(o -> o.title = R.string.playback_prefs);
 

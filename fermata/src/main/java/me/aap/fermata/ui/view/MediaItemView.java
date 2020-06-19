@@ -42,6 +42,7 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.menu.OverlayMenu;
 
+import static android.util.TypedValue.COMPLEX_UNIT_PX;
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
@@ -83,18 +84,42 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		MainActivityDelegate a = MainActivityDelegate.get(ctx);
 		if (a == null) return;
 
-		boolean grid = a.getPrefs().getGridViewPref();
+		MainActivityPrefs prefs = a.getPrefs();
+		float scale = prefs.getMediaItemScalePref();
+		boolean grid = prefs.getGridViewPref();
 		removeAllViews();
 
 		if (grid) {
 			inflate(ctx, R.layout.media_item_grid_layout, this);
+			setTextSize(ctx, scale);
 		} else {
 			inflate(ctx, R.layout.media_item_list_layout, this);
+			setTextSize(ctx, scale);
 			int iconSize = (int) (getTitle().getTextSize() + getSubtitle().getTextSize() + toPx(ctx, 10));
 			ViewGroup.LayoutParams lp = getIcon().getLayoutParams();
 			lp.height = iconSize;
 			lp.width = iconSize;
 		}
+	}
+
+	private void setTextSize(Context ctx, float scale) {
+		TypedArray ta = ctx.obtainStyledAttributes(null, new int[]{
+				R.attr.textAppearanceListItem,
+				R.attr.textAppearanceCaption
+		}, R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
+		int titleTextAppearance = ta.getResourceId(0, 0);
+		int subtitleTextAppearance = ta.getResourceId(1, 0);
+		ta.recycle();
+
+		ta = ctx.obtainStyledAttributes(titleTextAppearance, new int[]{android.R.attr.textSize});
+		int titleTextSize = ta.getDimensionPixelSize(0, 0);
+		ta.recycle();
+		ta = ctx.obtainStyledAttributes(subtitleTextAppearance, new int[]{android.R.attr.textSize});
+		int subtitleTextSize = ta.getDimensionPixelSize(0, 0);
+		ta.recycle();
+
+		getTitle().setTextSize(COMPLEX_UNIT_PX, titleTextSize * scale);
+		getSubtitle().setTextSize(COMPLEX_UNIT_PX, subtitleTextSize * scale);
 	}
 
 	public MediaItemWrapper getItemWrapper() {
@@ -306,7 +331,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MainActivityPrefs.GRID_VIEW)) {
+		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
 			applyLayout(getContext());
 		}
 	}
