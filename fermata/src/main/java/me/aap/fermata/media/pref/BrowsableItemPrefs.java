@@ -23,6 +23,7 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 	Pref<BooleanSupplier> SUBTITLE_ARTIST = Pref.b("SUBTITLE_ARTIST", false);
 	Pref<BooleanSupplier> SUBTITLE_DURATION = Pref.b("SUBTITLE_DURATION", true);
 	Pref<BooleanSupplier> SHOW_TRACK_ICONS = Pref.b("SHOW_TRACK_ICONS", true);
+	Pref<BooleanSupplier> PLAY_NEXT = Pref.b("PLAY_NEXT", true);
 	int SORT_BY_NONE = 0;
 	int SORT_BY_NAME = 1;
 	int SORT_BY_FILE_NAME = 2;
@@ -156,10 +157,6 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 		return getBooleanPref(SHOW_TRACK_ICONS);
 	}
 
-	default void setShowTrackIconsPref(boolean b) {
-		applyBooleanPref(SHOW_TRACK_ICONS, b);
-	}
-
 	default Pref<IntSupplier> getSortByPrefKey() {
 		return SORT_BY;
 	}
@@ -178,5 +175,13 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 
 	default void setSortDescPref(boolean desc) {
 		applyBooleanPref(SORT_DESC, desc);
+	}
+
+	default boolean getPlayNextPref() {
+		return getBooleanPref(PLAY_NEXT);
+	}
+
+	default void setPlayNextPref(boolean play) {
+		applyBooleanPref(PLAY_NEXT, play);
 	}
 }

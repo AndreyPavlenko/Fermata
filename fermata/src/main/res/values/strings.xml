@@ -17,7 +17,8 @@
     <string name="addon_name_youtube" translatable="false">Youtube</string>
 
     <string name="interface_prefs">Interface</string>
-    <string name="playback_prefs">Playback control</string>
+    <string name="playback_settings">Playback settings</string>
+    <string name="playback_control">Playback control</string>
     <string name="engine_prefs">Media engine</string>
 
     <string name="theme">Application theme</string>
@@ -32,6 +33,8 @@
     <string name="fullscreen_mode">Fullscreen mode</string>
     <string name="show_track_icons">Show track icons</string>
     <string name="text_icon_scale">Text and icon scale</string>
+
+    <string name="play_next_on_completion">Play next on completion</string>
 
     <string name="rw_ff_click">RW/FF - click</string>
     <string name="rw_ff_long_click">RW/FF - long click</string>

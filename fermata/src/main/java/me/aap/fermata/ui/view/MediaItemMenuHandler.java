@@ -6,13 +6,13 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
-import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Folders;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
+import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
@@ -145,15 +145,21 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 					b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove).setData(bi);
 				}
 			}
+
+			if (parent instanceof Folders) {
+				b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
+			}
+
 			if (hasBookmarks) {
 				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
 			}
 			if (!(bi instanceof Playlist)) {
 				a.addPlaylistMenu(b, bi.getPlayableChildren(true), bi::getName);
 			}
-			if (parent instanceof Folders) {
-				b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
-			}
+
+			b.addItem(R.id.playback_settings, R.drawable.playback_settings, R.string.playback_settings)
+					.setSubmenu(sb -> sb.addItem(R.id.play_next, R.string.play_next_on_completion)
+							.setChecked(bi.getPrefs().getPlayNextPref()).setHandler(this));
 
 			addMediaEngineMenu(a, b);
 			return completedVoid();
@@ -366,7 +372,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				break;
 			case R.id.playlist_remove:
 				Playlist p = i.getData();
-				((MediaLib.Playlists) p.getParent()).removeItems(Collections.singletonList(p));
+				p.getParent().removeItems(Collections.singletonList(p));
 				break;
 			case R.id.bookmark_remove_all_confirm:
 				if ((item instanceof BrowsableItem)) {
@@ -383,6 +389,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			case R.id.repeat_enable:
 			case R.id.repeat_disable:
 				((PlayableItem) item).setRepeatItemEnabled(id == R.id.repeat_enable);
+				break;
+			case R.id.play_next:
+				BrowsableItemPrefs brPrefs = ((BrowsableItem) item).getPrefs();
+				brPrefs.setPlayNextPref(!brPrefs.getPlayNextPref());
 				break;
 			case R.id.mark_watched:
 			case R.id.mark_unwatched:

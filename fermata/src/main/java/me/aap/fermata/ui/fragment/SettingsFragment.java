@@ -208,7 +208,14 @@ public class SettingsFragment extends MainActivityFragment {
 			o.seekMax = 20;
 		});
 
-		sub1 = set.subSet(o -> o.title = R.string.playback_prefs);
+		sub1 = set.subSet(o -> o.title = R.string.playback_settings);
+		sub1.addBooleanPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = BrowsableItemPrefs.PLAY_NEXT;
+			o.title = R.string.play_next_on_completion;
+		});
+
+		sub1 = set.subSet(o -> o.title = R.string.playback_control);
 
 		sub2 = sub1.subSet(o -> o.title = R.string.rw_ff_click);
 		sub2.addIntPref(o -> {

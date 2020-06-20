@@ -4,7 +4,8 @@
     <string name="addon_name_web_browser">Веб браузер</string>
 
     <string name="interface_prefs">Интерфейс</string>
-    <string name="playback_prefs">Управление воспроизведением</string>
+    <string name="playback_settings">Найстройки воспроизведения</string>
+    <string name="playback_control">Управление воспроизведением</string>
     <string name="engine_prefs">Медиа движок</string>
 
     <string name="theme">Тема приложения</string>
@@ -19,6 +20,8 @@
     <string name="fullscreen_mode">Полноэкранный режим</string>
     <string name="show_track_icons">Показывать иконки треков</string>
     <string name="text_icon_scale">Маштаб текста и иконки</string>
+
+    <string name="play_next_on_completion">Воспроизводить следующий трек</string>
 
     <string name="rw_ff_click">Назад/Вперед - нажатие</string>
     <string name="rw_ff_long_click">Назад/Вперед - долгое нажатие</string>

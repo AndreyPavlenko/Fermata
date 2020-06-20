@@ -90,6 +90,9 @@
     <item name="repeat_track" type="id" />
     <item name="repeat_folder" type="id" />
 
+    <item name="playback_settings" type="id" />
+    <item name="play_next" type="id" />
+
     <item name="bookmarks" type="id" />
     <item name="bookmark_select" type="id" />
     <item name="bookmark_create" type="id" />

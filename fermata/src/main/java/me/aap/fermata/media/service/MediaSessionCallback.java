@@ -957,6 +957,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (i != null) {
 			if (i.isVideo()) i.getPrefs().setWatchedPref(true);
 
+			if (!i.getParent().getPrefs().getPlayNextPref()) {
+				onStop(true);
+				return completedVoid();
+			}
+
 			return i.getNextPlayable().then(this::prepareItem).then(next -> {
 				if (next != null) {
 					skipTo(true, next);
