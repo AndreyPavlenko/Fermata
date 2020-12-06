@@ -305,7 +305,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 			resultHandler = null;
 			rh.accept(this, null);
 			callback.onPlaybackStateChanged(mediaController.getPlaybackState());
-		} catch (RemoteException ex) {
+		} catch (Exception ex) {
 			rh.accept(null, ex);
 		}
 	}

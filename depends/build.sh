@@ -9,6 +9,7 @@ if [ ! -d "$NDK_DIR" ];then
 fi
 
 DEPENDS_DIR="$(cd "$(dirname "$0")" && pwd)"
+FFMPEG_DIR="$DEPENDS_DIR/ffmpeg"
 EXO_DIR="$DEPENDS_DIR/ExoPlayer"
 EXO_EXT_DIR="$EXO_DIR/extensions"
 
@@ -19,7 +20,15 @@ ANDROIDX_MEDIA_VERSION="$(grep 'ANDROIDX_MEDIA_VERSION = ' $DEPENDS_DIR/../build
 ANDROIDX_APPCOMPAT_VERSION="$(grep 'ANDROIDX_APPCOMPAT_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
 
 : ${HOST_PLATFORM:='linux-x86_64'}
-: ${ABI:='armeabi-v7a arm64-v8a x86'}
+: ${ABI:='armeabi-v7a arm64-v8a x86 x86_64'}
+
+# Clone or update FFmpeg
+if [ -d "$FFMPEG_DIR" ]; then
+    cd "$FFMPEG_DIR"
+    git clean -xfd && git reset --hard && git pull
+else
+    git clone 'git://source.ffmpeg.org/ffmpeg' "$FFMPEG_DIR"
+fi
 
 # Clone or update ExoPlayer
 if [ -d "$EXO_DIR" ]; then
@@ -40,16 +49,13 @@ sed -i "s/androidxAppCompatVersion .*/androidxAppCompatVersion = $ANDROIDX_APPCO
 sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/gvr/build.gradle"
 sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/leanback/build.gradle"
 
-
 # Build ExoPlayer FFmpeg extension
 FFMPEG_DECODERS=(vorbis alac mp3 aac ac3 eac3 mlp truehd)
 
 cd "$EXO_EXT_DIR/ffmpeg/src/main/jni"
-[ -d ffmpeg ] && cd ffmpeg && git clean -xfd && git reset --hard && cd -
+ln -s "$FFMPEG_DIR" ffmpeg
 
-./build_ffmpeg.sh "$(pwd)" "$NDK_DIR" "$HOST_PLATFORM" "${FFMPEG_DECODERS[@]}"
-"$NDK_DIR/ndk-build" APP_ABI="$ABI" -j4
-
+./build_ffmpeg.sh "$(pwd)/.." "$NDK_DIR" "$HOST_PLATFORM" "${FFMPEG_DECODERS[@]}"
 
 # Build ExoPlayer Flac extension
 FLAC_VERSION='1.3.3'
