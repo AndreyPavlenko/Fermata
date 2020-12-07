@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.media.MediaMetadata;
 import android.net.Uri;
-import android.os.ParcelFileDescriptor;
+import android.provider.MediaStore;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.Nullable;
@@ -31,6 +31,7 @@ import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.vfs.content.ContentFileSystem;
 
 import static me.aap.utils.async.Completed.completedEmptyMap;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -53,6 +54,14 @@ public class MetadataRetriever implements Closeable {
 	private static final String COL_ID_PATTERN = COL_ID + " LIKE ? AND NOT " + COL_ID + " LIKE ?";
 	private static final String[] QUERY_COLUMNS = {COL_ID, COL_TITLE, COL_ALBUM, COL_ARTIST,
 			COL_DURATION, COL_ART};
+	private static final String[] CONTENT_COLUMNS = {
+			MediaStore.MediaColumns.TITLE,
+			MediaStore.Audio.AudioColumns.DURATION,
+			MediaStore.Audio.AudioColumns.ARTIST,
+			"album_artist",
+			MediaStore.Audio.AudioColumns.ALBUM,
+			MediaStore.Audio.AudioColumns.COMPOSER,
+			"genre"};
 
 	private final MediaEngineManager mgr;
 	private final BitmapCache bitmapCache;
@@ -102,9 +111,22 @@ public class MetadataRetriever implements Closeable {
 		if (meta != null) return meta;
 
 		MetaBuilder mb = new MetaBuilder();
+		VirtualResource file = item.getResource();
+
+		if (file.getVirtualFileSystem() instanceof ContentFileSystem) {
+			if (queryContentProvider(file.getRid().toAndroidUri(), mb)) {
+				try {
+					insertMetadata(mb, item);
+				} catch (Throwable ex) {
+					Log.e(ex, "Failed to update MediaStore");
+				}
+
+				return mb;
+			}
+		}
+
 		MediaEngineProvider mp = mgr.mediaPlayer;
 		MediaEngineProvider vlc = mgr.vlcPlayer;
-		VirtualResource file = item.getResource();
 
 		if (file.isLocalFile() && file.getName().endsWith(".flac")) {
 			// VLC does not extract images from flac, thus prefer Android extractor for local files
@@ -125,6 +147,40 @@ public class MetadataRetriever implements Closeable {
 		}
 
 		return mb;
+	}
+
+	private boolean queryContentProvider(Uri uri, MetaBuilder mb) {
+		try (Cursor c = App.get().getContentResolver().query(uri, CONTENT_COLUMNS, null, null, null)) {
+			if ((c == null) || !c.moveToFirst()) return false;
+
+			String m = c.getString(1);
+
+			if ((m != null) && !m.isEmpty()) {
+				try {
+					mb.putLong(MediaMetadata.METADATA_KEY_DURATION, Long.parseLong(m));
+				} catch (NumberFormatException ex) {
+					Log.d(ex);
+					return false;
+				}
+			} else {
+				return false;
+			}
+
+			m = c.getString(0);
+			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
+			m = c.getString(2);
+			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, m);
+			m = c.getString(3);
+			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, m);
+			m = c.getString(4);
+			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
+			m = c.getString(5);
+			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_COMPOSER, m);
+			m = c.getString(6);
+			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
+
+			return true;
+		}
 	}
 
 	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern) {
@@ -237,15 +293,6 @@ public class MetadataRetriever implements Closeable {
 
 		values.put(COL_ID, item.getId());
 		db.insert(TABLE, null, values);
-	}
-
-	@SuppressWarnings("unused")
-	private static boolean isBitmapUri(Context ctx, String u, Uri uri) {
-		try (ParcelFileDescriptor fd = ctx.getContentResolver().openFileDescriptor(uri, "r")) {
-			return true;
-		} catch (Exception ex) {
-			return false;
-		}
 	}
 
 	private void createTable() {

@@ -182,11 +182,13 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	public void refresh() {
+		getLib().getVfsManager().clearCache();
 		getAdapter().getParent().refresh();
 		reload();
 	}
 
 	public void rescan() {
+		getLib().getVfsManager().clearCache();
 		getAdapter().getParent().rescan();
 		reload();
 	}

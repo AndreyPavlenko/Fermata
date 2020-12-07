@@ -62,6 +62,20 @@ public class YoutubeFragment extends WebBrowserFragment implements
 		webView.loadUrl(url);
 	}
 
+	@Override
+	public void onPause() {
+		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+
+		if ((a != null) && !a.isCarActivity()) {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			if ((b != null) && (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem()))) {
+				b.getMediaSessionCallback().onStop();
+			}
+		}
+
+		super.onPause();
+	}
+
 	public void loadUrl(String url) {
 		FermataWebView v = getWebView();
 		if (v != null) v.loadUrl(url);

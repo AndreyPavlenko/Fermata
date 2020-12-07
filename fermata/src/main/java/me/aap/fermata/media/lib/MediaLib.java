@@ -37,7 +37,6 @@ import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
-import me.aap.utils.vfs.content.ContentFileSystem;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
@@ -267,7 +266,7 @@ public interface MediaLib {
 
 		default boolean isStream() {
 			VirtualFileSystem.Provider p = getResource().getVirtualFileSystem().getProvider();
-			return (p instanceof GenericFileSystem.Provider) || (p instanceof ContentFileSystem.Provider);
+			return (p instanceof GenericFileSystem.Provider);
 		}
 
 		@NonNull

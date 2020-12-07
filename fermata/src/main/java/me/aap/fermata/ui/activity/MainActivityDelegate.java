@@ -236,11 +236,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	public void setBarsHidden(boolean barsHidden) {
-		this.barsHidden = barsHidden;
-		int visibility = barsHidden ? GONE : VISIBLE;
-		ToolBarView tb = getToolBar();
-		if (tb.getMediator() != ToolBarView.Mediator.Invisible.instance) tb.setVisibility(visibility);
-		getNavBar().setVisibility(visibility);
+		App.get().getHandler().post(() -> {
+			this.barsHidden = barsHidden;
+			int visibility = barsHidden ? GONE : VISIBLE;
+			ToolBarView tb = getToolBar();
+			if (tb.getMediator() != ToolBarView.Mediator.Invisible.instance) tb.setVisibility(visibility);
+			getNavBar().setVisibility(visibility);
+		});
 	}
 
 	public void setVideoMode(boolean videoMode, @Nullable VideoView v) {
