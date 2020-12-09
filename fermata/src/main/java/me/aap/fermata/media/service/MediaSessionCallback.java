@@ -454,10 +454,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onPlayFromSearch(String query, Bundle extras) {
-		if (TextUtils.isEmpty(query)) {
-			onPlay();
-		}
-		//TODO: implement
+		Log.i("Search query received: " + query);
+		getMediaLib().getMetadataRetriever().queryId(query).onSuccess(id -> {
+			if (id != null) {
+				Log.i("Playing media from search: " + id);
+				onPlayFromMediaId(id, null);
+			} else {
+				Log.i("No media found for query: " + query + ". Playing last item");
+				onPlay();
+			}
+		});
 	}
 
 	@Override

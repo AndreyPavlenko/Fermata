@@ -50,8 +50,8 @@
             android:resource="@style/AppTheme.Dark" />
 
         <activity
-            android:configChanges="orientation|screenSize|keyboardHidden"
             android:name="me.aap.fermata.ui.activity.MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -67,8 +67,11 @@
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="me.aap.fermata.action.MediaService" />
                 <action android:name="me.aap.fermata.action.CarMediaService" />
                 <action android:name="me.aap.fermata.action.ControlService" />

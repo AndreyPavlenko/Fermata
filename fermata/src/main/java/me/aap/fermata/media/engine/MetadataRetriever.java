@@ -1,5 +1,6 @@
 package me.aap.fermata.media.engine;
 
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -34,6 +35,7 @@ import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.content.ContentFileSystem;
 
 import static me.aap.utils.async.Completed.completedEmptyMap;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 
 /**
@@ -150,7 +152,10 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	private boolean queryContentProvider(Uri uri, MetaBuilder mb) {
-		try (Cursor c = App.get().getContentResolver().query(uri, CONTENT_COLUMNS, null, null, null)) {
+		App app = App.get();
+		ContentResolver cr = app.getContentResolver();
+
+		try (Cursor c = cr.query(uri, CONTENT_COLUMNS, null, null, null)) {
 			if ((c == null) || !c.moveToFirst()) return false;
 
 			String m = c.getString(1);
@@ -179,12 +184,33 @@ public class MetadataRetriever implements Closeable {
 			m = c.getString(6);
 			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
 
+			mb.setImageUri(uri.toString());
 			return true;
 		}
 	}
 
 	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern) {
 		return (db != null) ? queue.enqueue(() -> query(idPattern)) : completedEmptyMap();
+	}
+
+	public FutureSupplier<String> queryId(String pattern) {
+		String[] p = {'%' + pattern + '%'};
+		return (db != null) ? queue.enqueue(() -> {
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_TITLE + " LIKE ?  LIMIT 1",
+					p, null, null, null)) {
+				if (c.moveToFirst()) return c.getString(0);
+			}
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_ARTIST + " LIKE ?  LIMIT 1",
+					p, null, null, null)) {
+				if (c.moveToFirst()) return c.getString(0);
+			}
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_ALBUM + " LIKE ?  LIMIT 1",
+					p, null, null, null)) {
+				if (c.moveToFirst()) return c.getString(0);
+			}
+
+			return null;
+		}) : completedNull();
 	}
 
 	public FutureSupplier<Void> clearMetadata(String idPattern) {

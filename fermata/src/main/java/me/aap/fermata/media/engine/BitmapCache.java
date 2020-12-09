@@ -2,17 +2,23 @@ package me.aap.fermata.media.engine;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
+import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -89,7 +95,7 @@ public class BitmapCache {
 		Bitmap bm;
 
 		if (resize) {
-			size = 3 * getIconSize(ctx);
+			size = getIconSize(ctx);
 			iconUri = toIconUri(uri, size);
 			bm = getCachedBitmap(iconUri);
 		} else {
@@ -136,12 +142,16 @@ public class BitmapCache {
 					Resources res = ctx.getResources();
 					String[] s = uri.split("/");
 					int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
-					Drawable d = res.getDrawable(id, ctx.getTheme());
+					Drawable d = ResourcesCompat.getDrawable(res, id, ctx.getTheme());
 					if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
 					break;
 				case "http":
 				case "http:":
 					bm = loadHttpBitmap(uri);
+					break;
+				case "content":
+					bm = loadContentBitmap(ctx, uri);
+					break;
 				default:
 					FermataVfsManager vfs = lib.getVfsManager();
 					if (vfs.isSupportedScheme(scheme))
@@ -163,6 +173,24 @@ public class BitmapCache {
 		}
 	}
 
+	private Bitmap loadContentBitmap(Context ctx, String uri) throws IOException {
+		ContentResolver cr = ctx.getContentResolver();
+		Uri u = Uri.parse(uri);
+		int s = getIconSize(ctx);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+			return cr.loadThumbnail(u, new Size(s, s), null);
+		} else {
+			final Bundle opts = new Bundle();
+			opts.putParcelable(ContentResolver.EXTRA_SIZE, new Point(s, s));
+
+			try (AssetFileDescriptor afd = cr.openTypedAssetFileDescriptor(u, "image/*", opts, null)) {
+				if (afd == null) return null;
+				return BitmapFactory.decodeFileDescriptor(afd.getFileDescriptor());
+			}
+		}
+	}
+
 	private Bitmap cacheBitmap(String uri, Bitmap bm) {
 		synchronized (cache) {
 			clearRefs();
@@ -179,7 +207,11 @@ public class BitmapCache {
 		}
 	}
 
-	private int getIconSize(Context ctx) {
+	private static int getIconSize(Context ctx) {
+		return 3 * smallIconSize(ctx);
+	}
+
+	private static int smallIconSize(Context ctx) {
 		switch (ctx.getResources().getConfiguration().densityDpi) {
 			case DisplayMetrics.DENSITY_LOW:
 				return 32;
@@ -193,14 +225,6 @@ public class BitmapCache {
 				return 144;
 			default:
 				return 192;
-		}
-	}
-
-	private String saveBitmap(Bitmap bm) {
-		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-			tb.append(imageCacheUri);
-			byte[] hash = saveBitmap(bm, tb);
-			return (hash == null) ? null : tb.toString();
 		}
 	}
 
@@ -247,7 +271,8 @@ public class BitmapCache {
 
 	private void saveIcon(Bitmap bm, String uri) {
 		File f = new File(iconsCache, uri.substring(iconsCacheUri.length()));
-		f.getParentFile().mkdirs();
+		File p = f.getParentFile();
+		if (p != null) p.mkdirs();
 
 		try (OutputStream out = new FileOutputStream(f)) {
 			bm.compress(Bitmap.CompressFormat.JPEG, 100, out);

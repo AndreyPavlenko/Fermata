@@ -55,7 +55,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 		try {
 			player.reset();
-			player.setDataSource(ctx, source.getLocation());
+			player.setDataSource(source.getLocation().toString());
 			player.prepareAsync();
 		} catch (Exception ex) {
 			listener.onEngineError(this, ex);

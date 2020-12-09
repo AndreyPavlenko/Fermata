@@ -305,7 +305,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 		actionFavRm = new Action(R.drawable.favorite_filled, getString(R.string.favorites_remove),
 				pi(INTENT_FAVORITE_REMOVE));
 
-		notifStyle = new MediaStyle().setShowActionsInCompactView(0, 2, 5).setShowCancelButton(true)
+		notifStyle = new MediaStyle().setShowActionsInCompactView(0, 2, 4).setShowCancelButton(true)
 				.setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this,
 						PlaybackStateCompat.ACTION_STOP))
 				.setMediaSession(session.getSessionToken());
