@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
@@ -13,6 +14,7 @@ import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 
+import static android.content.ContentResolver.SCHEME_CONTENT;
 import static me.aap.utils.async.Completed.completed;
 
 /**
@@ -52,10 +54,12 @@ public class MediaPlayerEngine implements MediaEngine,
 	@Override
 	public void prepare(PlayableItem source) {
 		this.source = source;
+		Uri u = source.getLocation();
 
 		try {
 			player.reset();
-			player.setDataSource(source.getLocation().toString());
+			if (SCHEME_CONTENT.equals(u.getScheme())) player.setDataSource(ctx, u);
+			else player.setDataSource(u.toString());
 			player.prepareAsync();
 		} catch (Exception ex) {
 			listener.onEngineError(this, ex);

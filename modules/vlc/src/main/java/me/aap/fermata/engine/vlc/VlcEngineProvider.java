@@ -2,7 +2,6 @@ package me.aap.fermata.engine.vlc;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -28,8 +27,6 @@ import me.aap.utils.log.Log;
 import me.aap.utils.security.SecurityUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
@@ -130,12 +127,10 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
 
 			m = media.getMeta(IMedia.Meta.ArtworkURL);
-			boolean iconSet = false;
 
 			if (m != null) {
 				if (m.startsWith("file://")) {
-					meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
-					iconSet = true;
+					meta.setImageUri(m);
 				} else if (m.startsWith("attachment://")) {
 					if (((artist != null) && !artist.isEmpty() && !"Unknown Artist".equals(artist)) &&
 							((album != null) && !album.isEmpty() && !"Unknown Album".equals(artist))) {
@@ -146,18 +141,9 @@ public class VlcEngineProvider implements MediaEngineProvider {
 					}
 
 					if (new File(new URI(m)).isFile()) {
-						meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, m);
-						iconSet = true;
+						meta.setImageUri(m);
 					}
 				}
-			}
-
-			if (!iconSet && item.isVideo() && item.getResource().isLocalFile()) {
-				mmr = new MediaMetadataRetriever();
-				mmr.setDataSource(vlc.getAppContext(), item.getLocation());
-				dur = MICROSECONDS.convert(dur, MILLISECONDS);
-				Bitmap bm = mmr.getFrameAtTime(dur / 2);
-				if (isValidBitmap(bm)) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 			}
 
 			return true;

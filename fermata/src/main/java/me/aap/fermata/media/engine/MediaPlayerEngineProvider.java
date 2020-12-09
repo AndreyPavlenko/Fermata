@@ -5,7 +5,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.support.v4.media.MediaMetadataCompat;
+
+import java.util.Collections;
 
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -35,8 +38,11 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 		MediaMetadataRetriever mmr = null;
 
 		try {
+			Uri u = item.getLocation();
 			mmr = new MediaMetadataRetriever();
-			mmr.setDataSource(ctx, item.getLocation());
+
+			if ("http".equals(u.getScheme())) mmr.setDataSource(u.toString(), Collections.emptyMap());
+			else mmr.setDataSource(ctx, u);
 
 			String m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
@@ -60,12 +66,15 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE);
 			if (m != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
 
-			m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-			long dur = 0;
+			long dur = meta.getDuration();
 
-			if (m != null) {
-				dur = Long.parseLong(m);
-				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+			if (dur == 0) {
+				m = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+
+				if (m != null) {
+					dur = Long.parseLong(m);
+					meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+				}
 			}
 
 			byte[] pic = mmr.getEmbeddedPicture();
@@ -83,6 +92,7 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			if (isValidBitmap(bm)) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
 		} catch (Throwable ex) {
 			Log.d(ex, "Failed to retrieve media metadata of ", item.getLocation());
+			if (meta.getDuration() != 0) return true;
 
 			MediaPlayer mp = null;
 			try {

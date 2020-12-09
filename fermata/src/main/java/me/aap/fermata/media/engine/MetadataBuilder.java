@@ -12,6 +12,7 @@ public class MetadataBuilder {
 	private final MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
 	private String imageUri;
 	private long duration;
+	private boolean hasBitmap;
 
 	public String getImageUri() {
 		return imageUri;
@@ -22,11 +23,16 @@ public class MetadataBuilder {
 		builder.putString(METADATA_KEY_ALBUM_ART_URI, imageUri);
 	}
 
+	public boolean hasImage() {
+		return hasBitmap || (imageUri != null);
+	}
+
 	public long getDuration() {
 		return duration;
 	}
 
 	public void putString(String key, String value) {
+		if (key.equals(METADATA_KEY_ALBUM_ART_URI)) imageUri = value;
 		builder.putString(key, value);
 	}
 
@@ -37,6 +43,7 @@ public class MetadataBuilder {
 
 	public void putBitmap(String key, Bitmap value) {
 		builder.putBitmap(key, value);
+		hasBitmap = true;
 	}
 
 	public MediaMetadataCompat build() {

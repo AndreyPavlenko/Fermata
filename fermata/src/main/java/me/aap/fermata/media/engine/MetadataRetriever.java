@@ -137,7 +137,7 @@ public class MetadataRetriever implements Closeable {
 				vlc.getMediaMetadata(mb, item);
 			}
 		} else if (vlc != null) {
-			if (!vlc.getMediaMetadata(mb, item)) mp.getMediaMetadata(mb, item);
+			if (!vlc.getMediaMetadata(mb, item) || !mb.hasImage()) mp.getMediaMetadata(mb, item);
 		} else {
 			mp.getMediaMetadata(mb, item);
 		}
