@@ -20,6 +20,7 @@ import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -478,6 +479,17 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
 		controlPanel.bind(getMediaServiceBinder());
+
+		SwipeRefreshLayout refresh = a.findViewById(R.id.swiperefresh);
+		refresh.setOnRefreshListener(() -> {
+			ActivityFragment f = getActiveFragment();
+			if (f != null) f.onRefresh(refresh::setRefreshing);
+		});
+		refresh.setOnChildScrollUpCallback((p, c) -> {
+			if (isMenuActive()) return true;
+			ActivityFragment f = getActiveFragment();
+			return (f != null) && f.canScrollUp();
+		});
 	}
 
 	private void onMediaServiceBind(FermataServiceUiBinder b, Throwable err) {

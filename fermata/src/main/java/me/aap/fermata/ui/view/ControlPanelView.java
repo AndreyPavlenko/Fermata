@@ -400,7 +400,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	}
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
-		showHideBars.setImageResource(a.isBarsHidden() ? R.drawable.expand : R.drawable.collapse);
+		App.get().getHandler().post(() ->
+				showHideBars.setImageResource(a.isBarsHidden() ? R.drawable.expand : R.drawable.collapse));
 	}
 
 	private MainActivityDelegate getActivity() {

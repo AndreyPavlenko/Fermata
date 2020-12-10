@@ -90,26 +90,30 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			}
 
 			if (isValidBitmap(bm)) meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bm);
+
+			return true;
 		} catch (Throwable ex) {
 			Log.d(ex, "Failed to retrieve media metadata of ", item.getLocation());
-			if (meta.getDuration() != 0) return true;
-
-			MediaPlayer mp = null;
-			try {
-				mp = MediaPlayer.create(ctx, item.getLocation());
-				if (mp == null) return false;
-
-				meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
-			} catch (Throwable ex2) {
-				Log.d(ex2, "Failed to retrieve duration of ", item.getLocation());
-				return false;
-			} finally {
-				if (mp != null) mp.release();
-			}
+			return false;
 		} finally {
 			if (mmr != null) mmr.release();
 		}
+	}
 
-		return true;
+	public boolean getDuration(MetadataBuilder meta, PlayableItem item) {
+		if (meta.getDuration() != 0) return true;
+
+		MediaPlayer mp = null;
+		try {
+			mp = MediaPlayer.create(ctx, item.getLocation());
+			if (mp == null) return false;
+			meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mp.getDuration());
+			return true;
+		} catch (Throwable ex2) {
+			Log.d(ex2, "Failed to retrieve duration of ", item.getLocation());
+			return false;
+		} finally {
+			if (mp != null) mp.release();
+		}
 	}
 }

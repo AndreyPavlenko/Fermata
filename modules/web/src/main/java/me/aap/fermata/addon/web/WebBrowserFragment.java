@@ -18,6 +18,7 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
+import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
@@ -59,6 +60,15 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 		FermataChromeClient chromeClient = new FermataChromeClient(webView, fullScreenView);
 		webView.init(addon, webClient, chromeClient);
 		webView.loadUrl(addon.getLastUrl());
+	}
+
+	@Override
+	public void onRefresh(BooleanConsumer refreshing) {
+		FermataWebView v = getWebView();
+		if (v != null) {
+			v.getWebViewClient().loading = refreshing;
+			v.reload();
+		}
 	}
 
 	@Override

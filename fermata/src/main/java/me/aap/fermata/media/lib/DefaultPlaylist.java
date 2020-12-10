@@ -23,6 +23,7 @@ import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
@@ -33,12 +34,27 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	private final int playlistId;
 	private final SharedPreferenceStore playlistPrefStore;
 
-	public DefaultPlaylist(String id, BrowsableItem parent, int playlistId) {
+	private DefaultPlaylist(String id, BrowsableItem parent, int playlistId) {
 		super(id, parent, null);
 		this.playlistId = playlistId;
 		SharedPreferences prefs = getLib().getContext().getSharedPreferences("playlist_" + playlistId,
 				Context.MODE_PRIVATE);
 		playlistPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
+	}
+
+	public static DefaultPlaylist create(String id, BrowsableItem parent, int playlistId, DefaultMediaLib lib) {
+		synchronized (lib.cacheLock()) {
+			Item i = lib.getFromCache(id);
+
+			if (i != null) {
+				DefaultPlaylist pl = (DefaultPlaylist) i;
+				if (DEBUG && !parent.equals(pl.getParent())) throw new AssertionError();
+				if (DEBUG && !id.equals(pl.getId())) throw new AssertionError();
+				return pl;
+			} else {
+				return new DefaultPlaylist(id, parent, playlistId);
+			}
+		}
 	}
 
 	@Override

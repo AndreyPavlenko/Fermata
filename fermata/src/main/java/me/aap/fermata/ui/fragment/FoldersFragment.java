@@ -3,6 +3,7 @@ package me.aap.fermata.ui.fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
@@ -204,6 +205,11 @@ public class FoldersFragment extends MediaLibFragment {
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setFileSystem(fs);
 		f.setFileConsumer(this::addFolderResult);
+	}
+
+	public boolean canScrollUp() {
+		View v = getView();
+		return (v != null) && (v.getScrollY() > 0);
 	}
 
 	private void addFolderVfs(String provId, @StringRes int name) {

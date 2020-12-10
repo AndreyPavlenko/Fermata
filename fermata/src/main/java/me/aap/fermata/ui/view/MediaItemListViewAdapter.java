@@ -101,9 +101,9 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		}
 	}
 
-	public void reload() {
+	public FutureSupplier<?> reload() {
 		getListView().discardSelection();
-		setParent(getParent());
+		return setParent(getParent());
 	}
 
 	public void refresh() {

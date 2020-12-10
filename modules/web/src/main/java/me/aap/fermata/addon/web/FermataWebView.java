@@ -7,11 +7,13 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.inputmethod.EditorInfo;
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
@@ -86,6 +88,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		return addon;
 	}
 
+	@NonNull
 	@Override
 	public FermataWebClient getWebViewClient() {
 		return (FermataWebClient) super.getWebViewClient();
@@ -110,6 +113,8 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 		ToolBarView.Mediator m = f.getToolBarMediator();
 		if (m instanceof WebToolBarMediator) ((WebToolBarMediator) m).setAddress(a.getToolBar(), uri);
+
+		CookieManager.getInstance().flush();
 	}
 
 	protected boolean requestFullScreen() {

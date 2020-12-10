@@ -41,7 +41,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	private static final String MODULE_EXO = "exoplayer";
 	private static final String MODULE_VLC = "vlc";
 	final MediaLib lib;
-	final MediaEngineProvider mediaPlayer;
+	final MediaPlayerEngineProvider mediaPlayer;
 	MediaEngineProvider exoPlayer;
 	MediaEngineProvider vlcPlayer;
 

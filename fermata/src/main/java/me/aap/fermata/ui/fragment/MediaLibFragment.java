@@ -30,6 +30,7 @@ import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
@@ -176,15 +177,20 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return true;
 	}
 
-	public void reload() {
-		discardSelection();
-		getAdapter().reload();
+	@Override
+	public void onRefresh(BooleanConsumer refreshing) {
+		reload().onCompletion((r,f)->refreshing.accept(false));
 	}
 
-	public void refresh() {
+	public FutureSupplier<?> reload() {
+		discardSelection();
+		return getAdapter().reload();
+	}
+
+	public FutureSupplier<?> refresh() {
 		getLib().getVfsManager().clearCache();
 		getAdapter().getParent().refresh();
-		reload();
+		return reload();
 	}
 
 	public void rescan() {

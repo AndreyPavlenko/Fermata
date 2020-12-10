@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web.yt;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.webkit.CookieManager;
 
 import me.aap.fermata.addon.web.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
@@ -50,6 +51,7 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	protected void pageLoaded(String uri) {
 		attachListeners();
+		CookieManager.getInstance().flush();
 	}
 
 	void attachListeners() {

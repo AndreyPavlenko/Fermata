@@ -113,6 +113,13 @@ public class YoutubeFragment extends WebBrowserFragment implements
 		return ToolBarView.Mediator.Invisible.instance;
 	}
 
+	@Override
+	public boolean canScrollUp() {
+		FermataWebView v = getWebView();
+		if (v == null) return false;
+		return v.getWebChromeClient().isFullScreen() || (v.getScrollY() > 0);
+	}
+
 	@Nullable
 	protected WebBrowserAddon getAddon() {
 		return AddonManager.get().getAddon(YoutubeAddon.class);
@@ -120,6 +127,7 @@ public class YoutubeFragment extends WebBrowserFragment implements
 
 	@Nullable
 	protected YoutubeWebView getWebView() {
+
 		View v = getView();
 		return (v != null) ? v.findViewById(R.id.ytWebView) : null;
 	}

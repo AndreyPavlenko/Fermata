@@ -78,12 +78,13 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	@Override
 	public FutureSupplier<List<Item>> listChildren() {
 		int[] ids = getPlaylistIdsPref();
+		DefaultMediaLib lib = getLib();
 		List<Item> children = new ArrayList<>(ids.length);
 
 		for (int id : ids) {
 			SharedTextBuilder tb = SharedTextBuilder.get();
 			tb.append(SCHEME).append(':').append(id).append(':');
-			children.add(new DefaultPlaylist(tb.releaseString(), this, id));
+			children.add(DefaultPlaylist.create(tb.releaseString(), this, id, lib));
 		}
 
 		return completed(children);
@@ -132,7 +133,7 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 		int playlistId = getPlaylistsCounterPref() + 1;
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(SCHEME).append(':').append(playlistId).append(':');
-		DefaultPlaylist pl = new DefaultPlaylist(tb.releaseString(), this, playlistId);
+		DefaultPlaylist pl = DefaultPlaylist.create(tb.releaseString(), this, playlistId, getLib());
 		setPlaylistsCounterPref(playlistId);
 		pl.setPlaylistNamePref(n);
 		super.addItem(pl);
