@@ -38,6 +38,9 @@ import me.aap.utils.pref.PreferenceViewAdapter;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.fermata.ui.activity.MainActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 /**
@@ -299,9 +302,9 @@ public class SettingsFragment extends MainActivityFragment {
 			});
 		}
 
+		PrefCondition<BooleanSupplier> exoCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.EXO_ENABLED);
+		PrefCondition<BooleanSupplier> vlcCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
 		Consumer<PreferenceView.ListOpts> initList = o -> {
-			PrefCondition<BooleanSupplier> exoCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.EXO_ENABLED);
-			PrefCondition<BooleanSupplier> vlcCond = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
 			if (o.visibility == null) o.visibility = exoCond.or(vlcCond);
 
 			o.values = new int[]{R.string.engine_mp_name, R.string.engine_exo_name, R.string.engine_vlc_name};
@@ -342,6 +345,17 @@ public class SettingsFragment extends MainActivityFragment {
 			o.subtitle = R.string.string_format;
 			o.formatSubtitle = true;
 			o.initList = initList;
+		});
+		sub1.addListPref(o -> {
+			o.store = mediaPrefs;
+			o.removeDefault = false;
+			o.pref = MediaLibPrefs.MEDIA_SCANNER;
+			o.title = R.string.preferred_media_scanner;
+			o.subtitle = R.string.string_format;
+			o.formatSubtitle = true;
+			o.visibility = vlcCond;
+			o.values = new int[]{R.string.preferred_media_scanner_default, R.string.preferred_media_scanner_system, R.string.engine_vlc_name};
+			o.valuesMap = new int[]{MEDIA_SCANNER_DEFAULT, MEDIA_SCANNER_SYSTEM, MEDIA_SCANNER_VLC};
 		});
 
 		sub1 = set.subSet(o -> o.title = R.string.video_settings);

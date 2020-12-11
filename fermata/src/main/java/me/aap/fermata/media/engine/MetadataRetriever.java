@@ -34,6 +34,9 @@ import me.aap.utils.text.TextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.content.ContentFileSystem;
 
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.utils.async.Completed.completedEmptyMap;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -127,13 +130,16 @@ public class MetadataRetriever implements Closeable {
 			}
 		}
 
-		MediaPlayerEngineProvider mp = mgr.mediaPlayer;
+		int scanner = (mgr.vlcPlayer == null) ? MEDIA_SCANNER_DEFAULT
+				: item.getLib().getPrefs().getMediaScannerPref();
 
-		if (!mp.getMediaMetadata(mb, item)) {
-			MediaEngineProvider vlc = mgr.vlcPlayer;
-			if ((vlc == null) || !vlc.getMediaMetadata(mb, item)) mp.getDuration(mb, item);
-		} else {
-			mp.getDuration(mb, item);
+		switch (scanner) {
+			case MEDIA_SCANNER_DEFAULT:
+			case MEDIA_SCANNER_SYSTEM:
+				if (mgr.mediaPlayer.getMediaMetadata(mb, item)) break;
+				if ((scanner == MEDIA_SCANNER_SYSTEM) && mgr.mediaPlayer.getDuration(mb, item)) break;
+			case MEDIA_SCANNER_VLC:
+				if (mgr.vlcPlayer != null) mgr.vlcPlayer.getMediaMetadata(mb, item);
 		}
 
 		try {

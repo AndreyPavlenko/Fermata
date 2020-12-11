@@ -22,9 +22,13 @@ public interface MediaPrefs extends PreferenceStore {
 	int SCALE_ORIGINAL = 2;
 	int SCALE_4_3 = 3;
 	int SCALE_16_9 = 4;
+	int MEDIA_SCANNER_DEFAULT = 0;
+	int MEDIA_SCANNER_SYSTEM = 1;
+	int MEDIA_SCANNER_VLC = 2;
 	Pref<IntSupplier> AUDIO_ENGINE = Pref.i("AUDIO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_ENGINE = Pref.i("VIDEO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_SCALE = Pref.i("VIDEO_SCALE", SCALE_BEST);
+	Pref<IntSupplier> MEDIA_SCANNER = Pref.i("MEDIA_SCANNER", MEDIA_SCANNER_DEFAULT).withInheritance(false);
 	Pref<DoubleSupplier> SPEED = Pref.f("SPEED", 1.0f).withInheritance(false);
 	Pref<BooleanSupplier> AE_ENABLED = Pref.b("AE_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> EQ_ENABLED = Pref.b("EQ_ENABLED", false).withInheritance(false);
@@ -77,6 +81,10 @@ public interface MediaPrefs extends PreferenceStore {
 		}
 	}
 
+	default int getMediaScannerPref() {
+		return getIntPref(MEDIA_SCANNER);
+	}
+
 	default boolean getSubEnabledPref() {
 		return getBooleanPref(SUB_ENABLED);
 	}
@@ -121,7 +129,7 @@ public interface MediaPrefs extends PreferenceStore {
 	}
 
 	static String toUserPreset(String name, int[] bands) {
-		try(SharedTextBuilder tb = SharedTextBuilder.get()) {
+		try (SharedTextBuilder tb = SharedTextBuilder.get()) {
 			for (int i = 0; i < bands.length; i++) {
 				tb.append(bands[i]);
 				if (i == (bands.length - 1)) tb.append(':');

@@ -27,6 +27,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.security.SecurityUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.DoInteract;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
 import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
@@ -98,7 +99,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 				media = new Media(getVlc(), uri);
 			}
 
-			media.parse(ParseLocal | ParseNetwork | FetchLocal | FetchNetwork);
+			media.parse(ParseLocal | ParseNetwork | FetchLocal | FetchNetwork | DoInteract);
 
 			String title = media.getMeta(IMedia.Meta.Title);
 			String artist = media.getMeta(IMedia.Meta.Artist);

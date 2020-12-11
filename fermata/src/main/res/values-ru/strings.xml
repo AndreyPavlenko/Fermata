@@ -48,6 +48,10 @@
     <string name="engine_installed">Медиа движок установлен: %1$s</string>
     <string name="engine_uninstalled">Медиа движок удален: %1$s</string>
 
+    <string name="preferred_media_scanner">Предпочтительный медиа сканнер</string>
+    <string name="preferred_media_scanner_default">По умолчанию</string>
+    <string name="preferred_media_scanner_system">Системный</string>
+
     <string name="module_installation">Установка модуля: %1$s</string>
     <string name="install_pending">Ожидание инсталляции: %1$s</string>
     <string name="downloading">Скачивание %1$s</string>

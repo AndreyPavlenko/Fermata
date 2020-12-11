@@ -61,6 +61,10 @@
     <string name="engine_installed">Media engine installed: %1$s</string>
     <string name="engine_uninstalled">Media engine uninstalled: %1$s</string>
 
+    <string name="preferred_media_scanner">Preferred media scanner</string>
+    <string name="preferred_media_scanner_default">Default</string>
+    <string name="preferred_media_scanner_system">System</string>
+
     <string name="module_installation">Module installation: %1$s</string>
     <string name="install_pending">Installation pending: %1$s</string>
     <string name="downloading">Downloading %1$s</string>
