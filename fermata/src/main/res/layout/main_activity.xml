@@ -46,7 +46,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/swiperefresh" />
 
-    <me.aap.utils.ui.view.NavBarView
+    <me.aap.fermata.ui.view.FermataNavBarView
         android:id="@+id/nav_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
