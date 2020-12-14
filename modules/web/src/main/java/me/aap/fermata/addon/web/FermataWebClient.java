@@ -57,6 +57,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		if (isYoutubeUri(request.getUrl())) {
 			try {
 				MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
+				if (a == null) return false;
 				YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
 				f.loadUrl(request.getUrl().toString());
 				return true;

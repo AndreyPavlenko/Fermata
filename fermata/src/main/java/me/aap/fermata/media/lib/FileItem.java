@@ -13,6 +13,8 @@ import me.aap.utils.vfs.VirtualResource;
 import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.fermata.util.Utils.isVideoFile;
 import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.security.SecurityUtils.md5;
+import static me.aap.utils.text.TextUtils.appendHexString;
 
 /**
  * @author Andrey Pavlenko
@@ -35,7 +37,14 @@ class FileItem extends PlayableItemBase {
 			if (i != null) {
 				FileItem f = (FileItem) i;
 				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
-				if (DEBUG && !file.equals(f.getResource())) throw new AssertionError();
+
+				if (!file.equals(f.getResource())) {
+					StringBuilder sb = new StringBuilder(id.length() + 33);
+					sb.append(id).append('_');
+					appendHexString(sb, md5(file.getRid().toString()));
+					return new FileItem(sb.toString(), parent, file, isVideo);
+				}
+
 				return f;
 			} else {
 				return new FileItem(id, parent, file, isVideo);

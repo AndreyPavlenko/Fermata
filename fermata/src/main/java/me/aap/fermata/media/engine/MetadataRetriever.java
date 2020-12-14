@@ -186,6 +186,9 @@ public class MetadataRetriever implements Closeable {
 
 			mb.setImageUri(uri.toString());
 			return true;
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to query content provider: " + uri);
+			return false;
 		}
 	}
 

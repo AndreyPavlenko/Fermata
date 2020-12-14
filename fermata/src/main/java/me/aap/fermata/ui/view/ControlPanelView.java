@@ -310,6 +310,8 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 		if (delay == 0) return false;
 
 		MainActivityDelegate a = getActivity();
+		if (a == null) return false;
+
 		View title = ((VideoView) gestureSource).getTitle();
 		View fb = a.getFloatingButton();
 
