@@ -2,6 +2,10 @@ package me.aap.fermata;
 
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
+
+import java.io.File;
+
 import me.aap.fermata.addon.AddonManager;
 import me.aap.utils.app.App;
 import me.aap.utils.app.NetSplitCompatApp;
@@ -54,5 +58,11 @@ public class FermataApplication extends NetSplitCompatApp {
 	@Override
 	protected int getMaxNumberOfThreads() {
 		return 5;
+	}
+
+	@Nullable
+	@Override
+	public File getLogFile() {
+		return BuildConfig.AUTO ? new File(getFilesDir(), "Fermata.log") : null;
 	}
 }

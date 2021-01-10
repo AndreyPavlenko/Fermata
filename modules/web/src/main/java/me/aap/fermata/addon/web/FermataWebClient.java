@@ -39,6 +39,7 @@ public class FermataWebClient extends WebViewClientCompat {
 	public void onPageFinished(WebView view, String url) {
 		FermataWebView v = (FermataWebView) view;
 		MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
+		if (a == null) return;
 		a.setContentLoading(Completed.completedVoid());
 
 		if (loading != null) {
