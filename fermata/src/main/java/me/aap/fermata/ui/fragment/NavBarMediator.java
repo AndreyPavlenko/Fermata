@@ -82,7 +82,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 
 	@Override
 	protected Pref<Compound<List<NavBarItem>>> getPref(NavBarView nb) {
-		return new NavBarPref(nb.getContext());
+		return new NavBarPref(nb);
 	}
 
 	@Override
@@ -236,10 +236,10 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 	private static final class NavBarPref implements Pref<Compound<List<NavBarItem>>>, Compound<List<NavBarItem>> {
 		private static final Pref<Supplier<String>> prefV = Pref.s("NAV_BAR_V", () -> null);
 		private static final Pref<Supplier<String>> prefH = Pref.s("NAV_BAR_H", () -> null);
-		private final Context ctx;
+		private final NavBarView nb;
 
-		public NavBarPref(Context ctx) {
-			this.ctx = ctx;
+		public NavBarPref(NavBarView nb) {
+			this.nb = nb;
 		}
 
 		@Override
@@ -276,6 +276,8 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 					if (item != null) items.add(item);
 				}
 			}
+
+			Context ctx = nb.getContext();
 
 			if (!CollectionUtils.contains(items, i -> i.getId() == R.id.folders_fragment)) {
 				items.add(NavBarItem.create(ctx, R.id.folders_fragment, R.drawable.folder, R.string.folders, true));
@@ -338,7 +340,14 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 		}
 
 		private Pref<Supplier<String>> getPref() {
-			return (ctx.getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) ? prefV : prefH;
+			Context ctx = nb.getContext();
+			if (ctx.getResources().getConfiguration().smallestScreenWidthDp > 600) return prefH;
+
+			boolean bottom = nb.getPosition() == NavBarView.POSITION_BOTTOM;
+			boolean portrait = nb.getContext().getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT;
+
+			if (bottom) return portrait ? prefV : prefH;
+			else return portrait ? prefH : prefV;
 		}
 
 		private static String getName(AddonManager amgr, NavBarItem i) {
@@ -364,6 +373,8 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 		}
 
 		private NavBarItem getItem(AddonManager amgr, String name, boolean pin) {
+			Context ctx = nb.getContext();
+
 			switch (name) {
 				case "folders":
 					return NavBarItem.create(ctx, R.id.folders_fragment, R.drawable.folder, R.string.folders, pin);

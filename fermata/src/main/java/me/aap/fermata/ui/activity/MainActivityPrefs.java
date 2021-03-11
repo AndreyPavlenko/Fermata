@@ -6,6 +6,7 @@ import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.ui.view.NavBarView;
 
 /**
  * @author Andrey Pavlenko
@@ -16,6 +17,8 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int THEME_DAY_NIGHT = 2;
 	int THEME_BLACK = 3;
 	Pref<IntSupplier> THEME = Pref.i("THEME", THEME_DARK);
+	Pref<IntSupplier> NAV_BAR_POS = Pref.i("NAV_BAR_POS", NavBarView.POSITION_BOTTOM);
+	Pref<IntSupplier> NAV_BAR_POS_AA = Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_BOTTOM);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> GRID_VIEW = Pref.b("GRID_VIEW", false);
@@ -23,6 +26,14 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default int getThemePref() {
 		return getIntPref(THEME);
+	}
+
+	default int getNavBarPosPref() {
+		return getIntPref(NAV_BAR_POS);
+	}
+
+	default int getNavBarPosAAPref() {
+		return getIntPref(NAV_BAR_POS_AA);
 	}
 
 	default void setThemePref(int value) {

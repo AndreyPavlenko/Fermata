@@ -6,23 +6,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <me.aap.fermata.ui.view.FermataNavBarView
+        android:id="@+id/nav_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:labelVisibilityMode="selected"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_weight="1"
+        app:position="RIGHT" />
+
     <me.aap.utils.ui.view.ToolBarView
         android:id="@+id/tool_bar"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
         app:layout_constraintBottom_toTopOf="@id/swiperefresh"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nav_bar"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swiperefresh"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/control_panel"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nav_bar"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tool_bar"
         app:layout_constraintVertical_weight="1">
@@ -38,23 +51,14 @@
 
     <me.aap.fermata.ui.view.ControlPanelView
         android:id="@+id/control_panel"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/nav_bar"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nav_bar"
+        app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/swiperefresh" />
-
-    <me.aap.fermata.ui.view.FermataNavBarView
-        android:id="@+id/nav_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:labelVisibilityMode="selected"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/control_panel" />
 
     <me.aap.utils.ui.view.FloatingButton
         android:id="@+id/floating_button"
@@ -65,7 +69,7 @@
         android:alpha="0.5"
         android:elevation="10dp"
         app:layout_constraintBottom_toTopOf="@id/control_panel"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@id/nav_bar" />
 
     <androidx.core.widget.ContentLoadingProgressBar
         android:id="@+id/content_loading_progress"
@@ -83,7 +87,7 @@
         android:layout_height="wrap_content"
         android:elevation="10dp"
         android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nav_bar"
         app:layout_constraintTop_toBottomOf="@id/tool_bar"
         app:layout_constraintVertical_bias="0" />
 
@@ -105,7 +109,7 @@
         android:elevation="10dp"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/control_panel"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nav_bar"
         app:layout_constraintVertical_bias="1" />
 
     <me.aap.utils.ui.menu.OverlayMenuView
@@ -114,8 +118,8 @@
         android:layout_height="wrap_content"
         android:elevation="10dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/nav_bar"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/nav_bar"
         app:layout_constraintVertical_bias="1" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

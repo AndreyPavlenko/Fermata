@@ -28,6 +28,13 @@
     <string name="theme_day_night">Day/Night</string>
     <string name="theme_black">Black</string>
 
+    <string name="nav_bar_pos">Navigation bar position</string>
+    <string name="nav_bar_pos_aa">Navigation bar position (Android Auto)</string>
+    <string name="nav_bar_pos_sub">Current position: %1$s</string>
+    <string name="nav_bar_pos_bottom">Bottom</string>
+    <string name="nav_bar_pos_left">Left</string>
+    <string name="nav_bar_pos_right">Right</string>
+
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="fullscreen_mode">Fullscreen mode</string>

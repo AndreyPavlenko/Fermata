@@ -186,6 +186,24 @@ public class SettingsFragment extends MainActivityFragment {
 			o.formatSubtitle = true;
 			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night, R.string.theme_black};
 		});
+		sub1.addListPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.NAV_BAR_POS;
+			o.title = R.string.nav_bar_pos;
+			o.subtitle = R.string.nav_bar_pos_sub;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.nav_bar_pos_bottom, R.string.nav_bar_pos_left, R.string.nav_bar_pos_right};
+		});
+		if (BuildConfig.AUTO) {
+			sub1.addListPref(o -> {
+				o.store = a.getPrefs();
+				o.pref = MainActivityPrefs.NAV_BAR_POS_AA;
+				o.title = R.string.nav_bar_pos_aa;
+				o.subtitle = R.string.nav_bar_pos_sub;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.nav_bar_pos_bottom, R.string.nav_bar_pos_left, R.string.nav_bar_pos_right};
+			});
+		}
 		sub1.addBooleanPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.HIDE_BARS;

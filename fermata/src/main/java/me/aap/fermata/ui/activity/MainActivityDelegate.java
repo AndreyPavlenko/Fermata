@@ -13,6 +13,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -27,6 +28,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib;
@@ -472,7 +474,22 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private void init() {
 		FermataActivity a = getAppActivity();
-		a.setContentView(R.layout.main_activity);
+		MainActivityPrefs prefs = getPrefs();
+		@LayoutRes int layout;
+
+		switch (a.isCarActivity() ? prefs.getNavBarPosAAPref() : prefs.getNavBarPosPref()) {
+			default:
+				layout = R.layout.main_activity;
+				break;
+			case NavBarView.POSITION_LEFT:
+				layout = R.layout.main_activity_left;
+				break;
+			case NavBarView.POSITION_RIGHT:
+				layout = R.layout.main_activity_right;
+				break;
+		}
+
+		a.setContentView(layout);
 		toolBar = a.findViewById(R.id.tool_bar);
 		progressBar = a.findViewById(R.id.content_loading_progress);
 		navBar = a.findViewById(R.id.nav_bar);
@@ -551,6 +568,11 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if (prefs.contains(MainActivityPrefs.THEME)) {
 			setTheme();
 			getAppActivity().recreate();
+		} else if (prefs.contains(MainActivityPrefs.NAV_BAR_POS)) {
+			getAppActivity().recreate();
+		} else if (BuildConfig.AUTO && prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
+			FermataActivity a = getAppActivity();
+			if (a.isCarActivity()) a.recreate();
 		} else if (prefs.contains(MainActivityPrefs.FULLSCREEN)) {
 			setSystemUiVisibility();
 		}
