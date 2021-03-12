@@ -1009,6 +1009,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			if (this.engine != null) {
 				Log.i("Trying another engine: ", this.engine);
 				tryAnotherEngine = false;
+				if (i.isVideo() && (videoView != null)) this.engine.setVideoView(videoView.get(0).view);
 				this.engine.prepare(i);
 				return;
 			}

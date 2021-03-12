@@ -1,5 +1,6 @@
 package me.aap.fermata.engine.exoplayer;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
 
@@ -9,15 +10,16 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.video.VideoListener;
 
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -25,7 +27,6 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.log.Log;
 
 import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
 import static me.aap.utils.async.Completed.completed;
@@ -33,15 +34,15 @@ import static me.aap.utils.async.Completed.completed;
 /**
  * @author Andrey Pavlenko
  */
-public class ExoPlayerEngine implements MediaEngine, Player.EventListener, AnalyticsListener {
+public class ExoPlayerEngine implements MediaEngine, Player.EventListener, VideoListener {
 	private final Listener listener;
 	private final SimpleExoPlayer player;
+	private final AudioEffects audioEffects;
 	private final DataSource.Factory dsFactory;
 	private ProgressiveMediaSource.Factory progressive;
 	private HlsMediaSource.Factory hls;
-	private AudioEffects audioEffects;
 	private PlayableItem source;
-	private byte preparingState;
+	private boolean preparing;
 	private boolean isHls;
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
@@ -49,7 +50,8 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 		player = new SimpleExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
 				.setExtensionRendererMode(EXTENSION_RENDERER_MODE_PREFER)).build();
 		player.addListener(this);
-		player.addAnalyticsListener(this);
+		player.addVideoListener(this);
+		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
 		dsFactory = new DefaultDataSourceFactory(ctx, "Fermata");
 	}
 
@@ -58,28 +60,32 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 		return MediaPrefs.MEDIA_ENG_EXO;
 	}
 
+	@SuppressLint("SwitchIntDef")
 	@Override
 	public void prepare(PlayableItem source) {
 		this.source = source;
-		preparingState = 1;
+		preparing = true;
 
 		Uri uri = source.getLocation();
+		MediaItem m = MediaItem.fromUri(uri);
 		int type = Util.inferContentType(uri, null);
 
 		switch (type) {
 			case C.TYPE_HLS:
 				if (hls == null) hls = new HlsMediaSource.Factory(dsFactory);
 				isHls = true;
-				player.prepare(hls.createMediaSource(uri), false, false);
+				player.setMediaSource(hls.createMediaSource(m), false);
 				break;
 			case C.TYPE_OTHER:
 				if (progressive == null) progressive = new ProgressiveMediaSource.Factory(dsFactory);
 				isHls = false;
-				player.prepare(progressive.createMediaSource(uri), false, false);
+				player.setMediaSource(progressive.createMediaSource(m), false);
 				break;
 			default:
 				listener.onEngineError(this, new IllegalArgumentException("Unsupported type: " + type));
 		}
+
+		player.prepare();
 	}
 
 	@Override
@@ -159,20 +165,15 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 
 		if (audioEffects != null) {
 			audioEffects.release();
-			audioEffects = null;
 		}
 	}
 
 	@Override
-	public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+	public void onPlaybackStateChanged(int playbackState) {
 		if (playbackState == Player.STATE_READY) {
-			if (preparingState == 1) {
-				if ((audioEffects != null)) {
-					preparingState = 0;
-					listener.onEnginePrepared(this);
-				} else {
-					preparingState = 2;
-				}
+			if (preparing) {
+				preparing = false;
+				listener.onEnginePrepared(this);
 			}
 		} else if (playbackState == Player.STATE_ENDED) {
 			listener.onEngineEnded(this);
@@ -180,22 +181,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Analy
 	}
 
 	@Override
-	public void onAudioSessionId(@NonNull EventTime eventTime, int audioSessionId) {
-		try {
-			audioEffects = AudioEffects.create(0, audioSessionId);
-		} catch (Exception ex) {
-			Log.e(ex, "Failed to create audio effects");
-		}
-
-		if (preparingState == 2) {
-			preparingState = 0;
-			listener.onEnginePrepared(this);
-		}
-	}
-
-	@Override
-	public void onVideoSizeChanged(@NonNull EventTime eventTime, int width, int height,
-																 int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+	public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
 		listener.onVideoSizeChanged(this, width, height);
 	}
 
