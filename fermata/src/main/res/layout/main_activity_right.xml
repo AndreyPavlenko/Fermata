@@ -21,8 +21,6 @@
         android:id="@+id/tool_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
         app:layout_constraintBottom_toTopOf="@id/swiperefresh"
         app:layout_constraintEnd_toStartOf="@id/nav_bar"
         app:layout_constraintHorizontal_weight="1"

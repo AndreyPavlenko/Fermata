@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
@@ -51,6 +52,7 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.Function;
 import me.aap.utils.function.IntObjectFunction;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
@@ -78,6 +80,7 @@ import static me.aap.utils.ui.activity.ActivityListener.SERVICE_BOUND;
  */
 public class MainActivityDelegate extends ActivityDelegate implements
 		PreferenceStore.Listener, FermataServiceUiBinder.Listener {
+	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private FermataServiceUiBinder mediaServiceBinder;
 	private ToolBarView toolBar;
 	private NavBarView navBar;
@@ -108,14 +111,30 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			typedArray.recycle();
 			FermataServiceUiBinder.bind(FermataApplication.get(), notifColor, isCarActivity(),
 					this::onMediaServiceBind);
+		} else if (mediaServiceBinder != null) {
+			onMediaServiceBind(mediaServiceBinder, null);
 		} else {
-			if (mediaServiceBinder != null) init();
+			onMediaServiceBind(mediaServiceBinder, new IllegalStateException("Media service is not bound"));
 		}
 	}
 
 	@Override
 	public void onActivityResume() {
 		super.onActivityResume();
+	}
+
+	@Override
+	protected void onActivityDestroy() {
+		super.onActivityDestroy();
+
+		toolBar = null;
+		navBar = null;
+		controlPanel = null;
+		floatingButton = null;
+		progressBar = null;
+		contentLoading = null;
+		barsHidden = false;
+		videoMode = false;
 	}
 
 	public void onActivityFinish() {
@@ -186,6 +205,20 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	@Override
+	public boolean interceptTouchEvent(MotionEvent e, Function<MotionEvent, Boolean> view) {
+		if (BuildConfig.AUTO && (e.getAction() == MotionEvent.ACTION_DOWN)) {
+			FermataActivity a = getAppActivity();
+
+			if (a.isInputActive()) {
+				a.stopInput(null);
+				return true;
+			}
+		}
+
+		return super.interceptTouchEvent(e, view);
+	}
+
+	@Override
 	public boolean isFullScreen() {
 		if (videoMode || getPrefs().getFullscreenPref()) {
 			if (isCarActivity()) {
@@ -220,6 +253,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public NavBarView getNavBar() {
 		return navBar;
+	}
+
+	public NavBarMediator getNavBarMediator() {
+		return navBarMediator;
 	}
 
 	public ToolBarView getToolBar() {
@@ -595,11 +632,11 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			case KeyEvent.KEYCODE_M:
 			case KeyEvent.KEYCODE_MENU:
 				if (keyEvent.isShiftPressed()) {
-					NavBarMediator.instance.showMenu(this);
+					getNavBarMediator().showMenu(this);
 				} else {
 					ControlPanelView cp = getControlPanel();
 					if (cp.isActive()) cp.showMenu();
-					else NavBarMediator.instance.showMenu(this);
+					else getNavBarMediator().showMenu(this);
 				}
 				break;
 			case KeyEvent.KEYCODE_P:

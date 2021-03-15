@@ -1,12 +1,8 @@
 package me.aap.fermata.ui.fragment;
 
-import android.content.Context;
-
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
 
-import com.google.android.play.core.splitcompat.SplitCompat;
-
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.view.FloatingButton;
@@ -17,8 +13,13 @@ import me.aap.utils.ui.view.FloatingButton;
 public abstract class MainActivityFragment extends ActivityFragment {
 
 	@Override
+	public MainActivityDelegate getActivityDelegate() {
+		return (MainActivityDelegate) super.getActivityDelegate();
+	}
+
+	@Override
 	public NavBarMediator getNavBarMediator() {
-		return NavBarMediator.instance;
+		return getActivityDelegate().getNavBarMediator();
 	}
 
 	public FloatingButton.Mediator getFloatingButtonMediator() {

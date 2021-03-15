@@ -13,8 +13,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.utils.pref.PreferenceStore;
 
 import static java.util.Objects.requireNonNull;
@@ -131,6 +133,18 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
 			configure(getContext().getResources().getConfiguration());
+			MainActivityDelegate a = MainActivityDelegate.get(getContext());
+			MediaLibFragment f = a.getActiveMediaLibFragment();
+
+			if ((f != null) && (f.getView() == this)) {
+				MediaLib.BrowsableItem i = getAdapter().getParent();
+
+				if (i != null) {
+					i.getLastPlayedItem().onSuccess(pi -> {
+						if (pi != null) f.revealItem(pi);
+					});
+				}
+			}
 		}
 	}
 }

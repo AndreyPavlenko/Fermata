@@ -52,10 +52,6 @@ import static me.aap.utils.ui.UiUtils.showInfo;
  */
 public class NavBarMediator extends PrefNavBarMediator implements AddonManager.Listener,
 		OverlayMenu.SelectionHandler {
-	public static final NavBarMediator instance = new NavBarMediator();
-
-	private NavBarMediator() {
-	}
 
 	@Override
 	public void enable(NavBarView nb, ActivityFragment f) {

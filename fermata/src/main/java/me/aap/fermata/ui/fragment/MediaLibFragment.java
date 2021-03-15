@@ -179,7 +179,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onRefresh(BooleanConsumer refreshing) {
-		reload().onCompletion((r,f)->refreshing.accept(false));
+		reload().onCompletion((r, f) -> refreshing.accept(false));
 	}
 
 	public FutureSupplier<?> reload() {
@@ -294,9 +294,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
-		if (!handleActivityFinishEvent(a, e) && (e == SERVICE_BOUND)) {
-			bind(a.getMediaServiceBinder());
-		}
+		if (handleActivityFinishEvent(a, e) || handleActivityDestroyEvent(a, e)) return;
+		if (e == SERVICE_BOUND) bind(a.getMediaServiceBinder());
 	}
 
 	@Override

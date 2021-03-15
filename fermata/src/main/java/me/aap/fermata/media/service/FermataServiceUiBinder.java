@@ -260,6 +260,8 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		if (progressBar != null) progressBar.setOnSeekBarChangeListener(null);
 		unbindButtons(playPauseButton, prevButton, nextButton, rwButton, ffButton);
 		playPauseButton = prevButton = nextButton = rwButton = ffButton = null;
+		progressTime = progressTotal = null;
+		progressBar = null;
 		controlPanel = null;
 	}
 

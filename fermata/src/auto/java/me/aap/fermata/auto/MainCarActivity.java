@@ -10,13 +10,13 @@ import android.view.Window;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
@@ -29,8 +29,9 @@ import static me.aap.utils.async.Completed.failed;
  * @author Andrey Pavlenko
  */
 public class MainCarActivity extends CarActivity implements FermataActivity {
-	private static MainActivityDelegate delegate;
+	static MainActivityDelegate delegate;
 	private CarEditText editText;
+	private TextWatcher textWatcher;
 
 	static {
 		ActivityDelegate.setContextToDelegate(c -> delegate);
@@ -44,6 +45,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setIgnoreConfigChanges(0xFFFF);
 		delegate = ActivityDelegate.create(MainActivityDelegate::new, this);
 		delegate.onActivityCreate(savedInstanceState);
 
@@ -56,18 +58,6 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	public void onResume() {
 		super.onResume();
 		getActivityDelegate().onActivityResume();
-	}
-
-	@Override
-	public void onDestroy() {
-		MainActivityDelegate a = getActivityDelegate();
-
-		if (a != null) {
-			FermataServiceUiBinder b = a.getMediaServiceBinder();
-			if (b != null) b.getMediaSessionCallback().onPause();
-		}
-
-		super.onDestroy();
 	}
 
 	@Override
@@ -116,17 +106,21 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	public EditText startInput(TextWatcher w) {
 		if (editText == null) editText = new CarEditText(this);
+		if (textWatcher != null) editText.removeTextChangedListener(textWatcher);
 		editText.addTextChangedListener(w);
+		textWatcher = w;
 		a().startInput(editText);
 		return editText;
 	}
 
-	public void stopInput(TextWatcher w) {
+	public void stopInput(@Nullable TextWatcher w) {
 		if (editText != null) {
-			editText.removeTextChangedListener(w);
+			if (w != null) editText.removeTextChangedListener(w);
+			if (textWatcher != null) editText.removeTextChangedListener(textWatcher);
 			editText.setOnEditorActionListener(null);
-			a().stopInput();
 		}
+
+		a().stopInput();
 	}
 
 	public boolean isInputActive() {
