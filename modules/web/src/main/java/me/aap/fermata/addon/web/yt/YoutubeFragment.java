@@ -131,4 +131,8 @@ public class YoutubeFragment extends WebBrowserFragment implements
 		View v = getView();
 		return (v != null) ? v.findViewById(R.id.ytWebView) : null;
 	}
+
+	protected boolean isDesktopVersionSupported() {
+		return false;
+	}
 }

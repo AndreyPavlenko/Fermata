@@ -28,6 +28,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class WebBrowserAddon implements FermataAddon {
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
 	private static final Pref<BooleanSupplier> FORCE_DARK = Pref.b("FORCE_DARK", false);
+	private static final Pref<BooleanSupplier> DESKTOP_VERSION = Pref.b("DESKTOP_VERSION", false);
 	private static final Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS");
 	private final SharedPreferenceStore preferenceStore;
 
@@ -62,6 +63,22 @@ public class WebBrowserAddon implements FermataAddon {
 
 	public Pref<BooleanSupplier> getForceDarkPref() {
 		return FORCE_DARK;
+	}
+
+	public boolean isForceDark() {
+		return getPreferenceStore().getBooleanPref(getForceDarkPref());
+	}
+
+	public Pref<BooleanSupplier> getDesktopVersionPref() {
+		return DESKTOP_VERSION;
+	}
+
+	public boolean isDesktopVersion() {
+		return getPreferenceStore().getBooleanPref(getDesktopVersionPref());
+	}
+
+	public void setDesktopVersion(boolean v) {
+		getPreferenceStore().applyBooleanPref(DESKTOP_VERSION, v);
 	}
 
 	Map<String, String> getBookmarks() {

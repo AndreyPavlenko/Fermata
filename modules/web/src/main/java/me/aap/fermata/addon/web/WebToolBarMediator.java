@@ -13,7 +13,8 @@ import me.aap.utils.ui.view.ToolBarView;
 import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
 import static android.view.KeyEvent.KEYCODE_ENTER;
 import static android.view.KeyEvent.KEYCODE_NUMPAD_ENTER;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEFT;
 import static me.aap.utils.ui.UiUtils.toPx;
@@ -31,11 +32,21 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 	@Override
 	public void enable(ToolBarView tb, ActivityFragment f) {
 		WebBrowserFragment b = (WebBrowserFragment) f;
+		FermataWebView wv = b.getWebView();
 		EditText t = createAddress(tb, b);
 		String url = b.getUrl();
 		if (url != null) t.setText(url);
 		addView(tb, t, R.id.browser_addr, LEFT);
+		addButton(tb, R.drawable.forward, v -> wv.goForward(), R.id.browser_forward, LEFT);
+		addButton(tb, me.aap.utils.R.drawable.back, v -> wv.goBack(), me.aap.utils.R.id.tool_bar_back_button, LEFT);
+		addButton(tb, R.drawable.clear, v -> t.setText(""), R.id.browser_addr_clear);
+		addButton(tb, me.aap.fermata.R.drawable.bookmark_filled, v -> onBookmarksButtonClick(b), me.aap.fermata.R.id.bookmarks);
+		setButtonsVisibility(tb, wv.canGoBack(), wv.canGoForward());
 		ToolBarView.Mediator.super.enable(tb, f);
+	}
+
+	private void onBookmarksButtonClick(WebBrowserFragment f) {
+		f.getActivityDelegate().getToolBarMenu().show(b -> f.bookmarksMenu(b));
 	}
 
 	public void setAddress(ToolBarView tb, String addr) {
@@ -43,11 +54,17 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		if (et != null) et.setText(addr);
 	}
 
+	public void setButtonsVisibility(ToolBarView tb, boolean back, boolean forward) {
+		tb.findViewById(me.aap.utils.R.id.tool_bar_back_button).setVisibility(back ? VISIBLE : GONE);
+		tb.findViewById(R.id.browser_forward).setVisibility(forward ? VISIBLE : GONE);
+	}
+
 	private EditText createAddress(ToolBarView tb, WebBrowserFragment f) {
 		Context ctx = tb.getContext();
 		int p = (int) toPx(ctx, 2);
 		EditText t = createEditText(tb);
-		ConstraintLayout.LayoutParams lp = setLayoutParams(t, MATCH_PARENT, WRAP_CONTENT);
+		ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
+		lp.horizontalWeight = 2;
 		t.setBackgroundResource(me.aap.utils.R.drawable.tool_bar_edittext_bg);
 		t.setOnKeyListener((v, keyCode, event) -> onKey(f, t, keyCode, event));
 		t.setMaxLines(1);

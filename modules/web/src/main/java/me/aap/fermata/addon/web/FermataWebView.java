@@ -18,6 +18,8 @@ import androidx.annotation.Nullable;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
+import java.util.List;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -35,7 +37,7 @@ import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
  * @author Andrey Pavlenko
  */
 public class FermataWebView extends WebView implements TextChangedListener,
-		TextView.OnEditorActionListener {
+		TextView.OnEditorActionListener, PreferenceStore.Listener {
 	private final boolean isCar;
 	private WebBrowserAddon addon;
 	private FermataChromeClient chrome;
@@ -60,20 +62,53 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		setWebViewClient(webClient);
 		setWebChromeClient(chromeClient);
 		WebSettings s = getSettings();
-		s.setJavaScriptEnabled(true);
 		s.setSupportZoom(true);
+		s.setBuiltInZoomControls(true);
+		s.setDisplayZoomControls(false);
 		s.setDatabaseEnabled(true);
 		s.setDomStorageEnabled(true);
+		s.setAllowFileAccess(true);
 		s.setLoadWithOverviewMode(true);
-		s.setAllowUniversalAccessFromFileURLs(true);
+		s.setJavaScriptEnabled(true);
+		s.setJavaScriptCanOpenWindowsAutomatically(true);
+
+		setDesktopMode(addon.isDesktopVersion(), false);
+		addon.getPreferenceStore().addBroadcastListener(this);
 		addJavascriptInterface(createJsInterface(), FermataJsInterface.NAME);
+		CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
 
 		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
-			PreferenceStore store = addon.getPreferenceStore();
-			if (store.getBooleanPref(addon.getForceDarkPref())) {
+			if (addon.isForceDark()) {
 				WebSettingsCompat.setForceDark(s, WebSettingsCompat.FORCE_DARK_ON);
 			}
 		}
+	}
+
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		WebBrowserAddon addon = getAddon();
+
+		if ((addon != null) && prefs.contains(addon.getDesktopVersionPref())) {
+			setDesktopMode(store.getBooleanPref(addon.getDesktopVersionPref()), true);
+		}
+	}
+
+	private void setDesktopMode(boolean v, boolean reload) {
+		WebSettings s = getSettings();
+		s.setUseWideViewPort(v);
+
+		if (v) {
+			String ua = s.getUserAgentString();
+			int i1 = ua.indexOf('(') + 1;
+			int i2 = ua.indexOf(')', i1);
+			ua = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2).replace("Mobile ", "");
+			Log.d("Changing UserAgent to " + ua);
+			s.setUserAgentString(ua);
+		} else {
+			s.setUserAgentString(null);
+		}
+
+		if (reload) reload();
 	}
 
 	protected FermataJsInterface createJsInterface() {
@@ -112,7 +147,13 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if (f == null) return;
 
 		ToolBarView.Mediator m = f.getToolBarMediator();
-		if (m instanceof WebToolBarMediator) ((WebToolBarMediator) m).setAddress(a.getToolBar(), uri);
+
+		if (m instanceof WebToolBarMediator) {
+			WebToolBarMediator wm = (WebToolBarMediator) m;
+			ToolBarView tb = a.getToolBar();
+			wm.setAddress(tb, uri);
+			wm.setButtonsVisibility(tb, canGoBack(), canGoForward());
+		}
 
 		CookieManager.getInstance().flush();
 	}
@@ -151,21 +192,33 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		Log.d(text);
 		loadUrl("javascript:\n" +
 				"var e =  document.activeElement;\n" +
-				"if (e.isContentEditable) e.innerText = '" + text + "';\n" +
-				"else e.value = '" + text + "';\n" +
-				"e.dispatchEvent(new KeyboardEvent('keyup'));"
+				"var text = '" + text + "';\n" +
+				"if (e.isContentEditable) e.innerText = text;\n" +
+				"else e.value = text;\n" +
+				"e.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));\n" +
+				"e.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));\n" +
+				"e.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));\n" +
+				"e.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));\n" +
+				"e.dispatchEvent(new Event('change', { bubbles: true }));"
 		);
 	}
 
-	protected void sendEnterEvent() {
+
+	protected void submitForm() {
 		if (!BuildConfig.AUTO) return;
 		loadUrl("javascript:\n" +
-				"var e = new KeyboardEvent('keydown',\n" +
-				"{ code: 'Enter', key: 'Enter', charKode: 13, keyCode: 13, view: window });\n" +
-				"document.activeElement.dispatchEvent(e);\n" +
-				"e = new KeyboardEvent('keyup',\n" +
-				"{ code: 'Enter', key: 'Enter', charKode: 13, keyCode: 13, view: window });\n" +
-				"document.activeElement.dispatchEvent(e);");
+				"var ae = document.activeElement;\n" +
+				"if (ae.form != null) {\n" +
+				"  ae.form.submit();\n" +
+				"} else {\n" +
+				"  var e = new KeyboardEvent('keydown',\n" +
+				"  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
+				"  ae.dispatchEvent(e);\n" +
+				"  e = new KeyboardEvent('keyup',\n" +
+				"  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
+				"  ae.dispatchEvent(e);\n" +
+				"}"
+		);
 	}
 
 	public void showKeyboard(String text) {
@@ -213,7 +266,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 			case EditorInfo.IME_ACTION_SEND:
 			case EditorInfo.IME_ACTION_NEXT:
 			case EditorInfo.IME_ACTION_DONE:
-				sendEnterEvent();
+				submitForm();
 				hideKeyboard();
 		}
 
@@ -223,7 +276,18 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		FermataChromeClient chrome = getWebChromeClient();
-		if ((chrome != null) && chrome.isFullScreen()) chrome.onTouchEvent(this, ev);
+
+		if ((chrome != null) && chrome.isFullScreen()) {
+			chrome.onTouchEvent(this, ev);
+		} else if (BuildConfig.AUTO) {
+			FermataActivity a = MainActivityDelegate.get(getContext()).getAppActivity();
+
+			if (a.isInputActive()) {
+				a.stopInput(this);
+				return true;
+			}
+		}
+
 		return super.onInterceptTouchEvent(ev);
 	}
 }

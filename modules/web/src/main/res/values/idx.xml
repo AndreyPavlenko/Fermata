@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="browser_addr" type="id" />
+    <item name="browser_addr_clear" type="id" />
     <item name="browser_forward" type="id" />
+    <item name="desktop_version" type="id" />
     <item name="fullscreen" type="id" />
     <item name="fullscreen_exit" type="id" />
     <item name="video_scaling_fill_proportional" type="id" />

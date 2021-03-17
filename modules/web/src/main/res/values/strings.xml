@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="force_dark">Force dark mode, if supported</string>
-    <string name="go_forward">Go forward</string>
+    <string name="desktop_version">Desktop version</string>
     <string name="full_screen">Full screen</string>
     <string name="full_screen_exit">Exit full screen</string>
     <string name="url" translatable="false">URL</string>

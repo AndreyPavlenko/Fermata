@@ -1,13 +1,26 @@
 package me.aap.fermata.addon.web;
 
 import android.Manifest;
+import android.content.Context;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -42,6 +55,47 @@ public class FermataChromeClient extends WebChromeClient {
 
 	public FermataWebView getWebView() {
 		return web;
+	}
+
+	@Override
+	public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+		Context ctx = view.getContext();
+		ActivityDelegate.get(ctx).createDialogBuilder(ctx)
+				.setTitle(android.R.drawable.ic_dialog_alert, android.R.string.dialog_alert_title)
+				.setMessage(message)
+				.setPositiveButton(android.R.string.ok, (d, w) -> result.confirm())
+				.show();
+		return true;
+	}
+
+	@Override
+	public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+		Context ctx = view.getContext();
+		ActivityDelegate.get(ctx).createDialogBuilder(ctx)
+				.setMessage(message)
+				.setNegativeButton(android.R.string.cancel, (d, w) -> result.cancel())
+				.setPositiveButton(android.R.string.ok, (d, w) -> result.confirm())
+				.show();
+		return true;
+	}
+
+	@Override
+	public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+		Context ctx = view.getContext();
+		ActivityDelegate a = ActivityDelegate.get(ctx);
+		EditText text = a.createEditText(ctx);
+		text.setSingleLine();
+		text.setText(defaultValue);
+		a.createDialogBuilder(ctx)
+				.setTitle(message).setView(text)
+				.setNegativeButton(android.R.string.cancel, (d, i) -> result.cancel())
+				.setPositiveButton(android.R.string.ok, (d, i) -> result.confirm(text.getText().toString())).show();
+		return true;
+	}
+
+	@Override
+	public boolean onJsBeforeUnload(WebView view, String url, String message, JsResult result) {
+		return onJsConfirm(view, url, message, result);
 	}
 
 	@Override
@@ -196,5 +250,60 @@ public class FermataChromeClient extends WebChromeClient {
 				cb.invoke(origin, ok, true);
 			});
 		}
+	}
+
+	@Override
+	public void onPermissionRequest(PermissionRequest request) {
+		Log.d("Permissions requested: ", Arrays.toString(request.getResources()));
+		Map<String, String> perms = new HashMap<>();
+
+		for (String p : request.getResources()) {
+			switch (p) {
+				case PermissionRequest.RESOURCE_AUDIO_CAPTURE:
+					perms.put(Manifest.permission.RECORD_AUDIO, p);
+					break;
+				case PermissionRequest.RESOURCE_VIDEO_CAPTURE:
+					perms.put(Manifest.permission.CAMERA, p);
+					break;
+			}
+		}
+
+		if (perms.isEmpty()) {
+			Log.d("No permissions granted");
+			request.deny();
+			return;
+		}
+
+		MainActivityDelegate a = MainActivityDelegate.get(getWebView().getContext());
+
+		if (BuildConfig.AUTO && a.isCarActivity()) {
+			// Activity.checkPermissions() is not supported by AA
+			Log.d("Granted permissions: ", perms.values());
+			request.grant(perms.values().toArray(new String[0]));
+			return;
+		}
+
+		String[] keys = perms.keySet().toArray(new String[0]);
+		FutureSupplier<int[]> perm = a.getAppActivity().checkPermissions(keys);
+		perm.onCompletion((r, err) -> {
+			if (err != null) {
+				Log.e(err, "Permission request failed");
+				request.deny();
+			} else {
+				List<String> granted = new ArrayList<>(r.length);
+
+				for (int i = 0; i < r.length; i++) {
+					if (r[i] == PERMISSION_GRANTED) granted.add(perms.get(keys[i]));
+				}
+
+				if (granted.isEmpty()) {
+					Log.d("No permissions granted");
+					request.deny();
+				} else {
+					Log.d("Granted permissions: ", granted);
+					request.grant(granted.toArray(new String[0]));
+				}
+			}
+		});
 	}
 }

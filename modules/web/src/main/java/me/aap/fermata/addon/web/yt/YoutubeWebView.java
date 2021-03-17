@@ -54,6 +54,17 @@ public class YoutubeWebView extends FermataWebView {
 		CookieManager.getInstance().flush();
 	}
 
+	protected void submitForm() {
+		if (!me.aap.fermata.BuildConfig.AUTO) return;
+		loadUrl("javascript:\n" +
+				"var e = new KeyboardEvent('keydown',\n" +
+				"{ code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
+				"document.activeElement.dispatchEvent(e);\n" +
+				"e = new KeyboardEvent('keyup',\n" +
+				"{ code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
+				"document.activeElement.dispatchEvent(e);");
+	}
+
 	void attachListeners() {
 		String debug = BuildConfig.DEBUG ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
