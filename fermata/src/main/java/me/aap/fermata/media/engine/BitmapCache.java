@@ -31,21 +31,26 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.io.ByteBufferInputStream;
 import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.log.Log;
+import me.aap.utils.net.http.HttpConnection;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.ui.UiUtils;
 
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.security.SecurityUtils.sha1;
 import static me.aap.utils.text.TextUtils.appendHexString;
 import static me.aap.utils.ui.UiUtils.resizedBitmap;
@@ -62,6 +67,7 @@ public class BitmapCache {
 	private final Map<String, Ref> cache = new HashMap<>();
 	private final ReferenceQueue<Bitmap> refQueue = new ReferenceQueue<>();
 	private final PromiseQueue queue = new PromiseQueue(App.get().getExecutor());
+	private final Map<String, String> invalidBitmapUris = new ConcurrentHashMap<>();
 
 	public BitmapCache(MediaLib lib) {
 		this.lib = lib;
@@ -105,6 +111,11 @@ public class BitmapCache {
 		}
 
 		if (bm != null) return completed(bm);
+
+		if (uri.startsWith("http://") || uri.startsWith("https://")) {
+			return loadHttpBitmap(uri, iconUri, size);
+		}
+
 		return queue.enqueue(() -> loadBitmap(ctx, uri, iconUri, cache, size));
 	}
 
@@ -145,17 +156,13 @@ public class BitmapCache {
 					Drawable d = ResourcesCompat.getDrawable(res, id, ctx.getTheme());
 					if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
 					break;
-				case "http":
-				case "http:":
-					bm = loadHttpBitmap(uri);
-					break;
 				case "content":
 					bm = loadContentBitmap(ctx, uri);
 					break;
 				default:
 					FermataVfsManager vfs = lib.getVfsManager();
 					if (vfs.isSupportedScheme(scheme))
-						bm = loadHttpBitmap(vfs.getHttpRid(Rid.create(u)).toString());
+						bm = loadUriBitmap(vfs.getHttpRid(Rid.create(u)).toString());
 			}
 
 			if (bm == null) return null;
@@ -167,10 +174,42 @@ public class BitmapCache {
 		}
 	}
 
-	private Bitmap loadHttpBitmap(String uri) throws IOException {
-		try (InputStream in = new URL(uri).openStream()) {
-			return BitmapFactory.decodeStream(in);
-		}
+	private FutureSupplier<Bitmap> loadHttpBitmap(String uri, String cacheUri, int size) {
+		if (invalidBitmapUris.containsKey(uri)) return completedNull();
+
+		Promise<Bitmap> p = new Promise<>();
+
+		HttpConnection.connect(o -> {
+			o.url(uri);
+			o.responseTimeout = 10;
+		}, (resp, err) -> {
+			if (err != null) {
+				p.completeExceptionally(err);
+				return p;
+			}
+
+			return resp.getPayload((payload, fail) -> {
+				if (fail != null) {
+					p.completeExceptionally(fail);
+					return p;
+				}
+
+				Bitmap bm = BitmapFactory.decodeStream(new ByteBufferInputStream(payload));
+
+				if (bm == null) {
+					invalidBitmapUris.put(uri, uri);
+					p.completeExceptionally(new IOException("Failed to load bitmap: " + uri));
+				} else {
+					if (size != 0) bm = resizedBitmap(bm, size);
+					if (cacheUri != null) bm = cacheBitmap(cacheUri, bm);
+					p.complete(bm);
+				}
+
+				return p;
+			});
+		});
+
+		return p;
 	}
 
 	private Bitmap loadContentBitmap(Context ctx, String uri) throws IOException {
@@ -188,6 +227,12 @@ public class BitmapCache {
 				if (afd == null) return null;
 				return BitmapFactory.decodeFileDescriptor(afd.getFileDescriptor());
 			}
+		}
+	}
+
+	private Bitmap loadUriBitmap(String uri) throws IOException {
+		try (InputStream in = new URL(uri).openStream()) {
+			return BitmapFactory.decodeStream(in);
 		}
 	}
 
@@ -272,7 +317,8 @@ public class BitmapCache {
 	private void saveIcon(Bitmap bm, String uri) {
 		File f = new File(iconsCache, uri.substring(iconsCacheUri.length()));
 		File p = f.getParentFile();
-		if (p != null) p.mkdirs();
+		if (p != null) //noinspection ResultOfMethodCallIgnored
+			p.mkdirs();
 
 		try (OutputStream out = new FileOutputStream(f)) {
 			bm.compress(Bitmap.CompressFormat.JPEG, 100, out);

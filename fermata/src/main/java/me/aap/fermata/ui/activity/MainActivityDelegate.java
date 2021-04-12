@@ -573,7 +573,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					}
 				});
 
-				if (!f.isDone() || !f.peek()) {
+				if (!f.isDone() || f.isFailed() || !f.peek()) {
 					showFragment(R.id.folders_fragment);
 					setContentLoading(f);
 				}

@@ -35,13 +35,13 @@ import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.vfs.VirtualFileSystem;
-import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
+import static me.aap.fermata.vfs.FermataVfsManager.M3U_ID;
 import static me.aap.fermata.vfs.FermataVfsManager.SFTP_ID;
 import static me.aap.fermata.vfs.FermataVfsManager.SMB_ID;
 import static me.aap.utils.async.Completed.completed;
@@ -160,6 +160,7 @@ public class FoldersFragment extends MediaLibFragment {
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
 			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
+			b.addItem(R.id.m3u_playlist, R.string.m3u_playlist);
 		});
 	}
 
@@ -179,6 +180,9 @@ public class FoldersFragment extends MediaLibFragment {
 				return true;
 			case R.id.vfs_smb:
 				addFolderVfs(SMB_ID, R.string.vfs_smb);
+				return true;
+			case R.id.m3u_playlist:
+				addFolderVfs(M3U_ID, R.string.m3u_playlist);
 				return true;
 			default:
 				return false;
@@ -259,13 +263,15 @@ public class FoldersFragment extends MediaLibFragment {
 		folders.addItem(uri).main().thenRun(() -> getAdapter().setParent(folders));
 	}
 
-	private void addFolderResult(VirtualResource folder) {
+	private void addFolderResult(VirtualResource r) {
 		MainActivityDelegate a = getMainActivity();
-		if (folder instanceof VirtualFolder) {
+
+		if (r != null) {
 			Folders folders = a.getLib().getFolders();
-			folders.addItem(folder.getRid().toAndroidUri()).main()
+			folders.addItem(r.getRid().toAndroidUri()).main()
 					.thenRun(() -> getAdapter().setParent(folders));
 		}
+
 		a.showFragment(getFragmentId());
 	}
 

@@ -10,7 +10,8 @@ import java.util.List;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
-import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.vfs.m3u.M3uFileSystem;
+import me.aap.fermata.vfs.m3u.M3uFileSystemProvider;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.BooleanSupplier;
@@ -37,6 +38,7 @@ public class FermataVfsManager extends VfsManager {
 	public static final String GDRIVE_ID = "gdrive";
 	public static final String SFTP_ID = "sftp";
 	public static final String SMB_ID = "smb";
+	public static final String M3U_ID = "m3u";
 	private static final String CHANNEL_ID = "fermata.vfs.install";
 	private static final Pref<BooleanSupplier> ENABLE_GDRIVE = Pref.b("ENABLE_GDRIVE", false);
 	private static final Pref<BooleanSupplier> ENABLE_SFTP = Pref.b("ENABLE_SFTP", false);
@@ -62,6 +64,8 @@ public class FermataVfsManager extends VfsManager {
 				return getProvider(scheme, ENABLE_SFTP, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
 			case SMB_ID:
 				return getProvider(scheme, ENABLE_SMB, SMB_CLASS, SMB_ID, R.string.vfs_smb);
+			case M3U_ID:
+				return completed(new M3uFileSystemProvider());
 			default:
 				return completedNull();
 		}
@@ -81,6 +85,7 @@ public class FermataVfsManager extends VfsManager {
 		p.add(LocalFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(GenericFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(ContentFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
+		p.add(M3uFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		addFileSystem(p, ps, ENABLE_GDRIVE, app, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
 		addFileSystem(p, ps, ENABLE_SFTP, app, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
 		addFileSystem(p, ps, ENABLE_SMB, app, SMB_CLASS, SMB_ID, R.string.vfs_smb);
@@ -95,7 +100,7 @@ public class FermataVfsManager extends VfsManager {
 		VfsProvider provider = loadProvider(className, moduleId);
 
 		if (provider != null) {
-			FutureSupplier<VirtualFileSystem> f = provider
+			FutureSupplier<? extends VirtualFileSystem> f = provider
 					.createFileSystem(ctx, () -> getActivity(ctx, moduleName), ps);
 			if (f.isDone() && !f.isFailed()) fileSystems.add(f.getOrThrow());
 		}
@@ -130,7 +135,7 @@ public class FermataVfsManager extends VfsManager {
 		}
 	}
 
-	private FutureSupplier<VirtualFileSystem> addProvider(VfsProvider p, @StringRes int moduleName) {
+	private FutureSupplier<? extends VirtualFileSystem> addProvider(VfsProvider p, @StringRes int moduleName) {
 		FermataApplication app = FermataApplication.get();
 		return p.createFileSystem(app, () -> getActivity(app, moduleName), app.getPreferenceStore())
 				.onSuccess(this::mount);
@@ -162,7 +167,7 @@ public class FermataVfsManager extends VfsManager {
 				}
 			}).thenComplete(contentLoading);
 
-			((MainActivityDelegate) a.getActivityDelegate()).setContentLoading(contentLoading);
+			a.getActivityDelegate().setContentLoading(contentLoading);
 			return install;
 		});
 	}

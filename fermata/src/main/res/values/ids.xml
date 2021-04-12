@@ -111,6 +111,7 @@
     <item name="vfs_gdrive" type="id" />
     <item name="vfs_sftp" type="id" />
     <item name="vfs_smb" type="id" />
+    <item name="m3u_playlist" type="id" />
 
     <item name="car_edit_text" type="id" />
 

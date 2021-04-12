@@ -10,7 +10,7 @@ import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.vfs.VirtualFileSystem;
-import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.gdrive.GdriveFileSystem;
 
 import static me.aap.utils.async.Completed.completedNull;
@@ -36,12 +36,12 @@ public class Provider extends VfsProviderBase {
 	}
 
 	@Override
-	protected FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
+	protected FutureSupplier<? extends VirtualResource> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
 		return completedNull();
 	}
 
 	@Override
-	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualFolder folder) {
+	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualResource folder) {
 		return completedVoid();
 	}
 }

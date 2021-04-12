@@ -35,16 +35,16 @@ public abstract class VfsProviderBase implements VfsProvider {
 	@SuppressWarnings({"FieldCanBeLocal", "unused"})
 	private PreferenceStore.Listener prefsListener;
 
-	protected FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
+	protected FutureSupplier<? extends VirtualResource> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
 		return completedNull();
 	}
 
-	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualFolder folder) {
+	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualResource folder) {
 		return completedVoid();
 	}
 
 	@Override
-	public FutureSupplier<VirtualFolder> select(MainActivityDelegate a, List<VirtualFileSystem> fs) {
+	public FutureSupplier<? extends VirtualResource> select(MainActivityDelegate a, List<? extends VirtualFileSystem> fs) {
 		if (fs.isEmpty()) return Completed.failed(new VfsException("No file system found"));
 
 		VirtualFileSystem f = fs.get(0);
@@ -52,8 +52,9 @@ public abstract class VfsProviderBase implements VfsProvider {
 		a.setContentLoading(getRoots);
 		return getRoots.main().then(roots -> {
 			if (roots.isEmpty() && addRemoveSupported()) {
-				return addFolder(a, f).then(folder -> {
-					if (folder != null) {
+				return addFolder(a, f).then(r -> {
+					if (r instanceof VirtualFolder) {
+						VirtualFolder folder = (VirtualFolder) r;
 						return folder.getChildren().main().then(c -> pickFolder(a, f, folder, c));
 					} else {
 						return cancelled();
@@ -65,14 +66,14 @@ public abstract class VfsProviderBase implements VfsProvider {
 		});
 	}
 
-	protected FutureSupplier<VirtualFolder> pickFolder(
+	protected FutureSupplier<VirtualResource> pickFolder(
 			MainActivityDelegate a, VirtualFileSystem fs, VirtualResource parent,
 			List<? extends VirtualResource> children) {
-		Promise<VirtualFolder> p = new Promise<>();
+		Promise<VirtualResource> p = new Promise<>();
 		FilePickerFragment f = a.showFragment(R.id.file_picker);
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setResources(parent, children);
-		f.setFileConsumer(r -> p.complete((VirtualFolder) r));
+		f.setFileConsumer(p::complete);
 
 		if (addRemoveSupported()) {
 			f.setCreateFolder(new FilePickerFragment.CreateFolder() {
@@ -98,7 +99,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 					b.addItem(R.id.folders_remove, R.drawable.remove_folder, R.string.remove_folder);
 					b.setSelectionHandler(i -> {
 						if (i.getItemId() != R.id.folders_remove) return false;
-						removeFolder(a, fs, (VirtualFolder) item).thenRun(() -> f.setFileSystem(fs));
+						removeFolder(a, fs, item).thenRun(() -> f.setFileSystem(fs));
 						return true;
 					});
 				});

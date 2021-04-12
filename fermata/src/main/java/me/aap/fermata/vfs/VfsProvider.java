@@ -11,15 +11,16 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VirtualResource;
 
 /**
  * @author Andrey Pavlenko
  */
 public interface VfsProvider {
 
-	FutureSupplier<VirtualFileSystem> createFileSystem(
+	FutureSupplier<? extends VirtualFileSystem> createFileSystem(
 			Context ctx, Supplier<FutureSupplier<? extends AppActivity>> activitySupplier,
 			PreferenceStore ps);
 
-	FutureSupplier<VirtualFolder> select(MainActivityDelegate a, List<VirtualFileSystem> fs);
+	FutureSupplier<? extends VirtualResource> select(MainActivityDelegate a, List<? extends VirtualFileSystem> fs);
 }

@@ -31,6 +31,7 @@ import me.aap.utils.pref.SharedPreferenceStore;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
@@ -104,27 +105,31 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			}
 		}
 
-		switch (id.substring(0, idx)) {
-			case FileItem.SCHEME:
-				return FileItem.create(this, id);
-			case FolderItem.SCHEME:
-				return FolderItem.create(this, id);
-			case CueItem.SCHEME:
-				return CueItem.create(this, id);
-			case CueTrackItem.SCHEME:
-				return CueTrackItem.create(this, id);
-			case M3uItem.SCHEME:
-				return M3uItem.create(this, id);
-			case M3uGroupItem.SCHEME:
-				return M3uGroupItem.create(this, id);
-			case M3uTrackItem.SCHEME:
-				return M3uTrackItem.create(this, id);
-			case DefaultFavorites.SCHEME:
-				return getFavorites().getItem(id);
-			case DefaultPlaylists.SCHEME:
-				return getPlaylists().getItem(id);
-			default:
-				return completedNull();
+		try {
+			switch (id.substring(0, idx)) {
+				case FileItem.SCHEME:
+					return FileItem.create(this, id);
+				case FolderItem.SCHEME:
+					return FolderItem.create(this, id);
+				case CueItem.SCHEME:
+					return CueItem.create(this, id);
+				case CueTrackItem.SCHEME:
+					return CueTrackItem.create(this, id);
+				case M3uItem.SCHEME:
+					return M3uItem.create(this, id);
+				case M3uGroupItem.SCHEME:
+					return M3uGroupItem.create(this, id);
+				case M3uTrackItem.SCHEME:
+					return M3uTrackItem.create(this, id);
+				case DefaultFavorites.SCHEME:
+					return getFavorites().getItem(id);
+				case DefaultPlaylists.SCHEME:
+					return getPlaylists().getItem(id);
+				default:
+					return completedNull();
+			}
+		} catch (Throwable ex) {
+			return failed(ex);
 		}
 	}
 

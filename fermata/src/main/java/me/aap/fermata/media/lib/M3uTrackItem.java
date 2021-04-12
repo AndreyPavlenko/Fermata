@@ -114,13 +114,12 @@ class M3uTrackItem extends PlayableItemBase {
 		if (genre != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, genre);
 
 		if (logo != null) {
-			return getM3uItem().getResource().getParent().then(dir -> {
-				if (dir == null) return super.buildMeta(meta);
-				return getLib().getVfsManager().resolve(logo, dir).then(f -> {
-					if (f != null) meta.setImageUri(f.getRid().toString());
-					return super.buildMeta(meta);
-				});
-			});
+			return getM3uItem().getResource().getParent().then(dir ->
+					getLib().getVfsManager().resolve(logo, dir).then(f -> {
+						if (f != null) meta.setImageUri(f.getRid().toString());
+						return super.buildMeta(meta);
+					})
+			);
 		}
 
 		return super.buildMeta(meta);

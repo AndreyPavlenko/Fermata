@@ -15,6 +15,7 @@ import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
+import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.sftp.SftpFileSystem;
 
 import static me.aap.utils.async.Completed.completedNull;
@@ -33,13 +34,13 @@ public class Provider extends VfsProviderBase {
 	private final Pref<Supplier<String>> KEY_PASSWD = Pref.s("KEY_PASSWD");
 
 	@Override
-	public FutureSupplier<VirtualFileSystem> createFileSystem(
+	public FutureSupplier<? extends VirtualFileSystem> createFileSystem(
 			Context ctx, Supplier<FutureSupplier<? extends AppActivity>> activitySupplier, PreferenceStore ps) {
 		return SftpFileSystem.Provider.getInstance().createFileSystem(ps);
 	}
 
 	@Override
-	protected FutureSupplier<VirtualFolder> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
+	protected FutureSupplier<? extends VirtualResource> addFolder(MainActivityDelegate a, VirtualFileSystem fs) {
 		PreferenceSet prefs = new PreferenceSet();
 		PreferenceStore ps = PrefsHolder.instance;
 
@@ -98,8 +99,8 @@ public class Provider extends VfsProviderBase {
 	}
 
 	@Override
-	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualFolder folder) {
-		((SftpFileSystem) fs).removeRoot(folder);
+	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualResource folder) {
+		((SftpFileSystem) fs).removeRoot((VirtualFolder) folder);
 		return completedVoid();
 	}
 

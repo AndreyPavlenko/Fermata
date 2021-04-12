@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 
+import androidx.annotation.NonNull;
+
 import me.aap.fermata.addon.web.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataJsInterface;
@@ -46,6 +48,12 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	public YoutubeAddon getAddon() {
 		return (YoutubeAddon) super.getAddon();
+	}
+
+	@Override
+	public void loadUrl(@NonNull String url) {
+		Log.d("Loading URL: " + url);
+		super.loadUrl(url);
 	}
 
 	@Override
@@ -108,28 +116,25 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void prev() {
-		FermataChromeClient chrome = getWebChromeClient();
-		if (chrome == null) return;
-
-		chrome.exitFullScreen().thenRun(() -> loadUrl("javascript:\n" +
-				"var c = document.getElementsByClassName('player-controls-middle center');\n" +
-				"if (c.length != 0) c = c[0].querySelectorAll('button');\n" +
-				"if (c.length != 0) c[0].click();\n" +
-				"else " + JS_EVENT + "(" + JS_ERR + ", 'Button not found: player-controls-middle center');"));
+		prevNext(0, 0);
 	}
 
 	void next() {
+		prevNext(4, 1);
+	}
+
+	private void prevNext(int idx, int plIdx) {
 		FermataChromeClient chrome = getWebChromeClient();
 		if (chrome == null) return;
 
 		chrome.exitFullScreen().thenRun(() -> loadUrl("javascript:\n" +
 				"var c = document.getElementsByClassName('player-controls-middle center');\n" +
 				"if (c.length != 0) c = c[0].querySelectorAll('button');\n" +
-				"if (c.length >= 5) c[4].click();  \n" +
+				"if (c.length >= 5) c[" + idx + "].click();  \n" +
 				"else {\n" +
-				"  c = document.getElementsByClassName('ytp-upnext-autoplay-icon');\n" +
-				"  if (c.length != 0) c[0].click();\n" +
-				"  else " + JS_EVENT + "(" + JS_ERR + ", 'Button not found: player-controls-middle center');\n" +
+				"  c = document.getElementsByClassName('playlist-controls-primary');\n" +
+				"  if ((c.length != 0) && (c[0].children.length >= 2)) c[0].children[" + plIdx + "].children[0].click();\n" +
+				"  else " + JS_EVENT + "(" + JS_ERR + ", 'Button not found: playlist-controls-primary');\n" +
 				"}"));
 	}
 

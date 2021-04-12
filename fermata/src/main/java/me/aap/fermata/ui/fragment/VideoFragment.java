@@ -75,7 +75,6 @@ public class VideoFragment extends MainActivityFragment implements FermataServic
 		MainActivityDelegate a = getMainActivity();
 		if (a == null) return;
 
-		a.setVideoMode(false, null);
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
 		if (b == null) return;
 

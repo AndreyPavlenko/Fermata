@@ -5,15 +5,21 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.vfs.m3u.M3uFileSystem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureRef;
 import me.aap.utils.async.FutureSupplier;
@@ -25,7 +31,6 @@ import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -37,7 +42,7 @@ import static me.aap.utils.text.TextUtils.indexOfChar;
 class M3uItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3u";
 	private FutureSupplier<Uri> iconUri;
-	private final FutureRef<Data> data = new FutureRef<Data>() {
+	final FutureRef<Data> data = new FutureRef<Data>() {
 		@Override
 		protected FutureSupplier<Data> create() {
 			return App.get().execute(M3uItem.this::parse);
@@ -62,7 +67,7 @@ class M3uItem extends BrowsableItemBase {
 		String m3uArtist = null;
 		String m3uGenre = null;
 		String cover = null;
-		byte m3uType = 0; // 0 - unknown, 1 - audio, 2 - video
+		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 1; // 0 - unknown, 1 - audio, 2 - video
 
 		String name = null;
 		String group = null;
@@ -74,8 +79,7 @@ class M3uItem extends BrowsableItemBase {
 		byte type = 0;
 		boolean first = true;
 
-		try (BufferedReader r = new BufferedReader(new InputStreamReader(
-				m3uFile.getInputStream().asInputStream(), UTF_8))) {
+		try (BufferedReader r = new BufferedReader(createReader(m3uFile))) {
 			read:
 			for (String l = r.readLine(); l != null; l = r.readLine()) {
 				l = l.trim();
@@ -248,15 +252,29 @@ class M3uItem extends BrowsableItemBase {
 
 	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
-		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
 
-		return lib.getItem(tb.releaseString()).map(i -> {
-			FileItem file = (FileItem) i;
-			if (file == null) return null;
+		synchronized (lib.cacheLock()) {
+			Item i = lib.getFromCache(id);
+			if (i != null) return completed(i);
+		}
 
-			FolderItem parent = (FolderItem) file.getParent();
-			return create(id, parent, (VirtualFile) file.getResource(), lib);
+		M3uFileSystem fs = M3uFileSystem.getInstance();
+		return fs.getResource(fs.toRid(id.substring(SCHEME.length() + 1))).main().then(r -> {
+			if (r != null) return completed(create(id, lib.getFolders(), (VirtualFile) r, lib));
+
+			SharedTextBuilder tb = SharedTextBuilder.get();
+			tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
+
+			return lib.getItem(tb.releaseString()).map(i -> {
+				if (!(i instanceof FileItem)) {
+					Log.w("Resource not found: ", id);
+					return null;
+				}
+
+				FileItem file = (FileItem) i;
+				BrowsableItem parent = file.getParent();
+				return create(id, parent, (VirtualFile) file.getResource(), lib);
+			});
 		});
 	}
 
@@ -332,6 +350,64 @@ class M3uItem extends BrowsableItemBase {
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
 		return data.get().map(d -> d.subtitle);
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<Void> refresh() {
+		Data d = data.peek();
+		VirtualResource r = getResource();
+
+		if (d != null) {
+			data.clear();
+			DefaultMediaLib lib = (DefaultMediaLib) getLib();
+
+			synchronized (lib.cacheLock()) {
+				lib.removeFromCache(this);
+
+				for (Item i : d.tracks) {
+					if (i instanceof M3uGroupItem) {
+						for (M3uTrackItem t : ((M3uGroupItem) i).tracks) {
+							lib.removeFromCache(t);
+						}
+					}
+
+					lib.removeFromCache(i);
+				}
+			}
+		}
+
+		if (r.getVirtualFileSystem() instanceof M3uFileSystem) {
+			M3uFileSystem.getInstance().reload(r.getRid());
+		}
+
+		return super.refresh();
+	}
+
+	protected Reader createReader(VirtualFile m3uFile) throws IOException {
+		InputStream in = m3uFile.getInputStream().asInputStream();
+		String enc = m3uFile.getContentEncoding();
+		String cs = m3uFile.getCharacterEncoding();
+
+		if (enc != null) {
+			if ("gzip".equals(enc)) {
+				in = new GZIPInputStream(in);
+			} else if ("deflate".equals(enc)) {
+				in = new InflaterInputStream(in);
+			} else {
+				throw new IOException("Unsupported content encoding: " + enc);
+			}
+		}
+
+		return new InputStreamReader(in, (cs == null) ? "UTF-8" : cs);
+	}
+
+	private boolean isVideo(VirtualFile m3uFile) {
+		if (m3uFile.getVirtualFileSystem() instanceof M3uFileSystem) {
+			return M3uFileSystem.getInstance().isVideo(m3uFile.getRid());
+		} else {
+			return false;
+		}
 	}
 
 	private static String trim(String s) {
