@@ -134,6 +134,8 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
 			configure(getContext().getResources().getConfiguration());
 			MainActivityDelegate a = MainActivityDelegate.get(getContext());
+			if (a == null) return;
+
 			MediaLibFragment f = a.getActiveMediaLibFragment();
 
 			if ((f != null) && (f.getView() == this)) {

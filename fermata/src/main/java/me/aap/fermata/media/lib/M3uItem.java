@@ -67,7 +67,7 @@ class M3uItem extends BrowsableItemBase {
 		String m3uArtist = null;
 		String m3uGenre = null;
 		String cover = null;
-		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 1; // 0 - unknown, 1 - audio, 2 - video
+		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 0; // 0 - unknown, 1 - audio, 2 - video
 
 		String name = null;
 		String group = null;

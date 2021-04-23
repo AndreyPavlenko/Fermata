@@ -30,7 +30,8 @@ public class FermataWebClient extends WebViewClientCompat {
 		if (loading != null) {
 			loading.accept(true);
 		} else {
-			MainActivityDelegate.get(view.getContext()).setContentLoading(new Promise<>());
+			MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
+			if (a != null) a.setContentLoading(new Promise<>());
 		}
 		super.onPageStarted(view, url, favicon);
 	}

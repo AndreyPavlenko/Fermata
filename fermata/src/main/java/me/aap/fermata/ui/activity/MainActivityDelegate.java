@@ -171,7 +171,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	public boolean isCarActivity() {
-		return getAppActivity().isCarActivity();
+		FermataActivity a = getAppActivity();
+		return (a != null) && a.isCarActivity();
 	}
 
 	@NonNull
