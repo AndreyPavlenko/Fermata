@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.vfs.VfsProviderBase;
@@ -19,6 +20,7 @@ import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
 
+import static me.aap.fermata.vfs.m3u.M3uFileSystem.AGENT;
 import static me.aap.fermata.vfs.m3u.M3uFileSystem.CHARSET;
 import static me.aap.fermata.vfs.m3u.M3uFileSystem.ENCODING;
 import static me.aap.fermata.vfs.m3u.M3uFileSystem.ETAG;
@@ -56,6 +58,12 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 			o.title = R.string.m3u_playlist_url;
 			o.stringHint = "http://example.com/playlist.m3u";
 		});
+		prefs.addStringPref(o -> {
+			o.store = ps;
+			o.pref = AGENT;
+			o.title = R.string.m3u_playlist_agent;
+			o.stringHint = "Fermata/" + BuildConfig.VERSION_NAME;
+		});
 		prefs.addBooleanPref(o -> {
 			o.store = ps;
 			o.pref = VIDEO;
@@ -64,7 +72,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 
 		return requestPrefs(a, prefs, ps).then(ok -> {
 			if (!ok) return completedNull();
-			return load(ps.getStringPref(NAME), ps.getStringPref(URL), ps.getBooleanPref(VIDEO));
+			return load(ps.getStringPref(NAME), ps.getStringPref(URL), ps.getStringPref(AGENT), ps.getBooleanPref(VIDEO));
 		});
 	}
 
@@ -77,7 +85,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 	@Override
 	@SuppressWarnings("unchecked")
 	protected boolean validate(PreferenceStore ps) {
-		if(!allSet(ps, NAME, URL)) return false;
+		if (!allSet(ps, NAME, URL)) return false;
 		String u = ps.getStringPref(URL);
 		return u.startsWith("http://") || u.startsWith("https://");
 	}
@@ -87,7 +95,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 		return false;
 	}
 
-	private static FutureSupplier<VirtualResource> load(String name, String url, boolean video) {
+	private static FutureSupplier<VirtualResource> load(String name, String url, String agent, boolean video) {
 		M3uFileSystem fs = M3uFileSystem.getInstance();
 		Rid rid = fs.toRid(name, url);
 		SharedPreferenceStore prefs = getM3uPrefs(rid);
@@ -96,6 +104,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 			e.setStringPref(NAME, name);
 			e.setStringPref(URL, url);
 			e.setBooleanPref(VIDEO, video);
+			if ((agent != null) && !(agent = agent.trim()).isEmpty()) e.setStringPref(AGENT, agent);
 		}
 
 		return fs.getResource(rid).onCompletion((r, err) -> {
@@ -114,6 +123,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 		try (PreferenceStore.Edit e = prefs.editPreferenceStore(true)) {
 			e.removePref(NAME);
 			e.removePref(URL);
+			e.removePref(AGENT);
 			e.removePref(VIDEO);
 			e.removePref(ETAG);
 			e.removePref(CHARSET);

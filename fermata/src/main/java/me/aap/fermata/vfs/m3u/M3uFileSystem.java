@@ -51,6 +51,7 @@ public class M3uFileSystem implements VirtualFileSystem {
 	static final Pref<Supplier<String>> NAME = Pref.s("NAME");
 	static final Pref<Supplier<String>> URL = Pref.s("URL");
 	static final Pref<BooleanSupplier> VIDEO = Pref.b("VIDEO", false);
+	static final Pref<Supplier<String>> AGENT = Pref.s("AGENT");
 	static final Pref<Supplier<String>> ETAG = Pref.s("ETAG");
 	static final Pref<Supplier<String>> CHARSET = Pref.s("CHARSET", "UTF-8");
 	static final Pref<Supplier<String>> ENCODING = Pref.s("ENCODING");
@@ -93,6 +94,10 @@ public class M3uFileSystem implements VirtualFileSystem {
 		return getM3uPrefs(rid).getBooleanPref(VIDEO);
 	}
 
+	public String getUserAgent(Rid rid) {
+		return getM3uPrefs(rid).getStringPref(AGENT);
+	}
+
 	private static FutureSupplier<VirtualResource> load(Rid rid, boolean useCached) {
 		M3uFileSystem fs = getInstance();
 		Promise<VirtualResource> p = new Promise<>();
@@ -132,6 +137,7 @@ public class M3uFileSystem implements VirtualFileSystem {
 		HttpConnection.connect(o -> {
 			o.url(url);
 			o.responseTimeout = 10;
+			o.userAgent = prefs.getStringPref(AGENT);
 			if (cacheFile.isFile()) o.ifNonMatch = prefs.getStringPref(ETAG);
 		}, (resp, err) -> {
 			if (err != null) {

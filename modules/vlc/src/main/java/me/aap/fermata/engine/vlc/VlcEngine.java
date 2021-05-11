@@ -93,13 +93,19 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 		try {
 			Uri uri = source.getLocation();
+			String scheme = uri.getScheme();
 
-			if ("content".equals(uri.getScheme())) {
+			if ("content".equals(scheme)) {
 				ContentResolver cr = vlc.getAppContext().getContentResolver();
 				fd = cr.openFileDescriptor(uri, "r");
 				media = (fd != null) ? new Media(vlc, fd.getFileDescriptor()) : new Media(vlc, uri);
 			} else {
 				media = new Media(vlc, uri);
+
+				if (scheme.startsWith("http")) {
+					String agent = source.getUserAgent();
+					if (agent != null) media.addOption(":http-user-agent='" + agent + "'");
+				}
 			}
 
 			PendingSource pending = new PendingSource(source, media, fd);

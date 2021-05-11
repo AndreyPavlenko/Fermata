@@ -181,6 +181,7 @@
     <string name="m3u_playlist">M3U плейлист</string>
     <string name="m3u_playlist_name" translatable="false">Название</string>
     <string name="m3u_playlist_url" translatable="false">URL</string>
+    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_video" translatable="false">Видео плейлист</string>
 
     <string name="eq_manual">Ручные</string>

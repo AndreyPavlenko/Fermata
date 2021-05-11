@@ -3,10 +3,12 @@ package me.aap.fermata.media.lib;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.vfs.m3u.M3uFileSystem;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
@@ -142,5 +144,16 @@ class M3uTrackItem extends PlayableItemBase {
 		String id = getId();
 		if (id.startsWith(SCHEME)) return id;
 		return id.substring(id.indexOf(SCHEME));
+	}
+
+	@Nullable
+	@Override
+	public String getUserAgent() {
+		VirtualResource r = getParent().getResource();
+		if (r.getVirtualFileSystem() instanceof M3uFileSystem) {
+			return M3uFileSystem.getInstance().getUserAgent(r.getRid());
+		} else {
+			return null;
+		}
 	}
 }

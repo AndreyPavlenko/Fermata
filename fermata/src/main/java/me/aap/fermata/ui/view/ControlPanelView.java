@@ -828,7 +828,7 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 				ControlPanelView.super.setVisibility(GONE);
 
 				for (View v : views) {
-					v.setVisibility(GONE);
+					if (v != null) v.setVisibility(GONE);
 				}
 			}
 		}

@@ -365,7 +365,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		if (i instanceof BrowsableItem) {
 			return ((BrowsableItem) i).getName();
 		} else if (i instanceof PlayableItem) {
-			MediaMetadataCompat md = ((PlayableItem) i).getMediaData().get(null);
+			MediaMetadataCompat md = ((PlayableItem) i).getMediaData().peek();
 			String title = (md != null) ? md.getString(MediaMetadataCompat.METADATA_KEY_TITLE) : null;
 			if (title != null) return title;
 		}

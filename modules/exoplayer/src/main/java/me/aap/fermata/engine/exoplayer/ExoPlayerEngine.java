@@ -21,6 +21,7 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoListener;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -35,6 +36,7 @@ import static me.aap.utils.async.Completed.completed;
  * @author Andrey Pavlenko
  */
 public class ExoPlayerEngine implements MediaEngine, Player.EventListener, VideoListener {
+	private final Context ctx;
 	private final Listener listener;
 	private final SimpleExoPlayer player;
 	private final AudioEffects audioEffects;
@@ -46,13 +48,14 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Video
 	private boolean isHls;
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
+		this.ctx = ctx;
 		this.listener = listener;
 		player = new SimpleExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
 				.setExtensionRendererMode(EXTENSION_RENDERER_MODE_PREFER)).build();
 		player.addListener(this);
 		player.addVideoListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
-		dsFactory = new DefaultDataSourceFactory(ctx, "Fermata");
+		dsFactory = new DefaultDataSourceFactory(ctx, "Fermata/" + BuildConfig.VERSION_NAME);
 	}
 
 	@Override
@@ -72,12 +75,13 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Video
 
 		switch (type) {
 			case C.TYPE_HLS:
-				if (hls == null) hls = new HlsMediaSource.Factory(dsFactory);
+				if (hls == null) hls = new HlsMediaSource.Factory(getDsFactory(source));
 				isHls = true;
 				player.setMediaSource(hls.createMediaSource(m), false);
 				break;
 			case C.TYPE_OTHER:
-				if (progressive == null) progressive = new ProgressiveMediaSource.Factory(dsFactory);
+				if (progressive == null)
+					progressive = new ProgressiveMediaSource.Factory(getDsFactory(source));
 				isHls = false;
 				player.setMediaSource(progressive.createMediaSource(m), false);
 				break;
@@ -86,6 +90,11 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Video
 		}
 
 		player.prepare();
+	}
+
+	private DataSource.Factory getDsFactory(PlayableItem source) {
+		String agent = source.getUserAgent();
+		return (agent == null) ? dsFactory : new DefaultDataSourceFactory(ctx, agent);
 	}
 
 	@Override

@@ -8,6 +8,8 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
+import java.util.Collections;
+
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
@@ -58,8 +60,19 @@ public class MediaPlayerEngine implements MediaEngine,
 
 		try {
 			player.reset();
-			if (SCHEME_CONTENT.equals(u.getScheme())) player.setDataSource(ctx, u);
-			else player.setDataSource(u.toString());
+			String scheme = u.getScheme();
+			if (SCHEME_CONTENT.equals(scheme)) {
+				player.setDataSource(ctx, u);
+			} else if (scheme.startsWith("http")) {
+				String agent = source.getUserAgent();
+				if (agent != null) {
+					player.setDataSource(ctx, u, Collections.singletonMap("User-Agent", agent));
+				} else {
+					player.setDataSource(ctx, u);
+				}
+			} else {
+				player.setDataSource(u.toString());
+			}
 			player.prepareAsync();
 		} catch (Exception ex) {
 			listener.onEngineError(this, ex);

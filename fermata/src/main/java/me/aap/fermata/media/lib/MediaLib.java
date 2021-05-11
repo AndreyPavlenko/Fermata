@@ -347,6 +347,11 @@ public interface MediaLib {
 		default boolean isLastPlayed() {
 			return getId().equals(getParent().getPrefs().getLastPlayedItemPref());
 		}
+
+		@Nullable
+		default String getUserAgent() {
+			return null;
+		}
 	}
 
 	interface BrowsableItem extends Item {

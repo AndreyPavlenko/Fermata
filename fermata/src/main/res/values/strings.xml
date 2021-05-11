@@ -199,6 +199,7 @@
     <string name="m3u_playlist" translatable="false">M3U playlist</string>
     <string name="m3u_playlist_name" translatable="false">Name</string>
     <string name="m3u_playlist_url" translatable="false">URL</string>
+    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_video" translatable="false">Video playlist</string>
 
     <string name="eq_manual">Manual</string>
