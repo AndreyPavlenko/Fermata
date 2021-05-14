@@ -305,14 +305,17 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	@Override
 	public boolean onSingleTapConfirmed(MotionEvent e) {
 		if (!(gestureSource instanceof VideoView)) return false;
+		return onTouch((VideoView) gestureSource);
+	}
 
+	public boolean onTouch(VideoView video) {
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
 
 		MainActivityDelegate a = getActivity();
 		if (a == null) return false;
 
-		View title = ((VideoView) gestureSource).getTitle();
+		View title = video.getTitle();
 		View fb = a.getFloatingButton();
 
 		if (getVisibility() == VISIBLE) {

@@ -227,13 +227,13 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
+	public void surfaceCreated(@NonNull SurfaceHolder holder) {
 		surfaceCreated = true;
 		showVideo();
 	}
 
 	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
+	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 		surfaceCreated = false;
 		MainActivityDelegate a = getActivity();
 		if (a != null) {
@@ -245,7 +245,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+	public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
 	}
 
 	@SuppressLint("ClickableViewAccessibility")
@@ -260,6 +260,9 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		FermataServiceUiBinder b;
 
 		switch (keyCode) {
+			case KeyEvent.KEYCODE_ENTER:
+			case KeyEvent.KEYCODE_DPAD_CENTER:
+				return getActivity().getControlPanel().onTouch(this);
 			case KeyEvent.KEYCODE_DPAD_LEFT:
 			case KeyEvent.KEYCODE_DPAD_RIGHT:
 				a = getActivity();
