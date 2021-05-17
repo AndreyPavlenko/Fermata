@@ -54,7 +54,15 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	private boolean prefListenerRegistered;
 
 	public VideoView(Context context) {
-		super(context, null);
+		this(context, null);
+	}
+
+	public VideoView(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		init(context);
+	}
+
+	protected void init(Context context) {
 		setBackgroundColor(Color.BLACK);
 		addView(new SurfaceView(getContext()) {
 			{
@@ -69,13 +77,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 	}
 
-	public VideoView(Context context, AttributeSet attrs) { // Used by Youtube addon
-		super(context, attrs);
-		addView(new FrameLayout(context), new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
-		addTitle(context);
-	}
-
-	private void addTitle(Context context) {
+	protected void addTitle(Context context) {
 		TextView text = new TextView(context);
 		int padding = (int) toPx(context, 10);
 		text.setPadding(padding, padding, padding, 0);
@@ -264,6 +266,12 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			case KeyEvent.KEYCODE_DPAD_CENTER:
 				return getActivity().getControlPanel().onTouch(this);
 			case KeyEvent.KEYCODE_DPAD_LEFT:
+				BodyLayout body = getActivity().getBody();
+
+				if (body.getMode() == BodyLayout.Mode.BOTH) {
+					body.getFrameView().requestFocus();
+					return true;
+				}
 			case KeyEvent.KEYCODE_DPAD_RIGHT:
 				a = getActivity();
 				b = a.getMediaServiceBinder();

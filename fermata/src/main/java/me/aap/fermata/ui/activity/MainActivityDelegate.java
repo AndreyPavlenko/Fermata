@@ -18,11 +18,11 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +47,7 @@ import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
-import me.aap.fermata.ui.fragment.VideoFragment;
+import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
@@ -78,12 +78,12 @@ import static me.aap.utils.ui.activity.ActivityListener.SERVICE_BOUND;
 /**
  * @author Andrey Pavlenko
  */
-public class MainActivityDelegate extends ActivityDelegate implements
-		PreferenceStore.Listener, FermataServiceUiBinder.Listener {
+public class MainActivityDelegate extends ActivityDelegate implements PreferenceStore.Listener {
 	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private FermataServiceUiBinder mediaServiceBinder;
 	private ToolBarView toolBar;
 	private NavBarView navBar;
+	private BodyLayout body;
 	private ControlPanelView controlPanel;
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
@@ -139,7 +139,6 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public void onActivityFinish() {
 		if (mediaServiceBinder != null) {
-			mediaServiceBinder.removeBroadcastListener(this);
 			FermataApplication.get().unbindService(mediaServiceBinder);
 		}
 	}
@@ -256,6 +255,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return navBar;
 	}
 
+	public BodyLayout getBody() {
+		return body;
+	}
+
 	public NavBarMediator getNavBarMediator() {
 		return navBarMediator;
 	}
@@ -353,8 +356,6 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				return new SettingsFragment();
 			case R.id.audio_effects_fragment:
 				return new AudioEffectsFragment();
-			case R.id.video:
-				return new VideoFragment();
 			default:
 				ActivityFragment f = FermataApplication.get().getAddonManager().createFragment(id);
 				return (f != null) ? f : super.createFragment(id);
@@ -512,39 +513,29 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private void init() {
 		FermataActivity a = getAppActivity();
-		MainActivityPrefs prefs = getPrefs();
-		@LayoutRes int layout;
-
-		switch (a.isCarActivity() ? prefs.getNavBarPosAAPref() : prefs.getNavBarPosPref()) {
-			default:
-				layout = R.layout.main_activity;
-				break;
-			case NavBarView.POSITION_LEFT:
-				layout = R.layout.main_activity_left;
-				break;
-			case NavBarView.POSITION_RIGHT:
-				layout = R.layout.main_activity_right;
-				break;
-		}
-
-		a.setContentView(layout);
+		a.setContentView(getLayout());
 		toolBar = a.findViewById(R.id.tool_bar);
 		progressBar = a.findViewById(R.id.content_loading_progress);
 		navBar = a.findViewById(R.id.nav_bar);
+		body = a.findViewById(R.id.body_layout);
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
 		controlPanel.bind(getMediaServiceBinder());
+	}
 
-		SwipeRefreshLayout refresh = a.findViewById(R.id.swiperefresh);
-		refresh.setOnRefreshListener(() -> {
-			ActivityFragment f = getActiveFragment();
-			if (f != null) f.onRefresh(refresh::setRefreshing);
-		});
-		refresh.setOnChildScrollUpCallback((p, c) -> {
-			if (isMenuActive()) return true;
-			ActivityFragment f = getActiveFragment();
-			return (f != null) && f.canScrollUp();
-		});
+	@LayoutRes
+	private int getLayout() {
+		FermataActivity a = getAppActivity();
+		MainActivityPrefs prefs = getPrefs();
+
+		switch (a.isCarActivity() ? prefs.getNavBarPosAAPref() : prefs.getNavBarPosPref()) {
+			default:
+				return R.layout.main_activity;
+			case NavBarView.POSITION_LEFT:
+				return R.layout.main_activity_left;
+			case NavBarView.POSITION_RIGHT:
+				return R.layout.main_activity_right;
+		}
 	}
 
 	private void onMediaServiceBind(FermataServiceUiBinder b, Throwable err) {
@@ -578,11 +569,6 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					showFragment(R.id.folders_fragment);
 					setContentLoading(f);
 				}
-
-				FermataApplication.get().getHandler().post(() -> {
-					b.addBroadcastListener(this);
-					onPlayableChanged(null, b.getCurrentItem());
-				});
 			});
 		} else {
 			Log.e(err);
@@ -606,19 +592,32 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if (prefs.contains(MainActivityPrefs.THEME)) {
 			setTheme();
 			getAppActivity().recreate();
-		} else if (prefs.contains(MainActivityPrefs.NAV_BAR_POS)) {
-			getAppActivity().recreate();
-		} else if (BuildConfig.AUTO && prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
+		} else if (prefs.contains(MainActivityPrefs.NAV_BAR_POS) || prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
 			FermataActivity a = getAppActivity();
-			if (a.isCarActivity()) a.recreate();
+			MainActivityPrefs p = getPrefs();
+			int layout;
+
+			switch (a.isCarActivity() ? p.getNavBarPosAAPref() : p.getNavBarPosPref()) {
+				default:
+					layout = R.layout.main_activity;
+					getNavBar().setPosition(NavBarView.POSITION_BOTTOM);
+					break;
+				case NavBarView.POSITION_LEFT:
+					layout = R.layout.main_activity_left;
+					getNavBar().setPosition(NavBarView.POSITION_LEFT);
+					break;
+				case NavBarView.POSITION_RIGHT:
+					layout = R.layout.main_activity_right;
+					getNavBar().setPosition(NavBarView.POSITION_RIGHT);
+					break;
+			}
+
+			ConstraintSet cs = new ConstraintSet();
+			cs.clone(getContext(), layout);
+			cs.applyTo(findViewById(R.id.main_activity));
 		} else if (prefs.contains(MainActivityPrefs.FULLSCREEN)) {
 			setSystemUiVisibility();
 		}
-	}
-
-	@Override
-	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
-		if ((newItem != null) && !newItem.isExternal() && newItem.isVideo()) showFragment(R.id.video);
 	}
 
 	private boolean exitPressed;

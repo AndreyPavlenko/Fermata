@@ -30,11 +30,12 @@ import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -87,9 +88,7 @@ import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_O
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_ALL;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_NONE;
-import static android.support.v4.media.session.PlaybackStateCompat.STATE_FAST_FORWARDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
-import static android.support.v4.media.session.PlaybackStateCompat.STATE_REWINDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
 import static java.util.Objects.requireNonNull;
@@ -149,7 +148,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@NonNull
 	private PlaybackStateCompat currentState;
 	private MediaMetadataCompat currentMetadata;
-	private List<VideoViewWraper> videoView;
+	private Queue<VideoViewWrapper> videoView;
 	private FutureSupplier<?> playerTask = completedVoid();
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
@@ -253,40 +252,40 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	public void addVideoView(VideoView view, int priority) {
 		if (this.videoView == null) {
-			videoView = new ArrayList<>(2);
-			videoView.add(new VideoViewWraper(view, priority));
+			videoView = new PriorityQueue<>(2);
 		} else {
-			for (VideoViewWraper s : videoView) {
+			for (VideoViewWrapper s : videoView) {
 				if (s.view == view) return;
 			}
-
-			videoView.add(new VideoViewWraper(view, priority));
-			Collections.sort(videoView);
 		}
 
+		videoView.add(new VideoViewWrapper(view, priority));
 		MediaEngine eng = getEngine();
 
 		if (eng != null) {
 			PlayableItem i = eng.getSource();
-			if (i.isVideo()) eng.setVideoView(videoView.get(0).view);
+			if (i.isVideo()) eng.setVideoView(getVideoView());
 		}
 	}
 
 	public void removeVideoView(VideoView view) {
 		MediaEngine eng = getEngine();
 
-		if ((videoView != null) && videoView.remove(new VideoViewWraper(view, 0))) {
+		if ((videoView != null) && videoView.remove(new VideoViewWrapper(view, 0))) {
 			if (videoView.isEmpty()) {
 				videoView = null;
 				if (eng != null) eng.setVideoView(null);
 			} else if (eng != null) {
-				eng.setVideoView(videoView.get(0).view);
+				eng.setVideoView(getVideoView());
 			}
 		}
 	}
 
+	@Nullable
 	public VideoView getVideoView() {
-		return (videoView == null) ? null : videoView.get(0).view;
+		if (videoView == null) return null;
+		VideoViewWrapper w = videoView.peek();
+		return (w == null) ? null : w.view;
 	}
 
 	@Override
@@ -369,7 +368,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			if (engine == null) return completedVoid();
 
 			playOnPrepared = false;
-			if (i.isVideo() && (videoView != null)) engine.setVideoView(videoView.get(0).view);
+			if (i.isVideo() && (videoView != null)) engine.setVideoView(getVideoView());
 			tryAnotherEngine = true;
 			engine.prepare(i);
 			return completedVoid();
@@ -602,19 +601,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if ((eng == null) || ((i = eng.getSource()) == null)) return;
 
 		playerTask = eng.getDuration().and(eng.getPosition()).main().onSuccess(h ->
-				eng.getSpeed().onSuccess(speed ->
-						rewindFastForward(eng, i, h.value2, speed, h.value1, ff, time, timeUnit, multiply)));
+				rewindFastForward(eng, i, h.value2, h.value1, ff, time, timeUnit, multiply));
 	}
 
-	private void rewindFastForward(MediaEngine eng, PlayableItem i, long pos, float speed, long dur,
+	private void rewindFastForward(MediaEngine eng, PlayableItem i, long pos, long dur,
 																 boolean ff, int time, int timeUnit, int multiply) {
 		if (getCurrentItem() != i) return;
-
-		PlaybackStateCompat state = getPlaybackState();
-		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-		b.setState(ff ? STATE_FAST_FORWARDING : STATE_REWINDING, state.getPosition(),
-				state.getPlaybackSpeed());
-		setPlaybackState(b.build());
 
 		long timeShift = getTimeMillis(dur, time, timeUnit) * multiply;
 
@@ -628,7 +620,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		eng.setPosition(pos);
-		setPlaybackState(b.setState(state.getState(), pos, speed).build());
 	}
 
 	private void progressiveRwFF(long time, boolean ff) {
@@ -986,7 +977,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	@Override
 	public void onVideoSizeChanged(MediaEngine engine, int width, int height) {
-		if (videoView != null) videoView.get(0).view.setSurfaceSize(engine);
+		VideoView v = getVideoView();
+		if (v != null) v.setSurfaceSize(engine);
 	}
 
 	@Override
@@ -1009,7 +1001,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			if (this.engine != null) {
 				Log.i("Trying another engine: ", this.engine);
 				tryAnotherEngine = false;
-				if (i.isVideo() && (videoView != null)) this.engine.setVideoView(videoView.get(0).view);
+				if (i.isVideo() && (videoView != null)) this.engine.setVideoView(getVideoView());
 				this.engine.prepare(i);
 				return;
 			}
@@ -1096,7 +1088,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			updateQueue = true;
 		}
 
-		if (i.isVideo() && (videoView != null)) engine.setVideoView(videoView.get(0).view);
+		if (i.isVideo() && (videoView != null)) engine.setVideoView(getVideoView());
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
@@ -1332,24 +1324,24 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state);
 	}
 
-	private static final class VideoViewWraper implements Comparable<VideoViewWraper> {
+	private static final class VideoViewWrapper implements Comparable<VideoViewWrapper> {
 		final VideoView view;
 		final int priority;
 
-		VideoViewWraper(VideoView view, int priority) {
+		VideoViewWrapper(VideoView view, int priority) {
 			this.view = view;
 			this.priority = priority;
 		}
 
 		@Override
-		public int compareTo(VideoViewWraper o) {
+		public int compareTo(VideoViewWrapper o) {
 			return Integer.compare(priority, o.priority);
 		}
 
 		@SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
 		@Override
 		public boolean equals(Object obj) {
-			return view == ((VideoViewWraper) obj).view;
+			return view == ((VideoViewWrapper) obj).view;
 		}
 
 		@Override

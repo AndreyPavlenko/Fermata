@@ -309,11 +309,18 @@ public class ControlPanelView extends LinearLayoutCompat implements MainActivity
 	}
 
 	public boolean onTouch(VideoView video) {
-		int delay = getTouchDelay();
-		if (delay == 0) return false;
-
 		MainActivityDelegate a = getActivity();
 		if (a == null) return false;
+
+		BodyLayout b = a.getBody();
+
+		if (b.getMode() == BodyLayout.Mode.BOTH) {
+			b.setMode(BodyLayout.Mode.VIDEO);
+			return true;
+		}
+
+		int delay = getTouchDelay();
+		if (delay == 0) return false;
 
 		View title = video.getTitle();
 		View fb = a.getFloatingButton();

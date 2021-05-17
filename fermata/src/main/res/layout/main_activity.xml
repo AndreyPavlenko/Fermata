@@ -2,7 +2,7 @@
 
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_activity"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,29 +10,21 @@
         android:id="@+id/tool_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@id/swiperefresh"
+        app:layout_constraintBottom_toTopOf="@id/body_layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swiperefresh"
+    <me.aap.fermata.ui.view.BodyLayout
+        android:id="@+id/body_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:background="?android:colorBackground"
         app:layout_constraintBottom_toTopOf="@id/control_panel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tool_bar"
-        app:layout_constraintVertical_weight="1">
-
-        <me.aap.fermata.ui.view.FrameView
-            android:id="@+id/frame_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:colorBackground"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            tools:context=".ui.activity.MainActivity" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        app:layout_constraintVertical_weight="1" />
 
     <me.aap.fermata.ui.view.ControlPanelView
         android:id="@+id/control_panel"
@@ -42,7 +34,7 @@
         app:layout_constraintBottom_toTopOf="@id/nav_bar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/swiperefresh" />
+        app:layout_constraintTop_toBottomOf="@id/body_layout" />
 
     <me.aap.fermata.ui.view.FermataNavBarView
         android:id="@+id/nav_bar"
@@ -91,10 +83,10 @@
         android:layout_height="wrap_content"
         android:elevation="10dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <me.aap.utils.ui.menu.OverlayMenuView
         android:id="@+id/control_menu"

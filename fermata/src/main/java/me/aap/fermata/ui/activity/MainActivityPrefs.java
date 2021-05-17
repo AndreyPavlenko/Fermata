@@ -1,5 +1,8 @@
 package me.aap.fermata.ui.activity;
 
+import android.content.Context;
+import android.content.res.Configuration;
+
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
@@ -23,6 +26,8 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> GRID_VIEW = Pref.b("GRID_VIEW", false);
 	Pref<DoubleSupplier> MEDIA_ITEM_SCALE = Pref.f("MEDIA_ITEM_SCALE", 1);
+	Pref<DoubleSupplier> P_SPLIT_PERCENT = Pref.f("P_SPLIT_PERCENT", 0.6f);
+	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
 
 	default int getThemePref() {
 		return getIntPref(THEME);
@@ -66,5 +71,21 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default float getMediaItemScalePref() {
 		return getFloatPref(MEDIA_ITEM_SCALE);
+	}
+
+	default float getSplitPercent(Context ctx) {
+		if (ctx.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			return getFloatPref(P_SPLIT_PERCENT);
+		} else {
+			return getFloatPref(L_SPLIT_PERCENT);
+		}
+	}
+
+	default void setSplitPercent(Context ctx, float percent) {
+		if (ctx.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			applyFloatPref(P_SPLIT_PERCENT, percent);
+		} else {
+			applyFloatPref(L_SPLIT_PERCENT, percent);
+		}
 	}
 }

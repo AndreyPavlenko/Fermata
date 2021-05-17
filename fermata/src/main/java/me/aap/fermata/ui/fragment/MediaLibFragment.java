@@ -25,6 +25,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemView;
@@ -168,6 +169,15 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	public boolean onBackPressed() {
+		MainActivityDelegate ad = getMainActivity();
+		if (ad == null) return false;
+		BodyLayout b = ad.getBody();
+
+		if (b.isVideoMode()) {
+			b.setMode(BodyLayout.Mode.BOTH);
+			return true;
+		}
+
 		ListAdapter a = getAdapter();
 		BrowsableItem p = a.getParent();
 		if (p == null) return false;
@@ -262,7 +272,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Nullable
 	public MediaItemListView getListView() {
-		return (MediaItemListView) getView();
+		View v = getView();
+		return (v == null) ? null : getView().findViewById(R.id.media_items_list_view);
 	}
 
 	public void discardSelection() {
@@ -354,10 +365,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			discardSelection();
 
 			if (i instanceof PlayableItem) {
-				PlayableItem pi = (PlayableItem) i;
 				MainActivityDelegate a = getMainActivity();
-				a.getMediaServiceBinder().playItem((PlayableItem) i);
-				if (pi.isVideo()) a.showFragment(R.id.video);
+				FermataServiceUiBinder b = a.getMediaServiceBinder();
+				PlayableItem cur = b.getCurrentItem();
+				b.playItem((PlayableItem) i);
+				if (i.equals(cur)) a.getBody().setMode(BodyLayout.Mode.VIDEO);
 			} else {
 				super.onClick(v);
 			}
