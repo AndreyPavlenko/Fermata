@@ -145,12 +145,11 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 					Context ctx = g.getContext();
 					MaterialTextView v = new MaterialTextView(ctx);
 					String url = "https://github.com/AndreyPavlenko/Fermata";
-					String openUrl = url + "/blob/master/README.md#donation";
-					String html = ctx.getString(R.string.about_html, openUrl, url, VERSION_NAME, VERSION_CODE);
+					String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE, url);
 					int pad = UiUtils.toIntPx(ctx, 10);
 					v.setPadding(pad, pad, pad, pad);
 					v.setText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY));
-					v.setOnClickListener(t -> openUrl(t.getContext(), openUrl));
+					v.setOnClickListener(t -> openUrl(t.getContext(), url));
 					g.addView(v);
 				});
 				return true;
