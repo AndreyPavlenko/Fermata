@@ -256,8 +256,9 @@ public class FermataChromeClient extends WebChromeClient {
 	public void onPermissionRequest(PermissionRequest request) {
 		Log.d("Permissions requested: ", Arrays.toString(request.getResources()));
 		Map<String, String> perms = new HashMap<>();
+		String[] resources = request.getResources();
 
-		for (String p : request.getResources()) {
+		for (String p : resources) {
 			switch (p) {
 				case PermissionRequest.RESOURCE_AUDIO_CAPTURE:
 					perms.put(Manifest.permission.RECORD_AUDIO, p);
@@ -265,6 +266,9 @@ public class FermataChromeClient extends WebChromeClient {
 				case PermissionRequest.RESOURCE_VIDEO_CAPTURE:
 					perms.put(Manifest.permission.CAMERA, p);
 					break;
+				case PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID:
+					request.grant(resources);
+					return;
 			}
 		}
 

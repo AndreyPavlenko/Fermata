@@ -34,6 +34,11 @@ public class FermataNavBarView extends NavBarView implements GestureListener {
 	}
 
 	@Override
+	protected MainActivityDelegate getActivity() {
+		return MainActivityDelegate.get(getContext());
+	}
+
+	@Override
 	public boolean onSwipeLeft(MotionEvent e1, MotionEvent e2) {
 		return getMainActivity().getControlPanel().onSwipeLeft(e1, e2);
 	}

@@ -10,15 +10,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.vfs.m3u.M3uFile;
 import me.aap.fermata.vfs.m3u.M3uFileSystem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureRef;
@@ -31,25 +34,29 @@ import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.text.TextUtils.indexOf;
 import static me.aap.utils.text.TextUtils.indexOfChar;
 
 /**
  * @author Andrey Pavlenko
  */
-class M3uItem extends BrowsableItemBase {
+public class M3uItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3u";
 	private FutureSupplier<Uri> iconUri;
-	final FutureRef<Data> data = new FutureRef<Data>() {
+	private final FutureRef<Data> data = new FutureRef<Data>() {
 		@Override
 		protected FutureSupplier<Data> create() {
-			return App.get().execute(M3uItem.this::parse);
+			return App.get().execute(M3uItem.this::parse)
+					.ifFail(err -> {
+						Log.e(err, "Failed to load M3U: ", getResource().getName());
+						return new Data(getResource().getName(), "", Collections.emptyList(), null);
+					});
 		}
 	};
 
-	private M3uItem(String id, BrowsableItem parent, VirtualFile m3uFile) {
+	protected M3uItem(String id, BrowsableItem parent, VirtualFile m3uFile) {
 		super(id, parent, m3uFile);
 	}
 
@@ -59,7 +66,7 @@ class M3uItem extends BrowsableItemBase {
 		VirtualFolder dir = m3uFile.getParent().getOrThrow();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
-		String idPath = id.substring(SCHEME.length());
+		String idPath = id.substring(getScheme().length());
 		VfsManager vfs = getLib().getVfsManager();
 
 		String m3uName = null;
@@ -75,6 +82,7 @@ class M3uItem extends BrowsableItemBase {
 		String artist = null;
 		String genre = null;
 		String logo = null;
+		String tvgId = null;
 		long duration = 0;
 		byte type = 0;
 		boolean first = true;
@@ -85,6 +93,42 @@ class M3uItem extends BrowsableItemBase {
 				l = l.trim();
 
 				if (l.isEmpty()) {
+					continue;
+				} else if (l.startsWith("#EXTM3U")) {
+					for (int off = 7, len = l.length(); off < len; ) {
+						int i = indexOf(l, '=', off, len);
+						if (i == -1) continue read;
+						String key = l.substring(off, i).trim();
+
+						if ((++i != len) && (l.charAt(i) == '"')) {
+							off = i + 1;
+							i = indexOf(l, '\"', off, len);
+							if (i == -1) i = len;
+						} else {
+							off = i;
+							i = indexOf(l, ' ', off, len);
+							if (i == -1) i = len;
+						}
+
+						switch (key) {
+							case "tvg-url":
+							case "url-tvg":
+								setTvgUrl(trim(l.substring(off, i)));
+								break;
+							case "catchup":
+								setCatchup(trim(l.substring(off, i)));
+								break;
+							case "catchup-source":
+								setCatchupSource(trim(l.substring(off, i)));
+								break;
+							case "catchup-days":
+								setCatchupDays(trim(l.substring(off, i)));
+								break;
+						}
+
+						off = i + 1;
+					}
+
 					continue;
 				} else if (l.startsWith("#EXTINF:")) {
 					first = false;
@@ -114,15 +158,17 @@ class M3uItem extends BrowsableItemBase {
 						i = indexOfChar(l, "\",", start, len);
 						if (i == -1) continue read;
 						if (l.charAt(i) != '\"') continue;
-						String value = trim(l.substring(start, i));
 
 						switch (key) {
 							case "logo":
 							case "tvg-logo":
-								logo = value;
+								logo = trim(l.substring(start, i));
+								break;
+							case "tvg-id":
+								tvgId = trim(l.substring(start, i));
 								break;
 							case "group-title":
-								group = value;
+								group = trim(l.substring(start, i));
 								break;
 						}
 					}
@@ -173,29 +219,18 @@ class M3uItem extends BrowsableItemBase {
 					if (logo == null) logo = cover;
 
 					if (group == null) {
-						int tid = tracks.size();
-						SharedTextBuilder tb = SharedTextBuilder.get();
-						tb.append(M3uTrackItem.SCHEME).append(':').append(-1).append(':')
-								.append(tid).append(idPath);
-						tracks.add(new M3uTrackItem(tb.releaseString(), this, tid, file, name, album, artist, genre,
-								logo, duration, type));
+						tracks.add(createTrack(this, -1, tracks.size(), idPath, file, name, album, artist, genre,
+								logo, tvgId, duration, type));
 					} else {
 						M3uGroupItem g = groups.get(group);
 
 						if (g == null) {
-							int gid = groups.size();
-							SharedTextBuilder tb = SharedTextBuilder.get();
-							tb.append(M3uGroupItem.SCHEME).append(':').append(gid).append(idPath);
-							g = new M3uGroupItem(tb.releaseString(), this, group, gid);
+							g = createGroup(idPath, group, groups.size());
 							groups.put(group, g);
 						}
 
-						int tid = g.tracks.size();
-						SharedTextBuilder tb = SharedTextBuilder.get();
-						tb.append(M3uTrackItem.SCHEME).append(':').append(g.getGroupId()).append(':')
-								.append(tid).append(idPath);
-						g.tracks.add(new M3uTrackItem(tb.releaseString(), g, tid, file, name, album, artist,
-								genre, logo, duration, type));
+						g.tracks.add(createTrack(g, g.getGroupId(), g.tracks.size(), idPath, file, name, album,
+								artist, genre, logo, tvgId, duration, type));
 					}
 				}
 
@@ -241,8 +276,8 @@ class M3uItem extends BrowsableItemBase {
 
 			if (i != null) {
 				M3uItem c = (M3uItem) i;
-				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-				if (DEBUG && !m3uFile.equals(c.getResource())) throw new AssertionError();
+				if (BuildConfig.D && !parent.equals(c.getParent())) throw new AssertionError();
+				if (BuildConfig.D && !m3uFile.equals(c.getResource())) throw new AssertionError();
 				return c;
 			} else {
 				return new M3uItem(id, parent, m3uFile);
@@ -259,40 +294,70 @@ class M3uItem extends BrowsableItemBase {
 		}
 
 		M3uFileSystem fs = M3uFileSystem.getInstance();
-		return fs.getResource(fs.toRid(id.substring(SCHEME.length() + 1))).main().then(r -> {
-			if (r != null) return completed(create(id, lib.getFolders(), (VirtualFile) r, lib));
-
-			SharedTextBuilder tb = SharedTextBuilder.get();
-			tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
-
-			return lib.getItem(tb.releaseString()).map(i -> {
-				if (!(i instanceof FileItem)) {
-					Log.w("Resource not found: ", id);
+		return fs.getResource(fs.toRid(id.substring(SCHEME.length() + 1)))
+				.ifFail(err -> {
+					Log.e(err, "Failed to load resource");
 					return null;
-				}
+				}).main().then(r -> {
+					if (r != null) return completed(create(id, lib.getFolders(), r, lib));
 
-				FileItem file = (FileItem) i;
-				BrowsableItem parent = file.getParent();
-				return create(id, parent, (VirtualFile) file.getResource(), lib);
-			});
-		});
+					SharedTextBuilder tb = SharedTextBuilder.get();
+					tb.append(FileItem.SCHEME).append(id, SCHEME.length(), id.length());
+
+					return lib.getItem(tb.releaseString()).map(i -> {
+						if (!(i instanceof FileItem)) {
+							Log.w("Resource not found: ", id);
+							return null;
+						}
+
+						FileItem file = (FileItem) i;
+						BrowsableItem parent = file.getParent();
+						return create(id, parent, (VirtualFile) file.getResource(), lib);
+					});
+				});
 	}
 
 	static boolean isM3uFile(String name) {
 		return name.endsWith(".m3u");
 	}
 
+	protected FutureRef<Data> getData() {
+		return data;
+	}
+
+	protected String getScheme() {
+		return SCHEME;
+	}
+
+	protected M3uGroupItem createGroup(String idPath, String name, int groupId) {
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(M3uGroupItem.SCHEME).append(':').append(groupId).append(idPath);
+		return new M3uGroupItem(tb.releaseString(), this, name, groupId);
+	}
+
+	protected M3uTrackItem createTrack(BrowsableItem parent, int groupNumber, int trackNumber,
+																		 String idPath, VirtualResource file, String name, String album,
+																		 String artist, String genre, String logo, String tvgId,
+																		 long duration, byte type) {
+		SharedTextBuilder tb = SharedTextBuilder.get();
+		tb.append(M3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
+				.append(trackNumber).append(idPath);
+		return new M3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
+				genre, logo, tvgId, duration, type);
+	}
+
+	@NonNull
 	@Override
 	public String getName() {
-		Data d = data.get().peek();
-		return (d == null) ? super.getName() : d.name;
+		Data d = getData().get().peek();
+		return (d == null) || (d.name == null) ? super.getName() : d.name;
 	}
 
 	@NonNull
 	@Override
 	public FutureSupplier<Uri> getIconUri() {
 		if (iconUri == null) {
-			return data.get().then(d -> {
+			return getData().get().then(d -> {
 				if (d.cover == null) {
 					return iconUri = completedNull();
 				} else {
@@ -308,8 +373,8 @@ class M3uItem extends BrowsableItemBase {
 		return iconUri;
 	}
 
-	public FutureSupplier<Item> getTrack(int id) {
-		return data.get().map(d -> {
+	public FutureSupplier<? extends M3uTrackItem> getTrack(int id) {
+		return getData().get().map(d -> {
 			for (Item c : d.tracks) {
 				if (c instanceof M3uTrackItem) {
 					M3uTrackItem t = (M3uTrackItem) c;
@@ -320,13 +385,13 @@ class M3uItem extends BrowsableItemBase {
 		});
 	}
 
-	public FutureSupplier<Item> getTrack(int gid, int tid) {
+	public FutureSupplier<? extends M3uTrackItem> getTrack(int gid, int tid) {
 		if (gid == -1) return getTrack(tid);
-		return getGroup(gid).map(g -> (g != null) ? ((M3uGroupItem) g).getTrack(tid) : null);
+		return getGroup(gid).map(g -> (g != null) ? g.getTrack(tid) : null);
 	}
 
-	public FutureSupplier<Item> getGroup(int id) {
-		return data.get().map(d -> {
+	public FutureSupplier<? extends M3uGroupItem> getGroup(int id) {
+		return getData().get().map(d -> {
 			for (Item c : d.tracks) {
 				if (c instanceof M3uGroupItem) {
 					M3uGroupItem g = (M3uGroupItem) c;
@@ -344,22 +409,22 @@ class M3uItem extends BrowsableItemBase {
 
 	@Override
 	public FutureSupplier<List<Item>> listChildren() {
-		return data.get().map(d -> d.tracks);
+		return getData().get().map(d -> d.tracks);
 	}
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		return data.get().map(d -> d.subtitle);
+		return getData().get().map(d -> d.subtitle);
 	}
 
 	@NonNull
 	@Override
 	public FutureSupplier<Void> refresh() {
-		Data d = data.peek();
-		VirtualResource r = getResource();
+		FutureRef<Data> ref = getData();
+		if (ref.peek() == null) return super.refresh();
 
-		if (d != null) {
-			data.clear();
+		return ref.get().main().then(d -> {
+			ref.clear();
 			DefaultMediaLib lib = (DefaultMediaLib) getLib();
 
 			synchronized (lib.cacheLock()) {
@@ -375,13 +440,9 @@ class M3uItem extends BrowsableItemBase {
 					lib.removeFromCache(i);
 				}
 			}
-		}
 
-		if (r.getVirtualFileSystem() instanceof M3uFileSystem) {
-			M3uFileSystem.getInstance().reload(r.getRid());
-		}
-
-		return super.refresh();
+			return super.refresh();
+		});
 	}
 
 	protected Reader createReader(VirtualFile m3uFile) throws IOException {
@@ -402,23 +463,31 @@ class M3uItem extends BrowsableItemBase {
 		return new InputStreamReader(in, (cs == null) ? "UTF-8" : cs);
 	}
 
-	private boolean isVideo(VirtualFile m3uFile) {
-		if (m3uFile.getVirtualFileSystem() instanceof M3uFileSystem) {
-			return M3uFileSystem.getInstance().isVideo(m3uFile.getRid());
-		} else {
-			return false;
-		}
+	protected void setTvgUrl(String url) {
+	}
+
+	protected void setCatchup(String catchup) {
+	}
+
+	protected void setCatchupSource(String src) {
+	}
+
+	protected void setCatchupDays(String days) {
+	}
+
+	private boolean isVideo(VirtualFile f) {
+		return (f instanceof M3uFile) && ((M3uFile) f).isVideo();
 	}
 
 	private static String trim(String s) {
 		return (s = s.trim()).isEmpty() ? null : s;
 	}
 
-	private static final class Data {
-		final String name;
-		final String subtitle;
-		final List<Item> tracks;
-		final String cover;
+	protected static final class Data {
+		protected final String name;
+		protected final String subtitle;
+		protected final List<Item> tracks;
+		protected final String cover;
 
 		Data(String name, String subtitle, List<Item> tracks, String cover) {
 			this.name = name;

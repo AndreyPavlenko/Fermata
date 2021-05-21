@@ -68,11 +68,11 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 	@Override
 	public FutureSupplier<MediaDescriptionCompat> getMediaDescription() {
 		FutureSupplier<MediaDescriptionCompat> d = MD.get(this);
-		if (d != null) return d;
+		if (isMediaDescriptionValid(d)) return d;
 
 		Promise<MediaDescriptionCompat> load = new Promise<>();
 
-		for (; !MD.compareAndSet(this, null, load); d = MD.get(this)) {
+		for (; !MD.compareAndSet(this, d, load); d = MD.get(this)) {
 			if (d != null) return d;
 		}
 
@@ -84,7 +84,7 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		FutureSupplier<Uri> icon = getIconUri();
 
 		if (title.isDone() && subtitle.isDone() && icon.isDone()) {
-			b.setTitle(title.get(() -> getResource().getName()));
+			b.setTitle(title.get(() -> getName()));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
 			MediaDescriptionCompat dsc = b.build();
@@ -113,6 +113,10 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 
 		d = MD.get(this);
 		return (d != null) ? d : load;
+	}
+
+	protected boolean isMediaDescriptionValid(FutureSupplier<MediaDescriptionCompat> d) {
+		return d != null;
 	}
 
 	protected FutureSupplier<String> buildTitle() {
@@ -234,7 +238,7 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
-	void reset() {
+	protected void reset() {
 		description = null;
 	}
 }

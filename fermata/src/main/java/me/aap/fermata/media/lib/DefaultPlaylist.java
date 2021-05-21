@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -23,7 +24,6 @@ import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 
 import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
@@ -48,8 +48,8 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 
 			if (i != null) {
 				DefaultPlaylist pl = (DefaultPlaylist) i;
-				if (DEBUG && !parent.equals(pl.getParent())) throw new AssertionError();
-				if (DEBUG && !id.equals(pl.getId())) throw new AssertionError();
+				if (BuildConfig.D && !parent.equals(pl.getParent())) throw new AssertionError();
+				if (BuildConfig.D && !id.equals(pl.getId())) throw new AssertionError();
 				return pl;
 			} else {
 				return new DefaultPlaylist(id, parent, playlistId);
@@ -68,6 +68,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 		return completed(getLib().getContext().getResources().getString(R.string.browsable_subtitle, count));
 	}
 
+	@NonNull
 	@Override
 	public String getName() {
 		return getPlaylistNamePref();
@@ -105,7 +106,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	}
 
 	@Override
-	String getScheme() {
+	protected String getScheme() {
 		return getId();
 	}
 
@@ -117,7 +118,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	}
 
 	@Override
-	void saveChildren(List<PlayableItem> children) {
+	protected void saveChildren(List<PlayableItem> children) {
 		setPlaylistItemsPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
 	}
 }

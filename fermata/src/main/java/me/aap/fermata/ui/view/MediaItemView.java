@@ -21,29 +21,30 @@ import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.util.List;
 import java.util.Objects;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
-import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.menu.OverlayMenu;
 
 import static android.util.TypedValue.COMPLEX_UNIT_PX;
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
+import static me.aap.utils.misc.MiscUtils.ifNull;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
@@ -51,15 +52,16 @@ import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
  * @author Andrey Pavlenko
  */
 public class MediaItemView extends ConstraintLayout implements OnLongClickListener,
-		OnCheckedChangeListener, PreferenceStore.Listener {
+		OnCheckedChangeListener, PreferenceStore.Listener, PlayableItem.ChangeListener {
 	private static final RotateAnimation rotate = new RotateAnimation(0, 360,
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 	private static Drawable loadingDrawable;
 	@ColorInt
 	private static int iconColor;
 	private final ColorStateList iconTint;
-	private MediaItemWrapper itemWrapper;
-	private MediaItemListView listView;
+	@Nullable
+	private MediaItemViewHolder holder;
+
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
@@ -122,31 +124,73 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		getSubtitle().setTextSize(COMPLEX_UNIT_PX, subtitleTextSize * scale);
 	}
 
+	public void setHolder(@Nullable MediaItemViewHolder holder) {
+		this.holder = holder;
+	}
+
+	@Nullable
+	public MediaItemViewHolder getHolder() {
+		return holder;
+	}
+
+	@Nullable
+	public MediaItemListView getListView() {
+		MediaItemViewHolder h = getHolder();
+		return (h != null) ? h.getListView() : null;
+	}
+
+	@Nullable
 	public MediaItemWrapper getItemWrapper() {
-		return itemWrapper;
+		MediaItemViewHolder h = getHolder();
+		return (h != null) ? h.getItemWrapper() : null;
 	}
 
+	@Nullable
 	public Item getItem() {
-		return getItemWrapper().getItem();
+		MediaItemWrapper w = getItemWrapper();
+		return (w != null) ? w.getItem() : null;
 	}
 
-	public void setItemWrapper(MediaItemWrapper wrapper) {
-		itemWrapper = wrapper;
-		wrapper.setView(this);
-		Item i = wrapper.getItem();
+	void rebind(@Nullable MediaItemWrapper oldItem, @NonNull MediaItemWrapper newItem) {
+		if (oldItem != null) oldItem.getItem().removeChangeListener(this);
+		boolean hasListener = newItem.getItem().addChangeListener(this);
+		load(newItem, !hasListener).onCompletion((r, err) -> {
+			if (getItemWrapper() != newItem) return;
+			if (err != null) Log.e(err, "Failed to load media description: ", newItem);
+		});
+		updateProgressIndicator(newItem);
+	}
 
+	@Override
+	public void mediaItemChanged(Item i) {
+		MediaItemWrapper w = getItemWrapper();
+
+		if ((w != null) && (w.getItem() == i)) {
+			load(w, false);
+			updateProgressIndicator(w);
+		}
+	}
+
+	@Override
+	public void playableItemProgressChanged(PlayableItem i) {
+		MediaItemWrapper w = getItemWrapper();
+		if ((w != null) && (w.getItem() == i)) updateProgressIndicator(w);
+	}
+
+	private FutureSupplier<MediaDescriptionCompat> load(MediaItemWrapper w, boolean showLoading) {
+		Item i = w.getItem();
 		FutureSupplier<MediaDescriptionCompat> load = i.getMediaDescription().main()
 				.addConsumer((result, fail, progress, total) -> {
-					if (wrapper != getItemWrapper()) return;
+					if (getItemWrapper() != w) return;
 
 					if (fail != null) {
 						Log.e(fail, "Failed to load media description: ", i);
-						setDefaults(i, false);
+						setDefaults(i, showLoading);
 						return;
 					}
 
 					CharSequence sub = result.getSubtitle();
-					getTitle().setText(MiscUtils.ifNull(result.getTitle(), () -> i.getResource().getName()));
+					getTitle().setText(ifNull(result.getTitle(), i::getName));
 					if (sub != null) getSubtitle().setText(sub);
 
 					if (progress != PROGRESS_DONE) return;
@@ -156,7 +200,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					if (uri != null) {
 						FutureSupplier<Bitmap> loadIcon = i.getLib().getBitmap(uri.toString(), true, true)
 								.main().onCompletion((bm, err) -> {
-									if (wrapper != getItemWrapper()) return;
+									if (getItemWrapper() != w) return;
 
 									ImageView icon = getIcon();
 									icon.clearAnimation();
@@ -184,17 +228,40 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					}
 				});
 
-		if (!load.isDone()) setDefaults(i, true);
+		if (!load.isDone()) setDefaults(i, showLoading);
+		return load;
+	}
+
+	private void updateProgressIndicator(MediaItemWrapper w) {
+		if (getItemWrapper() != w) return;
+		Item i = w.getItem();
+		LinearProgressIndicator p = getProgress();
+
+		if (i instanceof PlayableItem) {
+			FutureSupplier<Integer> f = ((PlayableItem) i).getProgress();
+
+			if ((f == null) || f.isFailed()) {
+				p.setVisibility(GONE);
+			} else {
+				f.main().onCompletion((v, err) -> {
+					if (getItemWrapper() != w) return;
+					if (err != null) {
+						Log.d(err, "Failed to get item progress");
+						p.setVisibility(GONE);
+					} else {
+						p.setVisibility(VISIBLE);
+						p.setProgress(v);
+					}
+				});
+			}
+		} else {
+			p.setVisibility(GONE);
+		}
 	}
 
 	private void setDefaults(Item i, boolean loading) {
-		if (i instanceof BrowsableItem) {
-			getTitle().setText(((BrowsableItem) i).getName());
-		} else {
-			getTitle().setText(i.getResource().getName());
-		}
-
 		ImageView icon = getIcon();
+		getTitle().setText(i.getName());
 
 		if (loading) {
 			rotate.setDuration(1000);
@@ -224,10 +291,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		loadingDrawable = null;
 	}
 
-	public void cancelLoading() {
-		if (itemWrapper != null) itemWrapper = new MediaItemWrapper(itemWrapper.getItem());
-	}
-
 	public ImageView getIcon() {
 		return (ImageView) getChildAt(0);
 	}
@@ -240,21 +303,18 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return (TextView) getChildAt(2);
 	}
 
+	public LinearProgressIndicator getProgress() {
+		return (LinearProgressIndicator) getChildAt(3);
+	}
+
 	public MaterialCheckBox getCheckBox() {
-		return (MaterialCheckBox) getChildAt(3);
+		return (MaterialCheckBox) getChildAt(4);
 	}
 
 	@Override
 	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		getItemWrapper().setSelected(isChecked, false);
-	}
-
-	public MediaItemListView getListView() {
-		return listView;
-	}
-
-	public void setListView(MediaItemListView listView) {
-		this.listView = listView;
+		MediaItemWrapper w = getItemWrapper();
+		if (w != null) w.setSelected(isChecked, false);
 	}
 
 	@Override
@@ -269,7 +329,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	public void refresh() {
 		MediaItemWrapper w = getItemWrapper();
-		setItemWrapper(w);
+		if (w == null) return;
+		rebind(w, w);
 		refreshState(w.getItem());
 	}
 
@@ -278,7 +339,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (w == null) return;
 
 		Item item = w.getItem();
-		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) setItemWrapper(w);
+		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) rebind(w, w);
 		refreshState(item);
 	}
 
@@ -295,8 +356,9 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		refreshCheckbox();
 
 		if (item.equals(getMainActivity().getCurrentPlayable())) {
+			MainActivityDelegate a = getMainActivity();
 			setSelected(true);
-			requestFocus();
+			if ((a != null) && !a.getBody().isVideoMode()) requestFocus();
 		} else {
 			setSelected(false);
 		}
@@ -304,6 +366,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	public void refreshCheckbox() {
 		MediaItemWrapper w = getItemWrapper();
+		if (w == null) return;
 		MaterialCheckBox cb = getCheckBox();
 
 		if (!w.isSelectionSupported()) {
@@ -311,7 +374,9 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			return;
 		}
 
-		if (getListView().isSelectionActive()) {
+		MediaItemListView l = getListView();
+
+		if ((l != null) && l.isSelectionActive()) {
 			cb.setVisibility(VISIBLE);
 			cb.setChecked(w.isSelected());
 		} else {
@@ -324,7 +389,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		MainActivityDelegate a = getMainActivity();
 		OverlayMenu menu = a.getContextMenu();
 		MediaItemMenuHandler handler = new MediaItemMenuHandler(menu, this);
-		getListView().discardSelection();
+		MediaItemListView l = getListView();
+		if (l != null) getListView().discardSelection();
 		handler.show();
 		return true;
 	}

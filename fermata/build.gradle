@@ -33,12 +33,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     '../proguard-rules.pro', '../depends/utils/proguard-rules.pro'
             signingConfig signingConfigs.release
+            buildConfigField "boolean", 'D', 'false'
         }
 
         debug {
             debuggable true
             applicationIdSuffix '.debug'
             signingConfig signingConfigs.release
+            buildConfigField "boolean", 'D', 'true'
         }
     }
 

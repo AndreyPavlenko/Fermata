@@ -476,9 +476,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			return;
 		}
 
-		Log.d(new Throwable(), "onPause()");
 		eng.pause();
-
 		eng.getPosition().and(eng.getSpeed()).main().onSuccess(h -> {
 			if (eng != getEngine()) return;
 			long qid = currentState.getActiveQueueItemId();
@@ -512,7 +510,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				if (i != null) lib.setLastPlayed(i, pos);
 			}
 
-			Log.d(new Throwable(), "onStop()");
 			eng.stop();
 			eng.releaseAudioFocus(audioManager, audioFocusReq);
 			eng.close();
@@ -816,22 +813,30 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	public void onEnginePrepared(MediaEngine engine) {
 		playerTask.cancel();
 		PlayableItem i = engine.getSource();
-		if (i == null) return;
-
-		playerTask = i.getDuration().main().onSuccess(dur -> {
-			if (this.engine == engine) onEnginePrepared(engine, i, dur);
-		});
+		if (i != null) onEnginePrepared(engine, i);
 	}
 
-	private void onEnginePrepared(MediaEngine engine, PlayableItem i, long dur) {
+	private void onEnginePrepared(MediaEngine engine, PlayableItem i) {
 		long pos = lib.getLastPlayedPosition(i);
-		float speed = getSpeed(i);
 
+		if (pos > 0) {
+			FutureSupplier<Long> dur = i.getDuration();
+
+			if (dur.isDone()) {
+				if (pos <= dur.get(() -> 0L)) engine.setPosition(pos);
+			} else {
+				dur.main().onSuccess(d -> {
+					if ((this.engine != engine) || (engine.getSource() != i)) return;
+					engine.setPosition((pos > d) ? 0 : pos);
+				});
+			}
+		}
+
+		float speed = getSpeed(i);
 		PlayableItemPrefs prefs = i.getPrefs();
 		BrowsableItemPrefs parentPrefs = i.getParent().getPrefs();
 		PlaybackControlPrefs playbackPrefs = getPlaybackControlPrefs();
 		runWithRetry(() -> setAudiEffects(engine, prefs, parentPrefs, playbackPrefs));
-		engine.setPosition((pos > dur) ? 0 : pos);
 
 		if (playOnPrepared) {
 			lib.setLastPlayed(i, pos);
@@ -892,7 +897,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		MediaMetadataCompat md;
 
-		if (load.isDone()) {
+		if (load.isDone() && !load.isFailed()) {
 			md = mdHolder.get();
 			assertNotNull(md);
 		} else {
@@ -1277,7 +1282,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			}).map(v -> i).main();
 		}
 
-		if (!getDur.isDone()) return getDur.map(d -> i).main();
+		if (!getDur.isDone()) return getDur.map(d -> i).timeout(5000, () -> i).main();
 		return completed(i).main();
 	}
 

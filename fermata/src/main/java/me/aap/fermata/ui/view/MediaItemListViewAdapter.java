@@ -28,6 +28,7 @@ import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
+import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 /**
@@ -65,6 +66,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 
 	@CallSuper
 	public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
+		ensureMainThread(true);
 		this.parent = parent;
 		list = Collections.emptyList();
 		notifyDataSetChanged();
@@ -89,6 +91,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 
 	@CallSuper
 	protected void setChildren(List<? extends Item> children) {
+		ensureMainThread(true);
 		list = filterMap(children, this::filter, (i, c, l) -> l.add(new MediaItemWrapper(c)), ArrayList::new);
 		notifyDataSetChanged();
 	}
@@ -137,23 +140,32 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@NonNull
 	@Override
 	public MediaItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-		MediaItemView v = (MediaItemView) LayoutInflater.from(parent.getContext()).inflate(R.layout.media_item_view, parent, false);
+		MediaItemView v = (MediaItemView) LayoutInflater.from(parent.getContext())
+				.inflate(R.layout.media_item_view, parent, false);
 		v.setClickable(true);
 		v.setOnClickListener(this);
-		v.setListView(getListView());
-		return new MediaItemViewHolder(v);
+		return new MediaItemViewHolder(v, getListView());
 	}
 
 	@Override
 	public void onBindViewHolder(@NonNull MediaItemViewHolder holder, int position) {
 		List<MediaItemWrapper> list = getList();
-		if (position < list.size()) holder.getItemView().setItemWrapper(list.get(position));
+		if (position < list.size()) holder.bind(list.get(position));
 	}
 
 	@Override
 	public void onViewRecycled(@NonNull MediaItemViewHolder holder) {
-		MediaItemView i = holder.getItemView();
-		if (i != null) i.cancelLoading();
+		holder.recycled();
+	}
+
+	@Override
+	public void onViewAttachedToWindow(@NonNull MediaItemViewHolder holder) {
+		holder.attached();
+	}
+
+	@Override
+	public void onViewDetachedFromWindow(@NonNull MediaItemViewHolder holder) {
+		holder.detached();
 	}
 
 	@Override
@@ -207,15 +219,8 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if (filter == null) return true;
 		MediaDescriptionCompat dsc = i.getMediaDescription().peek();
 		CharSequence title;
-
-		if (dsc != null) {
-			title = requireNonNull(dsc.getTitle());
-		} else if (i instanceof BrowsableItem) {
-			title = ((BrowsableItem) i).getName();
-		} else {
-			title = i.getResource().getName();
-		}
-
+		if (dsc != null) title = requireNonNull(dsc.getTitle());
+		else title = i.getName();
 		return filter.matcher(title).find();
 	}
 }

@@ -32,6 +32,8 @@ import java.util.List;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -73,6 +75,8 @@ import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COL
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
+import static me.aap.utils.ui.UiUtils.showAlert;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.SERVICE_BOUND;
 
 /**
@@ -290,6 +294,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public void setVideoMode(boolean videoMode, @Nullable VideoView v) {
+		if (videoMode == this.videoMode) return;
 		ControlPanelView cp = getControlPanel();
 
 		if (videoMode) {
@@ -303,6 +308,8 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			getWindow().clearFlags(FLAG_KEEP_SCREEN_ON);
 			if (cp != null) cp.disableVideoMode();
 		}
+
+		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 	}
 
 	public boolean isVideoMode() {
@@ -345,21 +352,19 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	protected ActivityFragment createFragment(int id) {
-		switch (id) {
-			case R.id.folders_fragment:
-				return new FoldersFragment();
-			case R.id.favorites_fragment:
-				return new FavoritesFragment();
-			case R.id.playlists_fragment:
-				return new PlaylistsFragment();
-			case R.id.settings_fragment:
-				return new SettingsFragment();
-			case R.id.audio_effects_fragment:
-				return new AudioEffectsFragment();
-			default:
-				ActivityFragment f = FermataApplication.get().getAddonManager().createFragment(id);
-				return (f != null) ? f : super.createFragment(id);
+		if (id == R.id.folders_fragment) {
+			return new FoldersFragment();
+		} else if (id == R.id.favorites_fragment) {
+			return new FavoritesFragment();
+		} else if (id == R.id.playlists_fragment) {
+			return new PlaylistsFragment();
+		} else if (id == R.id.settings_fragment) {
+			return new SettingsFragment();
+		} else if (id == R.id.audio_effects_fragment) {
+			return new AudioEffectsFragment();
 		}
+		ActivityFragment f = FermataApplication.get().getAddonManager().createFragment(id);
+		return (f != null) ? f : super.createFragment(id);
 	}
 
 	@Nullable
@@ -402,7 +407,9 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		} else if (root instanceof MediaLib.Playlists) {
 			showFragment(R.id.playlists_fragment);
 		} else {
-			Log.d(new UnsupportedOperationException());
+			MediaLibAddon a = AddonManager.get().getMediaLibAddon(root);
+			if (a != null) showFragment(a.getAddonId());
+			else Log.d("Unsupported item: ", pi);
 		}
 
 		FermataApplication.get().getHandler().post(() -> {
@@ -461,15 +468,17 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			discardSelection();
 			if (name == null) return;
 
-			Playlist pl = getLib().getPlaylists().addItem(name);
-			if (pl != null) {
-				selection.main().onSuccess(items -> {
-					pl.addItems(items);
-					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
-					if (f != null) f.getAdapter().reload();
-				});
-			}
+			getLib().getPlaylists().addItem(name)
+					.onFailure(err -> showAlert(getContext(), err.getMessage()))
+					.then(pl -> selection.main().then(items -> pl.addItems(items)
+							.onFailure(err -> showAlert(getContext(), err.getMessage()))
+							.thenRun(() -> {
+								MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
+								if (f != null) f.getAdapter().reload();
+							}))
+					);
 		});
+
 		return true;
 	}
 
@@ -492,9 +501,12 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	public void removeFromPlaylist(Playlist pl, List<PlayableItem> selection) {
 		discardSelection();
-		pl.removeItems(selection);
-		MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
-		if (f != null) f.getAdapter().reload();
+		pl.removeItems(selection)
+				.onFailure(err -> showAlert(getContext(), err.getMessage()))
+				.thenRun(() -> {
+					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
+					if (f != null) f.getAdapter().reload();
+				});
 	}
 
 	private void discardSelection() {
@@ -572,7 +584,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			});
 		} else {
 			Log.e(err);
-			UiUtils.showAlert(getContext(), String.valueOf(err));
+			showAlert(getContext(), String.valueOf(err));
 		}
 	}
 

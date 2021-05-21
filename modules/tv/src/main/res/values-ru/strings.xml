@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_tv_source">Добавить источник M3U IPTV</string>
+    <string name="epg_time_shift">Сдвиг времени EPG (часов)</string>
+    <string name="logo">Логотипы каналов</string>
+    <string name="logo_location">Расположение</string>
+    <string name="logo_location_hint">Папка или http(s) URL</string>
+    <string name="logo_prefer_epg">Предпочитать логотипы из EPG</string>
+    <string name="catchup_query">Формат строки запроса</string>
+    <string name="catchup_type">Тип catchup</string>
+    <string name="catchup_type_cur">Текущий тип: %1$s</string>
+    <string name="catchup_type_default">По умолчанию</string>
+    <string name="catchup_days">Количество дней</string>
+    <string name="connection_settings">Настройки соединения</string>
+
+    <string name="err_failed_to_add_tv_source">Не удалось добавить источник: %1$s</string>
+</resources>

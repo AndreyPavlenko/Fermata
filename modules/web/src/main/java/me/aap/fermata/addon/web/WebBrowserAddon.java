@@ -3,7 +3,7 @@ package me.aap.fermata.addon.web;
 import android.content.Context;
 
 import androidx.annotation.Keep;
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -45,14 +45,14 @@ public class WebBrowserAddon implements FermataAddon {
 	}
 
 	@Override
-	public int getNavId() {
+	public int getAddonId() {
 		return me.aap.fermata.R.id.web_browser_fragment;
 	}
 
-	@Nullable
+	@NonNull
 	@Override
-	public ActivityFragment createFragment(int id) {
-		return (id == me.aap.fermata.R.id.web_browser_fragment) ? new WebBrowserFragment() : null;
+	public ActivityFragment createFragment() {
+		return new WebBrowserFragment();
 	}
 
 	@Override

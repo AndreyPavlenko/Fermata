@@ -101,12 +101,12 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	}
 
 	@Override
-	String getScheme() {
+	protected String getScheme() {
 		return SCHEME;
 	}
 
 	@Override
-	void saveChildren(List<PlayableItem> children) {
+	protected void saveChildren(List<PlayableItem> children) {
 		setFavoritesPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
 	}
 }

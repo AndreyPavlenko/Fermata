@@ -11,8 +11,10 @@
     <string name="module_name_sftp" translatable="false">SFTP</string>
     <string name="module_name_smb" translatable="false">SMB</string>
     <string name="module_name_web" translatable="false">Web</string>
+    <string name="module_name_tv" translatable="false">TV</string>
 
     <string name="addons">Addons</string>
+    <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
 
@@ -197,10 +199,11 @@
     <string name="vfs_sftp" translatable="false">SFTP</string>
     <string name="vfs_smb" translatable="false">LAN (SMB)</string>
     <string name="m3u_playlist" translatable="false">M3U playlist</string>
-    <string name="m3u_playlist_name" translatable="false">Name</string>
-    <string name="m3u_playlist_url" translatable="false">URL</string>
+    <string name="m3u_playlist_name">Name</string>
+    <string name="m3u_playlist_location">Location</string>
+    <string name="m3u_playlist_location_hint">File or http(s) URL</string>
     <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
-    <string name="m3u_playlist_video" translatable="false">Video playlist</string>
+    <string name="m3u_playlist_video">Video playlist</string>
 
     <string name="eq_manual">Manual</string>
     <string name="eq_normal">Normal</string>
@@ -251,4 +254,5 @@
     <string name="err_failed_add_folder">Failed to add folder: %1$s</string>
     <string name="err_failed_open_url">Failed to open URL: %1$s</string>
     <string name="err_failed_install_module">Failed to install module: %1$s</string>
+    <string name="err_failed_to_download">Failed to download %1$s</string>
 </resources>

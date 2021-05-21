@@ -214,11 +214,12 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	public FutureSupplier<Void> refresh() {
 		FutureSupplier<List<Item>> list = CHILDREN.get(this);
 		if (list == null) return super.updateTitles();
-		return list.then(children -> {
-			for (Item i : children) {
-				if (i instanceof ItemBase) ((ItemBase) i).reset();
-				else i.updateTitles();
-			}
+
+		return list.then(children -> Async.forEach(i -> {
+			if (i instanceof ItemBase) ((ItemBase) i).reset();
+			if (i instanceof BrowsableItem) return ((BrowsableItem) i).refresh();
+			return i.updateTitles();
+		}, children)).then(v -> {
 			CHILDREN.compareAndSet(this, list, null);
 			return super.updateTitles();
 		});
@@ -228,8 +229,11 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	@Override
 	public FutureSupplier<Void> rescan() {
 		String pattern = getChildrenIdPattern();
-		if (pattern != null) getLib().getMetadataRetriever().clearMetadata(pattern);
-		return refresh();
+		if (pattern != null) {
+			return getLib().getMetadataRetriever().clearMetadata(pattern).main().thenRun(this::refresh);
+		} else {
+			return refresh();
+		}
 	}
 
 	void setChildren(List<Item> c) {
@@ -363,7 +367,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 	private static String name(Item i) {
 		if (i instanceof BrowsableItem) {
-			return ((BrowsableItem) i).getName();
+			return i.getName();
 		} else if (i instanceof PlayableItem) {
 			MediaMetadataCompat md = ((PlayableItem) i).getMediaData().peek();
 			String title = (md != null) ? md.getString(MediaMetadataCompat.METADATA_KEY_TITLE) : null;

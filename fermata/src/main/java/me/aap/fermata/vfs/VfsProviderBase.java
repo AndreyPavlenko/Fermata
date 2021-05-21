@@ -111,19 +111,47 @@ public abstract class VfsProviderBase implements VfsProvider {
 		return p;
 	}
 
+	protected String getTitle(MainActivityDelegate a) {
+		return a.getString(R.string.add_folder);
+	}
+
+	protected String getTitle(MainActivityDelegate a, PreferenceViewAdapter adapter) {
+		PreferenceSet p = adapter.getPreferenceSet();
+		if (p.getParent() != null) return a.getString(p.get().title);
+		else return getTitle(a);
+	}
+
+	protected boolean onBackPressed(MainActivityDelegate a, PreferenceViewAdapter adapter) {
+		PreferenceSet p = adapter.getPreferenceSet();
+		if (p.getParent() != null) {
+			adapter.setPreferenceSet(p.getParent());
+			return true;
+		}
+		return false;
+	}
+
 	protected FutureSupplier<Boolean> requestPrefs(
 			MainActivityDelegate a, PreferenceSet prefs, PreferenceStore ps) {
 		GenericDialogFragment f = a.showFragment(me.aap.utils.R.id.generic_dialog_fragment);
-		f.setTitle(a.getString(R.string.add_folder));
+		PreferenceViewAdapter adapter = new PreferenceViewAdapter(prefs) {
+			@Override
+			public void setPreferenceSet(PreferenceSet set) {
+				super.setPreferenceSet(set);
+				f.setTitle(getTitle(a, this));
+				a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+			}
+		};
+		f.setTitle(getTitle(a, adapter));
 		f.setContentProvider(g -> {
 			RecyclerView v = new RecyclerView(g.getContext());
 			v.setLayoutParams(new RecyclerView.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 			v.setHasFixedSize(true);
 			v.setLayoutManager(new LinearLayoutManager(g.getContext()));
-			v.setAdapter(new PreferenceViewAdapter(prefs));
+			v.setAdapter(adapter);
 			g.addView(v);
 		});
 		f.setDialogValidator(() -> validate(ps));
+		f.setBackHandler(() -> onBackPressed(a, adapter));
 
 		ps.addBroadcastListener(prefsListener = (s, p) ->
 				f.getToolBarMediator().onActivityEvent(a.getToolBar(), a, FRAGMENT_CONTENT_CHANGED));

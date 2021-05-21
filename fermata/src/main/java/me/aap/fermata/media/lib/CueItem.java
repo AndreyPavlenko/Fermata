@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -24,7 +25,6 @@ import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static me.aap.fermata.BuildConfig.DEBUG;
 
 /**
  * @author Andrey Pavlenko
@@ -143,8 +143,8 @@ class CueItem extends BrowsableItemBase {
 
 			if (i != null) {
 				CueItem c = (CueItem) i;
-				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-				if (DEBUG && !cueFile.equals(c.getResource())) throw new AssertionError();
+				if (BuildConfig.D && !parent.equals(c.getParent())) throw new AssertionError();
+				if (BuildConfig.D && !cueFile.equals(c.getResource())) throw new AssertionError();
 				return c;
 			} else {
 				return new CueItem(id, parent, cueFile);
@@ -231,10 +231,11 @@ class CueItem extends BrowsableItemBase {
 		});
 	}
 
+	@NonNull
 	@Override
 	public String getName() {
 		Data d = data.get().peek();
-		return (d == null) ? super.getName() : d.name;
+		return (d == null) || (d.name == null) ? super.getName() : d.name;
 	}
 
 	@Override

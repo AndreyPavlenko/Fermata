@@ -26,7 +26,7 @@ import static me.aap.utils.collection.CollectionUtils.filterMap;
 public class FavoritesFragment extends MediaLibFragment {
 
 	@Override
-	ListAdapter createAdapter(FermataServiceUiBinder b) {
+	protected ListAdapter createAdapter(FermataServiceUiBinder b) {
 		return new FavoritesAdapter(getMainActivity(), b.getLib().getFavorites());
 	}
 
@@ -42,45 +42,27 @@ public class FavoritesFragment extends MediaLibFragment {
 
 	@Override
 	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
-		FavoritesAdapter a = getAdapter();
-		if (!a.hasSelectable()) return;
-
-		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
-
-		if (a.getListView().isSelectionActive()) {
-			b.addItem(R.id.nav_select_all, R.drawable.check_box, R.string.select_all);
-			b.addItem(R.id.nav_unselect_all, R.drawable.check_box_blank, R.string.unselect_all);
-
-			if (a.hasSelected()) {
-				b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
-				getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
-			}
-		} else {
-			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
-		}
-
 		super.contributeToNavBarMenu(builder);
+		FavoritesAdapter a = getAdapter();
+
+		if (a.getListView().isSelectionActive() && a.hasSelectable() && a.hasSelected()) {
+			OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+			b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
+			getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
+		}
 	}
 
-	private boolean navBarMenuItemSelected(OverlayMenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.nav_select:
-			case R.id.nav_select_all:
-				getAdapter().getListView().select(true);
-				return true;
-			case R.id.nav_unselect_all:
-				getAdapter().getListView().select(false);
-				return true;
-			case R.id.favorites_remove:
-				requireNonNull(getLib()).getFavorites().removeItems(filterMap(getAdapter().getList(),
-						MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
-						ArrayList::new));
-				discardSelection();
-				getAdapter().setParent(getAdapter().getParent());
-				return true;
+	protected boolean navBarMenuItemSelected(OverlayMenuItem item) {
+		int itemId = item.getItemId();
+		if (itemId == R.id.favorites_remove) {
+			requireNonNull(getLib()).getFavorites().removeItems(filterMap(getAdapter().getList(),
+					MediaItemWrapper::isSelected, (i, w, l) -> l.add((PlayableItem) w.getItem()),
+					ArrayList::new));
+			discardSelection();
+			getAdapter().setParent(getAdapter().getParent());
+			return true;
 		}
-
-		return false;
+		return super.navBarMenuItemSelected(item);
 	}
 
 	@Override

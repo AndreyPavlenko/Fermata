@@ -6,7 +6,7 @@ import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
 
-import me.aap.fermata.addon.web.BuildConfig;
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataJsInterface;
 import me.aap.fermata.addon.web.FermataWebView;
@@ -74,7 +74,7 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void attachListeners() {
-		String debug = BuildConfig.DEBUG ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
+		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		loadUrl("javascript:\n" +
 				"function attachVideoListeners(v) {\n" +

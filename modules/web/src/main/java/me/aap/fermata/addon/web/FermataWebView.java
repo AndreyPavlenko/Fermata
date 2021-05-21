@@ -119,6 +119,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
 			int v = a.isForceDark() ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_AUTO;
 			WebSettingsCompat.setForceDark(getSettings(), v);
+			if (reload) reload();
 		}
 	}
 

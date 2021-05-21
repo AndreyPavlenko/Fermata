@@ -2,6 +2,7 @@ package me.aap.fermata.vfs.m3u;
 
 import android.content.Context;
 
+import java.io.File;
 import java.util.List;
 
 import me.aap.fermata.BuildConfig;
@@ -14,23 +15,18 @@ import me.aap.utils.log.Log;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.pref.SharedPreferenceStore;
-import me.aap.utils.resource.Rid;
 import me.aap.utils.ui.activity.AppActivity;
+import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.AGENT;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.CHARSET;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.ENCODING;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.ETAG;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.NAME;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.URL;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.VIDEO;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.getCacheFile;
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.getM3uPrefs;
+import static me.aap.fermata.vfs.m3u.M3uFile.M3U_FILE_AGE;
+import static me.aap.fermata.vfs.m3u.M3uFile.NAME;
+import static me.aap.fermata.vfs.m3u.M3uFile.URL;
+import static me.aap.fermata.vfs.m3u.M3uFile.VIDEO;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
 
 /**
  * @author Andrey Pavlenko
@@ -52,11 +48,12 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 			o.pref = NAME;
 			o.title = R.string.m3u_playlist_name;
 		});
-		prefs.addStringPref(o -> {
+		prefs.addFilePref(o -> {
 			o.store = ps;
 			o.pref = URL;
-			o.title = R.string.m3u_playlist_url;
-			o.stringHint = "http://example.com/playlist.m3u";
+			o.mode = FilePickerFragment.FILE;
+			o.title = me.aap.fermata.R.string.m3u_playlist_location;
+			o.stringHint = a.getString(me.aap.fermata.R.string.m3u_playlist_location_hint);
 		});
 		prefs.addStringPref(o -> {
 			o.store = ps;
@@ -72,13 +69,14 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 
 		return requestPrefs(a, prefs, ps).then(ok -> {
 			if (!ok) return completedNull();
-			return load(ps.getStringPref(NAME), ps.getStringPref(URL), ps.getStringPref(AGENT), ps.getBooleanPref(VIDEO));
+			return load(ps, M3uFileSystem.getInstance());
 		});
 	}
 
 	@Override
-	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualResource folder) {
-		removePlaylist(folder.getRid());
+	protected FutureSupplier<Void> removeFolder(MainActivityDelegate a, VirtualFileSystem fs, VirtualResource m3u) {
+		if (m3u instanceof M3uFile) removePlaylist((M3uFile) m3u);
+		else Log.e("Unable to delete resource ", m3u);
 		return completedVoid();
 	}
 
@@ -87,7 +85,10 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 	protected boolean validate(PreferenceStore ps) {
 		if (!allSet(ps, NAME, URL)) return false;
 		String u = ps.getStringPref(URL);
-		return u.startsWith("http://") || u.startsWith("https://");
+		if (u.startsWith("http://")) return u.length() > 7;
+		if (u.startsWith("https://")) return u.length() > 8;
+		if (u.startsWith("/")) return new File(u).isFile();
+		return false;
 	}
 
 	@Override
@@ -95,43 +96,30 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 		return false;
 	}
 
-	private static FutureSupplier<VirtualResource> load(String name, String url, String agent, boolean video) {
-		M3uFileSystem fs = M3uFileSystem.getInstance();
-		Rid rid = fs.toRid(name, url);
-		SharedPreferenceStore prefs = getM3uPrefs(rid);
-
-		try (PreferenceStore.Edit e = prefs.editPreferenceStore(true)) {
-			e.setStringPref(NAME, name);
-			e.setStringPref(URL, url);
-			e.setBooleanPref(VIDEO, video);
-			if ((agent != null) && !(agent = agent.trim()).isEmpty()) e.setStringPref(AGENT, agent);
-		}
-
-		return fs.getResource(rid).onCompletion((r, err) -> {
+	protected FutureSupplier<? extends M3uFile> load(PreferenceStore ps, M3uFileSystem fs) {
+		M3uFile f = fs.newFile();
+		setPrefs(ps, f);
+		return fs.load(f).onCompletion((r, err) -> {
 			if (r == null) {
-				if (err != null) Log.e(err, "Failed to load playlist: ", url);
-				else Log.e("Playlist URL not found", url);
-				removePlaylist(rid);
+				if (err != null) Log.e(err, "Failed to load playlist: ", ps.getStringPref(URL));
+				else Log.e("Playlist URL not found", ps.getStringPref(URL));
+				removePlaylist(f);
 			}
 		});
 	}
 
-	private static void removePlaylist(Rid rid) {
-		Log.d("Removing playlist ", rid);
-		SharedPreferenceStore prefs = getM3uPrefs(rid);
+	protected void setPrefs(PreferenceStore ps, M3uFile f) {
+		String agent = ps.getStringPref(AGENT);
+		f.setName(ps.getStringPref(NAME));
+		f.setUrl(ps.getStringPref(URL));
+		f.setVideo(ps.getBooleanPref(VIDEO));
+		f.setMaxAge(M3U_FILE_AGE);
+		if ((agent != null) && !(agent = agent.trim()).isEmpty()) f.setUserAgent(agent);
+	}
 
-		try (PreferenceStore.Edit e = prefs.editPreferenceStore(true)) {
-			e.removePref(NAME);
-			e.removePref(URL);
-			e.removePref(AGENT);
-			e.removePref(VIDEO);
-			e.removePref(ETAG);
-			e.removePref(CHARSET);
-			e.removePref(ENCODING);
-		}
-
-		//noinspection ResultOfMethodCallIgnored
-		getCacheFile(rid).delete();
+	public static void removePlaylist(M3uFile f) {
+		Log.d("Removing playlist ", f);
+		f.delete();
 	}
 
 	private static final class PrefsHolder extends BasicPreferenceStore {

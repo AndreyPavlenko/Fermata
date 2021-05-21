@@ -32,7 +32,14 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.view.NavBarView;
 
+import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
+import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
+import static android.view.KeyEvent.KEYCODE_DPAD_LEFT;
+import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
+import static android.view.KeyEvent.KEYCODE_DPAD_UP;
+import static android.view.KeyEvent.KEYCODE_ENTER;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
@@ -40,6 +47,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.toPx;
 
 /**
@@ -225,8 +233,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	@Override
 	public void surfaceCreated(@NonNull SurfaceHolder holder) {
-		if(!getVideoSurface().getHolder().getSurface().isValid()) return;
-		if(!getSubtitleSurface().getHolder().getSurface().isValid()) return;
+		if (!getVideoSurface().getHolder().getSurface().isValid()) return;
+		if (!getSubtitleSurface().getHolder().getSurface().isValid()) return;
 		surfaceCreated = true;
 		showVideo(true);
 	}
@@ -257,29 +265,53 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		MainActivityDelegate a;
 		FermataServiceUiBinder b;
+		ControlPanelView p;
 
 		switch (keyCode) {
-			case KeyEvent.KEYCODE_ENTER:
-			case KeyEvent.KEYCODE_DPAD_CENTER:
+			case KEYCODE_ENTER:
+			case KEYCODE_DPAD_CENTER:
 				return getActivity().getControlPanel().onTouch(this);
-			case KeyEvent.KEYCODE_DPAD_LEFT:
-				BodyLayout body = getActivity().getBody();
-
-				if (body.getMode() == BodyLayout.Mode.BOTH) {
-					body.getFrameView().requestFocus();
-					return true;
-				}
-			case KeyEvent.KEYCODE_DPAD_RIGHT:
+			case KEYCODE_DPAD_LEFT:
+			case KEYCODE_DPAD_RIGHT:
 				a = getActivity();
+				p = a.getControlPanel();
+
+				if (!p.isVideoSeekMode() && !a.getBody().isVideoMode()) {
+					View v = focusSearch(this, (keyCode == KEYCODE_DPAD_LEFT) ? FOCUS_LEFT : FOCUS_RIGHT);
+					if (v != null) {
+						v.requestFocus();
+						return true;
+					} else {
+						break;
+					}
+				}
+
 				b = a.getMediaServiceBinder();
-				b.onRwFfButtonClick(keyCode == KeyEvent.KEYCODE_DPAD_RIGHT);
+				b.onRwFfButtonClick(keyCode == KEYCODE_DPAD_RIGHT);
 				a.getControlPanel().onVideoSeek();
 				return true;
-			case KeyEvent.KEYCODE_DPAD_UP:
-			case KeyEvent.KEYCODE_DPAD_DOWN:
+			case KEYCODE_DPAD_UP:
 				a = getActivity();
 				b = a.getMediaServiceBinder();
-				b.onRwFfButtonLongClick(keyCode == KeyEvent.KEYCODE_DPAD_UP);
+				b.onRwFfButtonLongClick(true);
+				a.getControlPanel().onVideoSeek();
+				return true;
+			case KEYCODE_DPAD_DOWN:
+				a = getActivity();
+				p = a.getControlPanel();
+
+				if (!p.isVideoSeekMode() && isVisible(p)) {
+					View v = p.focusSearch();
+					if (v != null) {
+						v.requestFocus();
+						return true;
+					} else {
+						break;
+					}
+				}
+
+				b = a.getMediaServiceBinder();
+				b.onRwFfButtonLongClick(false);
 				a.getControlPanel().onVideoSeek();
 				return true;
 		}
@@ -308,6 +340,22 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 				eng.setSubtitleDelay(i.getPrefs().getSubDelayPref());
 			}
 		}
+	}
+
+
+	@Override
+	public View focusSearch(View focused, int direction) {
+		MainActivityDelegate a = getActivity();
+		if (!a.getBody().isBothMode()) return focused;
+
+		if (direction == FOCUS_LEFT) {
+			return MediaItemListView.focusActive(focused);
+		} else if (direction == FOCUS_RIGHT) {
+			NavBarView n = a.getNavBar();
+			if (n.isRight()) return n.focusSearch();
+		}
+
+		return focused;
 	}
 
 	private MainActivityDelegate getActivity() {

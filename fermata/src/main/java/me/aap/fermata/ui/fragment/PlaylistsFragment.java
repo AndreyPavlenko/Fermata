@@ -1,6 +1,5 @@
 package me.aap.fermata.ui.fragment;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import me.aap.fermata.R;
@@ -12,13 +11,9 @@ import me.aap.fermata.media.pref.PlaylistPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 /**
  * @author Andrey Pavlenko
@@ -26,7 +21,7 @@ import static me.aap.utils.collection.CollectionUtils.filterMap;
 public class PlaylistsFragment extends MediaLibFragment {
 
 	@Override
-	ListAdapter createAdapter(FermataServiceUiBinder b) {
+	protected ListAdapter createAdapter(FermataServiceUiBinder b) {
 		return new PlaylistsAdapter(getMainActivity(), b.getLib().getPlaylists());
 	}
 
@@ -47,49 +42,23 @@ public class PlaylistsFragment extends MediaLibFragment {
 
 	@Override
 	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
-		PlaylistsAdapter a = getAdapter();
-		if (!a.hasSelectable()) return;
-
-		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
-
-		if (a.getListView().isSelectionActive()) {
-			b.addItem(R.id.nav_select_all, R.drawable.check_box, R.string.select_all);
-			b.addItem(R.id.nav_unselect_all, R.drawable.check_box_blank, R.string.unselect_all);
-
-			if (a.hasSelected()) {
-				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
-				b.addItem(R.id.playlist_remove_item, R.drawable.playlist_remove, R.string.playlist_remove_item);
-			}
-		} else {
-			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
-		}
-
 		super.contributeToNavBarMenu(builder);
+		PlaylistsAdapter a = getAdapter();
+
+		if (a.getListView().isSelectionActive() && a.hasSelected()) {
+			OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+			b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+			b.addItem(R.id.playlist_remove_item, R.drawable.playlist_remove, R.string.playlist_remove_item);
+		}
 	}
 
 	public boolean navBarMenuItemSelected(OverlayMenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.nav_select:
-			case R.id.nav_select_all:
-				getAdapter().getListView().select(true);
-				return true;
-			case R.id.nav_unselect_all:
-				getAdapter().getListView().select(false);
-				return true;
-			case R.id.favorites_add:
-				requireNonNull(getLib()).getFavorites().addItems(filterMap(getAdapter().getList(),
-						MediaItemWrapper::isSelected, (i, w, l) -> l.add((MediaLib.PlayableItem) w.getItem()),
-						ArrayList::new));
-				discardSelection();
-				MediaLibFragment f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
-				if (f != null) f.reload();
-				return true;
-			case R.id.playlist_remove_item:
-				getMainActivity().removeFromPlaylist((Playlist) getAdapter().getParent(), getAdapter().getSelectedItems());
-				return true;
+		int itemId = item.getItemId();
+		if (itemId == R.id.playlist_remove_item) {
+			getMainActivity().removeFromPlaylist((Playlist) getAdapter().getParent(), getAdapter().getSelectedItems());
+			return true;
 		}
-
-		return false;
+		return super.navBarMenuItemSelected(item);
 	}
 
 	@Override

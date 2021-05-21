@@ -6,30 +6,39 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.view.NavBarView;
+import me.aap.utils.ui.view.ToolBarView;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.utils.ui.UiUtils.isVisible;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MediaItemListView extends RecyclerView implements PreferenceStore.Listener {
 	private boolean isSelectionActive;
+	private int focusReq;
+	private boolean grid;
 
 	public MediaItemListView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs);
 		configure(ctx.getResources().getConfiguration());
+		setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
 		MainActivityDelegate.get(ctx).getPrefs().addBroadcastListener(this);
 	}
 
@@ -45,7 +54,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		if (a == null) return;
 
 		MainActivityPrefs prefs = a.getPrefs();
-		boolean grid = prefs.getGridViewPref();
+		grid = prefs.getGridViewPref();
 
 		if (grid) {
 			float scale = prefs.getMediaItemScalePref();
@@ -103,30 +112,174 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public void scrollToPosition(int position) {
-		super.scrollToPosition(position);
 		List<MediaItemWrapper> list = getAdapter().getList();
 		if ((position < 0) || (position >= list.size())) return;
-		View v = list.get(position).getView();
-		if (v != null) v.requestFocus();
+
+		focusReq = -1;
+		super.scrollToPosition(position);
+		if (!isVisible(this)) return;
+		MainActivityDelegate a = getActivity();
+		if ((a == null) || a.getBody().isVideoMode()) return;
+		MediaItemWrapper w = list.get(position);
+		MediaItemViewHolder h = w.getViewHolder();
+		if ((h != null) && h.isAttached() && (h.getItemWrapper() == w)) h.getItemView().requestFocus();
+		else focusReq = position;
+	}
+
+	void holderAttached(MediaItemViewHolder h) {
+		if ((focusReq != -1) && (h.getAdapterPosition() == focusReq)) {
+			focusReq = -1;
+			h.getItemView().requestFocus();
+		}
+	}
+
+	@Nullable
+	public static View focusFirst(View focused) {
+		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+		if (f instanceof MediaLibFragment) {
+			MediaItemListView v = ((MediaLibFragment) f).getListView();
+			if (v != null) {
+				List<MediaItemWrapper> list = v.getAdapter().getList();
+				return ((list != null) && !list.isEmpty()) ? v.focusTo(focused, list, 0) : v.focusEmpty();
+			}
+		}
+		return null;
+	}
+
+	@Nullable
+	public static View focusLast(View focused) {
+		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+		if (f instanceof MediaLibFragment) {
+			MediaItemListView v = ((MediaLibFragment) f).getListView();
+			if (v != null) {
+				List<MediaItemWrapper> list = v.getAdapter().getList();
+				return ((list != null) && !list.isEmpty())
+						? v.focusTo(focused, list, list.size() - 1)
+						: v.focusEmpty();
+			}
+		}
+		return null;
+	}
+
+	@Nullable
+	public static View focusActive(View focused) {
+		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+		if (f instanceof MediaLibFragment) {
+			MediaItemListView v = ((MediaLibFragment) f).getListView();
+			return (v != null) ? v.focusSearch() : null;
+		}
+		return null;
+	}
+
+	public View focusSearch() {
+		List<MediaItemWrapper> list = getAdapter().getList();
+		MainActivityDelegate a = getActivity();
+		PlayableItem p = a.getCurrentPlayable();
+
+		if (p != null) {
+			for (int i = 0, n = list.size(); i < n; i++) {
+				MediaItemWrapper w = list.get(i);
+				if (w.getItem() == p) return focusTo(this, w, i);
+			}
+		}
+
+		for (int i = 0, n = list.size(); i < n; i++) {
+			MediaItemWrapper w = list.get(i);
+			Item item = w.getItem();
+			if ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed()) {
+				return focusTo(this, w, i);
+			}
+		}
+
+		return focusEmpty();
+	}
+
+	private View focusEmpty() {
+		View v = getActivity().getFloatingButton();
+		return isVisible(v) ? v : this;
 	}
 
 	@Override
 	public View focusSearch(View focused, int direction) {
-		if ((direction == FOCUS_UP) && (focused instanceof MediaItemView)) {
-			List<MediaItemWrapper> list = getAdapter().getList();
+		if (grid) return super.focusSearch(focused, direction);
+		if (!(focused instanceof MediaItemView) || (focused.getParent() != this)) return focused;
 
-			if ((list != null) && !list.isEmpty()) {
-				MediaItemView i = (MediaItemView) focused;
+		if (direction == FOCUS_LEFT) return focusLeft(focused);
+		if (direction == FOCUS_RIGHT) return focusRight(focused);
 
-				if (list.get(0) == i.getItemWrapper()) {
-					View v = MainActivityDelegate.get(getContext()).getToolBar()
-							.findViewById(R.id.tool_bar_back_button);
-					if (v.getVisibility() == VISIBLE) return v;
-				}
-			}
+		List<MediaItemWrapper> list = getAdapter().getList();
+
+		if ((list == null) || list.isEmpty()) {
+			return (direction == FOCUS_UP) ? focusUp(focused) : focusDown(focused);
 		}
 
-		return super.focusSearch(focused, direction);
+		ViewHolder vh = getChildViewHolder(focused);
+		if (!(vh instanceof MediaItemViewHolder)) return focused;
+
+		int pos = ((MediaItemViewHolder) vh).getAdapterPosition();
+		if ((pos < 0) || (pos >= list.size())) return focused;
+		return focusTo(focused, list, (direction == FOCUS_UP) ? (pos - 1) : (pos + 1));
+	}
+
+	public View focusLeft(View focused) {
+		MainActivityDelegate a = getActivity();
+		NavBarView n = a.getNavBar();
+		if (isVisible(n) && n.isLeft()) return n.focusSearch();
+
+		ToolBarView tb = getActivity().getToolBar();
+		if (isVisible(tb)) return tb.focusSearch();
+
+		List<MediaItemWrapper> list = getAdapter().getList();
+		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
+	}
+
+	public View focusRight(View focused) {
+		MainActivityDelegate a = getActivity();
+		BodyLayout b = a.getBody();
+		if (b.isBothMode()) return b;
+		View v = a.getFloatingButton();
+		if (isVisible(v)) return v;
+		NavBarView n = a.getNavBar();
+		return (isVisible(n) && n.isRight()) ? n.focusSearch() : focused;
+	}
+
+	public View focusUp(View focused) {
+		ToolBarView tb = getActivity().getToolBar();
+		if (isVisible(tb)) return tb.focusSearch();
+
+		List<MediaItemWrapper> list = getAdapter().getList();
+		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, list.size() - 1) : focused;
+	}
+
+	public View focusDown(View focused) {
+		MainActivityDelegate a = getActivity();
+		ControlPanelView p = a.getControlPanel();
+		if (isVisible(p)) return p.focusSearch();
+
+		NavBarView n = a.getNavBar();
+		if (isVisible(n) && n.isBottom()) return n.focusSearch();
+
+		List<MediaItemWrapper> list = getAdapter().getList();
+		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
+	}
+
+	public View focusTo(View focused, List<MediaItemWrapper> list, int pos) {
+		if (pos < 0) return focusUp(focused);
+		if (pos >= list.size()) return focusDown(focused);
+		return focusTo(focused, list.get(pos), pos);
+	}
+
+	private View focusTo(View focused, MediaItemWrapper w, int pos) {
+		MediaItemViewHolder h = w.getViewHolder();
+
+		if ((h != null) && h.isAttached() && (h.getItemWrapper() == w)) {
+			super.scrollToPosition(pos);
+			return h.getItemView();
+		} else {
+			focusReq = pos;
+			super.scrollToPosition(pos);
+			return focused;
+		}
 	}
 
 	@Override
@@ -148,5 +301,9 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 				}
 			}
 		}
+	}
+
+	private MainActivityDelegate getActivity() {
+		return MainActivityDelegate.get(getContext());
 	}
 }

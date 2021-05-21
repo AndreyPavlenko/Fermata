@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.view;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Objects;
 
@@ -13,7 +14,8 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 public class MediaItemWrapper {
 	private final Item item;
 	private boolean selected;
-	private MediaItemView view;
+	@Nullable
+	private MediaItemViewHolder viewHolder;
 
 	public MediaItemWrapper(Item item) {
 		this.item = item;
@@ -23,17 +25,25 @@ public class MediaItemWrapper {
 		return item;
 	}
 
-	public void setView(MediaItemView view) {
-		this.view = view;
-		view.getCheckBox().setSelected(isSelected());
+	public void setViewHolder(@Nullable MediaItemViewHolder h) {
+		viewHolder = h;
+		if (h != null) h.getItemView().getCheckBox().setSelected(isSelected());
 	}
 
+	@Nullable
+	public MediaItemViewHolder getViewHolder() {
+		return viewHolder;
+	}
+
+	@Nullable
 	public MediaItemView getView() {
-		return view;
+		MediaItemViewHolder h = getViewHolder();
+		return (h != null) ? h.getItemView() : null;
 	}
 
 	public void refreshViewCheckbox() {
-		if (view != null) view.refreshCheckbox();
+		MediaItemView v = getView();
+		if (v != null) v.refreshCheckbox();
 	}
 
 	public boolean isSelected() {

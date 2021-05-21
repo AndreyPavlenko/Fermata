@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <me.aap.fermata.ui.view.ControlPanelSeekView
+        android:id="@+id/seek_bar"
+        style="?attr/appSeekBarStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/focusable_shape_transparent"
+        app:layout_constraintBottom_toTopOf="@id/barrier"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrier"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="seek_bar" />
+
+    <LinearLayout
+        android:id="@+id/show_hide_bars"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:focusable="true"
+        android:gravity="center"
+        android:nextFocusLeft="@id/control_menu_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/control_prev"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barrier">
+
+        <me.aap.utils.ui.view.ImageButton
+            style="?attr/appControlPanelStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/collapse" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/seek_time"
+            style="?attr/appSeekBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:padding="4dp"
+            android:textAppearance="?attr/textAppearanceBody1" />
+    </LinearLayout>
+
+    <me.aap.utils.ui.view.ImageButton
+        android:id="@+id/control_prev"
+        style="?attr/appControlPanelStyle"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/prev"
+        app:layout_constraintEnd_toStartOf="@id/control_rw"
+        app:layout_constraintStart_toEndOf="@id/show_hide_bars"
+        app:layout_constraintTop_toBottomOf="@id/barrier" />
+
+    <me.aap.utils.ui.view.ImageButton
+        android:id="@+id/control_rw"
+        style="?attr/appControlPanelStyle"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/rw"
+        app:layout_constraintEnd_toStartOf="@id/control_play_pause"
+        app:layout_constraintStart_toEndOf="@id/control_prev"
+        app:layout_constraintTop_toBottomOf="@id/barrier" />
+
+    <me.aap.utils.ui.view.ImageButton
+        android:id="@+id/control_play_pause"
+        style="?attr/appControlPanelStyle"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/play_pause"
+        app:layout_constraintEnd_toStartOf="@id/control_ff"
+        app:layout_constraintStart_toEndOf="@id/control_rw"
+        app:layout_constraintTop_toBottomOf="@id/barrier" />
+
+    <me.aap.utils.ui.view.ImageButton
+        android:id="@+id/control_ff"
+        style="?attr/appControlPanelStyle"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ff"
+        app:layout_constraintEnd_toStartOf="@id/control_next"
+        app:layout_constraintStart_toEndOf="@id/control_play_pause"
+        app:layout_constraintTop_toBottomOf="@id/barrier" />
+
+    <me.aap.utils.ui.view.ImageButton
+        android:id="@+id/control_next"
+        style="?attr/appControlPanelStyle"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/next"
+        app:layout_constraintEnd_toStartOf="@id/control_menu_button"
+        app:layout_constraintStart_toEndOf="@id/control_ff"
+        app:layout_constraintTop_toBottomOf="@id/barrier" />
+
+    <LinearLayout
+        android:id="@+id/control_menu_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/focusable_shape_transparent"
+        android:focusable="true"
+        android:gravity="center"
+        android:nextFocusRight="@id/show_hide_bars"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/control_next"
+        app:layout_constraintTop_toBottomOf="@id/barrier">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/seek_total"
+            style="?attr/appSeekBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:padding="4dp"
+            android:textAppearance="?attr/textAppearanceBody1" />
+
+        <me.aap.utils.ui.view.ImageButton
+            style="?attr/appControlPanelStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/more" />
+    </LinearLayout>
+
+</merge>

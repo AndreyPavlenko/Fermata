@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
@@ -85,7 +86,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@NonNull
 	@Override
-	public FutureSupplier<Item> getItem(CharSequence itemId) {
+	public FutureSupplier<? extends Item> getItem(CharSequence itemId) {
 		String id = itemId.toString();
 		Item i = getFromCache(id);
 		if (i != null) return completed(i);
@@ -101,12 +102,15 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				case DefaultPlaylists.ID:
 					return completed(getPlaylists());
 				default:
-					return completedNull();
+					FutureSupplier<? extends Item> ai = AddonManager.get().getItem(this, null, id);
+					return (ai != null) ? ai : completedNull();
 			}
 		}
 
 		try {
-			switch (id.substring(0, idx)) {
+			String scheme = id.substring(0, idx);
+
+			switch (scheme) {
 				case FileItem.SCHEME:
 					return FileItem.create(this, id);
 				case FolderItem.SCHEME:
@@ -126,7 +130,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 				case DefaultPlaylists.SCHEME:
 					return getPlaylists().getItem(id);
 				default:
-					return completedNull();
+					FutureSupplier<? extends Item> ai = AddonManager.get().getItem(this, scheme, id);
+					return (ai != null) ? ai : completedNull();
 			}
 		} catch (Throwable ex) {
 			return failed(ex);
@@ -297,15 +302,16 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 	}
 
-	Object cacheLock() {
+	public Object cacheLock() {
 		return itemCache;
 	}
 
 	void addToCache(Item i) {
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
-			if (BuildConfig.DEBUG && itemCache.containsKey(i.getId())) throw new AssertionError();
-			itemCache.put(i.getId(), new WeakRef<>(i.getId(), i, itemRefQueue));
+			String id = i.getId();
+			if (BuildConfig.D && itemCache.containsKey(id)) throw new AssertionError(id);
+			itemCache.put(id, new WeakRef<>(id, i, itemRefQueue));
 		}
 	}
 
@@ -321,7 +327,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 	}
 
-	Item getFromCache(String id) {
+	public Item getFromCache(String id) {
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
 			WeakRef<Item> r = itemCache.get(id);
@@ -334,6 +340,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		}
 
 		return null;
+	}
+
+	@Override
+	public void clearCache() {
+		synchronized (itemCache) {
+			clearRefs(itemCache, itemRefQueue);
+		}
 	}
 
 	@SuppressWarnings("rawtypes")

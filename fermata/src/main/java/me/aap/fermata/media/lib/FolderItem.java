@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.FolderItemPrefs;
@@ -19,7 +20,6 @@ import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 
@@ -40,8 +40,8 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 
 			if (i != null) {
 				FolderItem f = (FolderItem) i;
-				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
-				if (DEBUG && !file.equals(f.getResource())) throw new AssertionError();
+				if (BuildConfig.D && !parent.equals(f.getParent())) throw new AssertionError();
+				if (BuildConfig.D && !file.equals(f.getResource())) throw new AssertionError();
 				return f;
 			} else {
 				return new FolderItem(id, parent, file);
@@ -58,7 +58,7 @@ class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 			return lib.getFolders().getUnsortedChildren().map(children -> {
 				String name = id.substring(SCHEME.length() + 1);
 				for (Item i : children) {
-					if (name.equals(((FolderItem) i).getName())) return i;
+					if (name.equals(i.getName())) return i;
 				}
 				return null;
 			});

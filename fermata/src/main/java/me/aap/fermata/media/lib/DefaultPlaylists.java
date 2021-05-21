@@ -1,11 +1,11 @@
 package me.aap.fermata.media.lib;
 
 import android.content.Context;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import me.aap.fermata.R;
@@ -15,13 +15,16 @@ import me.aap.fermata.media.lib.MediaLib.Playlist;
 import me.aap.fermata.media.lib.MediaLib.Playlists;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlaylistsPrefs;
+import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.holder.Holder;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
@@ -93,17 +96,32 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	@Override
 	FutureSupplier<Item> getItem(String id) {
 		assert id.startsWith(SCHEME);
+		FutureSupplier<Item> none = completedNull();
+		Holder<FutureSupplier<Item>> h = new Holder<>(none);
 
-		for (Item i : getUnsortedChildren().getOrThrow()) {
-			if (!id.startsWith(i.getId())) continue;
-			if (id.equals(i.getId())) return completed(i);
+		return list().then(playlists -> {
+			if (playlists.isEmpty()) return completedNull();
+			Iterator<Playlist> plIt = playlists.iterator();
 
-			for (Item c : ((Playlist) i).getUnsortedChildren().getOrThrow()) {
-				if (id.equals(c.getId())) return completed(c);
-			}
-		}
+			return Async.iterate(() -> {
+				if ((h.value != none) || !plIt.hasNext()) return null;
+				Playlist pl = plIt.next();
+				if (!id.startsWith(pl.getId())) return completedNull();
+				if (id.equals(pl.getId())) return h.value = completed(pl);
 
-		return completedNull();
+				return pl.getUnsortedChildren().then(children -> {
+					if (children.isEmpty()) return completedNull();
+					Iterator<Item> chIt = children.iterator();
+
+					return Async.iterate(() -> {
+						if ((h.value != none) || !chIt.hasNext()) return null;
+						Item c = chIt.next();
+						if (id.equals(c.getId())) return h.value = completed(c);
+						return completedNull();
+					});
+				});
+			});
+		}).then(v -> h.value);
 	}
 
 	@Override
@@ -112,51 +130,49 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	}
 
 	@Override
-	public Playlist addItem(CharSequence name) {
+	public FutureSupplier<Playlist> addItem(CharSequence name) {
 		String n = name.toString().trim();
 
 		if (n.isEmpty() || (n.indexOf('/') != -1)) {
 			Context ctx = getLib().getContext();
-			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_invalid_playlist_name, n),
-					Toast.LENGTH_LONG).show();
-			return null;
+			String err = ctx.getResources().getString(R.string.err_invalid_playlist_name, n);
+			return failed(new IllegalArgumentException(err));
 		}
 
-		if (CollectionUtils.contains(getUnsortedChildren().getOrThrow(),
-				c -> n.equals(((Playlist) c).getName()))) {
-			Context ctx = getLib().getContext();
-			Toast.makeText(ctx, ctx.getResources().getString(R.string.err_playlist_exists, n),
-					Toast.LENGTH_LONG).show();
-			return null;
-		}
+		return list().then(list -> {
+			if (CollectionUtils.contains(list, c -> n.equals(((Playlist) c).getName()))) {
+				Context ctx = getLib().getContext();
+				String err = ctx.getResources().getString(R.string.err_playlist_exists, n);
+				return failed(new IllegalArgumentException(err));
+			}
 
-		int playlistId = getPlaylistsCounterPref() + 1;
-		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(SCHEME).append(':').append(playlistId).append(':');
-		DefaultPlaylist pl = DefaultPlaylist.create(tb.releaseString(), this, playlistId, getLib());
-		setPlaylistsCounterPref(playlistId);
-		pl.setPlaylistNamePref(n);
-		super.addItem(pl);
-		return pl;
+			int playlistId = getPlaylistsCounterPref() + 1;
+			SharedTextBuilder tb = SharedTextBuilder.get();
+			tb.append(SCHEME).append(':').append(playlistId).append(':');
+			DefaultPlaylist pl = DefaultPlaylist.create(tb.releaseString(), this, playlistId, getLib());
+			setPlaylistsCounterPref(playlistId);
+			pl.setPlaylistNamePref(n);
+			return super.addItem(pl).map(v -> pl);
+		});
 	}
 
 	@Override
-	String getScheme() {
+	protected String getScheme() {
 		return SCHEME;
 	}
 
 	@Override
-	public void addItem(Playlist i) {
+	public FutureSupplier<Void> addItem(Playlist i) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void addItems(List<Playlist> items) {
+	public FutureSupplier<Void> addItems(List<Playlist> items) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	void saveChildren(List<Playlist> children) {
+	protected void saveChildren(List<Playlist> children) {
 		setPlaylistIdsPref(CollectionUtils.map(children, (i, t, a) -> a[i] = ((DefaultPlaylist) t).getPlaylistId(), int[]::new));
 	}
 

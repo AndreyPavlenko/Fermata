@@ -19,18 +19,6 @@ public class ExtPlayable extends PlayableItemBase {
 		return false;
 	}
 
-	@NonNull
-	@Override
-	public MediaLib.PlayableItem export(String exportId, BrowsableItem parent) {
-		String origId = getOrigId();
-		return new ExtPlayable(exportId, parent, getResource()) {
-			@Override
-			public String getOrigId() {
-				return origId;
-			}
-		};
-	}
-
 	@Override
 	public String getOrigId() {
 		return getId();

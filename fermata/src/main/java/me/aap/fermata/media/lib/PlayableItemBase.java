@@ -54,17 +54,21 @@ public abstract class PlayableItemBase extends ItemBase implements PlayableItem,
 	@Override
 	public FutureSupplier<MediaMetadataCompat> getMediaData() {
 		FutureSupplier<MediaMetadataCompat> m = META.get(this);
-		if (m != null) return m;
+		if (isMediaDataValid(m)) return m.fork();
 
 		Promise<MediaMetadataCompat> load = new Promise<>();
 
-		for (; !META.compareAndSet(this, null, load); m = META.get(this)) {
-			if (m != null) return m;
+		for (; !META.compareAndSet(this, m, load); m = META.get(this)) {
+			if (m != null) return m.fork();
 		}
 
 		loadMeta().thenReplaceOrClear(META, this, load);
 		m = META.get(this);
-		return (m != null) ? m : load;
+		return ((m != null) ? m : load).fork();
+	}
+
+	protected boolean isMediaDataValid(FutureSupplier<MediaMetadataCompat> d) {
+		return d != null;
 	}
 
 	@NonNull
@@ -78,6 +82,12 @@ public abstract class PlayableItemBase extends ItemBase implements PlayableItem,
 			getLib().getMetadataRetriever().updateDuration(this, duration);
 			return completedVoid();
 		});
+	}
+
+	@NonNull
+	@Override
+	public PlayableItem export(String exportId, BrowsableItem parent) {
+		return ExportedItem.create(this, exportId, parent);
 	}
 
 	@NonNull
@@ -97,18 +107,15 @@ public abstract class PlayableItemBase extends ItemBase implements PlayableItem,
 		}
 	}
 
-	protected void setMeta(MediaMetadataCompat m) {
-		setMeta(completed(m));
-	}
-
 	protected void setMeta(FutureSupplier<MediaMetadataCompat> m) {
+		reset();
 		META.set(this, m);
 		m.thenReplaceOrClear(META, this);
 	}
 
 	protected void setMeta(MetadataBuilder mb) {
 		FutureSupplier<MediaMetadataCompat> m = META.get(this);
-		if (m != null) return;
+		if (isMediaDataValid(m)) return;
 
 		m = buildMeta(mb);
 
@@ -117,7 +124,7 @@ public abstract class PlayableItemBase extends ItemBase implements PlayableItem,
 	}
 
 	@Override
-	void reset() {
+	protected void reset() {
 		super.reset();
 		meta = null;
 	}

@@ -8,7 +8,7 @@ import androidx.annotation.Nullable;
 import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.vfs.m3u.M3uFileSystem;
+import me.aap.fermata.vfs.m3u.M3uFile;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
@@ -21,7 +21,7 @@ import static me.aap.utils.io.FileUtils.getMimeTypeFromExtension;
 /**
  * @author Andrey Pavlenko
  */
-class M3uTrackItem extends PlayableItemBase {
+public class M3uTrackItem extends PlayableItemBase {
 	public static final String SCHEME = "m3ut";
 	private final String name;
 	private final String album;
@@ -29,11 +29,13 @@ class M3uTrackItem extends PlayableItemBase {
 	private final String genre;
 	private final int trackNumber;
 	private final String logo;
+	private final String tvgId;
 	private final boolean isVideo;
-	private long duration;
+	private final long duration;
 
-	M3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file, String name,
-							 String album, String artist, String genre, String logo, long duration, byte type) {
+	protected M3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
+												 String name, String album, String artist, String genre, String logo,
+												 String tvgId, long duration, byte type) {
 		super(id, parent, file);
 
 		if (type == 1) {
@@ -51,25 +53,13 @@ class M3uTrackItem extends PlayableItemBase {
 		this.artist = artist;
 		this.genre = genre;
 		this.logo = logo;
+		this.tvgId = tvgId;
 		this.trackNumber = trackNumber;
-		this.duration = file.isLocalFile() ? duration : 0;
-	}
-
-	private M3uTrackItem(String id, BrowsableItem parent, M3uTrackItem i) {
-		super(id, parent, i.getResource());
-		this.trackNumber = i.trackNumber;
-		this.name = i.name;
-		this.album = i.album;
-		this.artist = i.artist;
-		this.genre = i.genre;
-		this.logo = i.logo;
-		this.duration = i.duration;
-		this.isVideo = i.isVideo;
-		setMeta(i.getMediaData());
+		this.duration = duration;
 	}
 
 	@NonNull
-	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
+	static FutureSupplier<? extends M3uTrackItem> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		int start = id.indexOf(':') + 1;
 		int end = id.indexOf(':', start);
@@ -86,18 +76,36 @@ class M3uTrackItem extends PlayableItemBase {
 		});
 	}
 
-	private M3uItem getM3uItem() {
+	protected M3uItem getM3uItem() {
 		Item p = getParent();
 		return (p instanceof M3uItem) ? (M3uItem) p : ((M3uGroupItem) p).getParent();
+	}
+
+	public String getScheme() {
+		return SCHEME;
 	}
 
 	public int getTrackNumber() {
 		return trackNumber;
 	}
 
+	@NonNull
+	public String getName() {
+		String n = name;
+		return (n != null) ? n : getResource().getName();
+	}
+
+	public String getTvgId() {
+		return tvgId;
+	}
+
 	@Override
 	public boolean isVideo() {
 		return isVideo;
+	}
+
+	protected String getLogo() {
+		return logo;
 	}
 
 	@NonNull
@@ -110,10 +118,11 @@ class M3uTrackItem extends PlayableItemBase {
 	@NonNull
 	@Override
 	protected FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
-		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, name);
+		meta.putString(MediaMetadataCompat.METADATA_KEY_TITLE, getName());
 		if (album != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
 		if (artist != null) meta.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
 		if (genre != null) meta.putString(MediaMetadataCompat.METADATA_KEY_GENRE, genre);
+		if (duration > 0) meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration * 1000);
 
 		if (logo != null) {
 			return getM3uItem().getResource().getParent().then(dir ->
@@ -127,33 +136,18 @@ class M3uTrackItem extends PlayableItemBase {
 		return super.buildMeta(meta);
 	}
 
-	@NonNull
-	@Override
-	public M3uTrackItem export(String exportId, BrowsableItem parent) {
-		DefaultMediaLib lib = (DefaultMediaLib) getLib();
-
-		synchronized (lib.cacheLock()) {
-			Item i = lib.getFromCache(exportId);
-			if (i instanceof M3uTrackItem) return (M3uTrackItem) i;
-			return new M3uTrackItem(exportId, parent, this);
-		}
-	}
-
 	@Override
 	public String getOrigId() {
+		String s = getScheme();
 		String id = getId();
-		if (id.startsWith(SCHEME)) return id;
-		return id.substring(id.indexOf(SCHEME));
+		if (id.startsWith(s)) return id;
+		return id.substring(id.indexOf(s));
 	}
 
 	@Nullable
 	@Override
 	public String getUserAgent() {
-		VirtualResource r = getParent().getResource();
-		if (r.getVirtualFileSystem() instanceof M3uFileSystem) {
-			return M3uFileSystem.getInstance().getUserAgent(r.getRid());
-		} else {
-			return null;
-		}
+		VirtualResource r = getM3uItem().getResource();
+		return (r instanceof M3uFile) ? ((M3uFile) r).getUserAgent() : null;
 	}
 }

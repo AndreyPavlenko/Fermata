@@ -11,7 +11,6 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 
@@ -40,19 +39,6 @@ class CueTrackItem extends PlayableItemBase {
 		this.trackNumber = trackNumber;
 		this.offset = offset;
 		this.isVideo = isVideo;
-	}
-
-	private CueTrackItem(String id, BrowsableItem parent, CueTrackItem item) {
-		super(id, parent, item.getResource());
-		this.title = item.title;
-		this.performer = item.performer;
-		this.writer = item.writer;
-		this.albumTitle = item.albumTitle;
-		this.trackNumber = item.trackNumber;
-		this.offset = item.offset;
-		this.isVideo = item.isVideo;
-		this.duration = item.duration;
-		setMeta(item.getMediaData());
 	}
 
 	@NonNull
@@ -121,29 +107,6 @@ class CueTrackItem extends PlayableItemBase {
 	@Override
 	public boolean isTimerRequired() {
 		return true;
-	}
-
-	@NonNull
-	@Override
-	public CueTrackItem export(String exportId, BrowsableItem parent) {
-		DefaultMediaLib lib = (DefaultMediaLib) parent.getLib();
-		CueTrackItem exported;
-
-		synchronized (lib.cacheLock()) {
-			Item i = lib.getFromCache(exportId);
-
-			if (i != null) {
-				CueTrackItem c = (CueTrackItem) i;
-				if (DEBUG && !parent.equals(c.getParent())) throw new AssertionError();
-				if (DEBUG && !getResource().equals(c.getResource())) throw new AssertionError();
-				return c;
-			} else {
-				exported = new CueTrackItem(exportId, parent, this);
-			}
-		}
-
-		exported.setMeta(getMediaData());
-		return exported;
 	}
 
 	@Override

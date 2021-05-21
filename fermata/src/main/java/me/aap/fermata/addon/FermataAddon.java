@@ -1,6 +1,7 @@
 package me.aap.fermata.addon;
 
 import androidx.annotation.IdRes;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import me.aap.utils.misc.ChangeableCondition;
@@ -16,14 +17,10 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 public interface FermataAddon {
 
 	@IdRes
-	default int getNavId() {
-		return ID_NULL;
-	}
+	int getAddonId();
 
-	@Nullable
-	default ActivityFragment createFragment(@IdRes int id) {
-		return null;
-	}
+	@NonNull
+	ActivityFragment createFragment();
 
 	default void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
 	}

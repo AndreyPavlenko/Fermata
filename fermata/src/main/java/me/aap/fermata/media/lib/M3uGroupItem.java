@@ -19,13 +19,13 @@ import static me.aap.utils.async.Completed.completedNull;
 /**
  * @author Andrey Pavlenko
  */
-class M3uGroupItem extends BrowsableItemBase {
+public class M3uGroupItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3ug";
 	final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
 	private final String name;
 	private final int groupId;
 
-	M3uGroupItem(String id, M3uItem parent, String name, int groupId) {
+	protected M3uGroupItem(String id, M3uItem parent, String name, int groupId) {
 		super(id, parent, parent.getResource());
 		this.name = name;
 		this.groupId = groupId;
@@ -36,7 +36,7 @@ class M3uGroupItem extends BrowsableItemBase {
 	}
 
 	@NonNull
-	static FutureSupplier<Item> create(DefaultMediaLib lib, String id) {
+	static FutureSupplier<? extends M3uGroupItem> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
 		int start = id.indexOf(':') + 1;
 		int end = id.indexOf(':', start);
@@ -56,6 +56,7 @@ class M3uGroupItem extends BrowsableItemBase {
 		return (M3uItem) requireNonNull(super.getParent());
 	}
 
+	@NonNull
 	@Override
 	public String getName() {
 		return name;

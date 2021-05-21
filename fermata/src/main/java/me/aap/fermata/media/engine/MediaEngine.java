@@ -33,6 +33,10 @@ public interface MediaEngine extends Closeable {
 	void pause();
 
 	default boolean canPause() {
+		return canSeek();
+	}
+
+	default boolean canSeek() {
 		PlayableItem src = getSource();
 		return (src != null) && !src.isStream();
 	}
@@ -112,12 +116,12 @@ public interface MediaEngine extends Closeable {
 	}
 
 	default boolean requestAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
-		return (audioManager == null) ||
+		return (audioManager == null) || (audioFocusReq == null) ||
 				(AudioManagerCompat.requestAudioFocus(audioManager, audioFocusReq) == AUDIOFOCUS_REQUEST_GRANTED);
 	}
 
 	default void releaseAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
-		if (audioManager != null)
+		if ((audioManager != null) && (audioFocusReq != null))
 			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
 	}
 

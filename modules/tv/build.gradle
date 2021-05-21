@@ -1,0 +1,24 @@
+android {
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+ext {
+    addons = [
+            [
+                    name : 'tv',
+                    icon : 'tv',
+                    class: 'me.aap.fermata.addon.tv.TvAddon'
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation 'androidx.media:media:' + ANDROIDX_MEDIA_VERSION
+    implementation 'androidx.appcompat:appcompat:' + ANDROIDX_APPCOMPAT_VERSION
+    implementation 'com.google.android.material:material:' + ANDROID_MATERIAL_VERSION
+}

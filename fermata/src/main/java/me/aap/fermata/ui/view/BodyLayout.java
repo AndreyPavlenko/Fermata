@@ -67,6 +67,10 @@ public class BodyLayout extends ConstraintLayout implements
 		return getMode() == Mode.VIDEO;
 	}
 
+	public boolean isBothMode() {
+		return getMode() == Mode.BOTH;
+	}
+
 	public void setMode(Mode mode) {
 		this.mode = mode;
 		Guideline gl = getGuideline();
@@ -99,7 +103,7 @@ public class BodyLayout extends ConstraintLayout implements
 				getSwipeRefresh().setVisibility(VISIBLE);
 				lp.guidePercent = getActivity().getPrefs().getSplitPercent(getContext());
 				vv.showVideo(true);
-				getActivity().setVideoMode(false, vv);
+				getActivity().setVideoMode(true, vv);
 				break;
 		}
 

@@ -21,9 +21,9 @@ bundletool_universal() {
     rm "$APKS"
 }
 
-./gradlew clean fermata:bundleRelease -PABI='arm64-v8a,armeabi-v7a'
-mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.aab "$DEST_DIR"
-mv ./fermata/build/outputs/bundle/mobileRelease/fermata-*.aab "$DEST_DIR"
+# ./gradlew clean fermata:bundleRelease -PABI='arm64-v8a,armeabi-v7a'
+# mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.aab "$DEST_DIR"
+# mv ./fermata/build/outputs/bundle/mobileRelease/fermata-*.aab "$DEST_DIR"
 
 ./gradlew -p control assembleRelease
 mv ./control/build/outputs/apk/release/fermata-auto-control-*-release.apk "$DEST_DIR"

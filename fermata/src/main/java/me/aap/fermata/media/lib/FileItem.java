@@ -4,13 +4,13 @@ import android.annotation.SuppressLint;
 
 import androidx.annotation.NonNull;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.BuildConfig.DEBUG;
 import static me.aap.fermata.util.Utils.isVideoFile;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.security.SecurityUtils.md5;
@@ -36,7 +36,7 @@ class FileItem extends PlayableItemBase {
 
 			if (i != null) {
 				FileItem f = (FileItem) i;
-				if (DEBUG && !parent.equals(f.getParent())) throw new AssertionError();
+				if (BuildConfig.D && !parent.equals(f.getParent())) throw new AssertionError();
 
 				if (!file.equals(f.getResource())) {
 					StringBuilder sb = new StringBuilder(id.length() + 33);
@@ -74,14 +74,6 @@ class FileItem extends PlayableItemBase {
 	@Override
 	public boolean isVideo() {
 		return isVideo;
-	}
-
-	@NonNull
-	@Override
-	public FileItem export(String exportId, BrowsableItem parent) {
-		FileItem f = create(exportId, parent, getResource(), (DefaultMediaLib) parent.getLib(), isVideo());
-		f.setMeta(getMediaData());
-		return f;
 	}
 
 	@Override

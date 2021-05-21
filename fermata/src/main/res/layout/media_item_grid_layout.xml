@@ -42,11 +42,22 @@
         android:ellipsize="marquee"
         android:singleLine="true"
         android:textAppearance="?attr/textAppearanceCaption"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/media_item_progress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/media_item_title"
         tools:ignore="RtlSymmetry" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/media_item_progress"
+        style="?attr/appMediaItemStyle"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/media_item_checkbox"
@@ -57,4 +68,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
 </merge>

@@ -1,5 +1,6 @@
 package me.aap.fermata.media.lib;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -11,26 +12,25 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
 import static me.aap.utils.async.Async.forEach;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
 
 
 /**
  * @author Andrey Pavlenko
  */
-abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
+public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 
-	ItemContainer(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
+	protected ItemContainer(String id, @Nullable BrowsableItem parent, @Nullable VirtualResource file) {
 		super(id, parent, file);
 	}
 
-	abstract String getScheme();
+	protected abstract String getScheme();
 
-	abstract void saveChildren(List<C> children);
+	protected abstract void saveChildren(List<C> children);
 
 	@NonNull
 	@Override
@@ -41,88 +41,115 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	FutureSupplier<Item> getItem(String id) {
 		assert id.startsWith(getScheme());
 
-		for (C i : list()) {
-			if (id.equals(i.getId())) return completed(i);
-		}
-
-		return completedNull();
+		return list().map(list -> {
+			for (C i : list) if (id.equals(i.getId())) return i;
+			return null;
+		});
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	FutureSupplier<List<Item>> listChildren(String[] ids) {
 		MediaLib lib = getLib();
 		List children = new ArrayList<>(ids.length);
-		return forEach(id -> lib.getItem(id).map(c -> {
-			if (c != null) children.add(toChildItem(c));
-			return null;
-		}), ids).map(v -> children);
+		return forEach(id -> lib.getItem(id)
+				.ifFail(err -> {
+					Log.e(err, "Failed to get item: ", id);
+					return null;
+				}).map(c -> {
+					if (c != null) children.add(toChildItem(c));
+					return null;
+				}), ids).map(v -> children);
 	}
 
-	public void addItem(C i) {
-		List<C> children = list();
-		i = toChildItem(i);
-		if (children.contains(i)) return;
+	public FutureSupplier<Void> addItem(C item) {
+		return list().map(children -> {
+			C i = toChildItem(item);
+			if (children.contains(i)) return null;
 
-		List<C> newChildren = new ArrayList<>(children.size() + 1);
-		newChildren.addAll(children);
-		newChildren.add(i);
-		setNewChildren(newChildren);
-		saveChildren(newChildren);
-	}
-
-	public void addItems(List<C> items) {
-		List<C> children = list();
-		List<C> newChildren = new ArrayList<>(children.size() + items.size());
-		boolean added = false;
-		newChildren.addAll(children);
-
-		for (C i : items) {
-			i = toChildItem(i);
-			if (children.contains(i)) continue;
+			List<C> newChildren = new ArrayList<>(children.size() + 1);
+			newChildren.addAll(children);
 			newChildren.add(i);
-			added = true;
-		}
-
-		if (!added) return;
-
-		setNewChildren(newChildren);
-		saveChildren(newChildren);
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			return null;
+		});
 	}
 
-	public void removeItem(int idx) {
-		List<C> newChildren = new ArrayList<>(list());
-		newChildren.remove(idx);
-		setNewChildren(newChildren);
-		saveChildren(newChildren);
+	public FutureSupplier<Void> addItems(List<C> items) {
+		return list().map(list -> {
+			List<C> newChildren = new ArrayList<>(list.size() + items.size());
+			boolean added = false;
+			newChildren.addAll(list);
+
+			for (C i : items) {
+				i = toChildItem(i);
+				if (list.contains(i)) continue;
+				newChildren.add(i);
+				added = true;
+			}
+
+			if (!added) return null;
+
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			return null;
+		});
 	}
 
-	public void removeItem(C i) {
-		List<C> newChildren = new ArrayList<>(list());
-		if (!newChildren.remove(toChildItem(i))) return;
-
-		setNewChildren(newChildren);
-		saveChildren(newChildren);
+	public FutureSupplier<Void> removeItem(int idx) {
+		return list().map(list -> {
+			List<C> newChildren = new ArrayList<>(list);
+			C removed = newChildren.remove(idx);
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			itemRemoved(removed);
+			return null;
+		});
 	}
 
-	public void removeItems(List<C> items) {
-		List<C> newChildren = new ArrayList<>(list());
-		boolean removed = false;
+	public FutureSupplier<Void> removeItem(C item) {
+		return list().map(list -> {
+			List<C> newChildren = new ArrayList<>(list);
+			C i = toChildItem(item);
+			if (!newChildren.remove(i)) return null;
 
-		for (C i : items) {
-			if (newChildren.remove(toChildItem(i))) removed = true;
-		}
-
-		if (!removed) return;
-
-		setNewChildren(newChildren);
-		saveChildren(newChildren);
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			itemRemoved(i);
+			return null;
+		});
 	}
 
-	public void moveItem(int fromPosition, int toPosition) {
-		List<C> newChildren = new ArrayList<>(list());
-		CollectionUtils.move(newChildren, fromPosition, toPosition);
-		setNewChildren(newChildren);
-		saveChildren(newChildren);
+	public FutureSupplier<Void> removeItems(List<C> items) {
+		return list().map(list -> {
+			List<C> newChildren = new ArrayList<>(list);
+			List<C> removed = new ArrayList<>(items.size());
+
+			for (C i : items) {
+				if (newChildren.remove(i = toChildItem(i))) removed.add(i);
+			}
+
+			if (removed.isEmpty()) return null;
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			CollectionUtils.forEach(removed, this::itemRemoved);
+			return null;
+		});
+	}
+
+	@CallSuper
+	protected void itemRemoved(C i) {
+		getLib().removeFromCache(i);
+	}
+
+	public FutureSupplier<Void> moveItem(int fromPosition, int toPosition) {
+		return list().map(list -> {
+			List<C> newChildren = new ArrayList<>(list);
+			CollectionUtils.move(newChildren, fromPosition, toPosition);
+			setNewChildren(newChildren);
+			saveChildren(newChildren);
+			return null;
+		});
 	}
 
 	@Override
@@ -156,7 +183,7 @@ abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private List<C> list() {
-		return (List) getUnsortedChildren().getOrThrow();
+	protected FutureSupplier<List<C>> list() {
+		return (FutureSupplier) getUnsortedChildren().main();
 	}
 }

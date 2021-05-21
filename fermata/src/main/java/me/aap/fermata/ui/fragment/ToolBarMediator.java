@@ -2,11 +2,15 @@ package me.aap.fermata.ui.fragment;
 
 import android.view.View;
 
+import androidx.annotation.Nullable;
+
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.view.ControlPanelView;
+import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -14,6 +18,8 @@ import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ImageButton;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static android.view.View.FOCUS_DOWN;
+import static android.view.View.FOCUS_UP;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_DATE;
@@ -21,6 +27,7 @@ import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NONE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_RND;
+import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
@@ -55,6 +62,23 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			ActivityFragment f = a.getActiveFragment();
 			if (f != null) setSortButtonVisibility(view, f);
 		}
+	}
+
+	@Nullable
+	@Override
+	public View focusSearch(ToolBarView tb, View focused, int direction) {
+		View v = ToolBarView.Mediator.BackTitleFilter.super.focusSearch(tb, focused, direction);
+		if (v != null) return v;
+
+		if (direction == FOCUS_UP) {
+			MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+			ControlPanelView p = a.getControlPanel();
+			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusLast(focused);
+		} else if (direction == FOCUS_DOWN) {
+			return MediaItemListView.focusFirst(focused);
+		}
+
+		return null;
 	}
 
 	private void setSortButtonVisibility(ToolBarView tb, ActivityFragment f) {
@@ -113,42 +137,41 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		MediaLibFragment.ListAdapter adapter = f.getAdapter();
 		BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
 
-		switch (item.getItemId()) {
-			case R.id.tool_seq_num:
-				prefs.setTitleSeqNumPref(!prefs.getTitleSeqNumPref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_track_name:
-				prefs.setTitleNamePref(!prefs.getTitleNamePref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_file_name:
-				prefs.setTitleFileNamePref(!prefs.getTitleFileNamePref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_sub_track_name:
-				prefs.setSubtitleNamePref(!prefs.getSubtitleNamePref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_sub_file_name:
-				prefs.setSubtitleFileNamePref(!prefs.getSubtitleFileNamePref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_sub_album:
-				prefs.setSubtitleAlbumPref(!prefs.getSubtitleAlbumPref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_sub_artist:
-				prefs.setSubtitleArtistPref(!prefs.getSubtitleArtistPref());
-				titlePrefChanged(adapter);
-				return true;
-			case R.id.tool_sub_dur:
-				prefs.setSubtitleDurationPref(!prefs.getSubtitleDurationPref());
-				titlePrefChanged(adapter);
-				return true;
-			default:
-				return false;
+		int itemId = item.getItemId();
+		if (itemId == R.id.tool_seq_num) {
+			prefs.setTitleSeqNumPref(!prefs.getTitleSeqNumPref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_track_name) {
+			prefs.setTitleNamePref(!prefs.getTitleNamePref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_file_name) {
+			prefs.setTitleFileNamePref(!prefs.getTitleFileNamePref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_sub_track_name) {
+			prefs.setSubtitleNamePref(!prefs.getSubtitleNamePref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_sub_file_name) {
+			prefs.setSubtitleFileNamePref(!prefs.getSubtitleFileNamePref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_sub_album) {
+			prefs.setSubtitleAlbumPref(!prefs.getSubtitleAlbumPref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_sub_artist) {
+			prefs.setSubtitleArtistPref(!prefs.getSubtitleArtistPref());
+			titlePrefChanged(adapter);
+			return true;
+		} else if (itemId == R.id.tool_sub_dur) {
+			prefs.setSubtitleDurationPref(!prefs.getSubtitleDurationPref());
+			titlePrefChanged(adapter);
+			return true;
 		}
+		return false;
 	}
 
 	private static void titlePrefChanged(MediaLibFragment.ListAdapter adapter) {
@@ -193,30 +216,29 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		MediaLibFragment f = (MediaLibFragment) mf;
 		MediaLibFragment.ListAdapter adapter = f.getAdapter();
 
-		switch (item.getItemId()) {
-			case R.id.tool_sort_name:
-				setSortBy(adapter, SORT_BY_NAME);
-				return true;
-			case R.id.tool_sort_file_name:
-				setSortBy(adapter, SORT_BY_FILE_NAME);
-				return true;
-			case R.id.tool_sort_date:
-				setSortBy(adapter, SORT_BY_DATE);
-				return true;
-			case R.id.tool_sort_random:
-				setSortBy(adapter, SORT_BY_RND);
-				return true;
-			case R.id.tool_sort_none:
-				setSortBy(adapter, SORT_BY_NONE);
-				return true;
-			case R.id.tool_sort_desc:
-				BrowsableItem p = adapter.getParent();
-				p.updateSorting().main()
-						.thenRun(() -> p.getPrefs().setSortDescPref(!p.getPrefs().getSortDescPref()));
-				return true;
-			default:
-				return false;
+		int itemId = item.getItemId();
+		if (itemId == R.id.tool_sort_name) {
+			setSortBy(adapter, SORT_BY_NAME);
+			return true;
+		} else if (itemId == R.id.tool_sort_file_name) {
+			setSortBy(adapter, SORT_BY_FILE_NAME);
+			return true;
+		} else if (itemId == R.id.tool_sort_date) {
+			setSortBy(adapter, SORT_BY_DATE);
+			return true;
+		} else if (itemId == R.id.tool_sort_random) {
+			setSortBy(adapter, SORT_BY_RND);
+			return true;
+		} else if (itemId == R.id.tool_sort_none) {
+			setSortBy(adapter, SORT_BY_NONE);
+			return true;
+		} else if (itemId == R.id.tool_sort_desc) {
+			BrowsableItem p = adapter.getParent();
+			p.updateSorting().main()
+					.thenRun(() -> p.getPrefs().setSortDescPref(!p.getPrefs().getSortDescPref()));
+			return true;
 		}
+		return false;
 	}
 
 	private static void setSortBy(MediaLibFragment.ListAdapter adapter, int sortBy) {

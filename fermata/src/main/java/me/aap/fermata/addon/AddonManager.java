@@ -13,8 +13,11 @@ import java.util.Map;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.DefaultMediaLib;
+import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.app.App;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.log.Log;
 import me.aap.utils.module.DynamicModuleInstaller;
@@ -68,9 +71,32 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	@Nullable
 	public ActivityFragment createFragment(@IdRes int id) {
 		for (FermataAddon a : getAddons()) {
-			ActivityFragment f = a.createFragment(id);
-			if (f != null) return f;
+			if (a.getAddonId() == id) return a.createFragment();
 		}
+		return null;
+	}
+
+	@Nullable
+	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme, String id) {
+		for (FermataAddon a : getAddons()) {
+			if (a instanceof MediaLibAddon) {
+				FutureSupplier<? extends Item> i = ((MediaLibAddon) a).getItem(lib, scheme, id);
+				if (i != null) return i;
+			}
+		}
+
+		return null;
+	}
+
+	@Nullable
+	public MediaLibAddon getMediaLibAddon(Item i) {
+		for (FermataAddon a : getAddons()) {
+			if (a instanceof MediaLibAddon) {
+				MediaLibAddon mla = (MediaLibAddon) a;
+				if (mla.isSupportedItem(i)) return mla;
+			}
+		}
+
 		return null;
 	}
 

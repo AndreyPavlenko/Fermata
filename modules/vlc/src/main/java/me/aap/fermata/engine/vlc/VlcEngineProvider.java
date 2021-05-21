@@ -47,7 +47,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
 		audioSessionId = (am != null) ? am.generateAudioSessionId() : AudioManager.ERROR;
 
-		if (BuildConfig.DEBUG) opts.add("-vvv");
+		if (BuildConfig.D) opts.add("-vvv");
 		if (audioSessionId != AudioManager.ERROR)
 			opts.add("--audiotrack-session-id=" + audioSessionId);
 

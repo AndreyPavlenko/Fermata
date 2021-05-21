@@ -89,7 +89,7 @@ public interface MediaLib {
 	}
 
 	@NonNull
-	FutureSupplier<Item> getItem(CharSequence id);
+	FutureSupplier<? extends Item> getItem(CharSequence id);
 
 	@NonNull
 	FutureSupplier<PlayableItem> getLastPlayedItem();
@@ -113,12 +113,10 @@ public interface MediaLib {
 	void search(String query, MediaLibResult<List<MediaItem>> result);
 
 	default void search(String query, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
-		// TODO: implement
-		result.sendResult(Collections.emptyList());
+		search(query, new MediaLibResult.Wrapper<>(result));
 	}
 
 	default void clearCache() {
-		// TODO: implement
 	}
 
 	interface Item {
@@ -127,6 +125,12 @@ public interface MediaLib {
 		String getId();
 
 		VirtualResource getResource();
+
+		@NonNull
+		default String getName() {
+			VirtualResource r = getResource();
+			return (r != null) ? r.getName() : getClass().getSimpleName();
+		}
 
 		@NonNull
 		MediaLib getLib();
@@ -256,6 +260,18 @@ public interface MediaLib {
 		default FutureSupplier<Void> updateTitles() {
 			return completedVoid();
 		}
+
+		default boolean addChangeListener(ChangeListener l) {
+			return false;
+		}
+
+		default boolean removeChangeListener(ChangeListener l) {
+			return false;
+		}
+
+		interface ChangeListener {
+			void mediaItemChanged(Item i);
+		}
 	}
 
 	interface PlayableItem extends Item {
@@ -301,6 +317,11 @@ public interface MediaLib {
 		@NonNull
 		default FutureSupplier<Void> setDuration(long duration) {
 			return completedVoid();
+		}
+
+		@Nullable
+		default FutureSupplier<Integer> getProgress() {
+			return null;
 		}
 
 		default boolean isTimerRequired() {
@@ -352,9 +373,20 @@ public interface MediaLib {
 		default String getUserAgent() {
 			return null;
 		}
+
+		interface ChangeListener extends Item.ChangeListener {
+
+			default void playableItemChanged(PlayableItem i) {
+				mediaItemChanged(i);
+			}
+
+			default void playableItemProgressChanged(PlayableItem i) {
+			}
+		}
 	}
 
 	interface BrowsableItem extends Item {
+
 		@NonNull
 		BrowsableItemPrefs getPrefs();
 
@@ -426,10 +458,6 @@ public interface MediaLib {
 
 		@NonNull
 		FutureSupplier<Iterator<PlayableItem>> getShuffleIterator();
-
-		default String getName() {
-			return getResource().getName();
-		}
 
 		@Override
 		default int getIcon() {
@@ -504,11 +532,12 @@ public interface MediaLib {
 		@NonNull
 		FutureSupplier<Item> addItem(Uri uri);
 
-		void removeItem(int idx);
+		FutureSupplier<Void> removeItem(int idx);
 
-		void removeItem(Item item);
+		FutureSupplier<Void> removeItem(Item item);
 
-		void moveItem(int fromPosition, int toPosition);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);
 	}
 
 	interface Favorites extends BrowsableItem {
@@ -517,17 +546,20 @@ public interface MediaLib {
 
 		boolean isFavoriteItemId(String id);
 
-		void addItem(PlayableItem i);
+		FutureSupplier<Void> addItem(PlayableItem i);
 
-		void addItems(List<PlayableItem> items);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> addItems(List<PlayableItem> items);
 
-		void removeItem(int idx);
+		FutureSupplier<Void> removeItem(int idx);
 
-		void removeItem(PlayableItem i);
+		FutureSupplier<Void> removeItem(PlayableItem i);
 
-		void removeItems(List<PlayableItem> items);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> removeItems(List<PlayableItem> items);
 
-		void moveItem(int fromPosition, int toPosition);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);
 
 		@Override
 		default int getIcon() {
@@ -539,21 +571,19 @@ public interface MediaLib {
 
 		boolean isPlaylistsItemId(String id);
 
-		Playlist addItem(CharSequence name);
+		FutureSupplier<Playlist> addItem(CharSequence name);
 
-		void removeItem(int idx);
+		FutureSupplier<Void> removeItem(int idx);
 
-		void removeItems(List<Playlist> items);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> removeItems(List<Playlist> items);
 
-		void moveItem(int fromPosition, int toPosition);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);
 
 		@Override
 		default int getIcon() {
 			return R.drawable.playlist;
-		}
-
-		default boolean hasPlaylists() {
-			return !getUnsortedChildren().getOrThrow().isEmpty();
 		}
 	}
 
@@ -563,15 +593,14 @@ public interface MediaLib {
 		@Override
 		Playlists getParent();
 
-		String getName();
+		FutureSupplier<Void> addItems(List<PlayableItem> items);
 
-		void addItems(List<PlayableItem> items);
+		FutureSupplier<Void> removeItem(int idx);
 
-		void removeItem(int idx);
+		FutureSupplier<Void> removeItems(List<PlayableItem> items);
 
-		void removeItems(List<PlayableItem> items);
-
-		void moveItem(int fromPosition, int toPosition);
+		@SuppressWarnings("UnusedReturnValue")
+		FutureSupplier<Void> moveItem(int fromPosition, int toPosition);
 
 		@Override
 		default int getIcon() {
