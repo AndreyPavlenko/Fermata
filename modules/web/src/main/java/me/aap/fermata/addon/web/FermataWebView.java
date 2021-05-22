@@ -19,6 +19,8 @@ import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.FermataActivity;
@@ -98,10 +100,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		s.setUseWideViewPort(v);
 
 		if (v) {
-			String ua = s.getUserAgentString();
-			int i1 = ua.indexOf('(') + 1;
-			int i2 = ua.indexOf(')', i1);
-			ua = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2).replace("Mobile ", "");
+			String ua = UserAgent.getPc(s);
 			Log.d("Changing UserAgent to " + ua);
 			s.setUserAgentString(ua);
 		} else {
@@ -289,5 +288,32 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		}
 
 		return super.onInterceptTouchEvent(ev);
+	}
+
+	private static final class UserAgent {
+		private static String pc;
+
+		static String getPc(WebSettings s) {
+			if (pc != null) return pc;
+
+			String ua = s.getUserAgentString();
+			Pattern pattern = Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
+			Matcher m = pattern.matcher(ua);
+
+			if (m.matches()) {
+				String wv = m.group(1);
+				String cv = m.group(2);
+				pc = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/" + wv
+						+ " (KHTML, like Gecko) Chrome/" + cv + " Safari/" + wv;
+			} else {
+				int i1 = ua.indexOf('(') + 1;
+				int i2 = ua.indexOf(')', i1);
+				pc = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)
+						.replace(" Mobile ", " ")
+						.replaceFirst(" Version/\\d+\\.\\d+ ", " ");
+			}
+
+			return pc;
+		}
 	}
 }

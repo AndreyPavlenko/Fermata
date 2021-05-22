@@ -25,10 +25,12 @@ ANDROIDX_APPCOMPAT_VERSION="$(grep 'ANDROIDX_APPCOMPAT_VERSION = ' $DEPENDS_DIR/
 # Clone or update FFmpeg
 if [ -d "$FFMPEG_DIR" ]; then
     cd "$FFMPEG_DIR"
-    git clean -xfd && git reset --hard && git pull
+    git clean -xfd && git checkout master && git reset --hard && git pull
 else
     git clone 'git://source.ffmpeg.org/ffmpeg' "$FFMPEG_DIR"
 fi
+# Temporary workaround for 'Unknown option "--disable-avresample"'
+git checkout n4.4
 
 # Clone or update ExoPlayer
 if [ -d "$EXO_DIR" ]; then
