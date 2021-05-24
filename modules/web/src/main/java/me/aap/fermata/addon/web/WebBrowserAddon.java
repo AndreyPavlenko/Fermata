@@ -28,6 +28,14 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class WebBrowserAddon implements FermataAddon {
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
 	private static final Pref<BooleanSupplier> FORCE_DARK = Pref.b("FORCE_DARK", false);
+	private static final Pref<Supplier<String>> USER_AGENT = Pref.s("USER_AGENT",
+			"Mozilla/5.0 (Linux; Android {ANDROID_VERSION}) " +
+					"AppleWebKit/{WEBKIT_VERSION} (KHTML, like Gecko) " +
+					"Chrome/{CHROME_VERSION} Mobile Safari/{WEBKIT_VERSION}");
+	private static final Pref<Supplier<String>> USER_AGENT_DESKTOP = Pref.s("USER_AGENT_DESKTOP",
+			"Mozilla/5.0 (X11; Linux x86_64) " +
+					"AppleWebKit/{WEBKIT_VERSION} (KHTML, like Gecko) " +
+					"Chrome/{CHROME_VERSION} Safari/{WEBKIT_VERSION}");
 	private static final Pref<BooleanSupplier> DESKTOP_VERSION = Pref.b("DESKTOP_VERSION", false);
 	private static final Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS");
 	private final SharedPreferenceStore preferenceStore;
@@ -55,6 +63,25 @@ public class WebBrowserAddon implements FermataAddon {
 			o.title = R.string.force_dark;
 			o.visibility = visibility;
 		});
+
+		if (getClass() == WebBrowserAddon.class) {
+			set.addStringPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = getUserAgentPref();
+				o.title = R.string.user_agent;
+				o.stringHint = o.pref.getDefaultValue().get();
+				o.visibility = visibility;
+				o.maxLines = 3;
+			});
+			set.addStringPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = getUserAgentDesktopPref();
+				o.title = R.string.user_agent_desktop;
+				o.stringHint = o.pref.getDefaultValue().get();
+				o.visibility = visibility;
+				o.maxLines = 3;
+			});
+		}
 	}
 
 	public SharedPreferenceStore getPreferenceStore() {
@@ -63,6 +90,14 @@ public class WebBrowserAddon implements FermataAddon {
 
 	public Pref<BooleanSupplier> getForceDarkPref() {
 		return FORCE_DARK;
+	}
+
+	public Pref<Supplier<String>> getUserAgentPref() {
+		return USER_AGENT;
+	}
+
+	public Pref<Supplier<String>> getUserAgentDesktopPref() {
+		return USER_AGENT_DESKTOP;
 	}
 
 	public boolean isForceDark() {

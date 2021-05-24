@@ -31,7 +31,10 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.TextChangedListener;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static android.os.Build.VERSION;
+import static android.os.Build.VERSION_CODES;
 import static androidx.webkit.WebViewFeature.FORCE_DARK;
+import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
 
@@ -74,40 +77,49 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		s.setJavaScriptEnabled(true);
 		s.setJavaScriptCanOpenWindowsAutomatically(true);
 
-		setDesktopMode(addon.isDesktopVersion(), false);
-		addon.getPreferenceStore().addBroadcastListener(this);
 		addJavascriptInterface(createJsInterface(), FermataJsInterface.NAME);
 		CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
 
-		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
-			if (addon.isForceDark()) {
-				WebSettingsCompat.setForceDark(s, WebSettingsCompat.FORCE_DARK_ON);
-			}
-		}
+		addon.getPreferenceStore().addBroadcastListener(this);
+		setDesktopMode(addon, false);
+		setForceDark(addon, false);
 	}
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		WebBrowserAddon addon = getAddon();
+		WebBrowserAddon a = getAddon();
+		if (a == null) return;
 
-		if ((addon != null) && prefs.contains(addon.getDesktopVersionPref())) {
-			setDesktopMode(store.getBooleanPref(addon.getDesktopVersionPref()), true);
+		if (prefs.contains(a.getDesktopVersionPref())) {
+			setDesktopMode(a, true);
+		} else if (prefs.contains(a.getUserAgentPref())) {
+			UserAgent.ua = null;
+			setDesktopMode(a, true);
+		} else if (prefs.contains(a.getUserAgentDesktopPref())) {
+			UserAgent.uaDesktop = null;
+			setDesktopMode(a, true);
+		} else if (prefs.contains(a.getForceDarkPref())) {
+			setForceDark(addon, true);
 		}
 	}
 
-	private void setDesktopMode(boolean v, boolean reload) {
+	private void setDesktopMode(WebBrowserAddon a, boolean reload) {
+		if (getClass() != FermataWebView.class) return;
+
 		WebSettings s = getSettings();
+		boolean v = a.getPreferenceStore().getBooleanPref(a.getDesktopVersionPref());
+		String ua = v ? UserAgent.getUaDesktop(s, a) : UserAgent.getUa(s, a);
+		Log.d("Setting User-Agent to " + ua);
+		s.setUserAgentString(ua);
 		s.setUseWideViewPort(v);
-
-		if (v) {
-			String ua = UserAgent.getPc(s);
-			Log.d("Changing UserAgent to " + ua);
-			s.setUserAgentString(ua);
-		} else {
-			s.setUserAgentString(null);
-		}
-
 		if (reload) reload();
+	}
+
+	private void setForceDark(WebBrowserAddon a, boolean reload) {
+		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
+			int v = a.isForceDark() ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_AUTO;
+			WebSettingsCompat.setForceDark(getSettings(), v);
+		}
 	}
 
 	protected FermataJsInterface createJsInterface() {
@@ -290,30 +302,58 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		return super.onInterceptTouchEvent(ev);
 	}
 
-	private static final class UserAgent {
-		private static String pc;
+	static final class UserAgent {
+		private static final Pattern pattern = Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
+		static String ua;
+		static String uaDesktop;
 
-		static String getPc(WebSettings s) {
-			if (pc != null) return pc;
+		static String getUa(WebSettings s, WebBrowserAddon a) {
+			if (ua != null) return ua;
 
 			String ua = s.getUserAgentString();
-			Pattern pattern = Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
+			Matcher m = pattern.matcher(ua);
+
+			if (m.matches()) {
+				String av;
+				if (VERSION.SDK_INT >= VERSION_CODES.R) av = VERSION.RELEASE_OR_CODENAME;
+				else av = VERSION.RELEASE;
+				String wv = m.group(1);
+				String cv = m.group(2);
+				UserAgent.ua = a.getPreferenceStore().getStringPref(a.getUserAgentPref()).trim()
+						.replace("{ANDROID_VERSION}", av)
+						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
+						.replace("{CHROME_VERSION}", requireNonNull(cv));
+				if (UserAgent.ua.isEmpty()) UserAgent.ua = ua;
+			} else {
+				Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
+				UserAgent.ua = ua;
+			}
+
+			return UserAgent.ua;
+		}
+
+		static String getUaDesktop(WebSettings s, WebBrowserAddon a) {
+			if (uaDesktop != null) return uaDesktop;
+
+			String ua = s.getUserAgentString();
 			Matcher m = pattern.matcher(ua);
 
 			if (m.matches()) {
 				String wv = m.group(1);
 				String cv = m.group(2);
-				pc = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/" + wv
-						+ " (KHTML, like Gecko) Chrome/" + cv + " Safari/" + wv;
+				uaDesktop = a.getPreferenceStore().getStringPref(a.getUserAgentDesktopPref())
+						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
+						.replace("{CHROME_VERSION}", requireNonNull(cv));
 			} else {
+				Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
 				int i1 = ua.indexOf('(') + 1;
 				int i2 = ua.indexOf(')', i1);
-				pc = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)
+				uaDesktop = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)
 						.replace(" Mobile ", " ")
 						.replaceFirst(" Version/\\d+\\.\\d+ ", " ");
 			}
 
-			return pc;
+			return uaDesktop;
 		}
 	}
 }

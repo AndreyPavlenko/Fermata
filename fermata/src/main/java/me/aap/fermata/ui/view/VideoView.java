@@ -72,6 +72,16 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 				getHolder().addCallback(VideoView.this);
 			}
 		});
+		addView(new SurfaceView(getContext()) {
+			{
+				FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+				lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+				setLayoutParams(lp);
+				setZOrderMediaOverlay(true);
+				getHolder().setFormat(PixelFormat.TRANSLUCENT);
+				getHolder().addCallback(VideoView.this);
+			}
+		});
 
 		addTitle(context);
 		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
@@ -93,30 +103,15 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		return (SurfaceView) getChildAt(0);
 	}
 
-	public SurfaceView getSubtitleSurface(boolean create) {
-		if (getChildCount() < 3) {
-			if (!create) return null;
-			removeViewAt(1);
-			Context ctx = getContext();
-			SurfaceView v = new SurfaceView(ctx);
-			FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-			lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
-			v.setLayoutParams(lp);
-			v.setZOrderMediaOverlay(true);
-			v.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-			addView(v);
-			addTitle(ctx);
-			return v;
-		}
-
-		return (SurfaceView) getChildAt(1);
+	public SurfaceView getSubtitleSurface() {
+		return (getChildCount() < 3) ? null : (SurfaceView) getChildAt(1);
 	}
 
 	public TextView getTitle() {
 		return (TextView) getChildAt((getChildCount() < 3) ? 1 : 2);
 	}
 
-	public void showVideo() {
+	public void showVideo(boolean hideTitle) {
 		if (surfaceCreated) {
 			MainActivityDelegate a = getActivity();
 			MediaSessionCallback cb = a.getMediaSessionCallback();
@@ -130,7 +125,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			cb.addVideoView(this, a.isCarActivity() ? 0 : 1);
 
 			TextView title = getTitle();
-			title.setVisibility(GONE);
+			if (hideTitle) title.setVisibility(GONE);
 
 			i.getMediaDescription().main().onSuccess(dsc -> {
 				if (cb.getCurrentItem() != i) return;
@@ -203,7 +198,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			surface.setLayoutParams(lp);
 		}
 
-		if ((surface = getSubtitleSurface(false)) != null) {
+		if ((surface = getSubtitleSurface()) != null) {
 			lp = surface.getLayoutParams();
 
 			if ((lp.width != width) || (lp.height != height)) {
@@ -230,8 +225,10 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	@Override
 	public void surfaceCreated(@NonNull SurfaceHolder holder) {
+		if(!getVideoSurface().getHolder().getSurface().isValid()) return;
+		if(!getSubtitleSurface().getHolder().getSurface().isValid()) return;
 		surfaceCreated = true;
-		showVideo();
+		showVideo(true);
 	}
 
 	@Override

@@ -4,7 +4,6 @@ import android.content.ContentResolver;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 
@@ -54,7 +53,7 @@ import static me.aap.utils.async.Completed.completed;
 /**
  * @author Andrey Pavlenko
  */
-public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, SurfaceHolder.Callback,
+public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 		IVLCVout.OnNewVideoLayoutListener {
 	@SuppressWarnings({"FieldCanBeLocal", "unused"}) // Hold reference to prevent garbage collection
 	private final VlcEngineProvider provider;
@@ -102,7 +101,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			} else {
 				media = new Media(vlc, uri);
 
-				if (scheme.startsWith("http")) {
+				if ((scheme != null) && scheme.startsWith("http")) {
 					String agent = source.getUserAgent();
 					if (agent != null) media.addOption(":http-user-agent='" + agent + "'");
 				}
@@ -224,17 +223,13 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 
 	@Override
 	public void setVideoView(VideoView view) {
-		if (this.videoView != null) {
-			this.videoView.getVideoSurface().getHolder().removeCallback(this);
-		}
-
 		this.videoView = view;
 		IVLCVout out = player.getVLCVout();
 		out.detachViews();
 
 		if (view != null) {
 			out.setVideoView(view.getVideoSurface());
-			out.setSubtitlesView(view.getSubtitleSurface(true));
+			out.setSubtitlesView(view.getSubtitleSurface());
 			out.attachViews(this);
 			setSurfaceSize(view);
 		}
@@ -330,12 +325,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 	@Override
 	public void close() {
 		stop();
-
-		if (videoView != null) {
-			videoView.getVideoSurface().getHolder().removeCallback(this);
-			videoView = null;
-		}
-
+		videoView = null;
 		player.release();
 		if (effects != null) effects.release();
 	}
@@ -353,16 +343,6 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 				listener.onEngineError(this, new MediaEngineException(""));
 				break;
 		}
-	}
-
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-	}
-
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-		if ((videoView == null) || !(source instanceof VideoSource)) return;
-		setSurfaceSize(videoView, (VideoSource) source);
 	}
 
 	@Override
@@ -517,7 +497,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 			surface.setLayoutParams(lp);
 		}
 
-		if ((surface = view.getSubtitleSurface(false)) != null) {
+		if ((surface = view.getSubtitleSurface()) != null) {
 			lp = surface.getLayoutParams();
 
 			if ((lp.width != width) || (lp.height != height)) {
@@ -525,15 +505,6 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener, Surfac
 				lp.height = height;
 				surface.setLayoutParams(lp);
 			}
-		}
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		if ((videoView != null) && (videoView.getVideoSurface().getHolder() == holder)) {
-			holder.removeCallback(this);
-			videoView = null;
-			player.getVLCVout().detachViews();
 		}
 	}
 

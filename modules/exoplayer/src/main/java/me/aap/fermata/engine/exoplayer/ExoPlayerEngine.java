@@ -19,7 +19,7 @@ import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
-import com.google.android.exoplayer2.video.VideoListener;
+import com.google.android.exoplayer2.video.VideoSize;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -35,7 +35,7 @@ import static me.aap.utils.async.Completed.completed;
 /**
  * @author Andrey Pavlenko
  */
-public class ExoPlayerEngine implements MediaEngine, Player.EventListener, VideoListener {
+public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	private final Context ctx;
 	private final Listener listener;
 	private final SimpleExoPlayer player;
@@ -190,8 +190,8 @@ public class ExoPlayerEngine implements MediaEngine, Player.EventListener, Video
 	}
 
 	@Override
-	public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-		listener.onVideoSizeChanged(this, width, height);
+	public void onVideoSizeChanged(VideoSize videoSize) {
+		listener.onVideoSizeChanged(this, videoSize.width, videoSize.height);
 	}
 
 	@Override

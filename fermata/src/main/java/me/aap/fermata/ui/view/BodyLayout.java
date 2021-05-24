@@ -88,7 +88,7 @@ public class BodyLayout extends ConstraintLayout implements
 				getSplitHandle().setVisibility(GONE);
 				getSwipeRefresh().setVisibility(GONE);
 				lp.guidePercent = isPortrait() ? 1f : 0f;
-				vv.showVideo();
+				vv.showVideo(true);
 				getActivity().setVideoMode(true, vv);
 				App.get().getHandler().post(vv::requestFocus);
 				break;
@@ -98,6 +98,7 @@ public class BodyLayout extends ConstraintLayout implements
 				getSplitHandle().setVisibility(VISIBLE);
 				getSwipeRefresh().setVisibility(VISIBLE);
 				lp.guidePercent = getActivity().getPrefs().getSplitPercent(getContext());
+				vv.showVideo(true);
 				getActivity().setVideoMode(false, vv);
 				break;
 		}
@@ -196,6 +197,7 @@ public class BodyLayout extends ConstraintLayout implements
 			setMode(BodyLayout.Mode.FRAME);
 		} else {
 			if (isFrameMode()) setMode(BodyLayout.Mode.VIDEO);
+			else getVideoView().showVideo(false);
 		}
 	}
 

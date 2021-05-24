@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="force_dark">Force dark mode, if supported</string>
+    <string name="user_agent" translatable="false">User-Agent</string>
+    <string name="user_agent_desktop">User-Agent - Desktop version</string>
     <string name="desktop_version">Desktop version</string>
     <string name="full_screen">Full screen</string>
     <string name="full_screen_exit">Exit full screen</string>
