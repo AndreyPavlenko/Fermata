@@ -167,7 +167,7 @@ public class FermataVfsManager extends VfsManager {
 				}
 			}).thenComplete(contentLoading);
 
-			a.getActivityDelegate().setContentLoading(contentLoading);
+			a.getActivityDelegate().onSuccess(d -> d.setContentLoading(contentLoading));
 			return install;
 		});
 	}

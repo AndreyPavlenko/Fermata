@@ -153,6 +153,13 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if (position < list.size()) holder.bind(list.get(position));
 	}
 
+	public void onDestroy() {
+		for (MediaItemWrapper w : getList()) {
+			MediaItemViewHolder h = w.getViewHolder();
+			if (h != null) h.recycled();
+		}
+	}
+
 	@Override
 	public void onViewRecycled(@NonNull MediaItemViewHolder holder) {
 		holder.recycled();

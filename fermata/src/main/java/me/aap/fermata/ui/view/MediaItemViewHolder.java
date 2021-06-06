@@ -56,5 +56,8 @@ public class MediaItemViewHolder extends RecyclerView.ViewHolder {
 	}
 
 	void recycled() {
+		MediaItemWrapper old = itemWrapper;
+		itemWrapper = null;
+		getItemView().rebind(old, null);
 	}
 }

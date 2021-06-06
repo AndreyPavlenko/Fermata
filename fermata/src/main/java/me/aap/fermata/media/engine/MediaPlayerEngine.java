@@ -63,15 +63,15 @@ public class MediaPlayerEngine implements MediaEngine,
 			String scheme = u.getScheme();
 			if (SCHEME_CONTENT.equals(scheme)) {
 				player.setDataSource(ctx, u);
-			} else if (scheme.startsWith("http")) {
+			} else if ((scheme != null) && scheme.startsWith("http")) {
 				String agent = source.getUserAgent();
 				if (agent != null) {
 					player.setDataSource(ctx, u, Collections.singletonMap("User-Agent", agent));
 				} else {
-					player.setDataSource(ctx, u);
+					player.setDataSource(u.toString());
 				}
 			} else {
-				player.setDataSource(u.toString());
+				player.setDataSource(ctx, u);
 			}
 			player.prepareAsync();
 		} catch (Exception ex) {

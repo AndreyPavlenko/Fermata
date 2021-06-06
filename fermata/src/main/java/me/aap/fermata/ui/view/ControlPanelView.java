@@ -311,8 +311,6 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 	public boolean onTouch(VideoView video) {
 		MainActivityDelegate a = getActivity();
-		if (a == null) return false;
-
 		BodyLayout b = a.getBody();
 
 		if (b.getMode() == BodyLayout.Mode.BOTH) {
@@ -839,10 +837,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 		private void startTimer() {
 			App.get().getHandler().postDelayed(() -> {
-				if (!closed) {
-					MainActivityDelegate a = getActivity();
-					if (a != null) getMenu(a).hide();
-				}
+				if (!closed) getMenu(getActivity()).hide();
 			}, 60000);
 		}
 	}

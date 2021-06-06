@@ -2,10 +2,9 @@ package me.aap.fermata.addon.tv.m3u;
 
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
-import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.M3uGroupItem;
 import me.aap.fermata.media.lib.M3uItem;
-import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 
@@ -28,8 +27,8 @@ public class TvM3uGroupItem extends M3uGroupItem implements TvItem {
 		int gid = Integer.parseInt(id.substring(start, end));
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uItem.SCHEME).append(id, end, id.length());
-
-		return root.getItem(TvM3uItem.SCHEME, tb.releaseString()).then(i -> {
+		FutureSupplier<? extends Item> f = root.getItem(TvM3uItem.SCHEME, tb.releaseString());
+		return (f == null) ? completedNull() : f.then(i -> {
 			TvM3uItem m3u = (TvM3uItem) i;
 			return (m3u != null) ? m3u.getGroup(gid) : completedNull();
 		});

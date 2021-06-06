@@ -106,12 +106,12 @@ public class TvM3uItem extends M3uItem implements TvItem, Runnable {
 	protected M3uTrackItem createTrack(BrowsableItem parent, int groupNumber, int trackNumber,
 																		 String idPath, VirtualResource file, String name, String album,
 																		 String artist, String genre, String logo, String tvgId,
-																		 long duration, byte type) {
+																		 String tvgName, long duration, byte type) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
 				.append(trackNumber).append(idPath);
 		return new TvM3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
-				genre, logo, tvgId, duration, type);
+				genre, logo, tvgId, tvgName, duration, type);
 	}
 
 	FutureSupplier<XmlTv> getXmlTv() {

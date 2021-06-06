@@ -29,7 +29,6 @@ public class TvAddon implements MediaLibAddon {
 		return new TvFragment();
 	}
 
-
 	@Nullable
 	@Override
 	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme, String id) {

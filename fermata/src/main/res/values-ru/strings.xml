@@ -170,6 +170,7 @@
     <string name="unselect_all">Отменить выбор</string>
     <string name="refresh">Обновить</string>
     <string name="rescan">Пересканировать</string>
+    <string name="delete">Удалить</string>
     <string name="loading">Загрузка…</string>
     <string name="press_back_again">Нажмите кнопку назад еще раз, чтобы выйти.</string>
     <string name="press_x_again">Нажмите кнопку X еще раз, чтобы выйти.</string>
@@ -222,8 +223,6 @@
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player - это бесплатный, с открытым исходным кодом, аудио и видео плеер
         с простым и интуитивным интерфейсом.</p>
-        <p>Если вам нравится приложение, пожалуйста, рассмотрите
-        возможность сделать пожертвование, посетив домашнюю страницу приложения:
         <p><b>Автор:</b> Андрей Павленко</p>
         <p><b>Версия:</b> %1$s (%2$d)</p>
         <p><b>Домашняя страница:</b> <a href="%3$s">%3$s</a></p>

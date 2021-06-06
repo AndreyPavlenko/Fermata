@@ -76,7 +76,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 	}
 
 	@Override
-	public void addonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
+	public void onAddonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
 		NavBarView nb = navBar;
 		if (nb != null) reload(nb);
 	}

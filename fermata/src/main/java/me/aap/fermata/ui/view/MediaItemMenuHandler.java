@@ -78,15 +78,21 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	public FutureSupplier<Void> build(OverlayMenu.Builder builder) {
+		FutureSupplier<Void> r;
 		MainActivityDelegate a = getMainActivity();
-		builder.setSelectionHandler(this);
 
 		if (item instanceof PlayableItem) {
 			buildPlayableMenu(a, builder, (PlayableItem) item, true);
-			return completedVoid();
+			r = completedVoid();
 		} else {
-			return buildBrowsableMenu(a, builder, (BrowsableItem) item);
+			r = buildBrowsableMenu(a, builder, (BrowsableItem) item);
 		}
+
+		return r.onSuccess(v -> {
+			MediaLibFragment f = a.getActiveMediaLibFragment();
+			if (f != null) f.contributeToContextMenu(builder, this);
+			builder.setSelectionHandler(this);
+		});
 	}
 
 	protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
@@ -341,112 +347,83 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		MediaLibFragment f;
 		Item item = getItem();
 
-		switch (id) {
-			case R.id.folders_remove:
-				Folders folders = item.getLib().getFolders();
-				folders.removeItem(item);
-				break;
-			case R.id.favorites_add:
-				if (item instanceof BrowsableItem) {
-					((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
-						item.getLib().getFavorites().addItems(list);
-						MediaLibFragment mf = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
-						if (mf != null) mf.reload();
-					});
-				} else {
-					item.getLib().getFavorites().addItem((PlayableItem) item);
-					f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
-					if (f != null) f.reload();
-				}
-
-				break;
-			case R.id.favorites_remove:
-				item.getLib().getFavorites().removeItem((PlayableItem) item);
+		if (id == R.id.folders_remove) {
+			Folders folders = item.getLib().getFolders();
+			folders.removeItem(item);
+		} else if (id == R.id.favorites_add) {
+			if (item instanceof BrowsableItem) {
+				((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
+					item.getLib().getFavorites().addItems(list);
+					MediaLibFragment mf = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
+					if (mf != null) mf.reload();
+				});
+			} else {
+				item.getLib().getFavorites().addItem((PlayableItem) item);
 				f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 				if (f != null) f.reload();
-				break;
-			case R.id.playlist_remove_item:
-				getMainActivity().removeFromPlaylist(
-						(Playlist) requireNonNull(item.getParent()),
-						Collections.singletonList((PlayableItem) item));
-				break;
-			case R.id.playlist_remove:
-				Playlist p = i.getData();
-				p.getParent().removeItems(Collections.singletonList(p));
-				break;
-			case R.id.bookmark_remove_all_confirm:
-				if ((item instanceof BrowsableItem)) {
-					((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
-						for (PlayableItem pi : list) {
-							pi.getPrefs().removePref(BOOKMARKS);
-						}
-					});
-				} else {
-					((PlayableItem) item).getPrefs().removePref(BOOKMARKS);
-				}
+			}
+		} else if (id == R.id.favorites_remove) {
+			item.getLib().getFavorites().removeItem((PlayableItem) item);
+			f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
+			if (f != null) f.reload();
+		} else if (id == R.id.playlist_remove_item) {
+			getMainActivity().removeFromPlaylist(
+					(Playlist) requireNonNull(item.getParent()),
+					Collections.singletonList((PlayableItem) item));
+		} else if (id == R.id.playlist_remove) {
+			Playlist p = i.getData();
+			p.getParent().removeItems(Collections.singletonList(p));
+		} else if (id == R.id.bookmark_remove_all_confirm) {
+			if ((item instanceof BrowsableItem)) {
+				((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
+					for (PlayableItem pi : list) {
+						pi.getPrefs().removePref(BOOKMARKS);
+					}
+				});
+			} else {
+				((PlayableItem) item).getPrefs().removePref(BOOKMARKS);
+			}
+		} else if (id == R.id.repeat_enable || id == R.id.repeat_disable) {
+			((PlayableItem) item).setRepeatItemEnabled(id == R.id.repeat_enable);
+		} else if (id == R.id.play_next) {
+			BrowsableItemPrefs brPrefs = ((BrowsableItem) item).getPrefs();
+			brPrefs.setPlayNextPref(!brPrefs.getPlayNextPref());
+		} else if (id == R.id.mark_watched || id == R.id.mark_unwatched) {
+			((PlayableItem) item).getPrefs().setWatchedPref(id == R.id.mark_watched);
 
-				break;
-			case R.id.repeat_enable:
-			case R.id.repeat_disable:
-				((PlayableItem) item).setRepeatItemEnabled(id == R.id.repeat_enable);
-				break;
-			case R.id.play_next:
-				BrowsableItemPrefs brPrefs = ((BrowsableItem) item).getPrefs();
-				brPrefs.setPlayNextPref(!brPrefs.getPlayNextPref());
-				break;
-			case R.id.mark_watched:
-			case R.id.mark_unwatched:
-				((PlayableItem) item).getPrefs().setWatchedPref(id == R.id.mark_watched);
-
-				if (view != null) {
-					view.refresh();
-				} else {
-					ActivityFragment mf = getMainActivity().getActiveFragment();
-					if (mf instanceof MediaLibFragment) ((MediaLibFragment) mf).getAdapter().refresh();
-				}
-
-				break;
-			case R.id.preferred_audio_engine_default:
-			case R.id.preferred_video_engine_default:
-				item.getPrefs().removePref((id == R.id.preferred_audio_engine_default)
-						? MediaPrefs.AUDIO_ENGINE : MediaPrefs.VIDEO_ENGINE);
-				break;
-			case R.id.preferred_audio_engine_mp:
-				item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_MP);
-				break;
-			case R.id.preferred_video_engine_mp:
-				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_MP);
-				break;
-			case R.id.preferred_audio_engine_exo:
-				item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_EXO);
-				break;
-			case R.id.preferred_video_engine_exo:
-				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_EXO);
-				break;
-			case R.id.preferred_audio_engine_vlc:
-				item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_VLC);
-				break;
-			case R.id.preferred_video_engine_vlc:
-				item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_VLC);
-				break;
-			case R.id.video_scaling_default:
-				item.getPrefs().removePref(VIDEO_SCALE);
-				break;
-			case R.id.video_scaling_best:
-				item.getPrefs().setVideoScalePref(SCALE_BEST);
-				break;
-			case R.id.video_scaling_fill:
-				item.getPrefs().setVideoScalePref(SCALE_FILL);
-				break;
-			case R.id.video_scaling_orig:
-				item.getPrefs().setVideoScalePref(SCALE_ORIGINAL);
-				break;
-			case R.id.video_scaling_4:
-				item.getPrefs().setVideoScalePref(SCALE_4_3);
-				break;
-			case R.id.video_scaling_16:
-				item.getPrefs().setVideoScalePref(SCALE_16_9);
-				break;
+			if (view != null) {
+				view.refresh();
+			} else {
+				ActivityFragment mf = getMainActivity().getActiveFragment();
+				if (mf instanceof MediaLibFragment) ((MediaLibFragment) mf).getAdapter().refresh();
+			}
+		} else if (id == R.id.preferred_audio_engine_default || id == R.id.preferred_video_engine_default) {
+			item.getPrefs().removePref((id == R.id.preferred_audio_engine_default)
+					? MediaPrefs.AUDIO_ENGINE : MediaPrefs.VIDEO_ENGINE);
+		} else if (id == R.id.preferred_audio_engine_mp) {
+			item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_MP);
+		} else if (id == R.id.preferred_video_engine_mp) {
+			item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_MP);
+		} else if (id == R.id.preferred_audio_engine_exo) {
+			item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_EXO);
+		} else if (id == R.id.preferred_video_engine_exo) {
+			item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_EXO);
+		} else if (id == R.id.preferred_audio_engine_vlc) {
+			item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_VLC);
+		} else if (id == R.id.preferred_video_engine_vlc) {
+			item.getPrefs().setVideoEnginePref(MediaPrefs.MEDIA_ENG_VLC);
+		} else if (id == R.id.video_scaling_default) {
+			item.getPrefs().removePref(VIDEO_SCALE);
+		} else if (id == R.id.video_scaling_best) {
+			item.getPrefs().setVideoScalePref(SCALE_BEST);
+		} else if (id == R.id.video_scaling_fill) {
+			item.getPrefs().setVideoScalePref(SCALE_FILL);
+		} else if (id == R.id.video_scaling_orig) {
+			item.getPrefs().setVideoScalePref(SCALE_ORIGINAL);
+		} else if (id == R.id.video_scaling_4) {
+			item.getPrefs().setVideoScalePref(SCALE_4_3);
+		} else if (id == R.id.video_scaling_16) {
+			item.getPrefs().setVideoScalePref(SCALE_16_9);
 		}
 
 		return true;

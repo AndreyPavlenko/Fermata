@@ -27,6 +27,9 @@
         <intent>
             <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+        </intent>
     </queries>
 
     <application
@@ -57,7 +60,7 @@
 
         <activity
             android:name="me.aap.fermata.ui.activity.MainActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
+            android:configChanges="colorMode|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

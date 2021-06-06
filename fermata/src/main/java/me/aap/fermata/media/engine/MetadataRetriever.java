@@ -79,6 +79,7 @@ public class MetadataRetriever implements Closeable {
 		bitmapCache = new BitmapCache(mgr.lib);
 		Context ctx = mgr.lib.getContext();
 		File cache = ctx.getExternalCacheDir();
+		if (cache == null) cache = ctx.getCacheDir();
 		File dbFile = new File(cache, "metadata.db");
 		SQLiteDatabase db = null;
 

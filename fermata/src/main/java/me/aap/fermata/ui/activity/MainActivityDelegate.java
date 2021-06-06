@@ -5,8 +5,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.TypedArray;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -21,8 +19,6 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,6 +57,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.view.DialogBuilder;
@@ -71,20 +68,18 @@ import me.aap.utils.ui.view.ToolBarView;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
-import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
-import static me.aap.utils.ui.activity.ActivityListener.SERVICE_BOUND;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MainActivityDelegate extends ActivityDelegate implements PreferenceStore.Listener {
 	private final NavBarMediator navBarMediator = new NavBarMediator();
-	private FermataServiceUiBinder mediaServiceBinder;
+	private final FermataServiceUiBinder mediaServiceBinder;
 	private ToolBarView toolBar;
 	private NavBarView navBar;
 	private BodyLayout body;
@@ -92,34 +87,78 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	private FloatingButton floatingButton;
 	private ContentLoadingProgressBar progressBar;
 	private FutureSupplier<?> contentLoading;
-	private boolean bind = true;
 	private boolean barsHidden;
 	private boolean videoMode;
+	private boolean recreating;
+	private boolean exitPressed;
 
-	public MainActivityDelegate() {
-		getPrefs().addBroadcastListener(this);
+	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
+		super(activity);
+		mediaServiceBinder = binder;
 	}
 
+	@NonNull
 	public static MainActivityDelegate get(Context ctx) {
 		return (MainActivityDelegate) ActivityDelegate.get(ctx);
 	}
 
 	@Override
-	public void onActivityCreate(Bundle savedInstanceState) {
-		setTheme();
+	public void onActivityCreate(@Nullable Bundle state) {
+		super.onActivityCreate(state);
+		getPrefs().addBroadcastListener(this);
+		int recreate = (state != null) ? state.getInt("recreate", ID_NULL) : ID_NULL;
+		AppActivity a = getAppActivity();
+		FermataServiceUiBinder b = getMediaServiceBinder();
+		Context ctx = a.getContext();
+		b.getMediaSessionCallback().getSession().setSessionActivity(
+				PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), 0));
+		if (b.getCurrentItem() == null) b.getMediaSessionCallback().onPrepare();
+		init();
 
-		if (bind) {
-			bind = false;
-			TypedArray typedArray = getTheme().obtainStyledAttributes(new int[]{android.R.attr.statusBarColor});
-			int notifColor = typedArray.getColor(0, Color.parseColor(DEFAULT_NOTIF_COLOR));
-			typedArray.recycle();
-			FermataServiceUiBinder.bind(FermataApplication.get(), notifColor, isCarActivity(),
-					this::onMediaServiceBind);
-		} else if (mediaServiceBinder != null) {
-			onMediaServiceBind(mediaServiceBinder, null);
-		} else {
-			onMediaServiceBind(mediaServiceBinder, new IllegalStateException("Media service is not bound"));
-		}
+		String[] perms = getRequiredPermissions();
+		a.checkPermissions(perms).onCompletion((result, fail) -> {
+			if (fail != null) {
+				if (!isCarActivity()) Log.e(fail);
+			} else {
+				Log.d("Requested permissions: ", Arrays.toString(perms), ". Result: " + Arrays.toString(result));
+			}
+
+			if (recreate != ID_NULL) {
+				showFragment(recreate);
+				return;
+			}
+
+			FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
+				if ((fail1 != null) && !isCancellation(fail1)) {
+					Log.e(fail1, "Last played track not found");
+				}
+			});
+
+			if (!f.isDone() || f.isFailed() || !Boolean.TRUE.equals(f.peek())) {
+				showFragment(R.id.folders_fragment);
+				setContentLoading(f);
+			}
+		});
+	}
+
+	@Override
+	protected void setUncaughtExceptionHandler() {
+		if (!BuildConfig.AUTO || getAppActivity().isCarActivity()) return;
+		super.setUncaughtExceptionHandler();
+	}
+
+	@Override
+	protected void onActivitySaveInstanceState(@NonNull Bundle outState) {
+		super.onActivitySaveInstanceState(outState);
+		if (recreating) outState.putInt("recreate", getActiveFragmentId());
+	}
+
+	public void recreate() {
+		App.get().getHandler().post(() -> {
+			Log.d("Recreating");
+			recreating = true;
+			getAppActivity().recreate();
+		});
 	}
 
 	@Override
@@ -128,9 +167,9 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	@Override
-	protected void onActivityDestroy() {
+	public void onActivityDestroy() {
 		super.onActivityDestroy();
-
+		getPrefs().removeBroadcastListener(this);
 		toolBar = null;
 		navBar = null;
 		controlPanel = null;
@@ -142,40 +181,17 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public void onActivityFinish() {
-		if (mediaServiceBinder != null) {
-			FermataApplication.get().unbindService(mediaServiceBinder);
-		}
+		super.onActivityFinish();
 	}
 
-	@Override
-	public void onLowMemory() {
-		super.onLowMemory();
-
-		if ((mediaServiceBinder != null) && mediaServiceBinder.isConnected()) {
-			mediaServiceBinder.getLib().clearCache();
-		}
-
-		FragmentManager fm = getSupportFragmentManager();
-		FragmentTransaction tr = null;
-
-		for (Fragment f : getSupportFragmentManager().getFragments()) {
-			if ((f != this) && f.isHidden()) {
-				if (tr == null) tr = fm.beginTransaction();
-				tr.remove(f);
-			}
-		}
-
-		if (tr != null) tr.commitAllowingStateLoss();
-	}
-
+	@NonNull
 	@Override
 	public FermataActivity getAppActivity() {
 		return (FermataActivity) super.getAppActivity();
 	}
 
 	public boolean isCarActivity() {
-		FermataActivity a = getAppActivity();
-		return (a != null) && a.isCarActivity();
+		return getAppActivity().isCarActivity();
 	}
 
 	@NonNull
@@ -227,8 +243,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		if (videoMode || getPrefs().getFullscreenPref()) {
 			if (isCarActivity()) {
 				FermataServiceUiBinder b = getMediaServiceBinder();
-				return (b == null) || !(b.getMediaSessionCallback().getPlaybackControlPrefs())
-						.getVideoAaShowStatusPref();
+				return !b.getMediaSessionCallback().getPlaybackControlPrefs().getVideoAaShowStatusPref();
 			} else {
 				return true;
 			}
@@ -237,6 +252,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		}
 	}
 
+	@NonNull
 	public FermataServiceUiBinder getMediaServiceBinder() {
 		return mediaServiceBinder;
 	}
@@ -464,7 +480,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection, Supplier<? extends CharSequence> initName) {
-		UiUtils.queryText(getContext(), R.string.playlist_name, initName.get(), name -> {
+		UiUtils.queryText(getContext(), R.string.playlist_name, initName.get()).onSuccess(name -> {
 			discardSelection();
 			if (name == null) return;
 
@@ -478,7 +494,6 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 							}))
 					);
 		});
-
 		return true;
 	}
 
@@ -514,10 +529,6 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		if (f instanceof MainActivityFragment) ((MainActivityFragment) f).discardSelection();
 	}
 
-	public FutureSupplier<Intent> startActivityForResult(Intent intent) {
-		return getAppActivity().startActivityForResult(intent);
-	}
-
 	@Override
 	protected int getExitMsg() {
 		return R.string.press_back_again;
@@ -550,44 +561,6 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		}
 	}
 
-	private void onMediaServiceBind(FermataServiceUiBinder b, Throwable err) {
-		FermataActivity a = getAppActivity();
-
-		if (b != null) {
-			mediaServiceBinder = b;
-			Context ctx = a.getContext();
-			b.getMediaSessionCallback().getSession().setSessionActivity(
-					PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), 0));
-			b.getMediaSessionCallback().onPrepare();
-			init();
-
-			String[] perms = getRequiredPermissions();
-			a.checkPermissions(perms).onCompletion((result, fail) -> {
-				if (fail != null) {
-					if (!isCarActivity()) Log.e(fail);
-				} else {
-					Log.i("Requested permissions: " + Arrays.toString(perms) + ". Result: " + Arrays.toString(result));
-				}
-
-				fireBroadcastEvent(SERVICE_BOUND);
-
-				FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
-					if ((fail1 != null) && !isCancellation(fail1)) {
-						Log.e(fail1, "Last played track not found");
-					}
-				});
-
-				if (!f.isDone() || f.isFailed() || !f.peek()) {
-					showFragment(R.id.folders_fragment);
-					setContentLoading(f);
-				}
-			});
-		} else {
-			Log.e(err);
-			showAlert(getContext(), String.valueOf(err));
-		}
-	}
-
 	private static String[] getRequiredPermissions() {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE,
@@ -603,7 +576,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (prefs.contains(MainActivityPrefs.THEME)) {
 			setTheme();
-			getAppActivity().recreate();
+			recreate();
 		} else if (prefs.contains(MainActivityPrefs.NAV_BAR_POS) || prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
 			FermataActivity a = getAppActivity();
 			MainActivityPrefs p = getPrefs();
@@ -631,8 +604,6 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			setSystemUiVisibility();
 		}
 	}
-
-	private boolean exitPressed;
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent keyEvent, IntObjectFunction<KeyEvent, Boolean> next) {

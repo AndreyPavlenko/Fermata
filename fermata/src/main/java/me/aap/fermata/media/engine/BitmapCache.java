@@ -72,6 +72,7 @@ public class BitmapCache {
 	public BitmapCache(MediaLib lib) {
 		this.lib = lib;
 		File cache = App.get().getExternalCacheDir();
+		if (cache == null) cache = App.get().getCacheDir();
 		iconsCache = new File(cache, "icons").getAbsoluteFile();
 		imageCache = new File(cache, "images").getAbsoluteFile();
 		iconsCacheUri = Uri.fromFile(iconsCache).toString() + '/';

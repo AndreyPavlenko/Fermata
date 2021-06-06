@@ -119,7 +119,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 				FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();
 				PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
 				addons.put(i.className, a);
-				fireBroadcastEvent(c -> c.addonChanged(this, i, true));
+				fireBroadcastEvent(c -> c.onAddonChanged(this, i, true));
 				prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
 				return;
 			} catch (Exception ignore) {
@@ -144,7 +144,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	private void uninstall(AddonInfo i) {
 		if (addons.remove(i.className) != null) {
 			PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
-			fireBroadcastEvent(c -> c.addonChanged(this, i, false));
+			fireBroadcastEvent(c -> c.onAddonChanged(this, i, false));
 			prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
 
 			for (AddonInfo ai : BuildConfig.ADDONS) {
@@ -172,6 +172,6 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	public interface Listener {
-		void addonChanged(AddonManager mgr, AddonInfo info, boolean installed);
+		void onAddonChanged(AddonManager mgr, AddonInfo info, boolean installed);
 	}
 }

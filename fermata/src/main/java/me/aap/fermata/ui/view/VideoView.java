@@ -31,6 +31,7 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
 
@@ -54,12 +55,11 @@ import static me.aap.utils.ui.UiUtils.toPx;
  * @author Andrey Pavlenko
  */
 public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
-		View.OnLayoutChangeListener, PreferenceStore.Listener {
+		View.OnLayoutChangeListener, PreferenceStore.Listener, MainActivityListener {
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(Arrays.asList(
 			MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.SUB_DELAY
 	));
 	private boolean surfaceCreated;
-	private boolean prefListenerRegistered;
 
 	public VideoView(Context context) {
 		this(context, null);
@@ -68,6 +68,9 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	public VideoView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		init(context);
+		MainActivityDelegate a = getActivity();
+		a.addBroadcastListener(this);
+		a.getLib().getPrefs().addBroadcastListener(this);
 	}
 
 	protected void init(Context context) {
@@ -139,11 +142,6 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 				if (cb.getCurrentItem() != i) return;
 				title.setText(dsc.getTitle());
 			});
-
-			if (!prefListenerRegistered) {
-				i.getLib().getPrefs().addBroadcastListener(this);
-				prefListenerRegistered = true;
-			}
 		}
 	}
 
@@ -242,13 +240,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	@Override
 	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 		surfaceCreated = false;
-		MainActivityDelegate a = getActivity();
-		if (a != null) {
-			FermataServiceUiBinder b = a.getMediaServiceBinder();
-			if (b != null) {
-				b.getMediaSessionCallback().removeVideoView(this);
-			}
-		}
+		getActivity().getMediaSessionCallback().removeVideoView(this);
 	}
 
 	@Override
@@ -326,7 +318,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (!Collections.disjoint(prefChange, prefs)) {
+		if (surfaceCreated && !Collections.disjoint(prefChange, prefs)) {
 			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 			PlayableItem i = eng.getSource();
@@ -342,6 +334,13 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		}
 	}
 
+	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (handleActivityDestroyEvent(a, e)) {
+			a.getMediaSessionCallback().removeVideoView(this);
+			a.getLib().getPrefs().removeBroadcastListener(this);
+		}
+	}
 
 	@Override
 	public View focusSearch(View focused, int direction) {

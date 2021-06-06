@@ -32,6 +32,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.db.SQLite;
+import me.aap.utils.holder.BooleanHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpFileDownloader.Status;
 
@@ -70,6 +71,7 @@ public class XmlTv implements Closeable {
 	private static final String Q_SEL_ID = COL_ID + " = ?";
 	private static final String Q_SEL_EPG_ID = COL_EPG_ID + " = ?";
 	private static final String Q_SEL_NAME = COL_NAME + " = ?";
+	private static final String Q_SEL_NAME_OR = COL_NAME + " = ? or " + COL_NAME + " = ?";
 	private static final String Q_SEL_EPG_ID_TIME = COL_CH_ID + " = ? AND " +
 			COL_START + " <= ? AND " + COL_STOP + " > ?";
 	private final SQLite sql;
@@ -143,7 +145,18 @@ public class XmlTv implements Closeable {
 
 		if (id == EPG_ID_UNKNOWN) {
 			String tvgId = track.getTvgId();
+			String tvgName = track.getTvgName();
 			String name = track.getName().toLowerCase();
+			String nameSel;
+			String[] nameArgs;
+
+			if (tvgName == null) {
+				nameSel = Q_SEL_NAME;
+				nameArgs = new String[]{name};
+			} else {
+				nameSel = Q_SEL_NAME_OR;
+				nameArgs = new String[]{tvgName.toLowerCase(), name};
+			}
 
 			if (tvgId != null) {
 				try (Cursor c = db.query(TABLE_CH, Q_COL_ID_ICON, Q_SEL_EPG_ID,
@@ -155,22 +168,22 @@ public class XmlTv implements Closeable {
 				}
 
 				if (id != EPG_ID_UNKNOWN) {
-					try (Cursor c = db.query(TABLE_NAME_TO_ICON, Q_COL_ICON, Q_SEL_NAME,
-							new String[]{name}, null, null, null)) {
+					try (Cursor c = db.query(TABLE_NAME_TO_ICON, Q_COL_ICON, nameSel,
+							nameArgs, null, null, null)) {
 						if (c.moveToFirst()) icon = c.getString(0);
 					}
 				}
 			}
 
 			if (id == EPG_ID_UNKNOWN) {
-				try (Cursor c = db.query(TABLE_NAME_TO_ID, Q_COL_CH_ID, Q_SEL_NAME,
-						new String[]{name}, null, null, null)) {
+				try (Cursor c = db.query(TABLE_NAME_TO_ID, Q_COL_CH_ID, nameSel,
+						nameArgs, null, null, null)) {
 					if (c.moveToFirst()) id = c.getInt(0);
 				}
 
 				if (id != EPG_ID_UNKNOWN) {
-					try (Cursor c = db.query(TABLE_NAME_TO_ICON, Q_COL_ICON, Q_SEL_NAME,
-							new String[]{name}, null, null, null)) {
+					try (Cursor c = db.query(TABLE_NAME_TO_ICON, Q_COL_ICON, nameSel,
+							nameArgs, null, null, null)) {
 						if (c.moveToFirst()) icon = c.getString(0);
 					}
 
@@ -208,6 +221,7 @@ public class XmlTv implements Closeable {
 	}
 
 	private FutureSupplier<XmlTv> load(TvM3uItem item, boolean hasIndex) {
+		BooleanHolder noUpdate = new BooleanHolder();
 		return item.getResource().downloadEpg().then(status -> {
 			if ((status.getDownloadedSize() == 0) && hasIndex) {
 				Log.i("XMLTV is up to date: ", status.getUrl());
@@ -215,6 +229,7 @@ public class XmlTv implements Closeable {
 			}
 
 			if (hasIndex) {
+				noUpdate.value = true;
 				Log.i("Scheduling XMLTV update in 30 seconds: ", status.getUrl());
 				Async.schedule(() -> load(item, status), 30000);
 				return completed(this);
@@ -231,6 +246,7 @@ public class XmlTv implements Closeable {
 				close();
 			}
 		}).onSuccess(v -> {
+			if (noUpdate.value) return;
 			TvM3uFile file = item.getResource();
 			long s = file.getEpgTimeStamp();
 			int a = file.getEpgMaxAge();
@@ -259,6 +275,9 @@ public class XmlTv implements Closeable {
 				TvM3uTrackItem track = (TvM3uTrackItem) c;
 				String id = track.getTvgId();
 				if (id != null) computeIfAbsent(idToTrack, id, k -> new ArrayList<>(1)).add(track);
+				id = track.getTvgName();
+				if (id != null)
+					computeIfAbsent(nameToTrack, id.toLowerCase(), k -> new ArrayList<>(1)).add(track);
 				computeIfAbsent(nameToTrack, track.getName().toLowerCase(), k -> new ArrayList<>(1)).add(track);
 				return completedVoid();
 			} else {

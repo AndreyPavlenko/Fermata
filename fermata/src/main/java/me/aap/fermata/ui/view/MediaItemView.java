@@ -84,8 +84,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	private void applyLayout(Context ctx) {
 		MainActivityDelegate a = MainActivityDelegate.get(ctx);
-		if (a == null) return;
-
 		MainActivityPrefs prefs = a.getPrefs();
 		float scale = prefs.getMediaItemScalePref();
 		boolean grid = prefs.getGridViewPref();
@@ -151,8 +149,9 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return (w != null) ? w.getItem() : null;
 	}
 
-	void rebind(@Nullable MediaItemWrapper oldItem, @NonNull MediaItemWrapper newItem) {
+	public void rebind(@Nullable MediaItemWrapper oldItem, @Nullable MediaItemWrapper newItem) {
 		if (oldItem != null) oldItem.getItem().removeChangeListener(this);
+		if (newItem == null) return;
 		boolean hasListener = newItem.getItem().addChangeListener(this);
 		load(newItem, !hasListener).onCompletion((r, err) -> {
 			if (getItemWrapper() != newItem) return;
@@ -281,7 +280,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (loadingDrawable == null) {
 			loadingDrawable = ContextCompat.getDrawable(ctx, R.drawable.loading);
 			Objects.requireNonNull(loadingDrawable).setTint(iconColor);
-			MainActivityDelegate.get(ctx).addBroadcastListener(MediaItemView::onActivityDestroyEvent, ACTIVITY_DESTROY);
+			MainActivityDelegate.get(ctx)
+					.addBroadcastListener(MediaItemView::onActivityDestroyEvent, ACTIVITY_DESTROY);
 		}
 
 		return loadingDrawable;
@@ -358,7 +358,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (item.equals(getMainActivity().getCurrentPlayable())) {
 			MainActivityDelegate a = getMainActivity();
 			setSelected(true);
-			if ((a != null) && !a.getBody().isVideoMode()) requestFocus();
+			if (!a.getBody().isVideoMode()) requestFocus();
 		} else {
 			setSelected(false);
 		}

@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -167,9 +168,7 @@ public class BodyLayout extends ConstraintLayout implements
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		if (handleActivityFinishEvent(a, e) || handleActivityDestroyEvent(a, e)) return;
 
-		if (e == SERVICE_BOUND) {
-			bind(a);
-		} else if (e == FRAGMENT_CHANGED) {
+		if (e == FRAGMENT_CHANGED) {
 			if (a.getActiveMediaLibFragment() == null) {
 				setMode(Mode.FRAME);
 			} else {
@@ -195,7 +194,7 @@ public class BodyLayout extends ConstraintLayout implements
 	@Override
 	public void onPlayableChanged(MediaLib.PlayableItem oldItem, MediaLib.PlayableItem newItem) {
 		MainActivityDelegate a = getActivity();
-		if ((a == null) || (a.getActiveMediaLibFragment() == null)) return;
+		if (a.getActiveMediaLibFragment() == null) return;
 
 		if ((newItem == null) || !newItem.isVideo() || newItem.isExternal()) {
 			setMode(BodyLayout.Mode.FRAME);
@@ -205,10 +204,14 @@ public class BodyLayout extends ConstraintLayout implements
 		}
 	}
 
+	@Override
+	public void onPlaybackError(String message) {
+		Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+	}
+
 	private void bind(MainActivityDelegate a) {
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		a.addBroadcastListener(this, SERVICE_BOUND | FRAGMENT_CHANGED | ACTIVITY_DESTROY);
-		if (b == null) return;
+		a.addBroadcastListener(this, FRAGMENT_CHANGED | ACTIVITY_DESTROY);
 		b.addBroadcastListener(this);
 		onPlayableChanged(null, b.getCurrentItem());
 	}

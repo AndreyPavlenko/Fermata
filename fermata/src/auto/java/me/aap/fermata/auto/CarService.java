@@ -3,9 +3,8 @@ package me.aap.fermata.auto;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarActivityService;
 
-import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.media.service.MediaSessionCallback;
-import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.log.Log;
 
 /**
@@ -27,17 +26,12 @@ public class CarService extends CarActivityService {
 	@Override
 	public void onDestroy() {
 		Log.d("Destroying CarService: " + this);
-		MainActivityDelegate a = MainCarActivity.delegate;
-
-		if (a != null) {
-			FermataServiceUiBinder b = a.getMediaServiceBinder();
-
-			if (b != null) {
-				MediaSessionCallback cb = b.getMediaSessionCallback();
-				if (cb.isPlaying()) cb.onPause();
-			}
-		}
-
+		FermataMediaServiceConnection s = MainCarActivity.service;
+		if (s == null) return;
+		MainCarActivity.service = null;
+		MediaSessionCallback cb = s.getMediaSessionCallback();
+		if ((cb != null) && cb.isPlaying()) cb.onPause();
+		s.disconnect();
 		super.onDestroy();
 	}
 }

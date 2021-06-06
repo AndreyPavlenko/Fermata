@@ -63,6 +63,14 @@ public class FermataApplication extends NetSplitCompatApp {
 	@Nullable
 	@Override
 	public File getLogFile() {
-		return BuildConfig.AUTO ? new File(getFilesDir(), "Fermata.log") : null;
+		File dir = getExternalFilesDir(null);
+		if (dir == null) dir = getFilesDir();
+		return new File(dir, "Fermata.log");
+	}
+
+	@Nullable
+	@Override
+	public String getCrashReportEmail() {
+		return "andrey.a.pavlenko@gmail.com";
 	}
 }

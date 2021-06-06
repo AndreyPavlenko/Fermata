@@ -170,8 +170,8 @@ public class FoldersFragment extends MediaLibFragment {
 
 	private void addFolderIntent() {
 		try {
-			Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-			getMainActivity().startActivityForResult(intent).onSuccess(this::addFolderResult);
+			getMainActivity().startActivityForResult(() -> new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
+					.onSuccess(this::addFolderResult);
 		} catch (ActivityNotFoundException ex) {
 			String msg = ex.getLocalizedMessage();
 			UiUtils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
@@ -229,7 +229,7 @@ public class FoldersFragment extends MediaLibFragment {
 		if (uri == null) return;
 
 		MainActivityDelegate a = getMainActivity();
-		a.requireContext().getContentResolver()
+		a.getContext().getContentResolver()
 				.takePersistableUriPermission(uri, FLAG_GRANT_READ_URI_PERMISSION);
 		Folders folders = getLib().getFolders();
 		folders.addItem(uri).main().thenRun(() -> getAdapter().setParent(folders));

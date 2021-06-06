@@ -193,7 +193,9 @@ public class M3uFile implements VirtualFile {
 	}
 
 	protected File getCacheDir() {
-		File cache = App.get().getExternalCacheDir();
+		App app = App.get();
+		File cache = app.getExternalCacheDir();
+		if (cache == null) cache = app.getCacheDir();
 		return new File(cache, getVirtualFileSystem().getScheme());
 	}
 

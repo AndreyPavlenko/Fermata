@@ -45,8 +45,9 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 
 	protected TvM3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
 													 String name, String album, String artist, String genre,
-													 String logo, String tvgId, long duration, byte type) {
-		super(id, parent, trackNumber, file, name, album, artist, genre, logo, tvgId, duration, (type > 2) ? 2 : type);
+													 String logo, String tvgId, String tvgName, long duration, byte type) {
+		super(id, parent, trackNumber, file, name, album, artist, genre, logo, tvgId, tvgName,
+				duration, (type > 2) ? 2 : type);
 	}
 
 	public static FutureSupplier<TvM3uTrackItem> create(TvRootItem root, String id) {
@@ -59,8 +60,8 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		int tid = Integer.parseInt(id.substring(start, end));
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uItem.SCHEME).append(id, end, id.length());
-
-		return root.getItem(TvM3uItem.SCHEME, tb.releaseString()).then(i -> {
+		FutureSupplier<? extends Item> f = root.getItem(TvM3uItem.SCHEME, tb.releaseString());
+		return (f == null) ? completedNull() : f.then(i -> {
 			TvM3uItem m3u = (TvM3uItem) i;
 			return (m3u != null) ? m3u.getTrack(gid, tid) : completedNull();
 		});

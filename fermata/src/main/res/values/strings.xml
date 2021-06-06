@@ -187,6 +187,7 @@
     <string name="unselect_all">Unselect all</string>
     <string name="refresh">Refresh</string>
     <string name="rescan">Rescan</string>
+    <string name="delete">Delete</string>
     <string name="loading">Loading…</string>
     <string name="press_back_again">Press back button again to exit.</string>
     <string name="press_x_again">Press X button again to exit.</string>

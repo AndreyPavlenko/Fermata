@@ -50,9 +50,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	private void configure(Configuration cfg) {
 		Context ctx = getContext();
-		MainActivityDelegate a = MainActivityDelegate.get(ctx);
-		if (a == null) return;
-
+		MainActivityDelegate a = getActivity();
 		MainActivityPrefs prefs = a.getPrefs();
 		grid = prefs.getGridViewPref();
 
@@ -119,7 +117,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		super.scrollToPosition(position);
 		if (!isVisible(this)) return;
 		MainActivityDelegate a = getActivity();
-		if ((a == null) || a.getBody().isVideoMode()) return;
+		if (a.getBody().isVideoMode()) return;
 		MediaItemWrapper w = list.get(position);
 		MediaItemViewHolder h = w.getViewHolder();
 		if ((h != null) && h.isAttached() && (h.getItemWrapper() == w)) h.getItemView().requestFocus();
@@ -183,7 +181,10 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 			}
 		}
 
-		for (int i = 0, n = list.size(); i < n; i++) {
+		int n = list.size();
+		if (n == 0) return focusEmpty();
+
+		for (int i = 0; i < n; i++) {
 			MediaItemWrapper w = list.get(i);
 			Item item = w.getItem();
 			if ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed()) {
@@ -191,7 +192,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 			}
 		}
 
-		return focusEmpty();
+		return focusTo(this, list.get(0), 0);
 	}
 
 	private View focusEmpty() {
@@ -286,9 +287,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
 			configure(getContext().getResources().getConfiguration());
-			MainActivityDelegate a = MainActivityDelegate.get(getContext());
-			if (a == null) return;
-
+			MainActivityDelegate a = getActivity();
 			MediaLibFragment f = a.getActiveMediaLibFragment();
 
 			if ((f != null) && (f.getView() == this)) {
@@ -303,6 +302,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		}
 	}
 
+	@NonNull
 	private MainActivityDelegate getActivity() {
 		return MainActivityDelegate.get(getContext());
 	}

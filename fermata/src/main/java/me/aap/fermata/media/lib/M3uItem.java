@@ -83,6 +83,7 @@ public class M3uItem extends BrowsableItemBase {
 		String genre = null;
 		String logo = null;
 		String tvgId = null;
+		String tvgName = null;
 		long duration = 0;
 		byte type = 0;
 		boolean first = true;
@@ -167,6 +168,9 @@ public class M3uItem extends BrowsableItemBase {
 							case "tvg-id":
 								tvgId = trim(l.substring(start, i));
 								break;
+							case "tvg-name":
+								tvgName = trim(l.substring(start, i));
+								break;
 							case "group-title":
 								group = trim(l.substring(start, i));
 								break;
@@ -220,7 +224,7 @@ public class M3uItem extends BrowsableItemBase {
 
 					if (group == null) {
 						tracks.add(createTrack(this, -1, tracks.size(), idPath, file, name, album, artist, genre,
-								logo, tvgId, duration, type));
+								logo, tvgId, tvgName, duration, type));
 					} else {
 						M3uGroupItem g = groups.get(group);
 
@@ -230,16 +234,11 @@ public class M3uItem extends BrowsableItemBase {
 						}
 
 						g.tracks.add(createTrack(g, g.getGroupId(), g.tracks.size(), idPath, file, name, album,
-								artist, genre, logo, tvgId, duration, type));
+								artist, genre, logo, tvgId, tvgName, duration, type));
 					}
 				}
 
-				name = null;
-				group = null;
-				album = null;
-				artist = null;
-				genre = null;
-				logo = null;
+				name = group = album = artist = genre = logo = tvgId = tvgName = null;
 				duration = 0;
 				type = 0;
 			}
@@ -338,12 +337,12 @@ public class M3uItem extends BrowsableItemBase {
 	protected M3uTrackItem createTrack(BrowsableItem parent, int groupNumber, int trackNumber,
 																		 String idPath, VirtualResource file, String name, String album,
 																		 String artist, String genre, String logo, String tvgId,
-																		 long duration, byte type) {
+																		 String tvgName, long duration, byte type) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
 				.append(trackNumber).append(idPath);
 		return new M3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
-				genre, logo, tvgId, duration, type);
+				genre, logo, tvgId, tvgName, duration, type);
 	}
 
 	@NonNull

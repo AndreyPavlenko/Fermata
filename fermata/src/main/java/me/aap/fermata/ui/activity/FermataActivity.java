@@ -11,6 +11,7 @@ import me.aap.utils.ui.activity.AppActivity;
  * @author Andrey Pavlenko
  */
 public interface FermataActivity extends AppActivity {
+
 	boolean isCarActivity();
 
 	@Nullable

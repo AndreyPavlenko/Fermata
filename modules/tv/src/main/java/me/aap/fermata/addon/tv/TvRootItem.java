@@ -27,6 +27,7 @@ import me.aap.utils.pref.PreferenceStore;
 import static me.aap.utils.async.Async.forEach;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.collection.CollectionUtils.contains;
 
 /**
  * @author Andrey Pavlenko
@@ -42,6 +43,7 @@ public class TvRootItem extends ItemContainer<TvM3uItem> implements TvItem {
 		this.lib = lib;
 	}
 
+	@Nullable
 	public FutureSupplier<? extends Item> getItem(@Nullable String scheme, String id) {
 		if (scheme == null) return ID.equals(id) ? completed(this) : null;
 
@@ -153,12 +155,17 @@ public class TvRootItem extends ItemContainer<TvM3uItem> implements TvItem {
 	}
 
 	private FutureSupplier<TvM3uItem> create(int srcId) {
+		if (!contains(getIntArrayPref(SOURCE_IDS), srcId)) return null;
 		String m3uId = getStringPref(Pref.s("M3UID#" + srcId));
 		if (m3uId == null) return null;
 		return TvM3uItem.create(this, srcId, m3uId).onFailure(err -> {
 			Log.e(err, "Failed to load source: ", m3uId);
 			if (err instanceof MalformedURLException) removeSource(srcId);
-		}).ifNull(v -> removeSource(srcId));
+		}).ifNull(() -> {
+			Log.e("Failed to load source: ", m3uId);
+			removeSource(srcId);
+			return null;
+		});
 	}
 
 	private void removeSource(int srcId) {

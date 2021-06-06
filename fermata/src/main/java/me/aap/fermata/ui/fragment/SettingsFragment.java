@@ -1,6 +1,5 @@
 package me.aap.fermata.ui.fragment;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,6 +41,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.fermata.ui.activity.MainActivityListener.FRAGMENT_CONTENT_CHANGED;
+import static me.aap.utils.ui.UiUtils.ID_NULL;
 
 /**
  * @author Andrey Pavlenko
@@ -61,29 +61,32 @@ public class SettingsFragment extends MainActivityFragment {
 		else return getResources().getString(R.string.settings);
 	}
 
-	@SuppressLint("RestrictedApi")
-	@Override
-	public void onCreate(@Nullable Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setRetainInstance(true);
-	}
-
 	@Nullable
 	@Override
-	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+													 @Nullable Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.pref_list_view, container, false);
 	}
 
 	@Override
-	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-		super.onViewCreated(view, savedInstanceState);
+	public void onSaveInstanceState(@NonNull Bundle outState) {
+		if (adapter != null) outState.putInt("id", adapter.getPreferenceSet().getId());
+	}
 
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+		super.onViewCreated(view, state);
 		if (adapter == null) adapter = createAdapter();
 
 		RecyclerView listView = view.findViewById(R.id.prefs_list_view);
 		listView.setHasFixedSize(true);
 		listView.setLayoutManager(new LinearLayoutManager(getContext()));
 		listView.setAdapter(adapter);
+
+		if (state != null) {
+			PreferenceSet p = adapter.getPreferenceSet().find(state.getInt("id", ID_NULL));
+			if (p != null) adapter.setPreferenceSet(p);
+		}
 	}
 
 	@Override
@@ -163,6 +166,7 @@ public class SettingsFragment extends MainActivityFragment {
 		}
 	}
 
+	@NonNull
 	private MainActivityDelegate getMainActivity() {
 		return MainActivityDelegate.get(getContext());
 	}
@@ -459,7 +463,7 @@ public class SettingsFragment extends MainActivityFragment {
 		}
 
 		@Override
-		public void addonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
+		public void onAddonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
 			if (set != null) set.configure(this::configure);
 		}
 	}

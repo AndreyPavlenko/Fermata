@@ -10,6 +10,7 @@ import java.util.Collections;
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystemProvider;
+import me.aap.fermata.addon.tv.m3u.TvM3uItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -17,10 +18,13 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.FloatingButton;
 
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
@@ -81,6 +85,35 @@ public class TvFragment extends MediaLibFragment {
 		return TvAddon.getRootItem((DefaultMediaLib) getMainActivity().getLib());
 	}
 
+	@Override
+	public void contributeToContextMenu(OverlayMenu.Builder b, MediaItemMenuHandler h) {
+		if (!(h.getItem() instanceof TvM3uItem)) return;
+		b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
+				me.aap.fermata.R.string.delete)
+				.setData(h.getItem())
+				.setHandler(this::contextMenuItemSelected);
+		super.contributeToContextMenu(b, h);
+	}
+
+	private boolean contextMenuItemSelected(OverlayMenuItem item) {
+		int id = item.getItemId();
+		if (id == me.aap.fermata.R.id.delete) {
+			TvRootItem root = getRootItem();
+			root.removeItem(item.getData()).onSuccess(v -> getAdapter().setParent(root));
+		}
+		return true;
+	}
+
+	@Override
+	protected boolean isSupportedItem(Item i) {
+		return getRootItem().isChildItemId(i.getId());
+	}
+
+	@Override
+	protected boolean isRefreshSupported() {
+		return true;
+	}
+
 	private void addM3uSource(TvM3uFile m3u) {
 		MainActivityDelegate a = getMainActivity();
 		if (m3u != null) getRootItem().addSource(m3u);
@@ -97,16 +130,6 @@ public class TvFragment extends MediaLibFragment {
 			UiUtils.showAlert(getContext(), getString(R.string.err_failed_to_add_tv_source,
 					(msg != null) ? msg : ex.toString()));
 		});
-	}
-
-	@Override
-	protected boolean isSupportedItem(Item i) {
-		return getRootItem().isChildItemId(i.getId());
-	}
-
-	@Override
-	protected boolean isRefreshSupported() {
-		return true;
 	}
 
 	private boolean isRootItem() {

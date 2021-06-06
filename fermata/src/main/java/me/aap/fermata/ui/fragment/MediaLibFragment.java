@@ -29,6 +29,7 @@ import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
+import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.async.FutureSupplier;
@@ -75,12 +76,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		else return getFragmentTitle();
 	}
 
-	@Override
-	public void onCreate(@Nullable Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setRetainInstance(true);
-	}
-
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -97,13 +92,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			attachTouchHelper();
 		} else {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
-
-			if (b != null) {
-				bind(b);
-				a.addBroadcastListener(this, ACTIVITY_FINISH);
-			} else {
-				a.addBroadcastListener(this, SERVICE_BOUND | ACTIVITY_FINISH);
-			}
+			bind(b);
+			a.addBroadcastListener(this, ACTIVITY_FINISH);
 		}
 	}
 
@@ -112,15 +102,16 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		super.onDestroy();
 
 		MainActivityDelegate a = getMainActivity();
-		if (a == null) return;
-
 		a.removeBroadcastListener(this);
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		if (b == null) return;
-
 		b.removeBroadcastListener(this);
 		a.getPrefs().removeBroadcastListener(this);
 		b.getLib().getPrefs().removeBroadcastListener(this);
+
+		if (adapter != null) {
+			adapter.onDestroy();
+			adapter = null;
+		}
 	}
 
 	private void bind(FermataServiceUiBinder b) {
@@ -142,10 +133,12 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		touchHelper.attachToRecyclerView(listView);
 	}
 
+	@NonNull
 	public MainActivityDelegate getMainActivity() {
 		return MainActivityDelegate.get(getContext());
 	}
 
+	@NonNull
 	public MediaLib getLib() {
 		return getMainActivity().getLib();
 	}
@@ -175,7 +168,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	public boolean onBackPressed() {
 		MainActivityDelegate ad = getMainActivity();
-		if (ad == null) return false;
 		BodyLayout b = ad.getBody();
 
 		if (b.isVideoMode()) {
@@ -251,7 +243,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	@Override
-	public void durationChanged(PlayableItem i) {
+	public void onDurationChanged(PlayableItem i) {
 		ListAdapter a = getAdapter();
 		if (a == null) return;
 
@@ -281,6 +273,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		} else {
 			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
 		}
+	}
+
+	public void contributeToContextMenu(OverlayMenu.Builder builder, MediaItemMenuHandler handler) {
 	}
 
 	protected boolean navBarMenuItemSelected(OverlayMenuItem item) {
@@ -363,8 +358,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
-		if (handleActivityFinishEvent(a, e) || handleActivityDestroyEvent(a, e)) return;
-		if (e == SERVICE_BOUND) bind(a.getMediaServiceBinder());
+		handleActivityFinishEvent(a, e);
 	}
 
 	@Override
@@ -433,7 +427,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				FermataServiceUiBinder b = a.getMediaServiceBinder();
 				PlayableItem cur = b.getCurrentItem();
 				b.playItem((PlayableItem) i);
-				if (i.equals(cur)) a.getBody().setMode(BodyLayout.Mode.VIDEO);
+				if (i.equals(cur) && cur.isVideo()) a.getBody().setMode(BodyLayout.Mode.VIDEO);
 			} else {
 				super.onClick(v);
 			}

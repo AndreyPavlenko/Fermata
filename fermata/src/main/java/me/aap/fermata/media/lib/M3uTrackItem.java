@@ -30,12 +30,13 @@ public class M3uTrackItem extends PlayableItemBase {
 	private final int trackNumber;
 	private final String logo;
 	private final String tvgId;
+	private final String tvgName;
 	private final boolean isVideo;
 	private final long duration;
 
 	protected M3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
 												 String name, String album, String artist, String genre, String logo,
-												 String tvgId, long duration, byte type) {
+												 String tvgId, String tvgName, long duration, byte type) {
 		super(id, parent, file);
 
 		if (type == 1) {
@@ -54,6 +55,7 @@ public class M3uTrackItem extends PlayableItemBase {
 		this.genre = genre;
 		this.logo = logo;
 		this.tvgId = tvgId;
+		this.tvgName = tvgName;
 		this.trackNumber = trackNumber;
 		this.duration = duration;
 	}
@@ -97,6 +99,10 @@ public class M3uTrackItem extends PlayableItemBase {
 
 	public String getTvgId() {
 		return tvgId;
+	}
+
+	public String getTvgName() {
+		return tvgName;
 	}
 
 	@Override

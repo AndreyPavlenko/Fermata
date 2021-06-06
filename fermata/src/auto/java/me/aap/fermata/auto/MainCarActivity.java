@@ -17,28 +17,32 @@ import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.ui.UiUtils.showAlert;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MainCarActivity extends CarActivity implements FermataActivity {
-	static MainActivityDelegate delegate;
+	static FermataMediaServiceConnection service;
+	@SuppressWarnings("unchecked")
+	@NonNull
+	private FutureSupplier<MainActivityDelegate> delegate = (FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
 	private CarEditText editText;
 	private TextWatcher textWatcher;
 
-	static {
-		ActivityDelegate.setContextToDelegate(c -> delegate);
-	}
-
+	@NonNull
 	@Override
-	public MainActivityDelegate getActivityDelegate() {
+	public FutureSupplier<MainActivityDelegate> getActivityDelegate() {
 		return delegate;
 	}
 
@@ -46,18 +50,43 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setIgnoreConfigChanges(0xFFFF);
-		delegate = ActivityDelegate.create(MainActivityDelegate::new, this);
-		delegate.onActivityCreate(savedInstanceState);
-
 		CarUiController ctrl = getCarUiController();
 		ctrl.getStatusBarController().hideAppHeader();
 		ctrl.getMenuController().hideMenuButton();
+		FermataMediaServiceConnection s = service;
+
+		if ((s != null) && s.isConnected()) {
+			onCreate(savedInstanceState, s);
+		} else {
+			delegate = FermataMediaServiceConnection.connect(this, true).main()
+					.onFailure(err -> showAlert(getContext(), String.valueOf(err)))
+					.map(c -> {
+						service = c;
+						return onCreate(savedInstanceState, c);
+					});
+		}
+	}
+
+	private MainActivityDelegate onCreate(Bundle state, FermataMediaServiceConnection s) {
+		MainActivityDelegate d = new MainActivityDelegate(this, s.createBinder());
+		ActivityDelegate.setContextToDelegate(ctx -> d);
+		delegate = completed(d);
+		d.onActivityCreate(state);
+		return d;
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		getActivityDelegate().onActivityResume();
+		getActivityDelegate().onSuccess(MainActivityDelegate::onActivityResume);
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		getActivityDelegate()
+				.onSuccess(MainActivityDelegate::onActivityDestroy)
+				.thenRun(() -> ActivityDelegate.setContextToDelegate(null));
 	}
 
 	@Override
@@ -87,11 +116,11 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	public void finish() {
-		getActivityDelegate().onActivityFinish();
+		getActivityDelegate().onSuccess(MainActivityDelegate::onActivityFinish);
 	}
 
 	@Override
-	public FutureSupplier<Intent> startActivityForResult(Intent intent) {
+	public FutureSupplier<Intent> startActivityForResult(Supplier<Intent> intent) {
 		return failed(new UnsupportedOperationException());
 	}
 
@@ -137,19 +166,22 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
-		return (delegate != null) ? delegate.onKeyUp(keyCode, keyEvent, super::onKeyUp)
+		MainActivityDelegate d = delegate.peek();
+		return (d != null) ? d.onKeyUp(keyCode, keyEvent, super::onKeyUp)
 				: super.onKeyUp(keyCode, keyEvent);
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
-		return (delegate != null) ? delegate.onKeyDown(keyCode, keyEvent, super::onKeyDown)
+		MainActivityDelegate d = delegate.peek();
+		return (d != null) ? d.onKeyDown(keyCode, keyEvent, super::onKeyDown)
 				: super.onKeyDown(keyCode, keyEvent);
 	}
 
 	@Override
 	public boolean onKeyLongPress(int keyCode, KeyEvent keyEvent) {
-		return (delegate != null) ? delegate.onKeyLongPress(keyCode, keyEvent, super::onKeyLongPress)
+		MainActivityDelegate d = delegate.peek();
+		return (d != null) ? d.onKeyLongPress(keyCode, keyEvent, super::onKeyLongPress)
 				: super.onKeyLongPress(keyCode, keyEvent);
 	}
 }
