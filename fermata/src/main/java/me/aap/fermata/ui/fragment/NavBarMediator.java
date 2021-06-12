@@ -7,14 +7,17 @@ import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
 
+import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
 
 import com.google.android.material.textview.MaterialTextView;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
@@ -30,9 +33,7 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.holder.IntHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.pref.PreferenceStore.Compound;
 import me.aap.utils.pref.PreferenceStore.Pref;
-import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -45,23 +46,89 @@ import me.aap.utils.ui.view.NavButtonView;
 import me.aap.utils.ui.view.PrefNavBarMediator;
 import me.aap.utils.ui.view.ToolBarView;
 
-import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 import static android.view.View.FOCUS_DOWN;
 import static android.view.View.FOCUS_LEFT;
 import static android.view.View.FOCUS_RIGHT;
 import static android.view.View.FOCUS_UP;
 import static me.aap.fermata.BuildConfig.VERSION_CODE;
 import static me.aap.fermata.BuildConfig.VERSION_NAME;
-import static me.aap.utils.ui.UiUtils.ID_NULL;
+import static me.aap.utils.collection.CollectionUtils.newLinkedHashSet;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.showInfo;
-import static me.aap.utils.ui.view.NavBarView.POSITION_BOTTOM;
+import static me.aap.utils.ui.view.NavBarItem.create;
+import static me.aap.utils.ui.view.NavBarView.POSITION_LEFT;
+import static me.aap.utils.ui.view.NavBarView.POSITION_RIGHT;
 
 /**
  * @author Andrey Pavlenko
  */
 public class NavBarMediator extends PrefNavBarMediator implements AddonManager.Listener,
 		OverlayMenu.SelectionHandler {
+	private static final Pref<Supplier<String[]>> PREF_B = Pref.sa("NAV_BAR_ITEMS_B", (String[]) null);
+	private static final Pref<Supplier<String[]>> PREF_L = Pref.sa("NAV_BAR_ITEMS_L", (String[]) null);
+	private static final Pref<Supplier<String[]>> PREF_R = Pref.sa("NAV_BAR_ITEMS_R", (String[]) null);
+
+	@Override
+	protected Collection<NavBarItem> getItems(NavBarView nb) {
+		int max = nb.suggestItemCount() - 1;
+		Collection<String> names = getLayout(nb);
+		List<NavBarItem> items = new ArrayList<>(names.size());
+		AddonManager amgr = getAddonManager();
+		Context ctx = nb.getContext();
+
+		for (String name : names) {
+			switch (name) {
+				case "folders":
+					items.add(create(ctx, R.id.folders_fragment, R.drawable.folder,
+							R.string.folders, items.size() < max));
+					continue;
+				case "favorites":
+					items.add(create(ctx, R.id.favorites_fragment, R.drawable.favorite_filled,
+							R.string.favorites, items.size() < max));
+					continue;
+				case "playlists":
+					items.add(create(ctx, R.id.playlists_fragment, R.drawable.playlist,
+							R.string.playlists, items.size() < max));
+					continue;
+				case "menu":
+					items.add(create(ctx, R.id.menu, R.drawable.menu, R.string.menu, items.size() < max));
+					continue;
+			}
+
+			FermataAddon a = amgr.getAddon(name);
+			if (a != null) {
+				AddonInfo ai = a.getInfo();
+				items.add(create(ctx, a.getAddonId(), ai.icon, ai.addonName, items.size() < max));
+				continue;
+			}
+			Log.e("Unknown NavBarItem name: ", name);
+		}
+
+		return items;
+	}
+
+	@Override
+	protected boolean canSwap(NavBarView nb) {
+		return true;
+	}
+
+	@Override
+	protected boolean swap(NavBarView nb, @IdRes int id1, @IdRes int id2) {
+		List<String> names = new ArrayList<>(getLayout(nb));
+		String name1 = idToName(id1);
+		String name2 = idToName(id2);
+		int idx1 = names.indexOf(name1);
+		int idx2 = names.indexOf(name2);
+
+		if ((idx1 != -1) && (idx2 != -1)) {
+			Collections.swap(names, idx1, idx2);
+			getPreferenceStore(nb).applyStringArrayPref(getPref(nb), names.toArray(new String[0]));
+			return true;
+		} else {
+			Log.e("Unable to swap ", name1, " and ", name2);
+			return false;
+		}
+	}
 
 	@Override
 	public void enable(NavBarView nb, ActivityFragment f) {
@@ -87,8 +154,15 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 	}
 
 	@Override
-	protected Pref<Compound<List<NavBarItem>>> getPref(NavBarView nb) {
-		return new NavBarPref(nb);
+	protected Pref<Supplier<String[]>> getPref(NavBarView nb) {
+		switch (nb.getPosition()) {
+			default:
+				return PREF_B;
+			case POSITION_LEFT:
+				return PREF_L;
+			case POSITION_RIGHT:
+				return PREF_R;
+		}
 	}
 
 	@Override
@@ -258,167 +332,39 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 		}
 	}
 
-	private static final class NavBarPref implements Pref<Compound<List<NavBarItem>>>, Compound<List<NavBarItem>> {
-		private static final Pref<Supplier<String>> prefV = Pref.s("NAV_BAR_V", () -> null);
-		private static final Pref<Supplier<String>> prefH = Pref.s("NAV_BAR_H", () -> null);
-		private final NavBarView nb;
+	private Collection<String> getLayout(NavBarView nb) {
+		AddonManager amgr = FermataApplication.get().getAddonManager();
+		Set<String> names = newLinkedHashSet(BuildConfig.ADDONS.length + 4);
+		String[] pref = getPreferenceStore(nb).getStringArrayPref(getPref(nb));
+		CollectionUtils.addAll(names, pref);
+		names.add("folders");
+		names.add("favorites");
+		names.add("playlists");
+		for (AddonInfo ai : BuildConfig.ADDONS) {
+			FermataAddon a = amgr.getAddon(ai.className);
+			if (a != null) names.add(ai.className);
+		}
+		names.add("menu");
+		return names;
+	}
 
-		public NavBarPref(NavBarView nb) {
-			this.nb = nb;
+	private static String idToName(@IdRes int id) {
+		if (id == R.id.folders_fragment) return "folders";
+		else if (id == R.id.favorites_fragment) return "favorites";
+		else if (id == R.id.playlists_fragment) return "playlists";
+		else if (id == R.id.menu) return "menu";
+
+		AddonManager amgr = getAddonManager();
+		for (AddonInfo ai : BuildConfig.ADDONS) {
+			FermataAddon a = amgr.getAddon(ai.className);
+			if ((a != null) && (a.getAddonId() == id)) return ai.className;
 		}
 
-		@Override
-		public String getName() {
-			return "NAV_BAR";
-		}
+		Log.e("Unknown NavBarItem id: ", id);
+		return String.valueOf(id);
+	}
 
-		@Override
-		public Compound<List<NavBarItem>> getDefaultValue() {
-			return this;
-		}
-
-		@Override
-		public List<NavBarItem> get(PreferenceStore store, String name) {
-			AddonManager amgr = FermataApplication.get().getAddonManager();
-			List<NavBarItem> items = new ArrayList<>(BuildConfig.ADDONS.length + 4);
-			Pref<Supplier<String>> pref = getPref();
-			int max = (pref == prefV) ? 4 : 7;
-			String v = store.getStringPref(pref);
-			if (v == null) v = store.getStringPref((pref == prefH) ? prefV : prefH);
-
-			if (v != null) {
-				for (String s : v.split(",")) {
-					int idx = s.indexOf('_');
-
-					if ((idx == -1) || (idx == s.length() - 1)) {
-						Log.w("Invalid value of NAV_BAR pref: " + v);
-						break;
-					}
-
-					boolean pin = s.startsWith("true_");
-					s = s.substring(idx + 1);
-					NavBarItem item = getItem(amgr, s, pin);
-					if (item != null) items.add(item);
-				}
-			}
-
-			Context ctx = nb.getContext();
-
-			if (!CollectionUtils.contains(items, i -> i.getId() == R.id.folders_fragment)) {
-				items.add(NavBarItem.create(ctx, R.id.folders_fragment, R.drawable.folder, R.string.folders, true));
-			}
-			if (!CollectionUtils.contains(items, i -> i.getId() == R.id.favorites_fragment)) {
-				items.add(NavBarItem.create(ctx, R.id.favorites_fragment, R.drawable.favorite_filled, R.string.favorites, true));
-			}
-			if (!CollectionUtils.contains(items, i -> i.getId() == R.id.playlists_fragment)) {
-				items.add(NavBarItem.create(ctx, R.id.playlists_fragment, R.drawable.playlist, R.string.playlists, true));
-			}
-
-			for (AddonInfo ai : BuildConfig.ADDONS) {
-				FermataAddon a = amgr.getAddon(ai.className);
-				if ((a != null) && (a.getAddonId() != ID_NULL) &&
-						!CollectionUtils.contains(items, i -> i.getId() == a.getAddonId())) {
-					items.add(NavBarItem.create(ctx, a.getAddonId(), ai.icon, ai.addonName, items.size() < max));
-				}
-			}
-
-			if (!CollectionUtils.contains(items, i -> i.getId() == R.id.menu)) {
-				items.add(NavBarItem.create(ctx, R.id.menu, R.drawable.menu, R.string.menu, false));
-			}
-
-			return items;
-		}
-
-		@Override
-		public void set(PreferenceStore.Edit edit, String name, List<NavBarItem> value) {
-			AddonManager amgr = FermataApplication.get().getAddonManager();
-			String v;
-
-			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-				for (NavBarItem i : value) {
-					String itemName = getName(amgr, i);
-
-					if (itemName == null) {
-						Log.w("Nav bar item name not found for " + i.getText());
-					} else {
-						if (tb.length() > 0) tb.append(',');
-						tb.append(i.isPinned()).append('_').append(itemName);
-					}
-				}
-
-				v = tb.toString();
-			}
-
-			edit.setStringPref(getPref(), v);
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (this == o) return true;
-			if (o == null || getClass() != o.getClass()) return false;
-			return Objects.equals(getName(), ((NavBarPref) o).getName());
-		}
-
-		@Override
-		public int hashCode() {
-			return getName().hashCode();
-		}
-
-		private Pref<Supplier<String>> getPref() {
-			Context ctx = nb.getContext();
-			if (ctx.getResources().getConfiguration().smallestScreenWidthDp > 600) return prefH;
-
-			boolean bottom = nb.getPosition() == POSITION_BOTTOM;
-			boolean portrait = nb.getContext().getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT;
-
-			if (bottom) return portrait ? prefV : prefH;
-			else return portrait ? prefH : prefV;
-		}
-
-		private static String getName(AddonManager amgr, NavBarItem i) {
-			int id = i.getId();
-
-			if (id == R.id.folders_fragment) {
-				return "folders";
-			} else if (id == R.id.favorites_fragment) {
-				return "favorites";
-			} else if (id == R.id.playlists_fragment) {
-				return "playlists";
-			} else if (id == R.id.menu) {
-				return "menu";
-			}
-			for (AddonInfo ai : BuildConfig.ADDONS) {
-				FermataAddon a = amgr.getAddon(ai.className);
-				if ((a != null) && (a.getAddonId() == id)) return ai.className;
-			}
-
-			return null;
-		}
-
-		private NavBarItem getItem(AddonManager amgr, String name, boolean pin) {
-			Context ctx = nb.getContext();
-
-			switch (name) {
-				case "folders":
-					return NavBarItem.create(ctx, R.id.folders_fragment, R.drawable.folder, R.string.folders, pin);
-				case "favorites":
-					return NavBarItem.create(ctx, R.id.favorites_fragment, R.drawable.favorite_filled, R.string.favorites, pin);
-				case "playlists":
-					return NavBarItem.create(ctx, R.id.playlists_fragment, R.drawable.playlist, R.string.playlists, pin);
-				case "menu":
-					return NavBarItem.create(ctx, R.id.menu, R.drawable.menu, R.string.menu, pin);
-				default:
-					for (AddonInfo ai : BuildConfig.ADDONS) {
-						if (name.equals(ai.className)) {
-							FermataAddon a = amgr.getAddon(ai.className);
-							if ((a != null) && (a.getAddonId() != ID_NULL)) {
-								return NavBarItem.create(ctx, a.getAddonId(), ai.icon, ai.addonName, pin);
-							}
-						}
-					}
-
-					return null;
-			}
-		}
+	private static AddonManager getAddonManager() {
+		return FermataApplication.get().getAddonManager();
 	}
 }

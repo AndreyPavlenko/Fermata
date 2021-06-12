@@ -63,7 +63,7 @@ public class M3uItem extends BrowsableItemBase {
 	private Data parse() {
 		String id = getId();
 		VirtualFile m3uFile = (VirtualFile) getResource();
-		VirtualFolder dir = m3uFile.getParent().getOrThrow();
+		VirtualFolder dir = m3uFile.getParent().peek();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
 		String idPath = id.substring(getScheme().length());

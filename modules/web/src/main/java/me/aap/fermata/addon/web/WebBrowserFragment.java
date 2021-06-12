@@ -17,6 +17,7 @@ import java.util.Map;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.Supplier;
@@ -35,7 +36,8 @@ import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
  */
 @Keep
 @SuppressWarnings("unused")
-public class WebBrowserFragment extends MainActivityFragment implements OverlayMenu.SelectionHandler {
+public class WebBrowserFragment extends MainActivityFragment
+		implements OverlayMenu.SelectionHandler, MainActivityListener {
 
 	@Override
 	public int getFragmentId() {
@@ -60,6 +62,13 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 		FermataChromeClient chromeClient = new FermataChromeClient(webView, fullScreenView);
 		webView.init(addon, webClient, chromeClient);
 		webView.loadUrl(addon.getLastUrl());
+		registerListeners(MainActivityDelegate.get(ctx));
+	}
+
+	@Override
+	public void onDestroyView() {
+		unregisterListeners(MainActivityDelegate.get(requireContext()));
+		super.onDestroyView();
 	}
 
 	@Override
@@ -69,6 +78,22 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 			v.getWebViewClient().loading = refreshing;
 			v.reload();
 		}
+	}
+
+	protected void registerListeners(MainActivityDelegate a) {
+		a.addBroadcastListener(this, MainActivityListener.ACTIVITY_DESTROY);
+	}
+
+	protected void unregisterListeners(MainActivityDelegate a) {
+		FermataWebView v = getWebView();
+		WebBrowserAddon addon = getAddon();
+		a.removeBroadcastListener(this);
+		if ((addon != null) && (v != null)) addon.getPreferenceStore().removeBroadcastListener(v);
+	}
+
+	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (e == ACTIVITY_DESTROY) unregisterListeners(a);
 	}
 
 	@Override
@@ -146,15 +171,16 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 
 	@Override
 	public void contributeToNavBarMenu(OverlayMenu.Builder b) {
+		WebBrowserAddon a = getAddon();
 		FermataWebView v = getWebView();
-		if (v == null) return;
+		if ((a == null) || (v == null)) return;
 
 		b.addItem(me.aap.fermata.R.id.refresh, me.aap.fermata.R.drawable.refresh,
 				me.aap.fermata.R.string.refresh).setHandler(this);
 
 		if (isDesktopVersionSupported()) {
 			b.addItem(R.id.desktop_version, R.drawable.desktop, R.string.desktop_version)
-					.setChecked(getAddon().isDesktopVersion()).setHandler(this);
+					.setChecked(a.isDesktopVersion()).setHandler(this);
 		}
 
 		FermataChromeClient chrome = v.getWebChromeClient();
@@ -183,21 +209,19 @@ public class WebBrowserFragment extends MainActivityFragment implements OverlayM
 
 		int id = item.getItemId();
 
-		switch (id) {
-			case me.aap.fermata.R.id.refresh:
-				v.reload();
-				return true;
-			case R.id.desktop_version:
-				WebBrowserAddon addon = getAddon();
-				addon.setDesktopVersion(!addon.isDesktopVersion());
-				return true;
-			case R.id.fullscreen:
-			case R.id.fullscreen_exit:
-				FermataChromeClient chrome = v.getWebChromeClient();
-				if (chrome == null) return false;
-				if (id == R.id.fullscreen) chrome.enterFullScreen();
-				else chrome.exitFullScreen();
-				return true;
+		if (id == me.aap.fermata.R.id.refresh) {
+			v.reload();
+			return true;
+		} else if (id == R.id.desktop_version) {
+			WebBrowserAddon addon = getAddon();
+			if (addon != null) addon.setDesktopVersion(!addon.isDesktopVersion());
+			return true;
+		} else if (id == R.id.fullscreen || id == R.id.fullscreen_exit) {
+			FermataChromeClient chrome = v.getWebChromeClient();
+			if (chrome == null) return false;
+			if (id == R.id.fullscreen) chrome.enterFullScreen();
+			else chrome.exitFullScreen();
+			return true;
 		}
 
 		return false;

@@ -45,6 +45,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		MainActivityDelegate.setTheme(this);
 		AddonManager.get().addBroadcastListener(this);
 		super.onCreate(savedInstanceState);
 	}

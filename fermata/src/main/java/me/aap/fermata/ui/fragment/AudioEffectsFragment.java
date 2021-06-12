@@ -43,18 +43,19 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 
 		MainActivityDelegate a = getMainActivity();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		a.addBroadcastListener(this, ACTIVITY_FINISH);
+		a.addBroadcastListener(this, ACTIVITY_FINISH | ACTIVITY_DESTROY);
 		b.getMediaSessionCallback().addBroadcastListener(this);
 	}
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		removeListeners(getMainActivity());
+	}
 
-		MainActivityDelegate a = getMainActivity();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
+	private void removeListeners(MainActivityDelegate a) {
 		a.removeBroadcastListener(this);
-		b.getMediaSessionCallback().removeBroadcastListener(this);
+		a.getMediaSessionCallback().removeBroadcastListener(this);
 	}
 
 	@Nullable
@@ -193,6 +194,10 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
-		if (handleActivityFinishEvent(a, e)) applyAndCleanup(a);
+		if (e == ACTIVITY_FINISH) {
+			applyAndCleanup(a);
+		} else if (e == ACTIVITY_DESTROY) {
+			removeListeners(a);
+		}
 	}
 }

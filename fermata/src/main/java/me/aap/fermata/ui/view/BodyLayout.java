@@ -53,7 +53,11 @@ public class BodyLayout extends ConstraintLayout implements
 		getSplitHandle().setOnTouchListener(this);
 		setSplitPercent(a.getPrefs().getSplitPercent(ctx));
 		setMode(Mode.FRAME);
-		bind(a);
+
+		FermataServiceUiBinder b = a.getMediaServiceBinder();
+		b.addBroadcastListener(this);
+		a.addBroadcastListener(this, FRAGMENT_CHANGED | ACTIVITY_DESTROY);
+		onPlayableChanged(null, b.getCurrentItem());
 	}
 
 	public Mode getMode() {
@@ -76,6 +80,7 @@ public class BodyLayout extends ConstraintLayout implements
 		this.mode = mode;
 		Guideline gl = getGuideline();
 		ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) gl.getLayoutParams();
+		MainActivityDelegate a = getActivity();
 		VideoView vv = getVideoView();
 
 		switch (mode) {
@@ -85,7 +90,7 @@ public class BodyLayout extends ConstraintLayout implements
 				getSplitHandle().setVisibility(GONE);
 				getSwipeRefresh().setVisibility(VISIBLE);
 				lp.guidePercent = isPortrait() ? 0f : 1f;
-				getActivity().setVideoMode(false, vv);
+				a.setVideoMode(false, vv);
 				break;
 			case VIDEO:
 				vv.setVisibility(VISIBLE);
@@ -94,7 +99,7 @@ public class BodyLayout extends ConstraintLayout implements
 				getSwipeRefresh().setVisibility(GONE);
 				lp.guidePercent = isPortrait() ? 1f : 0f;
 				vv.showVideo(true);
-				getActivity().setVideoMode(true, vv);
+				a.setVideoMode(true, vv);
 				App.get().getHandler().post(vv::requestFocus);
 				break;
 			case BOTH:
@@ -104,11 +109,12 @@ public class BodyLayout extends ConstraintLayout implements
 				getSwipeRefresh().setVisibility(VISIBLE);
 				lp.guidePercent = getActivity().getPrefs().getSplitPercent(getContext());
 				vv.showVideo(true);
-				getActivity().setVideoMode(true, vv);
+				a.setVideoMode(true, vv);
 				break;
 		}
 
 		gl.setLayoutParams(lp);
+		a.fireBroadcastEvent(MODE_CHANGED);
 	}
 
 	@Override
@@ -166,9 +172,9 @@ public class BodyLayout extends ConstraintLayout implements
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
-		if (handleActivityFinishEvent(a, e) || handleActivityDestroyEvent(a, e)) return;
-
-		if (e == FRAGMENT_CHANGED) {
+		if (handleActivityDestroyEvent(a, e)) {
+			a.getMediaServiceBinder().removeBroadcastListener(this);
+		} else if (e == FRAGMENT_CHANGED) {
 			if (a.getActiveMediaLibFragment() == null) {
 				setMode(Mode.FRAME);
 			} else {
@@ -207,13 +213,6 @@ public class BodyLayout extends ConstraintLayout implements
 	@Override
 	public void onPlaybackError(String message) {
 		Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
-	}
-
-	private void bind(MainActivityDelegate a) {
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		a.addBroadcastListener(this, FRAGMENT_CHANGED | ACTIVITY_DESTROY);
-		b.addBroadcastListener(this);
-		onPlayableChanged(null, b.getCurrentItem());
 	}
 
 	@Override

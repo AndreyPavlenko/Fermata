@@ -32,14 +32,17 @@ import static me.aap.utils.ui.UiUtils.isVisible;
  */
 public class MediaItemListView extends RecyclerView implements PreferenceStore.Listener {
 	private boolean isSelectionActive;
-	private int focusReq;
 	private boolean grid;
+	private int focusReq;
 
 	public MediaItemListView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs);
 		configure(ctx.getResources().getConfiguration());
 		setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
-		MainActivityDelegate.get(ctx).getPrefs().addBroadcastListener(this);
+	}
+
+	public boolean isGrid() {
+		return grid;
 	}
 
 	@Override
@@ -52,7 +55,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		Context ctx = getContext();
 		MainActivityDelegate a = getActivity();
 		MainActivityPrefs prefs = a.getPrefs();
-		grid = prefs.getGridViewPref();
+		grid = a.isGridView();
 
 		if (grid) {
 			float scale = prefs.getMediaItemScalePref();
@@ -136,10 +139,8 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
 		if (f instanceof MediaLibFragment) {
 			MediaItemListView v = ((MediaLibFragment) f).getListView();
-			if (v != null) {
-				List<MediaItemWrapper> list = v.getAdapter().getList();
-				return ((list != null) && !list.isEmpty()) ? v.focusTo(focused, list, 0) : v.focusEmpty();
-			}
+			List<MediaItemWrapper> list = v.getAdapter().getList();
+			return ((list != null) && !list.isEmpty()) ? v.focusTo(focused, list, 0) : v.focusEmpty();
 		}
 		return null;
 	}
@@ -149,12 +150,10 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
 		if (f instanceof MediaLibFragment) {
 			MediaItemListView v = ((MediaLibFragment) f).getListView();
-			if (v != null) {
-				List<MediaItemWrapper> list = v.getAdapter().getList();
-				return ((list != null) && !list.isEmpty())
-						? v.focusTo(focused, list, list.size() - 1)
-						: v.focusEmpty();
-			}
+			List<MediaItemWrapper> list = v.getAdapter().getList();
+			return ((list != null) && !list.isEmpty())
+					? v.focusTo(focused, list, list.size() - 1)
+					: v.focusEmpty();
 		}
 		return null;
 	}
@@ -162,11 +161,8 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	@Nullable
 	public static View focusActive(View focused) {
 		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
-		if (f instanceof MediaLibFragment) {
-			MediaItemListView v = ((MediaLibFragment) f).getListView();
-			return (v != null) ? v.focusSearch() : null;
-		}
-		return null;
+		return (f instanceof MediaLibFragment)
+				? (((MediaLibFragment) f).getListView()).focusSearch() : null;
 	}
 
 	public View focusSearch() {
@@ -202,8 +198,22 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public View focusSearch(View focused, int direction) {
-		if (grid) return super.focusSearch(focused, direction);
 		if (!(focused instanceof MediaItemView) || (focused.getParent() != this)) return focused;
+
+		if (grid) {
+			if (direction == FOCUS_LEFT) {
+				List<MediaItemWrapper> list = getAdapter().getList();
+				if (list != null) return focusTo(focused, list, indexOf(list, focused) - 1);
+			} else if (direction == FOCUS_RIGHT) {
+				List<MediaItemWrapper> list = getAdapter().getList();
+				int idx = indexOf(list, focused);
+				if ((idx != -1) && (idx < list.size() - 1)) return focusTo(focused, list, idx + 1);
+				else return focusRight(focused);
+			}
+
+			return super.focusSearch(focused, direction);
+		}
+
 
 		if (direction == FOCUS_LEFT) return focusLeft(focused);
 		if (direction == FOCUS_RIGHT) return focusRight(focused);
@@ -305,5 +315,13 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	@NonNull
 	private MainActivityDelegate getActivity() {
 		return MainActivityDelegate.get(getContext());
+	}
+
+	private int indexOf(List<MediaItemWrapper> list, View v) {
+		for (int i = 0, n = list.size(); i < n; i++) {
+			MediaItemViewHolder h = list.get(i).getViewHolder();
+			if ((h != null) && (h.getItemView() == v) && h.isAttached()) return i;
+		}
+		return -1;
 	}
 }

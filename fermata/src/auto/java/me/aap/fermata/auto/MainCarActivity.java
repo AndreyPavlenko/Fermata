@@ -48,6 +48,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		MainActivityDelegate.setTheme(this);
 		super.onCreate(savedInstanceState);
 		setIgnoreConfigChanges(0xFFFF);
 		CarUiController ctrl = getCarUiController();

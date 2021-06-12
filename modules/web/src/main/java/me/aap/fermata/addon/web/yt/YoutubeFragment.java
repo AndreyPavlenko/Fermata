@@ -27,8 +27,7 @@ import me.aap.utils.ui.view.ToolBarView;
  */
 @Keep
 @SuppressWarnings("unused")
-public class YoutubeFragment extends WebBrowserFragment implements
-		FermataServiceUiBinder.Listener {
+public class YoutubeFragment extends WebBrowserFragment implements FermataServiceUiBinder.Listener {
 	private static final String DEFAULT_URL = "http://m.youtube.com";
 	private String loadUrl = DEFAULT_URL;
 
@@ -54,21 +53,38 @@ public class YoutubeFragment extends WebBrowserFragment implements
 		VideoView videoView = a.findViewById(R.id.ytVideoView);
 		YoutubeWebClient webClient = new YoutubeWebClient();
 		YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
-		a.getMediaServiceBinder().addBroadcastListener(this);
 		webView.init(addon, webClient, chromeClient);
-
+		registerListeners(a);
 		String url = loadUrl;
 		loadUrl = DEFAULT_URL;
 		webView.loadUrl(url);
+	}
+
+
+	@Override
+	public void onDestroyView() {
+		unregisterListeners(MainActivityDelegate.get(requireContext()));
+		super.onDestroyView();
+	}
+
+	@Override
+	protected void registerListeners(MainActivityDelegate a) {
+		super.registerListeners(a);
+		a.getMediaServiceBinder().addBroadcastListener(this);
+	}
+
+	protected void unregisterListeners(MainActivityDelegate a) {
+		super.unregisterListeners(a);
+		a.getMediaServiceBinder().removeBroadcastListener(this);
 	}
 
 	@Override
 	public void onPause() {
 		MainActivityDelegate a = MainActivityDelegate.get(getContext());
 
-		if ((a != null) && !a.isCarActivity()) {
+		if (!a.isCarActivity()) {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
-			if ((b != null) && (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem()))) {
+			if (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem())) {
 				b.getMediaSessionCallback().onStop();
 			}
 		}
@@ -89,7 +105,7 @@ public class YoutubeFragment extends WebBrowserFragment implements
 		if (YoutubeMediaEngine.isYoutubeItem(newItem)) {
 			FermataWebView v = getWebView();
 			MainActivityDelegate a = MainActivityDelegate.get(getContext());
-			if ((v == null) || (a == null)) return;
+			if (v == null) return;
 
 			FermataChromeClient chrome = v.getWebChromeClient();
 			if (chrome == null) return;
@@ -103,8 +119,7 @@ public class YoutubeFragment extends WebBrowserFragment implements
 			FermataWebView v = getWebView();
 			if (v == null) return;
 			FermataChromeClient chrome = v.getWebChromeClient();
-			MainActivityDelegate a = MainActivityDelegate.get(getContext());
-			if ((a != null) && (chrome != null)) chrome.exitFullScreen();
+			if (chrome != null) chrome.exitFullScreen();
 		}
 	}
 
@@ -117,7 +132,8 @@ public class YoutubeFragment extends WebBrowserFragment implements
 	public boolean canScrollUp() {
 		FermataWebView v = getWebView();
 		if (v == null) return false;
-		return v.getWebChromeClient().isFullScreen() || (v.getScrollY() > 0);
+		FermataChromeClient chrome = v.getWebChromeClient();
+		return (chrome != null) && (chrome.isFullScreen() || (v.getScrollY() > 0));
 	}
 
 	@Nullable
@@ -127,7 +143,6 @@ public class YoutubeFragment extends WebBrowserFragment implements
 
 	@Nullable
 	protected YoutubeWebView getWebView() {
-
 		View v = getView();
 		return (v != null) ? v.findViewById(R.id.ytWebView) : null;
 	}

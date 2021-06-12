@@ -218,6 +218,10 @@
     <string name="minutes">Минуты</string>
 
     <string name="enable">Включить</string>
+    <string name="move_left">Сдвинуть влево</string>
+    <string name="move_right">Сдвинуть вправо</string>
+    <string name="move_up">Сдвинуть вверх</string>
+    <string name="move_down">Сдвинуть вниз</string>
 
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

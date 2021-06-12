@@ -23,6 +23,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Consumer;
@@ -40,13 +41,12 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.fermata.ui.activity.MainActivityListener.FRAGMENT_CONTENT_CHANGED;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 
 /**
  * @author Andrey Pavlenko
  */
-public class SettingsFragment extends MainActivityFragment {
+public class SettingsFragment extends MainActivityFragment implements MainActivityListener {
 	private PreferenceViewAdapter adapter;
 
 	@Override
@@ -76,7 +76,8 @@ public class SettingsFragment extends MainActivityFragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
 		super.onViewCreated(view, state);
-		if (adapter == null) adapter = createAdapter();
+		adapter = createAdapter();
+		getActivityDelegate().addBroadcastListener(this);
 
 		RecyclerView listView = view.findViewById(R.id.prefs_list_view);
 		listView.setHasFixedSize(true);
@@ -87,6 +88,25 @@ public class SettingsFragment extends MainActivityFragment {
 			PreferenceSet p = adapter.getPreferenceSet().find(state.getInt("id", ID_NULL));
 			if (p != null) adapter.setPreferenceSet(p);
 		}
+	}
+
+	@Override
+	public void onDestroyView() {
+		cleanUp(getActivityDelegate());
+		super.onDestroyView();
+	}
+
+	private void cleanUp(MainActivityDelegate a) {
+		a.removeBroadcastListener(this);
+		FermataApplication.get().getAddonManager()
+				.removeBroadcastListeners(l -> l instanceof AddonPrefsBuilder);
+		if (adapter != null) adapter.onDestroy();
+		adapter = null;
+	}
+
+	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (e == ACTIVITY_DESTROY) cleanUp(a);
 	}
 
 	@Override

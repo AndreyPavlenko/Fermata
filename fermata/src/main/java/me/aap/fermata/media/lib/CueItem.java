@@ -45,7 +45,7 @@ class CueItem extends BrowsableItemBase {
 	private Data parse() {
 		String id = getId();
 		VirtualFile cueFile = (VirtualFile) getResource();
-		VirtualFolder dir = cueFile.getParent().getOrThrow();
+		VirtualFolder dir = cueFile.getParent().peek();
 		Context ctx = getLib().getContext();
 		List<CueTrackItem> tracks = new ArrayList<>();
 		VirtualResource file = null;
@@ -123,7 +123,7 @@ class CueItem extends BrowsableItemBase {
 
 			if (size > 0) {
 				CueTrackItem last = tracks.get(size - 1);
-				MetadataBuilder md = getLib().getMetadataRetriever().getMediaMetadata(last).getOrThrow();
+				MetadataBuilder md = getLib().getMetadataRetriever().getMediaMetadata(last).get();
 				long dur = md.getDuration();
 				if (dur > 0) last.duration(dur - last.getOffset());
 			}

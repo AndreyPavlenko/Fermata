@@ -16,7 +16,6 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 
@@ -30,6 +29,8 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.MediaLibAddon;
+import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -50,6 +51,7 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.IntObjectFunction;
 import me.aap.utils.function.Supplier;
@@ -170,14 +172,16 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public void onActivityDestroy() {
 		super.onActivityDestroy();
 		getPrefs().removeBroadcastListener(this);
-		toolBar = null;
-		navBar = null;
-		controlPanel = null;
-		floatingButton = null;
-		progressBar = null;
-		contentLoading = null;
-		barsHidden = false;
-		videoMode = false;
+		removeListeners(getPrefs());
+
+		if (me.aap.utils.BuildConfig.D) {
+			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
+				if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
+				if ((l instanceof MediaEngineManager) && (b instanceof DefaultMediaLib)) return false;
+				return (!(l instanceof AddonManager)) || (b != FermataApplication.get().getPreferenceStore());
+			});
+			if (leaks) throw new IllegalStateException("Listener leaks detected!");
+		}
 	}
 
 	public void onActivityFinish() {
@@ -205,21 +209,21 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	@SuppressWarnings("deprecation")
-	protected void setTheme() {
-		switch (getPrefs().getThemePref()) {
+	public static void setTheme(Context ctx) {
+		switch (Prefs.instance.getThemePref()) {
 			default:
 			case MainActivityPrefs.THEME_DARK:
-				getAppActivity().setTheme(R.style.AppTheme_Dark);
+				ctx.setTheme(R.style.AppTheme_Dark);
 				break;
 			case MainActivityPrefs.THEME_LIGHT:
-				getAppActivity().setTheme(R.style.AppTheme_Light);
+				ctx.setTheme(R.style.AppTheme_Light);
 				break;
 			case MainActivityPrefs.THEME_DAY_NIGHT:
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_TIME);
-				getAppActivity().setTheme(R.style.AppTheme_DayNight);
+				ctx.setTheme(R.style.AppTheme_DayNight);
 				break;
 			case MainActivityPrefs.THEME_BLACK:
-				getAppActivity().setTheme(R.style.AppTheme_Black);
+				ctx.setTheme(R.style.AppTheme_Black);
 				break;
 		}
 	}
@@ -247,6 +251,16 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			} else {
 				return true;
 			}
+		} else {
+			return false;
+		}
+	}
+
+	public boolean isGridView() {
+		ActivityFragment f = getActiveFragment();
+
+		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGreedSupported()) {
+			return getPrefs().getGridViewPref();
 		} else {
 			return false;
 		}
@@ -466,17 +480,17 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	private void createPlaylistMenu(OverlayMenu.Builder b, FutureSupplier<List<PlayableItem>> selection,
 																	Supplier<? extends CharSequence> initName) {
-		List<Item> playlists = getLib().getPlaylists().getUnsortedChildren().getOrThrow();
+		getLib().getPlaylists().getUnsortedChildren().main().onSuccess(playlists -> {
+			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
+					.setHandler(i -> createPlaylist(selection, initName));
 
-		b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
-				.setHandler(i -> createPlaylist(selection, initName));
-
-		for (int i = 0; i < playlists.size(); i++) {
-			Playlist pl = (Playlist) playlists.get(i);
-			String name = pl.getName();
-			b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name)
-					.setHandler(item -> addToPlaylist(name, selection));
-		}
+			for (int i = 0; i < playlists.size(); i++) {
+				Playlist pl = (Playlist) playlists.get(i);
+				String name = pl.getName();
+				b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name)
+						.setHandler(item -> addToPlaylist(name, selection));
+			}
+		});
 	}
 
 	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection, Supplier<? extends CharSequence> initName) {
@@ -499,18 +513,20 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	private boolean addToPlaylist(String name, FutureSupplier<List<PlayableItem>> selection) {
 		discardSelection();
-		for (Item i : getLib().getPlaylists().getUnsortedChildren().getOrThrow()) {
-			Playlist pl = (Playlist) i;
+		getLib().getPlaylists().getUnsortedChildren().main().onSuccess(playlists -> {
+			for (Item i : getLib().getPlaylists().getUnsortedChildren().getOrThrow()) {
+				Playlist pl = (Playlist) i;
 
-			if (name.equals(pl.getName())) {
-				selection.main().onSuccess(items -> {
-					pl.addItems(items);
-					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
-					if (f != null) f.getAdapter().reload();
-				});
-				break;
+				if (name.equals(pl.getName())) {
+					selection.main().onSuccess(items -> {
+						pl.addItems(items);
+						MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
+						if (f != null) f.getAdapter().reload();
+					});
+					break;
+				}
 			}
-		}
+		});
 		return true;
 	}
 
@@ -575,31 +591,9 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (prefs.contains(MainActivityPrefs.THEME)) {
-			setTheme();
 			recreate();
 		} else if (prefs.contains(MainActivityPrefs.NAV_BAR_POS) || prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
-			FermataActivity a = getAppActivity();
-			MainActivityPrefs p = getPrefs();
-			int layout;
-
-			switch (a.isCarActivity() ? p.getNavBarPosAAPref() : p.getNavBarPosPref()) {
-				default:
-					layout = R.layout.main_activity;
-					getNavBar().setPosition(NavBarView.POSITION_BOTTOM);
-					break;
-				case NavBarView.POSITION_LEFT:
-					layout = R.layout.main_activity_left;
-					getNavBar().setPosition(NavBarView.POSITION_LEFT);
-					break;
-				case NavBarView.POSITION_RIGHT:
-					layout = R.layout.main_activity_right;
-					getNavBar().setPosition(NavBarView.POSITION_RIGHT);
-					break;
-			}
-
-			ConstraintSet cs = new ConstraintSet();
-			cs.clone(getContext(), layout);
-			cs.applyTo(findViewById(R.id.main_activity));
+			recreate();
 		} else if (prefs.contains(MainActivityPrefs.FULLSCREEN)) {
 			setSystemUiVisibility();
 		}

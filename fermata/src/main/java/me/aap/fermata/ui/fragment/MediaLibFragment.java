@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.fragment;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +27,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
@@ -34,15 +36,16 @@ import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanConsumer;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
-import static me.aap.utils.misc.Assert.assertTrue;
 
 /**
  * @author Andrey Pavlenko
@@ -70,7 +73,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	public CharSequence getTitle() {
 		ListAdapter adapter = getAdapter();
 		if (adapter == null) return getFragmentTitle();
-
 		BrowsableItem parent = adapter.getParent();
 		if ((parent != null) && (parent.getParent() != null)) return parent.getName();
 		else return getFragmentTitle();
@@ -85,52 +87,42 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		MediaItemListView v = getListView();
 		MainActivityDelegate a = getMainActivity();
+		PreferenceStore ap = a.getPrefs();
+		FermataServiceUiBinder b = a.getMediaServiceBinder();
+		adapter = createAdapter(b);
+		ItemTouchHelper h = new ItemTouchHelper(adapter.getItemTouchCallback());
+		adapter.setListView(v);
+		v.setAdapter(adapter);
+		h.attachToRecyclerView(v);
+		ap.addBroadcastListener(v);
+		ap.addBroadcastListener(this);
+		a.addBroadcastListener(this);
 		a.getToolBar().addBroadcastListener(this);
-
-		if (adapter != null) {
-			attachTouchHelper();
-		} else {
-			FermataServiceUiBinder b = a.getMediaServiceBinder();
-			bind(b);
-			a.addBroadcastListener(this, ACTIVITY_FINISH);
-		}
+		b.getLib().getPrefs().addBroadcastListener(this);
+		b.addBroadcastListener(this);
+		Log.d("MediaLibFragment view created: ", this);
 	}
 
 	@Override
-	public void onDestroy() {
-		super.onDestroy();
+	public void onDestroyView() {
+		cleanUp(getMainActivity());
+		super.onDestroyView();
+		Log.d("MediaLibFragment view destroyed: ", this);
+	}
 
-		MainActivityDelegate a = getMainActivity();
-		a.removeBroadcastListener(this);
+	private void cleanUp(MainActivityDelegate a) {
+		MediaItemListView v = (MediaItemListView) getView();
+		PreferenceStore ap = a.getPrefs();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		b.removeBroadcastListener(this);
-		a.getPrefs().removeBroadcastListener(this);
+		ap.removeBroadcastListener(this);
+		a.removeBroadcastListener(this);
+		a.getToolBar().removeBroadcastListener(this);
 		b.getLib().getPrefs().removeBroadcastListener(this);
-
-		if (adapter != null) {
-			adapter.onDestroy();
-			adapter = null;
-		}
-	}
-
-	private void bind(FermataServiceUiBinder b) {
-		assertTrue(adapter == null);
-		adapter = createAdapter(b);
-		b.addBroadcastListener(this);
-		b.getLib().getPrefs().addBroadcastListener(this);
-		getMainActivity().getPrefs().addBroadcastListener(this);
-		attachTouchHelper();
-	}
-
-	private void attachTouchHelper() {
-		MediaItemListView listView = getListView();
-		assert listView != null;
-		assertTrue(adapter != null);
-		adapter.setListView(listView);
-		listView.setAdapter(adapter);
-		ItemTouchHelper touchHelper = new ItemTouchHelper(adapter.getItemTouchCallback());
-		touchHelper.attachToRecyclerView(listView);
+		b.removeBroadcastListener(this);
+		if (v != null) ap.removeBroadcastListener(v);
+		if (adapter != null) adapter.onDestroy();
 	}
 
 	@NonNull
@@ -147,7 +139,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	public boolean isRootPage() {
 		ListAdapter a = getAdapter();
 		if (a == null) return true;
-
 		BrowsableItem p = a.getParent();
 		return (p == null) || (p.getParent() == null);
 	}
@@ -156,7 +147,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		ListAdapter a = getAdapter();
 		BrowsableItem p = i.getParent();
 		if (p == null) return;
-
 		if (!p.equals(a.getParent())) a.setParent(p);
 
 		// Make sure the list is loaded
@@ -213,9 +203,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem) {
 		scrollPosition = -1;
-		MediaItemListView view = getListView();
-		if (view == null) return;
-
 		ListAdapter a = getAdapter();
 		BrowsableItem p = a.getParent();
 		if (p == null) return;
@@ -244,10 +231,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onDurationChanged(PlayableItem i) {
-		ListAdapter a = getAdapter();
-		if (a == null) return;
-
-		for (MediaItemWrapper w : a.getList()) {
+		for (MediaItemWrapper w : getAdapter().getList()) {
 			if (i.equals(w.getItem())) {
 				MediaItemView v = w.getView();
 				if (v != null) v.refresh();
@@ -314,6 +298,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return false;
 	}
 
+	public boolean isGreedSupported() {
+		return (getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) ||
+				!getActivityDelegate().getBody().isBothMode();
+	}
+
 	protected boolean isSupportedItem(Item i) {
 		return false;
 	}
@@ -323,10 +312,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return (A) adapter;
 	}
 
-	@Nullable
+	@NonNull
 	public MediaItemListView getListView() {
-		View v = getView();
-		return (v == null) ? null : getView().findViewById(R.id.media_items_list_view);
+		return (MediaItemListView) requireView();
 	}
 
 	public void discardSelection() {
@@ -337,9 +325,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		FermataApplication.get().getHandler().post(() -> {
 			int pos = scrollPosition;
 			if (pos == -1) return;
-			MediaItemListView list = getListView();
-			if (list == null) return;
-			list.smoothScrollToPosition(pos);
+			getListView().smoothScrollToPosition(pos);
 		});
 	}
 
@@ -358,7 +344,15 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
-		handleActivityFinishEvent(a, e);
+		if (e == MODE_CHANGED) {
+			if (isHidden()) return;
+			MainActivityPrefs store = a.getPrefs();
+			if (!store.getGridViewPref()) return;
+			List<PreferenceStore.Pref<?>> prefs = Collections.singletonList(MainActivityPrefs.GRID_VIEW);
+			store.fireBroadcastEvent(l -> l.onPreferenceChanged(store, prefs));
+		} else if (e == ACTIVITY_DESTROY) {
+			cleanUp(a);
+		}
 	}
 
 	@Override
@@ -368,6 +362,22 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
+			MediaItemListView list = (MediaItemListView) getView();
+
+			if (list != null) {
+				Context ctx = getContext();
+				MainActivityDelegate a = getMainActivity();
+
+				for (MediaItemWrapper w : getAdapter().getList()) {
+					MediaItemView v = w.getView();
+					if (v != null) v.applyLayout(ctx, a);
+				}
+			}
+
+			return;
+		}
+
 		BrowsableItem p = getAdapter().getParent();
 		if (p == null) return;
 
@@ -450,6 +460,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				});
 			}
 		}
+
 	}
 
 	private static int indexOf(List<MediaItemWrapper> list, Item item) {

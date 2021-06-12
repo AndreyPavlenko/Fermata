@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web;
 
 import android.content.Context;
 
+import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
@@ -9,6 +10,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
@@ -26,6 +28,8 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 @Keep
 @SuppressWarnings("unused")
 public class WebBrowserAddon implements FermataAddon {
+	@NonNull
+	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
 	private static final Pref<BooleanSupplier> FORCE_DARK = Pref.b("FORCE_DARK", false);
 	private static final Pref<Supplier<String>> USER_AGENT = Pref.s("USER_AGENT",
@@ -44,9 +48,16 @@ public class WebBrowserAddon implements FermataAddon {
 		preferenceStore = SharedPreferenceStore.create(App.get().getSharedPreferences("web", Context.MODE_PRIVATE));
 	}
 
+	@IdRes
 	@Override
 	public int getAddonId() {
 		return me.aap.fermata.R.id.web_browser_fragment;
+	}
+
+	@NonNull
+	@Override
+	public AddonInfo getInfo() {
+		return info;
 	}
 
 	@NonNull

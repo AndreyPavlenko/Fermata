@@ -28,17 +28,14 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
-import java.util.List;
 import java.util.Objects;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
-import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.menu.OverlayMenu;
 
@@ -52,7 +49,7 @@ import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
  * @author Andrey Pavlenko
  */
 public class MediaItemView extends ConstraintLayout implements OnLongClickListener,
-		OnCheckedChangeListener, PreferenceStore.Listener, PlayableItem.ChangeListener {
+		OnCheckedChangeListener, PlayableItem.ChangeListener {
 	private static final RotateAnimation rotate = new RotateAnimation(0, 360,
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 	private static Drawable loadingDrawable;
@@ -72,21 +69,18 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		iconColor = ta.getColor(0, 0);
 		setElevation(ta.getDimension(1, 0));
 		ta.recycle();
-		applyLayout(ctx);
+		applyLayout(ctx, getMainActivity());
 		iconTint = getIcon().getImageTintList();
 		setLongClickable(true);
 		setOnLongClickListener(this);
 		getCheckBox().setOnCheckedChangeListener(this);
 		setBackgroundResource(R.drawable.media_item_bg);
 		setFocusable(true);
-		getMainActivity().getPrefs().addBroadcastListener(this);
 	}
 
-	private void applyLayout(Context ctx) {
-		MainActivityDelegate a = MainActivityDelegate.get(ctx);
-		MainActivityPrefs prefs = a.getPrefs();
-		float scale = prefs.getMediaItemScalePref();
-		boolean grid = prefs.getGridViewPref();
+	public void applyLayout(Context ctx, MainActivityDelegate a) {
+		boolean grid = a.isGridView();
+		float scale = a.getPrefs().getMediaItemScalePref();
 		removeAllViews();
 
 		if (grid) {
@@ -289,6 +283,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	private static void onActivityDestroyEvent(ActivityDelegate a, long e) {
 		loadingDrawable = null;
+		a.removeBroadcastListener(MediaItemView::onActivityDestroyEvent);
 	}
 
 	public ImageView getIcon() {
@@ -393,13 +388,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (l != null) getListView().discardSelection();
 		handler.show();
 		return true;
-	}
-
-	@Override
-	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
-			applyLayout(getContext());
-		}
 	}
 
 	void hideMenu() {

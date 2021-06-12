@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import java.util.LinkedList;
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.engine.MetadataBuilder;
@@ -17,6 +18,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VirtualResource;
@@ -193,7 +195,9 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		ensureMainThread(true);
 		List<Item.ChangeListener> listeners = this.listeners;
 		if (listeners == null) this.listeners = listeners = new LinkedList<>();
+		else if (listeners.contains(l)) return true;
 		listeners.add(l);
+		if (BuildConfig.D) ListenerLeakDetector.add(this, l);
 
 		if (listeners.size() == 1) {
 			if (getEpgId() >= 0) {
@@ -216,6 +220,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		List<Item.ChangeListener> listeners = this.listeners;
 		if ((listeners == null) || !listeners.remove(l)) return false;
 		if (listeners.isEmpty()) getM3uItem().removeUpdateHandler(this);
+		if (BuildConfig.D) ListenerLeakDetector.remove(this, l);
 		return true;
 	}
 

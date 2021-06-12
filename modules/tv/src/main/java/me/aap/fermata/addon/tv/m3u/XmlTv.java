@@ -100,21 +100,14 @@ public class XmlTv implements Closeable {
 
 		try {
 			XmlTv xml = new XmlTv(SQLite.get(item.getResource().getEpgDbFile()));
-			FutureSupplier<FutureSupplier<XmlTv>> f = xml.sql.query(db -> {
+			return xml.sql.query(db -> {
 				if (hasIndex(db)) {
 					xml.load(item, true);
 					return completed(xml);
 				} else {
 					return xml.load(item, false);
 				}
-			});
-
-			if (f.isFailed()) {
-				Log.e(f.getFailure(), "Failed to create XMLTV");
-				return completedNull();
-			} else {
-				return f.getOrThrow();
-			}
+			}).then(v -> v);
 		} catch (Throwable ex) {
 			return failed(ex);
 		}

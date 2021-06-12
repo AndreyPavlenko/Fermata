@@ -96,6 +96,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 		addTitle(context);
 		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+		setFocusable(true);
 	}
 
 	protected void addTitle(Context context) {
@@ -107,7 +108,6 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		text.setVisibility(GONE);
 		addView(text);
 		addOnLayoutChangeListener(this);
-		setFocusable(true);
 	}
 
 	public SurfaceView getVideoSurface() {

@@ -43,11 +43,17 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	@Override
 	public void enable(ToolBarView tb, ActivityFragment f) {
 		ToolBarView.Mediator.BackTitleFilter.super.enable(tb, f);
-		boolean grid = MainActivityDelegate.get(tb.getContext()).getPrefs().getGridViewPref();
-		int gridIcon = grid ? R.drawable.view_list : R.drawable.view_grid;
+		MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+		View last = null;
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
-		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
-		View last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
+		View sort = addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
+
+		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGreedSupported()) {
+			int gridIcon = a.isGridView() ? R.drawable.view_list : R.drawable.view_grid;
+			last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
+		}
+
+		if (last == null) last = sort;
 		View first = tb.findViewById(R.id.tool_bar_back_button);
 		last.setNextFocusRightId(R.id.tool_bar_back_button);
 		first.setNextFocusLeftId(R.id.tool_grid);
