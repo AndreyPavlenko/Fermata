@@ -5,7 +5,7 @@
     <string name="addon_name_web_browser">Веб браузер</string>
 
     <string name="interface_prefs">Интерфейс</string>
-    <string name="playback_settings">Найстройки воспроизведения</string>
+    <string name="playback_settings">Настройки воспроизведения</string>
     <string name="playback_control">Управление воспроизведением</string>
     <string name="engine_prefs">Медиа движок</string>
 
@@ -141,6 +141,7 @@
     <string name="repeat_disable">Не повторять</string>
     <string name="shuffle">Перемешать</string>
     <string name="shuffle_disable">Не перемешивать</string>
+    <string name="programme_guide">Программа передач</string>
     <string name="favorites_add">Добавить в избранное</string>
     <string name="favorites_remove">Удалть из избранного</string>
     <string name="mark_watched">Пометить как просмотренное</string>

@@ -105,7 +105,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public FutureSupplier<Long> getDuration() {
-		return completed((source == null) || source.isStream() ? 0L : player.getDuration());
+		return completed((source == null) || !source.isSeekable() ? 0L : player.getDuration());
 	}
 
 	@Override

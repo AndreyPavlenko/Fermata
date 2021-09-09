@@ -1,5 +1,8 @@
 package me.aap.fermata.ui.view;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.ui.UiUtils.isVisible;
+
 import android.content.Context;
 import android.content.res.Configuration;
 import android.util.AttributeSet;
@@ -24,9 +27,6 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.ui.UiUtils.isVisible;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -39,10 +39,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		super(ctx, attrs);
 		configure(ctx.getResources().getConfiguration());
 		setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
-	}
-
-	public boolean isGrid() {
-		return grid;
 	}
 
 	@Override
@@ -227,7 +223,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		ViewHolder vh = getChildViewHolder(focused);
 		if (!(vh instanceof MediaItemViewHolder)) return focused;
 
-		int pos = ((MediaItemViewHolder) vh).getAdapterPosition();
+		int pos = vh.getAdapterPosition();
 		if ((pos < 0) || (pos >= list.size())) return focused;
 		return focusTo(focused, list, (direction == FOCUS_UP) ? (pos - 1) : (pos + 1));
 	}
@@ -272,6 +268,21 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 		List<MediaItemWrapper> list = getAdapter().getList();
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
+	}
+
+	@Nullable
+	public MediaItemView focusTo(Item i) {
+		List<MediaItemWrapper> list = getAdapter().getList();
+		int pos = 0;
+		for (MediaItemWrapper w : list) {
+			if (i == w.getItem()) {
+				View focus = focusTo(null, w, pos);
+				if (focus != null) focus.requestFocus();
+				return (MediaItemView) focus;
+			}
+			pos++;
+		}
+		return null;
 	}
 
 	public View focusTo(View focused, List<MediaItemWrapper> list, int pos) {

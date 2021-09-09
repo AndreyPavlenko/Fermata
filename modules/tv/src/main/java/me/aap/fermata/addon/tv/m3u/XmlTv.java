@@ -1,5 +1,16 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
+import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_NOT_FOUND;
+import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_UNKNOWN;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.collection.CollectionUtils.compute;
+import static me.aap.utils.collection.CollectionUtils.computeIfAbsent;
+
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -14,6 +25,7 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,16 +47,6 @@ import me.aap.utils.db.SQLite;
 import me.aap.utils.holder.BooleanHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpFileDownloader.Status;
-
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
-import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_NOT_FOUND;
-import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_UNKNOWN;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.async.Completed.failed;
-import static me.aap.utils.collection.CollectionUtils.compute;
-import static me.aap.utils.collection.CollectionUtils.computeIfAbsent;
 
 /**
  * @author Andrey Pavlenko
@@ -72,7 +74,8 @@ public class XmlTv implements Closeable {
 	private static final String Q_SEL_EPG_ID = COL_EPG_ID + " = ?";
 	private static final String Q_SEL_NAME = COL_NAME + " = ?";
 	private static final String Q_SEL_NAME_OR = COL_NAME + " = ? or " + COL_NAME + " = ?";
-	private static final String Q_SEL_EPG_ID_TIME = COL_CH_ID + " = ? AND " +
+	private static final String Q_SEL_CH_ID = COL_CH_ID + " = ? ";
+	private static final String Q_SEL_CH_ID_TIME = COL_CH_ID + " = ? AND " +
 			COL_START + " <= ? AND " + COL_STOP + " > ?";
 	private final SQLite sql;
 
@@ -196,9 +199,9 @@ public class XmlTv implements Closeable {
 			return;
 		}
 
-		String time = String.valueOf(track.getM3uItem().getTime());
+		String time = String.valueOf(System.currentTimeMillis());
 
-		try (Cursor c = db.query(TABLE_PROG, Q_COL_EPG, Q_SEL_EPG_ID_TIME,
+		try (Cursor c = db.query(TABLE_PROG, Q_COL_EPG, Q_SEL_CH_ID_TIME,
 				new String[]{String.valueOf(id), time, time}, null, null, null)) {
 			if (c.moveToFirst()) {
 				track.update(id, icon, c.getLong(0), c.getLong(1), c.getString(2),
@@ -206,6 +209,44 @@ public class XmlTv implements Closeable {
 			} else {
 				track.update(id, icon, 0, 0, null, null, null, false);
 			}
+		}
+	}
+
+	public FutureSupplier<List<TvM3uEpgItem>> getEpg(TvM3uTrackItem track) {
+		int id = track.getEpgId();
+		if (id == EPG_ID_UNKNOWN) {
+			return track.getMediaData().then(m -> {
+				int eid = track.getEpgId();
+				return (eid == EPG_ID_UNKNOWN) ? completedEmptyList() : getEpg(track, eid);
+			});
+		}
+		return getEpg(track, id);
+	}
+
+	private FutureSupplier<List<TvM3uEpgItem>> getEpg(TvM3uTrackItem track, int id) {
+		return sql.query(db -> {
+			try {
+				return getEpg(db, track, id);
+			} catch (Throwable ex) {
+				Log.e(ex, "Failed to load epg for channel: ", track.getName());
+				return Collections.emptyList();
+			}
+		});
+	}
+
+	private List<TvM3uEpgItem> getEpg(SQLiteDatabase db, TvM3uTrackItem track, int id) {
+		try (Cursor c = db.query(TABLE_PROG, Q_COL_EPG, Q_SEL_CH_ID,
+				new String[]{String.valueOf(id)}, null, null, null)) {
+			int cnt = c.getCount();
+			if (cnt == 0) return Collections.emptyList();
+			List<TvM3uEpgItem> l = new ArrayList<>(cnt);
+			while (c.moveToNext()) {
+				l.add(TvM3uEpgItem.create(track, c.getLong(0), c.getLong(1), c.getString(2),
+						c.getString(3), c.getString(4)));
+			}
+			Collections.sort(l);
+			for (int i = 1, s = l.size(); i < s; i++) l.get(i - 1).next = l.get(i);
+			return l;
 		}
 	}
 
@@ -246,7 +287,7 @@ public class XmlTv implements Closeable {
 			long time = System.currentTimeMillis();
 			if (s <= 0) s = time;
 			if (a <= 0) a = EPG_FILE_AGE;
-			long utime = s + a * 1000;
+			long utime = s + a * 1000L;
 			if (utime <= time) utime = time + EPG_FILE_AGE * 1000;
 			Log.i("Scheduling XMLTV update at ", new Date(utime));
 			Async.scheduleAt(() -> !isClosed() ? load(item) : completedNull(), utime);
@@ -292,7 +333,7 @@ public class XmlTv implements Closeable {
 			InputStream in = (status.getFile().getName().endsWith(".gz")) ? new GZIPInputStream(fis) : fis;
 			createTables(db);
 			db.beginTransaction();
-			parser.parse(in, new XmlHandler(db, idToTrack, nameToTrack, item.getTime()));
+			parser.parse(in, new XmlHandler(db, idToTrack, nameToTrack, item.getResource().getEpgShift()));
 			db.setTransactionSuccessful();
 		} finally {
 			db.endTransaction();
@@ -349,10 +390,11 @@ public class XmlTv implements Closeable {
 
 	private static final class XmlHandler extends DefaultHandler {
 		private final SimpleDateFormat TIME = new SimpleDateFormat("yyyyMMddHHmmss Z", Locale.getDefault());
+		private final long time = System.currentTimeMillis();
 		private final SQLiteDatabase db;
 		private final Map<String, List<TvM3uTrackItem>> idToTrack;
 		private final Map<String, List<TvM3uTrackItem>> nameToTrack;
-		private final long time;
+		private final long epgShift;
 		private final Map<String, ChannelInfo> channels;
 		private final Map<String, InfoIcon> channelNames;
 		private final String localLang = Locale.getDefault().getLanguage();
@@ -374,7 +416,7 @@ public class XmlTv implements Closeable {
 		private int counter;
 
 		XmlHandler(SQLiteDatabase db, Map<String, List<TvM3uTrackItem>> idToTrack,
-							 Map<String, List<TvM3uTrackItem>> nameToTrack, long time) {
+							 Map<String, List<TvM3uTrackItem>> nameToTrack, float epgShift) {
 			chStmt = db.compileStatement("INSERT INTO " + TABLE_CH + " VALUES(?, ?, ?)");
 			progStmt = db.compileStatement("INSERT INTO " + TABLE_PROG + " VALUES(?, ?, ?, ?, ?, ?)");
 			nameToIdStmt = db.compileStatement("INSERT INTO " + TABLE_NAME_TO_ID + " VALUES(?, ?)");
@@ -382,7 +424,7 @@ public class XmlTv implements Closeable {
 			this.db = db;
 			this.idToTrack = idToTrack;
 			this.nameToTrack = nameToTrack;
-			this.time = time;
+			this.epgShift = (long) (60000 * epgShift);
 			int capacity = idToTrack.size() + nameToTrack.size();
 			channels = new HashMap<>(capacity);
 			channelNames = new HashMap<>(capacity);
@@ -587,7 +629,7 @@ public class XmlTv implements Closeable {
 
 			try {
 				Date d = TIME.parse(time);
-				return (d != null) ? d.getTime() : 0;
+				return (d != null) ? (d.getTime() + epgShift) : 0;
 			} catch (ParseException ex) {
 				Log.e(ex, "Failed to parse time: ", time);
 				return 0;

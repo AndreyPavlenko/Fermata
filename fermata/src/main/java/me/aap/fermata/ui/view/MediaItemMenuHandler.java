@@ -1,5 +1,20 @@
 package me.aap.fermata.ui.view;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_SCALE;
+import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
+import static me.aap.fermata.media.pref.PlayableItemPrefs.bookmarkTime;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addAudioPrefs;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addDelayPrefs;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -12,6 +27,7 @@ import me.aap.fermata.media.lib.MediaLib.Folders;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -29,21 +45,6 @@ import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
-import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_SCALE;
-import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
-import static me.aap.fermata.media.pref.PlayableItemPrefs.bookmarkTime;
-import static me.aap.fermata.ui.fragment.SettingsFragment.addAudioPrefs;
-import static me.aap.fermata.ui.fragment.SettingsFragment.addDelayPrefs;
-import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -98,6 +99,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
 																	 boolean initRepeat) {
 		if (pi.isExternal()) return;
+
+		if (pi instanceof StreamItem) {
+			b.addItem(R.id.programme_guide, R.drawable.epg, R.string.programme_guide);
+		}
 
 		if (pi.isFavoriteItem()) {
 			b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
@@ -298,7 +303,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			});
 		} else {
 			Bookmark bm = i.getData();
-			getMainActivity().getMediaServiceBinder().playItem(bm.item, bm.time * 1000);
+			getMainActivity().getMediaServiceBinder().playItem(bm.item, bm.time * 1000L);
 		}
 
 		return true;
@@ -350,6 +355,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		if (id == R.id.folders_remove) {
 			Folders folders = item.getLib().getFolders();
 			folders.removeItem(item);
+		} else if (id == R.id.programme_guide) {
+			ActivityFragment af = getMainActivity().getActiveFragment();
+			if (af instanceof MediaLibFragment)
+				((MediaLibFragment) af).getAdapter().openEpg((StreamItem) item);
 		} else if (id == R.id.favorites_add) {
 			if (item instanceof BrowsableItem) {
 				((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {

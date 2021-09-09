@@ -238,7 +238,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			}
 
 			if (i.isVideo()) {
-				if (position > (dur * 0.9f)) {
+				if (position > (dur * 0.95f)) {
 					i.getPrefs().setWatchedPref(true);
 				} else {
 					i.getPrefs().setPositionPref(position);

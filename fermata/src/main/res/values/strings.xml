@@ -158,6 +158,7 @@
     <string name="repeat_disable">Do not repeat</string>
     <string name="shuffle">Shuffle</string>
     <string name="shuffle_disable">Do not shuffle</string>
+    <string name="programme_guide">Programme guide</string>
     <string name="favorites_add">Add to favorites</string>
     <string name="favorites_remove">Remove from favorites</string>
     <string name="mark_watched">Mark as watched</string>

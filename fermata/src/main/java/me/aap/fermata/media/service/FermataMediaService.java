@@ -1,5 +1,11 @@
 package me.aap.fermata.media.service;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.service.ControlServiceConnection.ACTION_CONTROL_SERVICE;
+import static me.aap.utils.misc.MiscUtils.isPackageInstalled;
+
 import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -26,6 +32,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.Action;
 import androidx.core.app.NotificationManagerCompat;
@@ -44,10 +51,6 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.media.service.ControlServiceConnection.ACTION_CONTROL_SERVICE;
-import static me.aap.utils.misc.MiscUtils.isPackageInstalled;
 
 
 /**
@@ -109,7 +112,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 
 		Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null, ctx,
 				MediaButtonReceiver.class);
-		session.setMediaButtonReceiver(PendingIntent.getBroadcast(ctx, 0, mediaButtonIntent, 0));
+		session.setMediaButtonReceiver(PendingIntent.getBroadcast(ctx, 0, mediaButtonIntent, FLAG_IMMUTABLE));
 		notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
 	}
 
@@ -280,7 +283,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 		int max = UiUtils.toIntPx(this, 128);
 		if (s < min) s = min;
 		else if (s > max) s = max;
-		return UiUtils.drawBitmap(requireNonNull(getDrawable(icon)), notifColor, Color.WHITE, s, s);
+		return UiUtils.drawBitmap(requireNonNull(AppCompatResources.getDrawable(this, icon)),
+				notifColor, Color.WHITE, s, s);
 	}
 
 	public void notificationInit() {
@@ -288,7 +292,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 
 		try {
 			Intent i = new Intent(this, Class.forName("me.aap.fermata.ui.activity.MainActivity"));
-			notifContentIntent = PendingIntent.getActivity(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
+			notifContentIntent = PendingIntent.getActivity(this, 0, i, FLAG_IMMUTABLE | FLAG_UPDATE_CURRENT);
 		} catch (ClassNotFoundException ex) {
 			Log.e(ex);
 			notifContentIntent = session.getController().getSessionActivity();
@@ -371,7 +375,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 
 	private PendingIntent pi(String action) {
 		Intent intent = new Intent(action);
-		return PendingIntent.getBroadcast(this, INTENT_CODE, intent, 0);
+		return PendingIntent.getBroadcast(this, INTENT_CODE, intent, FLAG_IMMUTABLE);
 	}
 
 	public final class ServiceBinder extends Binder {

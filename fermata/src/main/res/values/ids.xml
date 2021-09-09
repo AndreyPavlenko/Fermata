@@ -46,6 +46,8 @@
     <item name="rescan" type="id" />
     <item name="delete" type="id" />
 
+    <item name="programme_guide" type="id" />
+
     <item name="favorites_add" type="id" />
     <item name="favorites_remove" type="id" />
 

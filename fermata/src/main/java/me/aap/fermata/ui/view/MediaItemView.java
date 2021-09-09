@@ -1,12 +1,22 @@
 package me.aap.fermata.ui.view;
 
+import static android.util.TypedValue.COMPLEX_UNIT_PX;
+import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_END_TIME;
+import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
+import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
+import static me.aap.utils.misc.MiscUtils.ifNull;
+import static me.aap.utils.ui.UiUtils.toPx;
+import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
+
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.util.AttributeSet;
 import android.view.View;
@@ -24,6 +34,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
+import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -31,25 +42,25 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 import java.util.Objects;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
+import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
-
-import static android.util.TypedValue.COMPLEX_UNIT_PX;
-import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
-import static me.aap.utils.misc.MiscUtils.ifNull;
-import static me.aap.utils.ui.UiUtils.toPx;
-import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MediaItemView extends ConstraintLayout implements OnLongClickListener,
-		OnCheckedChangeListener, PlayableItem.ChangeListener {
+		OnCheckedChangeListener, Item.ChangeListener {
 	private static final RotateAnimation rotate = new RotateAnimation(0, 360,
 			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
 	private static Drawable loadingDrawable;
@@ -58,16 +69,22 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	private final ColorStateList iconTint;
 	@Nullable
 	private MediaItemViewHolder holder;
-
+	private ProgressUpdater progressUpdater;
+	@ColorInt
+	private final int mediaItemMarkColor;
+	private VectorDrawableCompat watchedVideoDrawable;
+	private VectorDrawableCompat watchingVideoDrawable;
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
 		TypedArray ta = ctx.obtainStyledAttributes(attrs, new int[]{
 				R.attr.colorOnSecondary,
-				R.attr.elevation
+				R.attr.elevation,
+				R.attr.mediaItemMarkColor
 		}, R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
 		iconColor = ta.getColor(0, 0);
 		setElevation(ta.getDimension(1, 0));
+		mediaItemMarkColor = ta.getColor(2, 0);
 		ta.recycle();
 		applyLayout(ctx, getMainActivity());
 		iconTint = getIcon().getImageTintList();
@@ -144,6 +161,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	public void rebind(@Nullable MediaItemWrapper oldItem, @Nullable MediaItemWrapper newItem) {
+		if (oldItem == newItem) return;
 		if (oldItem != null) oldItem.getItem().removeChangeListener(this);
 		if (newItem == null) return;
 		boolean hasListener = newItem.getItem().addChangeListener(this);
@@ -151,23 +169,12 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			if (getItemWrapper() != newItem) return;
 			if (err != null) Log.e(err, "Failed to load media description: ", newItem);
 		});
-		updateProgressIndicator(newItem);
 	}
 
 	@Override
 	public void mediaItemChanged(Item i) {
 		MediaItemWrapper w = getItemWrapper();
-
-		if ((w != null) && (w.getItem() == i)) {
-			load(w, false);
-			updateProgressIndicator(w);
-		}
-	}
-
-	@Override
-	public void playableItemProgressChanged(PlayableItem i) {
-		MediaItemWrapper w = getItemWrapper();
-		if ((w != null) && (w.getItem() == i)) updateProgressIndicator(w);
+		if ((w != null) && (w.getItem() == i)) load(w, false);
 	}
 
 	private FutureSupplier<MediaDescriptionCompat> load(MediaItemWrapper w, boolean showLoading) {
@@ -186,6 +193,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					getTitle().setText(ifNull(result.getTitle(), i::getName));
 					if (sub != null) getSubtitle().setText(sub);
 
+					if (progress >= 3) setExtras(result.getExtras());
 					if (progress != PROGRESS_DONE) return;
 
 					Uri uri = result.getIconUri();
@@ -225,31 +233,27 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return load;
 	}
 
-	private void updateProgressIndicator(MediaItemWrapper w) {
-		if (getItemWrapper() != w) return;
-		Item i = w.getItem();
+	private void setExtras(Bundle extras) {
 		LinearProgressIndicator p = getProgress();
+		progressUpdater = null;
 
-		if (i instanceof PlayableItem) {
-			FutureSupplier<Integer> f = ((PlayableItem) i).getProgress();
-
-			if ((f == null) || f.isFailed()) {
-				p.setVisibility(GONE);
-			} else {
-				f.main().onCompletion((v, err) -> {
-					if (getItemWrapper() != w) return;
-					if (err != null) {
-						Log.d(err, "Failed to get item progress");
-						p.setVisibility(GONE);
-					} else {
+		if (extras != null) {
+			long start = extras.getLong(STREAM_START_TIME);
+			if (start > 0) {
+				long end = extras.getLong(STREAM_END_TIME);
+				if (end > start) {
+					Item i = getItem();
+					if (i != null) {
+						progressUpdater = new ProgressUpdater(i, p, start, end);
+						progressUpdater.run();
 						p.setVisibility(VISIBLE);
-						p.setProgress(v);
+						return;
 					}
-				});
+				}
 			}
-		} else {
-			p.setVisibility(GONE);
 		}
+
+		p.setVisibility(GONE);
 	}
 
 	private void setDefaults(Item i, boolean loading) {
@@ -322,19 +326,57 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		}
 	}
 
+	@Override
+	public void onDrawForeground(Canvas canvas) {
+		super.onDrawForeground(canvas);
+		Item item = getItem();
+		if (!(item instanceof PlayableItem) || (item instanceof StreamItem)) return;
+
+		PlayableItem p = (PlayableItem) item;
+		if (!p.isVideo()) return;
+
+		PlayableItemPrefs prefs = p.getPrefs();
+		VectorDrawableCompat d;
+
+		if (prefs.getWatchedPref()) {
+			d = watchedVideoDrawable;
+			if (d == null) {
+				d = watchedVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.done, null);
+				if (d == null) return;
+				d.setTint(mediaItemMarkColor);
+			}
+		} else if (prefs.getPositionPref() > 0) {
+			d = watchingVideoDrawable;
+			if (d == null) {
+				d = watchingVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.watching, null);
+				if (d == null) return;
+				d.setTint(mediaItemMarkColor);
+			}
+		} else {
+			return;
+		}
+
+		ImageView i = getIcon();
+		int l = i.getLeft();
+		int t = i.getTop();
+		int r = i.getRight();
+		int b = i.getBottom();
+		d.setBounds(l + (r - l) / 3, t + (b - t) / 3, r, b);
+		d.draw(canvas);
+	}
+
 	public void refresh() {
 		MediaItemWrapper w = getItemWrapper();
 		if (w == null) return;
-		rebind(w, w);
+		rebind(null, w);
 		refreshState(w.getItem());
 	}
 
 	public void refreshState() {
 		MediaItemWrapper w = getItemWrapper();
 		if (w == null) return;
-
 		Item item = w.getItem();
-		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) rebind(w, w);
+		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) rebind(null, w);
 		refreshState(item);
 	}
 
@@ -350,7 +392,32 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		t.setActivated(last);
 		refreshCheckbox();
 
-		if (item.equals(getMainActivity().getCurrentPlayable())) {
+		boolean selected = false;
+
+		if (item instanceof EpgItem) {
+			EpgItem e = (EpgItem) item;
+			long time = System.currentTimeMillis();
+			if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
+				selected = true;
+				App.get().getHandler().postDelayed(() -> {
+					if (getItem() != e) return;
+					refreshState(e);
+					EpgItem next = e.getNext();
+
+					if (next != null) {
+						ActivityFragment f = getMainActivity().getActiveFragment();
+						if (f instanceof MediaLibFragment) {
+							MediaItemView focus = ((MediaLibFragment) f).getListView().focusTo(next);
+							if (focus != null) focus.refreshState();
+						}
+					}
+				}, e.getEndTime() - time);
+			}
+		} else if (item.equals(getMainActivity().getCurrentPlayable())) {
+			selected = true;
+		}
+
+		if (selected) {
 			MainActivityDelegate a = getMainActivity();
 			setSelected(true);
 			if (!a.getBody().isVideoMode()) requestFocus();
@@ -397,5 +464,66 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	private MainActivityDelegate getMainActivity() {
 		return MainActivityDelegate.get(getContext());
+	}
+
+	private final class ProgressUpdater implements Runnable {
+		private final Item item;
+		private final LinearProgressIndicator progress;
+		private final long start;
+		private final long end;
+
+		private ProgressUpdater(Item item, LinearProgressIndicator progress, long start, long end) {
+			this.item = item;
+			this.progress = progress;
+			this.start = start;
+			this.end = end;
+		}
+
+		@Override
+		public void run() {
+			if (!isValid()) return;
+			long time = System.currentTimeMillis();
+
+			if (time >= end) {
+				progressUpdater = null;
+				progress.setProgressCompat(100, true);
+				update();
+			} else if (start > time) {
+				progress.setProgressCompat(0, true);
+				runAt(time, start);
+			} else {
+				long dur = end - start;
+				int prog = (int) ((time - start) * 100 / dur);
+				progress.setProgressCompat(prog, true);
+
+				if (prog >= 99) {
+					runAt(time, end);
+				} else {
+					long upTime = start + (prog + 1) * dur / 100;
+					runAt(time, Math.min(upTime, end));
+				}
+			}
+		}
+
+		private boolean isValid() {
+			return (progressUpdater == this) && (item == getItem()) && (item != null);
+		}
+
+		private void runAt(long curTime, long atTime) {
+			App.get().getHandler().postDelayed(this, atTime - curTime);
+		}
+
+		private void update() {
+			item.getMediaItemDescription().main().onSuccess(d -> {
+				if (!isValid()) return;
+				Bundle b = d.getExtras();
+				if (b != null) {
+					long start = b.getLong(STREAM_START_TIME);
+					long end = b.getLong(STREAM_END_TIME);
+					if ((start == this.start) && (end == this.end)) return;
+				}
+				refresh();
+			});
+		}
 	}
 }

@@ -38,7 +38,7 @@ public interface MediaEngine extends Closeable {
 
 	default boolean canSeek() {
 		PlayableItem src = getSource();
-		return (src != null) && !src.isStream();
+		return (src != null) && src.isSeekable();
 	}
 
 	PlayableItem getSource();

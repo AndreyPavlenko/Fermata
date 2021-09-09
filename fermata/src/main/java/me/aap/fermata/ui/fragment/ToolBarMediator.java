@@ -1,23 +1,5 @@
 package me.aap.fermata.ui.fragment;
 
-import android.view.View;
-
-import androidx.annotation.Nullable;
-
-import me.aap.fermata.R;
-import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
-import me.aap.fermata.media.pref.BrowsableItemPrefs;
-import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.fermata.ui.view.ControlPanelView;
-import me.aap.fermata.ui.view.MediaItemListView;
-import me.aap.utils.ui.activity.ActivityDelegate;
-import me.aap.utils.ui.fragment.ActivityFragment;
-import me.aap.utils.ui.menu.OverlayMenu;
-import me.aap.utils.ui.menu.OverlayMenuItem;
-import me.aap.utils.ui.view.ImageButton;
-import me.aap.utils.ui.view.ToolBarView;
-
 import static android.view.View.FOCUS_DOWN;
 import static android.view.View.FOCUS_UP;
 import static android.view.View.GONE;
@@ -30,6 +12,26 @@ import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_RND;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
+
+import android.view.View;
+
+import androidx.annotation.Nullable;
+
+import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
+import me.aap.fermata.media.pref.BrowsableItemPrefs;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.view.ControlPanelView;
+import me.aap.fermata.ui.view.MediaItemListView;
+import me.aap.utils.ui.activity.ActivityDelegate;
+import me.aap.utils.ui.fragment.ActivityFragment;
+import me.aap.utils.ui.menu.OverlayMenu;
+import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.ui.view.ImageButton;
+import me.aap.utils.ui.view.ToolBarView;
 
 /**
  * @author Andrey Pavlenko
@@ -57,7 +59,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		View first = tb.findViewById(R.id.tool_bar_back_button);
 		last.setNextFocusRightId(R.id.tool_bar_back_button);
 		first.setNextFocusLeftId(R.id.tool_grid);
-		setSortButtonVisibility(tb, f);
+		setButtonsVisibility(tb, f);
 	}
 
 	@Override
@@ -66,7 +68,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 
 		if ((e == FRAGMENT_CHANGED) || e == FRAGMENT_CONTENT_CHANGED) {
 			ActivityFragment f = a.getActiveFragment();
-			if (f != null) setSortButtonVisibility(view, f);
+			if (f != null) setButtonsVisibility(view, f);
 		}
 	}
 
@@ -87,12 +89,21 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		return null;
 	}
 
-	private void setSortButtonVisibility(ToolBarView tb, ActivityFragment f) {
+	private void setButtonsVisibility(ToolBarView tb, ActivityFragment f) {
 		if (!(f instanceof MediaLibFragment)) return;
 		MediaLibFragment.ListAdapter a = ((MediaLibFragment) f).getAdapter();
 		if (a == null) return;
 		BrowsableItem b = a.getParent();
-		tb.findViewById(R.id.tool_sort).setVisibility(b.sortChildrenEnabled() ? VISIBLE : GONE);
+
+		if (b instanceof StreamItem) {
+			tb.findViewById(R.id.tool_view).setVisibility(GONE);
+			tb.findViewById(R.id.tool_sort).setVisibility(GONE);
+			tb.findViewById(R.id.tool_grid).setVisibility(GONE);
+		} else {
+			tb.findViewById(R.id.tool_view).setVisibility(VISIBLE);
+			tb.findViewById(R.id.tool_grid).setVisibility(VISIBLE);
+			tb.findViewById(R.id.tool_sort).setVisibility((b != null) && b.sortChildrenEnabled() ? VISIBLE : GONE);
+		}
 	}
 
 	private static void onViewButtonClick(View v) {

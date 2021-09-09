@@ -180,18 +180,21 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		setShowHideBarsIcon(a);
 
 		View title = (v != null) ? v.getTitle() : null;
+		MediaItemDescriptionView dsc = (v != null) ? v.getDescription() : null;
 		View fb = a.getFloatingButton();
 		int delay = getStartDelay();
 
 		if (delay == 0) {
 			fb.setVisibility(GONE);
 			if (title != null) title.setVisibility(GONE);
+			if (dsc != null) dsc.setVisibility(GONE);
 			super.setVisibility(GONE);
 		} else {
 			fb.setVisibility(VISIBLE);
 			if (title != null) title.setVisibility(VISIBLE);
+			if ((dsc != null) && dsc.hasDescription()) dsc.setVisibility(VISIBLE);
 			super.setVisibility(VISIBLE);
-			hideTimer = new HideTimer(delay, false, title, fb);
+			hideTimer = new HideTimer(delay, false, title, dsc, fb);
 			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
 

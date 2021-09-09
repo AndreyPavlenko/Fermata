@@ -5,6 +5,8 @@
     <attr name="appControlPanelStyle" format="reference" />
     <attr name="appSeekBarStyle" format="reference" />
     <attr name="appEqualizerStyle" format="reference" />
+    <attr name="appStreamProgressStyle" format="reference" />
+    <attr name="mediaItemMarkColor" format="color|reference" />
 
     <style name="AppTheme" parent="Theme.Utils.Base">
         <item name="android:windowBackground">@drawable/app_background</item>
@@ -14,6 +16,8 @@
         <item name="appControlPanelStyle">@style/AppTheme.ControlPanelStyle</item>
         <item name="appSeekBarStyle">@style/AppTheme.SeekBarStyle</item>
         <item name="appEqualizerStyle">@style/AppTheme.EqualizerStyle</item>
+        <item name="appStreamProgressStyle">@style/AppTheme.StreamProgressStyle</item>
+        <item name="mediaItemMarkColor">@android:color/holo_green_light</item>
     </style>
 
     <style name="AppTheme.MediaItemStyle">
@@ -38,6 +42,12 @@
     <style name="AppTheme.EqualizerStyle">
         <item name="android:textColor">?android:attr/textColorSecondary</item>
         <item name="tint">?attr/colorOnSecondary</item>
+    </style>
+
+    <style name="AppTheme.StreamProgressStyle">
+        <item name="indicatorColor">#FFD600</item>
+        <item name="trackColor">?attr/colorSecondary</item>
+        <item name="trackCornerRadius">2dp</item>
     </style>
 
 </resources>

@@ -16,6 +16,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.material.circularreveal.CircularRevealFrameLayout;
 
@@ -95,6 +96,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		});
 
 		addTitle(context);
+		addDescription(context);
 		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 		setFocusable(true);
 	}
@@ -110,6 +112,16 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		addOnLayoutChangeListener(this);
 	}
 
+	protected void addDescription(Context context) {
+		MediaItemDescriptionView d = new MediaItemDescriptionView(context, null);
+		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+		d.setLayoutParams(lp);
+		int padding = (int) toPx(context, 10);
+		d.setPadding(padding, padding, padding, 0);
+		addView(d);
+	}
+
 	public SurfaceView getVideoSurface() {
 		return (SurfaceView) getChildAt(0);
 	}
@@ -119,7 +131,12 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	public TextView getTitle() {
-		return (TextView) getChildAt((getChildCount() < 3) ? 1 : 2);
+		return (TextView) getChildAt((getChildCount() < 4) ? 1 : 2);
+	}
+
+	@Nullable
+	public MediaItemDescriptionView getDescription() {
+		return (getChildCount() < 4) ? (MediaItemDescriptionView) getChildAt(3) : null;
 	}
 
 	public void showVideo(boolean hideTitle) {

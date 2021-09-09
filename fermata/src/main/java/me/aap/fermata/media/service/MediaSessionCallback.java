@@ -1,5 +1,53 @@
 package me.aap.fermata.media.service;
 
+import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_FROM_URI;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_REWIND;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SET_REPEAT_MODE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_QUEUE_ITEM;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_STOP;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ALL;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_GROUP;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_NONE;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ONE;
+import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_ALL;
+import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
+import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_NONE;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.BASS_STRENGTH;
+import static me.aap.fermata.media.pref.MediaPrefs.EQ_BANDS;
+import static me.aap.fermata.media.pref.MediaPrefs.EQ_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
+import static me.aap.fermata.media.pref.MediaPrefs.EQ_USER_PRESETS;
+import static me.aap.fermata.media.pref.MediaPrefs.VIRT_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.VIRT_MODE;
+import static me.aap.fermata.media.pref.MediaPrefs.VIRT_STRENGTH;
+import static me.aap.fermata.media.pref.MediaPrefs.getUserPresetBands;
+import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.function.CheckedRunnable.runWithRetry;
+import static me.aap.utils.misc.Assert.assertNotNull;
+
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -61,54 +109,6 @@ import me.aap.utils.log.Log;
 import me.aap.utils.net.NetServer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
-
-import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_FROM_URI;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_REWIND;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SEEK_TO;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SET_REPEAT_MODE;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_SKIP_TO_QUEUE_ITEM;
-import static android.support.v4.media.session.PlaybackStateCompat.ACTION_STOP;
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ALL;
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_GROUP;
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_NONE;
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ONE;
-import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_ALL;
-import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
-import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_NONE;
-import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
-import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
-import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
-import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.BASS_STRENGTH;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_BANDS;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_USER_PRESETS;
-import static me.aap.fermata.media.pref.MediaPrefs.VIRT_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.VIRT_MODE;
-import static me.aap.fermata.media.pref.MediaPrefs.VIRT_STRENGTH;
-import static me.aap.fermata.media.pref.MediaPrefs.getUserPresetBands;
-import static me.aap.fermata.media.pref.PlaybackControlPrefs.getTimeMillis;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.function.CheckedRunnable.runWithRetry;
-import static me.aap.utils.misc.Assert.assertNotNull;
 
 /**
  * @author Andrey Pavlenko
@@ -361,7 +361,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
-			if ((i == null) || i.isVideo() || i.isStream()) return completedVoid();
+			if ((i == null) || i.isVideo() || !i.isSeekable()) return completedVoid();
 
 			engine = getEngineManager().createEngine(engine, i, this);
 			Log.d("MediaEngine ", engine + " created for ", i);
@@ -569,11 +569,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 	private void skipTo(boolean next, PlayableItem i) {
 		PlaybackStateCompat state = getPlaybackState();
+		long pos = i.isVideo() ? i.getPrefs().getPositionPref() : 0;
 		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
-		b.setState(next ? STATE_SKIPPING_TO_NEXT : STATE_SKIPPING_TO_PREVIOUS, state.getPosition(),
-				state.getPlaybackSpeed());
+		b.setState(next ? STATE_SKIPPING_TO_NEXT : STATE_SKIPPING_TO_PREVIOUS, pos, state.getPlaybackSpeed());
 		setPlaybackState(b.build());
-		playPreparedItem(i, 0);
+		playPreparedItem(i, pos);
 	}
 
 	@Override
@@ -1081,13 +1081,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		BrowsableItem p = i.getParent();
 		boolean updateQueue = false;
+		if (pos != -1) lib.setLastPlayed(i, pos);
 
 		if (current != null) {
-			if (!p.equals(current.getParent())) {
-				updateQueue = true;
-				lib.setLastPlayed(current, currentPos);
+			if (current.equals(i)) {
+				if (pos != -1) eng.setPosition(pos);
 			} else {
-				lib.setLastPlayed(i, pos);
+				lib.setLastPlayed(current, currentPos);
+				if (!p.equals(current.getParent())) updateQueue = true;
 			}
 		} else {
 			updateQueue = true;

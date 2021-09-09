@@ -1,11 +1,14 @@
 package me.aap.fermata.addon.web.yt;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.media.AudioFocusRequestCompat;
 
 import me.aap.fermata.addon.web.R;
@@ -171,8 +174,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void contributeToMenu(OverlayMenu.Builder b) {
-		b.addItem(me.aap.fermata.R.id.video_scaling, R.drawable.video_scaling,
-				me.aap.fermata.R.string.video_scaling).setSubmenu(this::videoScalingMenu);
+		Context ctx = web.getContext();
+		Resources r = ctx.getResources();
+		b.addItem(me.aap.fermata.R.id.video_scaling,
+				ResourcesCompat.getDrawable(r, R.drawable.video_scaling, ctx.getTheme()),
+				r.getString(me.aap.fermata.R.string.video_scaling)).setSubmenu(this::videoScalingMenu);
 	}
 
 	private void videoScalingMenu(OverlayMenu.Builder b) {
@@ -190,22 +196,21 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public boolean menuItemSelected(OverlayMenuItem item) {
-		switch (item.getItemId()) {
-			case me.aap.fermata.R.id.video_scaling_best:
-				web.setScale(VideoScale.CONTAIN);
-				return true;
-			case me.aap.fermata.R.id.video_scaling_fill:
-				web.setScale(VideoScale.FILL);
-				return true;
-			case R.id.video_scaling_fill_proportional:
-				web.setScale(VideoScale.COVER);
-				return true;
-			case me.aap.fermata.R.id.video_scaling_orig:
-				web.setScale(VideoScale.NONE);
-				return true;
-			default:
-				return false;
+		int itemId = item.getItemId();
+		if (itemId == me.aap.fermata.R.id.video_scaling_best) {
+			web.setScale(VideoScale.CONTAIN);
+			return true;
+		} else if (itemId == me.aap.fermata.R.id.video_scaling_fill) {
+			web.setScale(VideoScale.FILL);
+			return true;
+		} else if (itemId == R.id.video_scaling_fill_proportional) {
+			web.setScale(VideoScale.COVER);
+			return true;
+		} else if (itemId == me.aap.fermata.R.id.video_scaling_orig) {
+			web.setScale(VideoScale.NONE);
+			return true;
 		}
+		return false;
 	}
 
 	static boolean isYoutubeItem(MediaLib.Item i) {
@@ -218,7 +223,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		}
 
 		@Override
-		public boolean isStream() {
+		public boolean isSeekable() {
 			return false;
 		}
 

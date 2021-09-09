@@ -1,7 +1,9 @@
 package me.aap.fermata.addon.tv.m3u;
 
-import java.util.HashSet;
-import java.util.Set;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
+import static me.aap.utils.async.Completed.completed;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.TvItem;
@@ -12,7 +14,6 @@ import me.aap.fermata.media.lib.M3uItem;
 import me.aap.fermata.media.lib.M3uTrackItem;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
-import me.aap.utils.app.App;
 import me.aap.utils.async.FutureRef;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
@@ -20,23 +21,15 @@ import me.aap.utils.resource.Rid;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
-
 /**
  * @author Andrey Pavlenko
  */
-public class TvM3uItem extends M3uItem implements TvItem, Runnable {
+public class TvM3uItem extends M3uItem implements TvItem {
 	public static final String SCHEME = "tvm3u";
 	private String tvgUrl;
 	private String catchUpSource;
 	private int catchUpType = CATCHUP_TYPE_DEFAULT;
 	private int catchUpDays;
-	private Set<Runnable> updateHandlers;
-	private boolean updaterScheduled;
 	private final FutureRef<XmlTv> xmlTv = new FutureRef<XmlTv>() {
 		@Override
 		protected FutureSupplier<XmlTv> create() {
@@ -189,40 +182,6 @@ public class TvM3uItem extends M3uItem implements TvItem, Runnable {
 			} catch (NumberFormatException ex) {
 				Log.d(ex, "Invalid catchup-days: ", days);
 			}
-		}
-	}
-
-	long getTime() {
-		return System.currentTimeMillis() + (long) (60000 * getResource().getEpgShift());
-	}
-
-	void addUpdateHandler(Runnable h) {
-		ensureMainThread(true);
-		Set<Runnable> u = updateHandlers;
-		if (u == null) updateHandlers = u = new HashSet<>();
-		u.add(h);
-		scheduleUpdater();
-	}
-
-	void removeUpdateHandler(Runnable h) {
-		ensureMainThread(true);
-		Set<Runnable> u = updateHandlers;
-		if (u != null) u.remove(h);
-	}
-
-	private void scheduleUpdater() {
-		if (updaterScheduled) return;
-		App.get().getHandler().postDelayed(this, 5000);
-		updaterScheduled = true;
-	}
-
-	@Override
-	public void run() {
-		updaterScheduled = false;
-		Set<Runnable> u = updateHandlers;
-		if (!u.isEmpty()) {
-			for (Runnable r : u) r.run();
-			scheduleUpdater();
 		}
 	}
 }

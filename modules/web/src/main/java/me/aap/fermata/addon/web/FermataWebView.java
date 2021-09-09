@@ -1,5 +1,12 @@
 package me.aap.fermata.addon.web;
 
+import static android.os.Build.VERSION;
+import static android.os.Build.VERSION_CODES;
+import static androidx.webkit.WebViewFeature.FORCE_DARK;
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
+import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.text.Editable;
@@ -27,16 +34,11 @@ import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.TextChangedListener;
 import me.aap.utils.ui.view.ToolBarView;
-
-import static android.os.Build.VERSION;
-import static android.os.Build.VERSION_CODES;
-import static androidx.webkit.WebViewFeature.FORCE_DARK;
-import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
-import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
 
 /**
  * @author Andrey Pavlenko
@@ -109,9 +111,18 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		WebSettings s = getSettings();
 		boolean v = a.getPreferenceStore().getBooleanPref(a.getDesktopVersionPref());
 		String ua = v ? UserAgent.getUaDesktop(s, a) : UserAgent.getUa(s, a);
-		Log.d("Setting User-Agent to " + ua);
-		s.setUserAgentString(ua);
 		s.setUseWideViewPort(v);
+
+		try {
+			Log.d("Setting User-Agent to " + ua);
+			s.setUserAgentString(ua);
+		} catch (Exception ex) {
+			Log.e(ex, "Invalid User-Agent: ", ua);
+			String msg = ex.getLocalizedMessage();
+			if (msg == null) msg = "Invalid User-Agent: " + ua;
+			UiUtils.showAlert(getContext(), msg);
+		}
+
 		if (reload) reload();
 	}
 
@@ -324,6 +335,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 						.replace("{ANDROID_VERSION}", av)
 						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
 						.replace("{CHROME_VERSION}", requireNonNull(cv));
+				UserAgent.ua = normalize(UserAgent.ua);
 				if (UserAgent.ua.isEmpty()) UserAgent.ua = ua;
 			} else {
 				Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
@@ -354,7 +366,43 @@ public class FermataWebView extends WebView implements TextChangedListener,
 						.replaceFirst(" Version/\\d+\\.\\d+ ", " ");
 			}
 
-			return uaDesktop;
+			return uaDesktop = normalize(uaDesktop);
+		}
+
+		private static String normalize(String ua) {
+ 			try (SharedTextBuilder b = SharedTextBuilder.get()) {
+				int cut = 0;
+				boolean changed = false;
+
+				for (int i = 0, n = ua.length(); i < n; i++) {
+					char c = ua.charAt(i);
+
+					if (c <= ' ') {
+						if ((b.length() == 0) || (ua.charAt(i - 1) == ' ')) {
+							changed = true;
+							continue;
+						} else if (c != ' ') {
+							b.append(' ');
+							changed = true;
+							continue;
+						}
+					}
+
+					b.append(c);
+				}
+
+				for (int i = b.length() - 1; i >= 0; i--) {
+					if (b.charAt(i) == ' ') cut ++;
+					else break;
+				}
+
+				if (cut != 0) {
+					changed = true;
+					b.setLength(b.length() - cut);
+				}
+
+				return changed ? b.toString() : ua;
+			}
 		}
 	}
 }

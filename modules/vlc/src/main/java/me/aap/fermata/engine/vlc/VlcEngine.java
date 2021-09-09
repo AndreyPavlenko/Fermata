@@ -174,7 +174,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 	@Override
 	public FutureSupplier<Long> getDuration() {
-		if (source.isStream()) return completed(0L);
+		if (!source.isSeekable()) return completed(0L);
 
 		long dur = source.getDuration();
 
@@ -194,7 +194,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	public FutureSupplier<Long> getPosition() {
 		Source src = source;
 
-		if ((src != Source.NULL) && !src.isStream()) {
+		if ((src != Source.NULL) && src.isSeekable()) {
 			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition);
 		} else {
 			return completed(0L);
@@ -304,7 +304,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 	@Override
 	public void setAudioDelay(int milliseconds) {
-		player.setAudioDelay(milliseconds * 1000);
+		player.setAudioDelay(milliseconds * 1000L);
 	}
 
 	@Override
@@ -319,7 +319,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 	@Override
 	public void setSubtitleDelay(int milliseconds) {
-		player.setSpuDelay(milliseconds * 1000);
+		player.setSpuDelay(milliseconds * 1000L);
 	}
 
 	@Override
@@ -517,7 +517,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 			int delay = prefs.getAudioDelayPref();
 			AudioStreamInfo ai = vs.selectAudioStream(prefs);
 			if (ai != null) player.setAudioTrack(ai.getId());
-			if (delay != 0) player.setAudioDelay(delay * 1000);
+			if (delay != 0) player.setAudioDelay(delay * 1000L);
 			vs.addSubtitles(player.getSpuTracks());
 
 			if (prefs.getSubEnabledPref()) {
@@ -526,7 +526,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 				if (si != null) {
 					player.setSpuTrack(si.getId());
 					delay = prefs.getSubDelayPref();
-					if (delay != 0) player.setSpuDelay(delay * 1000);
+					if (delay != 0) player.setSpuDelay(delay * 1000L);
 				}
 			} else {
 				player.setSpuTrack(-1);
@@ -559,7 +559,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 			return 0;
 		}
 
-		boolean isStream() {
+		boolean isSeekable() {
 			return false;
 		}
 
@@ -612,7 +612,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 		PreparedSource prepare() {
 			PlayableItem pi = getItem();
-			boolean stream = pi.isStream();
+			boolean seekable = pi.isSeekable();
 			long dur = media.getDuration();
 
 			if (dur == -1) {
@@ -638,11 +638,11 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 				audio.trimToSize();
 				subtitle.trimToSize();
-				return new VideoSource(pi, fd, dur, stream,
+				return new VideoSource(pi, fd, dur, seekable,
 						audio.isEmpty() ? Collections.emptyList() : audio,
 						subtitle.isEmpty() ? Collections.emptyList() : subtitle);
 			} else {
-				return new PreparedSource(pi, fd, dur, stream);
+				return new PreparedSource(pi, fd, dur, seekable);
 			}
 		}
 
@@ -661,12 +661,12 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 	private static class PreparedSource extends Source {
 		private long duration;
-		private final boolean isStream;
+		private final boolean seekable;
 
-		PreparedSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean isStream) {
+		PreparedSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean seekable) {
 			super(item, fd);
 			this.duration = duration;
-			this.isStream = isStream;
+			this.seekable = seekable;
 		}
 
 		@Override
@@ -675,8 +675,8 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 		}
 
 		@Override
-		public boolean isStream() {
-			return isStream;
+		public boolean isSeekable() {
+			return seekable;
 		}
 
 		@Override
@@ -695,10 +695,10 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 		private final List<AudioStreamInfo> audioStreamInfo;
 		private List<SubtitleStreamInfo> subtitleStreamInfo;
 
-		VideoSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean isStream,
+		VideoSource(PlayableItem item, ParcelFileDescriptor fd, long duration, boolean seekable,
 								List<AudioStreamInfo> audioStreamInfo,
 								List<SubtitleStreamInfo> subtitleStreamInfo) {
-			super(item, fd, duration, isStream);
+			super(item, fd, duration, seekable);
 			this.subtitleStreamInfo = subtitleStreamInfo;
 			this.audioStreamInfo = audioStreamInfo;
 		}

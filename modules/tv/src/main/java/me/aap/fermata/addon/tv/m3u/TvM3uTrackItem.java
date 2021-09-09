@@ -1,5 +1,13 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.cancelled;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
+
+import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
@@ -7,6 +15,7 @@ import androidx.annotation.NonNull;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.TvItem;
@@ -15,24 +24,23 @@ import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.M3uTrackItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem.StreamItemPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VirtualResource;
 
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.async.Completed.cancelled;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
-
 /**
  * @author Andrey Pavlenko
  */
-public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
+public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamItemPrefs, TvItem {
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static final AtomicReferenceFieldUpdater<TvM3uTrackItem, FutureSupplier<List<TvM3uEpgItem>>> EPG =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(TvM3uTrackItem.class, FutureSupplier.class, "epg");
 	static final int EPG_ID_UNKNOWN = -1;
 	static final int EPG_ID_NOT_FOUND = -2;
 	public static final String SCHEME = "tvm3ut";
@@ -44,6 +52,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 	private String epgChIcon;
 	private String epgProgIcon;
 	private List<Item.ChangeListener> listeners;
+	private volatile FutureSupplier<List<TvM3uEpgItem>> epg;
 
 	protected TvM3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
 													 String name, String album, String artist, String genre,
@@ -67,6 +76,40 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 			TvM3uItem m3u = (TvM3uItem) i;
 			return (m3u != null) ? m3u.getTrack(gid, tid) : completedNull();
 		});
+	}
+
+	@NonNull
+	@Override
+	@SuppressWarnings("unchecked")
+	public FutureSupplier<List<TvM3uEpgItem>> getEpg() {
+		FutureSupplier<List<TvM3uEpgItem>> l = EPG.get(this);
+		if (l != null) return l;
+
+		Promise<List<TvM3uEpgItem>> load = new Promise<>();
+
+		for (; !EPG.compareAndSet(this, null, load); l = EPG.get(this)) {
+			if (l != null) return l;
+		}
+
+		FutureSupplier<XmlTv> f = getM3uItem().getXmlTv();
+
+		if (f.isDone()) {
+			XmlTv xml = f.peek();
+			if ((xml == null) || xml.isClosed()) return epg = completedEmptyList();
+			xml.getEpg(this).thenReplaceOrClear(EPG, this, load);
+		} else {
+			f.then(xml -> ((xml == null) || xml.isClosed()) ? completedEmptyList() : xml.getEpg(this))
+					.thenReplaceOrClear(EPG, this, load);
+		}
+
+		l = EPG.get(this);
+		return (l != null) ? l : load;
+	}
+
+	@NonNull
+	@Override
+	public StreamItemPrefs getPrefs() {
+		return this;
 	}
 
 	@Override
@@ -110,13 +153,48 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 
 	private MediaMetadataCompat build(MetadataBuilder b) {
 		String logo = getLogo();
+		String title = getEpgTitle();
+		String desc = getEpgDesc();
+		String icon = getEpgProgIcon();
 		long start = epgStart;
 		long stop = epgStop;
-		long dur = (stop > start) ? (stop - start) : 0;
+		long dur = (start > 0) && (start < stop) ? (stop - start) : 0;
 		b.putString(MediaMetadataCompat.METADATA_KEY_TITLE, getName());
-		b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+
+		if (title != null) {
+			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, title);
+		}
+		if (dur > 0) {
+			b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
+			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
+				TextUtils.dateToTimeString(tb, start, false);
+				tb.append(" - ");
+				TextUtils.dateToTimeString(tb, stop, false);
+				b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, tb.toString());
+			}
+		}
+		if (desc != null) {
+			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, desc);
+		}
+		if (icon != null) {
+			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, icon);
+		}
+
 		if (logo != null) b.setImageUri(logo);
 		return b.build();
+	}
+
+	@Override
+	protected FutureSupplier<Bundle> buildExtras() {
+		return getMediaData().map(m -> {
+			long start = epgStart;
+			long end = epgStop;
+			if ((start <= 0) || (end < start)) return null;
+			Bundle b = new Bundle();
+			b.putLong(STREAM_START_TIME, start);
+			b.putLong(STREAM_END_TIME, end);
+			return b;
+		});
 	}
 
 	@Override
@@ -142,12 +220,16 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 
 	@Override
 	protected boolean isMediaDataValid(FutureSupplier<MediaMetadataCompat> d) {
-		return (d != null) && (!d.isDone() || (epgStop == 0) || (epgStop > System.currentTimeMillis()));
+		return validate(d);
 	}
 
 	@Override
 	protected boolean isMediaDescriptionValid(FutureSupplier<MediaDescriptionCompat> d) {
-		return (d != null) && (!d.isDone() || (epgStop == 0) || (epgStop > System.currentTimeMillis()));
+		return validate(d);
+	}
+
+	private boolean validate(FutureSupplier<?> s) {
+		return (s != null) && (!s.isDone() || (epgStop == 0) || (epgStop > System.currentTimeMillis()));
 	}
 
 	@Override
@@ -177,19 +259,6 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		return me.aap.fermata.R.drawable.tv;
 	}
 
-	@NonNull
-	@Override
-	public FutureSupplier<Integer> getProgress() {
-		return getMediaData().map(d -> {
-			long start = epgStart;
-			long stop = epgStop;
-			if ((start == 0) || (start >= stop)) return 0;
-			long dur = stop - start;
-			long prog = getM3uItem().getTime() - start;
-			return (int) (prog * 100 / dur);
-		});
-	}
-
 	@Override
 	public boolean addChangeListener(Item.ChangeListener l) {
 		ensureMainThread(true);
@@ -198,19 +267,6 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		else if (listeners.contains(l)) return true;
 		listeners.add(l);
 		if (BuildConfig.D) ListenerLeakDetector.add(this, l);
-
-		if (listeners.size() == 1) {
-			if (getEpgId() >= 0) {
-				getM3uItem().addUpdateHandler(this);
-			} else {
-				getMediaData().main().thenRun(() -> {
-					if ((getEpgId() >= 0) && !this.listeners.isEmpty()) {
-						getM3uItem().addUpdateHandler(this);
-					}
-				});
-			}
-		}
-
 		return true;
 	}
 
@@ -219,27 +275,8 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		ensureMainThread(true);
 		List<Item.ChangeListener> listeners = this.listeners;
 		if ((listeners == null) || !listeners.remove(l)) return false;
-		if (listeners.isEmpty()) getM3uItem().removeUpdateHandler(this);
 		if (BuildConfig.D) ListenerLeakDetector.remove(this, l);
 		return true;
-	}
-
-	@Override
-	public void run() {
-		if (!isMediaDataValid(getMediaData())) {
-			reset();
-			getMediaData();
-		} else {
-			List<Item.ChangeListener> listeners = this.listeners;
-
-			if ((listeners != null) && !listeners.isEmpty()) {
-				for (Item.ChangeListener l : listeners) {
-					if (l instanceof PlayableItem.ChangeListener) {
-						((PlayableItem.ChangeListener) l).playableItemProgressChanged(this);
-					}
-				}
-			}
-		}
 	}
 
 	int getEpgId() {
@@ -288,17 +325,16 @@ public class TvM3uTrackItem extends M3uTrackItem implements TvItem, Runnable {
 		});
 	}
 
+	@Override
+	protected void reset() {
+		super.reset();
+		epg = null;
+	}
+
 	private void notifyListeners() {
 		List<Item.ChangeListener> listeners = this.listeners;
-
 		if ((listeners != null) && !listeners.isEmpty()) {
-			for (Item.ChangeListener l : listeners) {
-				if (l instanceof PlayableItem.ChangeListener) {
-					((PlayableItem.ChangeListener) l).playableItemChanged(this);
-				} else {
-					l.mediaItemChanged(this);
-				}
-			}
+			for (Item.ChangeListener l : listeners) l.mediaItemChanged(this);
 		}
 	}
 }

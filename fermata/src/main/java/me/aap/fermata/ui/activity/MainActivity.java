@@ -1,6 +1,16 @@
 package me.aap.fermata.ui.activity;
 
+import static android.media.AudioManager.ADJUST_LOWER;
+import static android.media.AudioManager.ADJUST_RAISE;
+import static android.media.AudioManager.FLAG_SHOW_UI;
+import static android.media.AudioManager.STREAM_MUSIC;
+import static android.view.InputDevice.SOURCE_CLASS_POINTER;
+import static android.view.MotionEvent.ACTION_SCROLL;
+import static me.aap.utils.ui.UiUtils.showAlert;
+
+import android.media.AudioManager;
 import android.os.Bundle;
+import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
 
@@ -13,8 +23,6 @@ import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.activity.SplitCompatActivityBase;
-
-import static me.aap.utils.ui.UiUtils.showAlert;
 
 public class MainActivity extends SplitCompatActivityBase
 		implements FermataActivity, AddonManager.Listener {
@@ -77,5 +85,18 @@ public class MainActivity extends SplitCompatActivityBase
 	@Override
 	public void onAddonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
 		SplitCompat.installActivity(this);
+	}
+
+	@Override
+	public boolean onGenericMotionEvent(MotionEvent event) {
+		if (((event.getSource() & SOURCE_CLASS_POINTER) != 0) && (event.getAction() == ACTION_SCROLL)) {
+			AudioManager amgr = (AudioManager) getContext().getSystemService(AUDIO_SERVICE);
+			if (amgr == null) return false;
+			float v = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+			amgr.adjustStreamVolume(STREAM_MUSIC, (v > 0) ? ADJUST_RAISE : ADJUST_LOWER, FLAG_SHOW_UI);
+			return true;
+		}
+
+		return super.onGenericMotionEvent(event);
 	}
 }

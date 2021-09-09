@@ -1,5 +1,10 @@
 package me.aap.fermata.ui.fragment;
 
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.collection.CollectionUtils.filterMap;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -21,8 +26,10 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
+import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -34,6 +41,7 @@ import me.aap.fermata.ui.view.MediaItemListViewAdapter;
 import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.log.Log;
@@ -43,10 +51,6 @@ import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
 
-import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.collection.CollectionUtils.filterMap;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -54,6 +58,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		PreferenceStore.Listener, FermataServiceUiBinder.Listener, ToolBarView.Listener {
 	private ListAdapter adapter;
 	private int scrollPosition;
+	private Item clicked;
 
 	protected abstract ListAdapter createAdapter(FermataServiceUiBinder b);
 
@@ -399,14 +404,20 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		}
 
 		@Override
+		@SuppressLint("MissingSuperCall")
 		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
-			BrowsableItem prev = super.getParent();
+			return setParent(parent, userAction, true);
+		}
+
+		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction, boolean scroll) {
 			FutureSupplier<?> set = super.setParent(parent, userAction);
 
 			if (!isHidden()) {
 				getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 
-				if (parent != null) {
+				if (scroll && (parent != null)) {
+					BrowsableItem prev = super.getParent();
+
 					if (set.isDone()) {
 						scrollToPrev(prev);
 					} else {
@@ -433,14 +444,58 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			discardSelection();
 
 			if (i instanceof PlayableItem) {
-				MainActivityDelegate a = getMainActivity();
-				FermataServiceUiBinder b = a.getMediaServiceBinder();
-				PlayableItem cur = b.getCurrentItem();
-				b.playItem((PlayableItem) i);
-				if (i.equals(cur) && cur.isVideo()) a.getBody().setMode(BodyLayout.Mode.VIDEO);
+				if (i instanceof StreamItem) {
+					if (clicked == i) {
+						clicked = null;
+						openEpg((StreamItem) i);
+					} else {
+						clicked = i;
+						App.get().getHandler().postDelayed(() -> {
+							boolean same = clicked == i;
+							clicked = null;
+							if (same) onClick((PlayableItem) i);
+						}, 300);
+					}
+				} else {
+					clicked = null;
+					onClick((PlayableItem) i);
+				}
 			} else {
+				clicked = null;
 				super.onClick(v);
 			}
+		}
+
+		public void openEpg(StreamItem i) {
+			setParent(i, true, false).thenRun(() -> {
+				long time = System.currentTimeMillis();
+				List<MediaItemWrapper> l = getAdapter().getList();
+				int pos = 0;
+
+				for (MediaItemWrapper w : l) {
+					if (w.getItem() instanceof EpgItem) {
+						EpgItem e = (EpgItem) w.getItem();
+						if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
+							scrollPosition = pos;
+							FermataApplication.get().getHandler().post(() -> {
+								if (getParent() != i) return;
+								getListView().smoothScrollToPosition(scrollPosition);
+								getListView().focusTo(e);
+							});
+							break;
+						}
+					}
+					pos++;
+				}
+			});
+		}
+
+		private void onClick(PlayableItem i) {
+			MainActivityDelegate a = getMainActivity();
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			PlayableItem cur = b.getCurrentItem();
+			b.playItem(i);
+			if (i.equals(cur) && cur.isVideo()) a.getBody().setMode(BodyLayout.Mode.VIDEO);
 		}
 
 		@Override

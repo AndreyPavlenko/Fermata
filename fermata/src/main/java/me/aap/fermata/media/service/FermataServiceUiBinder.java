@@ -261,7 +261,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 		if (fromUser) {
 			callback.setProgressTime(progress);
-			mediaController.getTransportControls().seekTo(progress * 1000);
+			mediaController.getTransportControls().seekTo(progress * 1000L);
 		}
 	}
 

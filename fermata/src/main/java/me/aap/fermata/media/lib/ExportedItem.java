@@ -1,9 +1,12 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
+
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -15,13 +18,12 @@ import me.aap.fermata.media.engine.MetadataBuilder;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
-
-import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
 
 /**
  * @author Andrey Pavlenko
@@ -45,6 +47,8 @@ public class ExportedItem extends PlayableItemBase {
 				ExportedItem ex = (ExportedItem) i;
 				assert parent.equals(ex.getParent());
 				return ex;
+			} else if (orig instanceof StreamItem) {
+				return new ExportedStreamItem(orig, exportId, parent);
 			} else {
 				return new ExportedItem(orig, exportId, parent);
 			}
@@ -136,8 +140,8 @@ public class ExportedItem extends PlayableItemBase {
 	}
 
 	@Override
-	public boolean isStream() {
-		return orig.isStream();
+	public boolean isSeekable() {
+		return orig.isSeekable();
 	}
 
 	@Override
@@ -175,16 +179,11 @@ public class ExportedItem extends PlayableItemBase {
 	}
 
 	@Override
-	@Nullable
-	public FutureSupplier<Integer> getProgress() {
-		return orig.getProgress();
-	}
-
-	@Override
 	public boolean isTimerRequired() {
 		return orig.isTimerRequired();
 	}
 
+	@DrawableRes
 	@Override
 	public int getIcon() {
 		return orig.getIcon();
@@ -229,7 +228,35 @@ public class ExportedItem extends PlayableItemBase {
 		}
 	}
 
-	private final class ListenerWrapper implements PlayableItem.ChangeListener {
+	PlayableItemBase getOrig() {
+		return orig;
+	}
+
+	private static final class ExportedStreamItem extends ExportedItem implements StreamItem {
+
+		private ExportedStreamItem(PlayableItemBase orig, String exportId, BrowsableItem parent) {
+			super(orig, exportId, parent);
+		}
+
+		@NonNull
+		@Override
+		public StreamItemPrefs getPrefs() {
+			return ((StreamItem) getOrig()).getPrefs();
+		}
+
+		@Override
+		public boolean isSeekable(long time) {
+			return ((StreamItem) getOrig()).isSeekable(time);
+		}
+
+		@Nullable
+		@Override
+		public Uri getLocation(long time) {
+			return ((StreamItem) getOrig()).getLocation(time);
+		}
+	}
+
+	private final class ListenerWrapper implements Item.ChangeListener {
 		final Item.ChangeListener listener;
 
 		public ListenerWrapper(Item.ChangeListener listener) {
@@ -240,22 +267,6 @@ public class ExportedItem extends PlayableItemBase {
 		public void mediaItemChanged(Item i) {
 			reset();
 			listener.mediaItemChanged(ExportedItem.this);
-		}
-
-		@Override
-		public void playableItemChanged(PlayableItem i) {
-			reset();
-
-			if (listener instanceof PlayableItem.ChangeListener) {
-				((PlayableItem.ChangeListener) listener).playableItemChanged(ExportedItem.this);
-			}
-		}
-
-		@Override
-		public void playableItemProgressChanged(PlayableItem i) {
-			if (listener instanceof PlayableItem.ChangeListener) {
-				((PlayableItem.ChangeListener) listener).playableItemProgressChanged(ExportedItem.this);
-			}
 		}
 	}
 }

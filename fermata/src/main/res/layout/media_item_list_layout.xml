@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:textAppearance="?attr/textAppearanceCaption"
-        app:layout_constraintBottom_toTopOf="@id/media_item_progress"
+        app:layout_constraintBottom_toTopOf="@id/media_stream_progress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="1"
         app:layout_constraintStart_toEndOf="@id/media_item_icon"
@@ -43,11 +43,12 @@
         tools:ignore="RtlSymmetry" />
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
-        android:id="@+id/media_item_progress"
-        style="?attr/appMediaItemStyle"
+        android:id="@+id/media_stream_progress"
+        style="?attr/appStreamProgressStyle"
         android:layout_width="0dp"
         android:layout_height="4dp"
         android:layout_marginStart="4dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="1"

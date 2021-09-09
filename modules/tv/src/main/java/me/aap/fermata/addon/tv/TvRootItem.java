@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.aap.fermata.addon.tv.m3u.TvM3uEpgItem;
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystemProvider;
@@ -54,6 +55,8 @@ public class TvRootItem extends ItemContainer<TvM3uItem> implements TvItem {
 				return TvM3uGroupItem.create(this, id);
 			case TvM3uTrackItem.SCHEME:
 				return TvM3uTrackItem.create(this, id);
+			case TvM3uEpgItem.SCHEME:
+				return TvM3uEpgItem.create(this, id);
 			default:
 				return null;
 		}

@@ -1,9 +1,17 @@
 package me.aap.fermata.media.lib;
 
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.util.Utils.getResourceUri;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.media.session.MediaSession;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
@@ -38,13 +46,6 @@ import me.aap.utils.holder.IntHolder;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.generic.GenericFileSystem;
-
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
-import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.util.Utils.getResourceUri;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -280,9 +281,9 @@ public interface MediaLib {
 
 		boolean isVideo();
 
-		default boolean isStream() {
+		default boolean isSeekable() {
 			VirtualFileSystem.Provider p = getResource().getVirtualFileSystem().getProvider();
-			return (p instanceof GenericFileSystem.Provider);
+			return !(p instanceof GenericFileSystem.Provider);
 		}
 
 		@NonNull
@@ -319,22 +320,14 @@ public interface MediaLib {
 			return completedVoid();
 		}
 
-		@Nullable
-		default FutureSupplier<Integer> getProgress() {
-			return null;
-		}
-
 		default boolean isTimerRequired() {
 			return false;
 		}
 
+		@DrawableRes
 		@Override
 		default int getIcon() {
-			if (isVideo()) {
-				return getPrefs().getWatchedPref() ? R.drawable.watched_video : R.drawable.video;
-			} else {
-				return R.drawable.audiotrack;
-			}
+			return isVideo() ? R.drawable.video : R.drawable.audiotrack;
 		}
 
 		@NonNull
@@ -373,15 +366,108 @@ public interface MediaLib {
 		default String getUserAgent() {
 			return null;
 		}
+	}
 
-		interface ChangeListener extends Item.ChangeListener {
+	interface StreamItem extends PlayableItem, BrowsableItem {
+		String STREAM_START_TIME = "me.aap.media.stream.START_TIME";
+		String STREAM_END_TIME = "me.aap.media.stream.END_TIME";
 
-			default void playableItemChanged(PlayableItem i) {
-				mediaItemChanged(i);
+		@NonNull
+		@Override
+		StreamItemPrefs getPrefs();
+
+		default boolean isSeekable(long time) {
+			return false;
+		}
+
+		@Nullable
+		default Uri getLocation(long time) {
+			return null;
+		}
+
+		@NonNull
+		default <E extends EpgItem> FutureSupplier<List<E>> getEpg() {
+			return Completed.completedEmptyList();
+		}
+
+		@NonNull
+		@Override
+		default FutureSupplier<Long> getDuration() {
+			return getMediaDescription().map(md -> {
+				Bundle b = md.getExtras();
+				if (b != null) {
+					long start = b.getLong(STREAM_START_TIME, 0);
+					if (start != 0) {
+						long end = b.getLong(STREAM_END_TIME, 0);
+						if (end > start) return end - start;
+					}
+				}
+				return 0L;
+			});
+		}
+
+		@DrawableRes
+		@Override
+		default int getIcon() {
+			return PlayableItem.super.getIcon();
+		}
+
+		@NonNull
+		@Override
+		default FutureSupplier<Uri> getIconUri() {
+			return PlayableItem.super.getIconUri();
+		}
+
+		@NonNull
+		@Override
+		@SuppressWarnings("unchecked")
+		default FutureSupplier<List<EpgItem>> getChildren() {
+			return getUnsortedChildren();
+		}
+
+		@NonNull
+		@Override
+		@SuppressWarnings("unchecked")
+		default FutureSupplier<List<EpgItem>> getUnsortedChildren() {
+			return getEpg();
+		}
+
+		@NonNull
+		@Override
+		default FutureSupplier<Iterator<PlayableItem>> getShuffleIterator() {
+			return completed(Collections.emptyIterator());
+		}
+
+		interface StreamItemPrefs extends PlayableItemPrefs, BrowsableItemPrefs {
+
+			@Override
+			default int getSortByPref() {
+				return SORT_BY_NONE;
 			}
+		}
+	}
 
-			default void playableItemProgressChanged(PlayableItem i) {
-			}
+	interface EpgItem extends Item, Comparable<EpgItem> {
+
+		@NonNull
+		@Override
+		StreamItem getParent();
+
+		@DrawableRes
+		@Override
+		default int getIcon() {
+			return R.drawable.epg;
+		}
+
+		long getStartTime();
+
+		long getEndTime();
+
+		EpgItem getNext();
+
+		@Override
+		default int compareTo(EpgItem o) {
+			return Long.compare(getStartTime(), o.getStartTime());
 		}
 	}
 
@@ -391,10 +477,10 @@ public interface MediaLib {
 		BrowsableItemPrefs getPrefs();
 
 		@NonNull
-		FutureSupplier<List<Item>> getChildren();
+		<I extends Item> FutureSupplier<List<I>> getChildren();
 
 		@NonNull
-		FutureSupplier<List<Item>> getUnsortedChildren();
+		<I extends Item> FutureSupplier<List<I>> getUnsortedChildren();
 
 		@NonNull
 		default FutureSupplier<List<PlayableItem>> getPlayableChildren(boolean recursive) {
@@ -459,6 +545,7 @@ public interface MediaLib {
 		@NonNull
 		FutureSupplier<Iterator<PlayableItem>> getShuffleIterator();
 
+		@DrawableRes
 		@Override
 		default int getIcon() {
 			return R.drawable.folder;

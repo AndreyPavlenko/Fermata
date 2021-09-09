@@ -1,7 +1,14 @@
 package me.aap.fermata.media.lib;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.misc.Assert.assertNotEquals;
+
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 
 import androidx.annotation.Keep;
@@ -22,11 +29,6 @@ import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.vfs.VirtualResource;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.misc.Assert.assertNotEquals;
 
 /**
  * @author Andrey Pavlenko
@@ -58,6 +60,10 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 
 	protected abstract FutureSupplier<String> buildSubtitle();
 
+	protected FutureSupplier<Bundle> buildExtras() {
+		return completedNull();
+	}
+
 	@NonNull
 	@Override
 	public String getId() {
@@ -81,12 +87,14 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 
 		FutureSupplier<String> title = buildTitle();
 		FutureSupplier<String> subtitle = buildSubtitle();
+		FutureSupplier<Bundle> extras = buildExtras();
 		FutureSupplier<Uri> icon = getIconUri();
 
-		if (title.isDone() && subtitle.isDone() && icon.isDone()) {
-			b.setTitle(title.get(() -> getName()));
+		if (title.isDone() && subtitle.isDone() && icon.isDone() && extras.isDone()) {
+			b.setTitle(title.get(this::getName));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
+			b.setExtras(extras.get(null));
 			MediaDescriptionCompat dsc = b.build();
 			load.complete(dsc);
 			d = completed(dsc);
@@ -97,16 +105,20 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 			MediaDescriptionCompat.Builder build = new MediaDescriptionCompat.Builder();
 			build.setMediaId(getId());
 			build.setTitle(t);
-			load.setProgress(build.build(), 1, 3);
+			load.setProgress(build.build(), 1, 4);
 		}).then(t -> {
 			b.setTitle(t);
-			load.setProgress(b.build(), 1, 3);
+			load.setProgress(b.build(), 1, 4);
 			return subtitle.then(s -> {
 				b.setSubtitle(s);
-				load.setProgress(b.build(), 2, 3);
-				return icon.then(u -> {
-					if (u != null) b.setIconUri(u);
-					return completed(b.build());
+				load.setProgress(b.build(), 2, 4);
+				return extras.then(ex -> {
+					b.setExtras(ex);
+					load.setProgress(b.build(), 3, 4);
+					return icon.then(u -> {
+						if (u != null) b.setIconUri(u);
+						return completed(b.build());
+					});
 				});
 			});
 		}).thenReplaceOrClear(MD, this, load);

@@ -1,73 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/media_item_icon"
         style="?attr/appMediaItemStyle"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:layout_margin="3dp"
         android:scaleType="fitCenter"
-        app:layout_constraintBottom_toTopOf="@id/media_item_title"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/media_item_title"
         style="?attr/appMediaItemStyle"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="3dp"
         android:layout_marginEnd="3dp"
         android:ellipsize="marquee"
+        android:maxLines="5"
         android:singleLine="true"
         android:textAppearance="?attr/textAppearanceListItem"
         app:layout_constraintBottom_toTopOf="@id/media_item_subtitle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/media_item_icon"
-        tools:ignore="RtlSymmetry" />
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="@id/media_item_icon"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/media_item_subtitle"
         style="?attr/appMediaItemStyle"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="3dp"
         android:layout_marginEnd="3dp"
         android:ellipsize="marquee"
         android:singleLine="true"
         android:textAppearance="?attr/textAppearanceCaption"
-        app:layout_constraintBottom_toTopOf="@id/media_stream_progress"
+        app:layout_constraintBottom_toTopOf="@id/media_item_dsc"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/media_item_title"
-        tools:ignore="RtlSymmetry" />
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="@id/media_item_icon"
+        app:layout_constraintTop_toBottomOf="@id/media_item_title" />
 
-    <com.google.android.material.progressindicator.LinearProgressIndicator
-        android:id="@+id/media_stream_progress"
-        style="?attr/appStreamProgressStyle"
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/media_item_dsc"
+        style="?attr/appMediaItemStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="3dp"
         android:layout_marginEnd="3dp"
-        android:visibility="gone"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        android:textAppearance="?attr/textAppearanceCaption"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <com.google.android.material.checkbox.MaterialCheckBox
-        android:id="@+id/media_item_checkbox"
-        style="?attr/appMediaItemStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elevation="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="@id/media_item_icon"
+        app:layout_constraintTop_toBottomOf="@id/media_item_subtitle" />
 
 </merge>

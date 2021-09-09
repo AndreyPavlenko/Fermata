@@ -1,5 +1,12 @@
 package me.aap.fermata.media.lib;
 
+import static java.util.Collections.emptyList;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.collection.CollectionUtils.filterMap;
+import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
+
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.Keep;
@@ -29,13 +36,6 @@ import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static java.util.Collections.emptyList;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedEmptyList;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.collection.CollectionUtils.filterMap;
-import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -62,6 +62,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 	@NonNull
 	@Override
+	@SuppressWarnings("unchecked")
 	public FutureSupplier<List<Item>> getUnsortedChildren() {
 		FutureSupplier<List<Item>> c = CHILDREN.get(this);
 		if (c != null) return c;
@@ -79,6 +80,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 	@NonNull
 	@Override
+	@SuppressWarnings("unchecked")
 	public FutureSupplier<List<Item>> getChildren() {
 		FutureSupplier<List<Item>> c = CHILDREN.get(this);
 		if (isDone(c)) return c;

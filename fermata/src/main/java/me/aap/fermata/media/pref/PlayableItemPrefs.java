@@ -34,7 +34,7 @@ public interface PlayableItemPrefs extends MediaPrefs {
 	default void setWatchedPref(boolean watched) {
 		try (Edit e = editPreferenceStore()) {
 			e.setBooleanPref(WATCHED, watched);
-			if (watched) e.removePref(POSITION);
+			e.removePref(POSITION);
 		}
 	}
 

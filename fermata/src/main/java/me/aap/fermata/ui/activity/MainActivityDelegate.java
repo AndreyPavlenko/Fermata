@@ -67,6 +67,7 @@ import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
@@ -113,7 +114,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		FermataServiceUiBinder b = getMediaServiceBinder();
 		Context ctx = a.getContext();
 		b.getMediaSessionCallback().getSession().setSessionActivity(
-				PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), 0));
+				PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), FLAG_IMMUTABLE));
 		if (b.getCurrentItem() == null) b.getMediaSessionCallback().onPrepare();
 		init();
 
