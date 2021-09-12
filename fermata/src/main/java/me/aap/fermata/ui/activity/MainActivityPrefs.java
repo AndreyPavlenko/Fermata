@@ -3,10 +3,13 @@ package me.aap.fermata.ui.activity;
 import android.content.Context;
 import android.content.res.Configuration;
 
+import androidx.annotation.Nullable;
+
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
@@ -28,6 +31,11 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<DoubleSupplier> MEDIA_ITEM_SCALE = Pref.f("MEDIA_ITEM_SCALE", 1);
 	Pref<DoubleSupplier> P_SPLIT_PERCENT = Pref.f("P_SPLIT_PERCENT", 0.6f);
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
+	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
+
+	static MainActivityPrefs get() {
+		return MainActivityDelegate.Prefs.instance;
+	}
 
 	default int getThemePref() {
 		return getIntPref(THEME);
@@ -87,5 +95,14 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 		} else {
 			applyFloatPref(L_SPLIT_PERCENT, percent);
 		}
+	}
+
+	@Nullable
+	default String getShowAddonOnStartPref() {
+		return getStringPref(SHOW_ADDON_ON_START);
+	}
+
+	default void setShowAddonOnStartPref(@Nullable String className) {
+		applyStringPref(SHOW_ADDON_ON_START, className);
 	}
 }

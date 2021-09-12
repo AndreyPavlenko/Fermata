@@ -1,13 +1,16 @@
 package me.aap.fermata.addon.web;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import me.aap.fermata.addon.AddonInfo;
@@ -18,7 +21,6 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
@@ -27,7 +29,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 @Keep
 @SuppressWarnings("unused")
-public class WebBrowserAddon implements FermataAddon {
+public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
@@ -42,10 +44,10 @@ public class WebBrowserAddon implements FermataAddon {
 					"Chrome/{CHROME_VERSION} Safari/{WEBKIT_VERSION}");
 	private static final Pref<BooleanSupplier> DESKTOP_VERSION = Pref.b("DESKTOP_VERSION", false);
 	private static final Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS");
-	private final SharedPreferenceStore preferenceStore;
+	private final SharedPreferences prefs;
 
 	public WebBrowserAddon() {
-		preferenceStore = SharedPreferenceStore.create(App.get().getSharedPreferences("web", Context.MODE_PRIVATE));
+		prefs = App.get().getSharedPreferences("web", Context.MODE_PRIVATE);
 	}
 
 	@IdRes
@@ -96,7 +98,20 @@ public class WebBrowserAddon implements FermataAddon {
 	}
 
 	public SharedPreferenceStore getPreferenceStore() {
-		return preferenceStore;
+		return this;
+	}
+
+	private Collection<ListenerRef<Listener>> listeners;
+
+	@NonNull
+	@Override
+	public SharedPreferences getSharedPreferences() {
+		return prefs;
+	}
+
+	@Override
+	public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
+		return (listeners != null) ? listeners : (listeners = new LinkedList<>());
 	}
 
 	public Pref<BooleanSupplier> getForceDarkPref() {

@@ -38,6 +38,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.DefaultMediaLib;
@@ -134,6 +135,17 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				return;
 			}
 
+			String showAddon = getPrefs().getShowAddonOnStartPref();
+
+			if (showAddon != null) {
+				FermataAddon addon = AddonManager.get().getAddon(showAddon);
+
+				if (addon != null) {
+					showFragment(addon.getFragmentId());
+					return;
+				}
+			}
+
 			FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
 				if ((fail1 != null) && !isCancellation(fail1)) {
 					Log.e(fail1, "Last played track not found");
@@ -181,6 +193,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 		if (me.aap.utils.BuildConfig.D) {
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
+				if (l instanceof FermataAddon) return false;
 				if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
 				if ((l instanceof MediaEngineManager) && (b instanceof DefaultMediaLib)) return false;
 				return (!(l instanceof AddonManager)) || (b != FermataApplication.get().getPreferenceStore());
@@ -648,7 +661,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		return handler.schedule(task, delay);
 	}
 
-	private static final class Prefs implements MainActivityPrefs {
+	static final class Prefs implements MainActivityPrefs {
 		static final Prefs instance = new Prefs();
 		private final List<ListenerRef<PreferenceStore.Listener>> listeners = new LinkedList<>();
 		private final SharedPreferences prefs = FermataApplication.get().getDefaultSharedPreferences();

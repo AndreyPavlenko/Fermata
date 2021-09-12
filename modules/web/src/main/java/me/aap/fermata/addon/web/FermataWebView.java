@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
@@ -44,7 +45,7 @@ import me.aap.utils.ui.view.ToolBarView;
  * @author Andrey Pavlenko
  */
 public class FermataWebView extends WebView implements TextChangedListener,
-		TextView.OnEditorActionListener, PreferenceStore.Listener {
+		TextView.OnEditorActionListener, PreferenceStore.Listener, MainActivityListener {
 	private final boolean isCar;
 	private WebBrowserAddon addon;
 	private FermataChromeClient chrome;
@@ -83,6 +84,8 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
 
 		addon.getPreferenceStore().addBroadcastListener(this);
+		MainActivityDelegate.get(getContext()).addBroadcastListener(this);
+
 		setDesktopMode(addon, false);
 		setForceDark(addon, false);
 	}
@@ -102,6 +105,13 @@ public class FermataWebView extends WebView implements TextChangedListener,
 			setDesktopMode(a, true);
 		} else if (prefs.contains(a.getForceDarkPref())) {
 			setForceDark(addon, true);
+		}
+	}
+
+	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		if (handleActivityDestroyEvent(a, e)) {
+			getAddon().getPreferenceStore().removeBroadcastListener(this);
 		}
 	}
 
@@ -370,7 +380,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		}
 
 		private static String normalize(String ua) {
- 			try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			try (SharedTextBuilder b = SharedTextBuilder.get()) {
 				int cut = 0;
 				boolean changed = false;
 
@@ -392,7 +402,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 				}
 
 				for (int i = b.length() - 1; i >= 0; i--) {
-					if (b.charAt(i) == ' ') cut ++;
+					if (b.charAt(i) == ' ') cut++;
 					else break;
 				}
 

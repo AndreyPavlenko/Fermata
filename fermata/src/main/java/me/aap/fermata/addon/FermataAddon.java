@@ -23,7 +23,17 @@ public interface FermataAddon {
 	@NonNull
 	ActivityFragment createFragment();
 
+	default int getFragmentId() {
+		return getAddonId();
+	}
+
 	default void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
+	}
+
+	default void install() {
+	}
+
+	default void uninstall() {
 	}
 
 	@NonNull
