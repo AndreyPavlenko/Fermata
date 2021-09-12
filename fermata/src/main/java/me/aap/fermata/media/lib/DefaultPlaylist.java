@@ -1,12 +1,15 @@
 package me.aap.fermata.media.lib;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.collection.CollectionUtils.mapToArray;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.BuildConfig;
@@ -22,10 +25,6 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.collection.CollectionUtils.mapToArray;
 
 /**
  * @author Andrey Pavlenko
@@ -64,8 +63,8 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		int count = getUnsortedChildren().peek(Collections::emptyList).size();
-		return completed(getLib().getContext().getResources().getString(R.string.browsable_subtitle, count));
+		return getUnsortedChildren().main().map(l ->
+				getLib().getContext().getResources().getString(R.string.browsable_subtitle, l.size()));
 	}
 
 	@NonNull
