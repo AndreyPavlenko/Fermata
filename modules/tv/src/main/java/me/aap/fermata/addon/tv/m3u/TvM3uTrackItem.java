@@ -1,11 +1,17 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.cancelled;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
+import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
 import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
@@ -153,34 +159,17 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	private MediaMetadataCompat build(MetadataBuilder b) {
 		String logo = getLogo();
-		String title = getEpgTitle();
 		String desc = getEpgDesc();
 		String icon = getEpgProgIcon();
 		long start = epgStart;
 		long stop = epgStop;
 		long dur = (start > 0) && (start < stop) ? (stop - start) : 0;
-		b.putString(MediaMetadataCompat.METADATA_KEY_TITLE, getName());
-
-		if (title != null) {
-			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, title);
-		}
-		if (dur > 0) {
-			b.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, dur);
-			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-				TextUtils.dateToTimeString(tb, start, false);
-				tb.append(" - ");
-				TextUtils.dateToTimeString(tb, stop, false);
-				b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, tb.toString());
-			}
-		}
-		if (desc != null) {
-			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, desc);
-		}
-		if (icon != null) {
-			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, icon);
-		}
-
+		b.putString(METADATA_KEY_TITLE, getName());
+		b.putString(METADATA_KEY_DISPLAY_SUBTITLE, SharedTextBuilder.apply(this::buildSubtitle));
+		if (desc != null) b.putString(METADATA_KEY_DISPLAY_DESCRIPTION, desc);
+		if (icon != null) b.putString(METADATA_KEY_DISPLAY_ICON_URI, icon);
 		if (logo != null) b.setImageUri(logo);
+		if (dur > 0) b.putLong(METADATA_KEY_DURATION, dur);
 		return b.build();
 	}
 
@@ -199,15 +188,20 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	@Override
 	protected String buildSubtitle(MediaMetadataCompat md, SharedTextBuilder tb) {
-		String t = epgTitle;
-		if (t == null) return "";
+		String t = md.getString(METADATA_KEY_DISPLAY_SUBTITLE);
+		return (t != null) ? t : buildSubtitle(tb);
+	}
+
+	private String buildSubtitle(SharedTextBuilder tb) {
+		String t = getEpgTitle();
+		if (!isNullOrBlank(t)) tb.append(t);
 
 		if (requireNonNull(getParent()).getPrefs().getSubtitleDurationPref()) {
 			long start = epgStart;
 			long stop = epgStop;
 
 			if ((start > 0) && (start < stop)) {
-				tb.append(t).append(". ");
+				if (tb.length() != 0) tb.append(". ");
 				TextUtils.dateToTimeString(tb, start, false);
 				tb.append(" - ");
 				TextUtils.dateToTimeString(tb, stop, false);

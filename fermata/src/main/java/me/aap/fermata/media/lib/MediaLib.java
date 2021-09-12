@@ -471,6 +471,14 @@ public interface MediaLib {
 		}
 	}
 
+	interface ArchiveItem extends PlayableItem, EpgItem {
+
+		@Override
+		default int getIcon() {
+			return PlayableItem.super.getIcon();
+		}
+	}
+
 	interface BrowsableItem extends Item {
 
 		@NonNull

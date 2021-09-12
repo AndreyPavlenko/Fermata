@@ -1,5 +1,8 @@
 package me.aap.fermata.addon.web.yt;
 
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_YT;
+import static me.aap.utils.async.Completed.completed;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.media.AudioManager;
@@ -23,13 +26,11 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.generic.GenericFileSystem;
-
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_YT;
-import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
@@ -224,7 +225,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 		@Override
 		public boolean isSeekable() {
-			return false;
+			return true;
 		}
 
 		@Override
@@ -240,6 +241,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		@Override
 		public boolean equals(@Nullable Object obj) {
 			return obj == this;
+		}
+
+		@Override
+		protected String buildSubtitle(MediaMetadataCompat md, SharedTextBuilder tb) {
+			return null;
 		}
 	}
 

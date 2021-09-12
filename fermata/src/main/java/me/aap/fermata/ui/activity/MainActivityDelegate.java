@@ -1,5 +1,15 @@
 package me.aap.fermata.ui.activity;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
+import static me.aap.utils.ui.UiUtils.ID_NULL;
+import static me.aap.utils.ui.UiUtils.showAlert;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
+
 import android.Manifest.permission;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -51,7 +61,9 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.event.ListenerLeakDetector;
+import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.IntObjectFunction;
 import me.aap.utils.function.Supplier;
@@ -67,20 +79,11 @@ import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.ToolBarView;
 
-import static android.app.PendingIntent.FLAG_IMMUTABLE;
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
-import static me.aap.utils.ui.UiUtils.ID_NULL;
-import static me.aap.utils.ui.UiUtils.showAlert;
-import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
-
 /**
  * @author Andrey Pavlenko
  */
 public class MainActivityDelegate extends ActivityDelegate implements PreferenceStore.Listener {
+	private final HandlerExecutor handler = new HandlerExecutor(App.get().getHandler().getLooper());
 	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private final FermataServiceUiBinder mediaServiceBinder;
 	private ToolBarView toolBar;
@@ -172,6 +175,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	@Override
 	public void onActivityDestroy() {
 		super.onActivityDestroy();
+		handler.close();
 		getPrefs().removeBroadcastListener(this);
 		removeListeners(getPrefs());
 
@@ -638,6 +642,10 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		}
 
 		return super.onKeyDown(keyCode, keyEvent, next);
+	}
+
+	public Cancellable postDelayed(Runnable task, long delay) {
+		return handler.schedule(task, delay);
 	}
 
 	private static final class Prefs implements MainActivityPrefs {

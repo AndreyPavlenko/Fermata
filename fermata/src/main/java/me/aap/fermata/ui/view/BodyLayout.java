@@ -150,10 +150,6 @@ public class BodyLayout extends ConstraintLayout implements
 		return findViewById(R.id.video_view);
 	}
 
-	public FrameView getFrameView() {
-		return findViewById(R.id.frame_layout);
-	}
-
 	private SwipeRefreshLayout getSwipeRefresh() {
 		return findViewById(R.id.swiperefresh);
 	}

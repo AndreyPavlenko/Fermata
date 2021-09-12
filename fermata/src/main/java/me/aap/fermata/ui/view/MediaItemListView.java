@@ -22,6 +22,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.NavBarView;
@@ -109,12 +110,16 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public void scrollToPosition(int position) {
+		scrollToPosition(position, true);
+	}
+
+	public void scrollToPosition(int position, boolean focus) {
 		List<MediaItemWrapper> list = getAdapter().getList();
 		if ((position < 0) || (position >= list.size())) return;
 
 		focusReq = -1;
 		super.scrollToPosition(position);
-		if (!isVisible(this)) return;
+		if (!focus || !isVisible(this)) return;
 		MainActivityDelegate a = getActivity();
 		if (a.getBody().isVideoMode()) return;
 		MediaItemWrapper w = list.get(position);
@@ -194,6 +199,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public View focusSearch(View focused, int direction) {
+		Log.i(new Throwable(), "focusSearch: ", direction);
 		if (!(focused instanceof MediaItemView) || (focused.getParent() != this)) return focused;
 
 		if (grid) {

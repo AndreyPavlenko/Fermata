@@ -13,6 +13,7 @@ import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -39,8 +40,10 @@ import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
+import java.util.List;
 import java.util.Objects;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -49,8 +52,8 @@ import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
-import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.Cancellable;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -179,6 +182,14 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	private FutureSupplier<MediaDescriptionCompat> load(MediaItemWrapper w, boolean showLoading) {
 		Item i = w.getItem();
+
+		if (i instanceof EpgItem) {
+			EpgItem e = (EpgItem) i;
+			setProgress(i, e.getStartTime(), e.getEndTime());
+		} else {
+			setProgress(i, 0, 0);
+		}
+
 		FutureSupplier<MediaDescriptionCompat> load = i.getMediaDescription().main()
 				.addConsumer((result, fail, progress, total) -> {
 					if (getItemWrapper() != w) return;
@@ -193,7 +204,11 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					getTitle().setText(ifNull(result.getTitle(), i::getName));
 					if (sub != null) getSubtitle().setText(sub);
 
-					if (progress >= 3) setExtras(result.getExtras());
+					if ((progress >= 3) && (i instanceof StreamItem)) {
+						Bundle b = result.getExtras();
+						if (b != null) setProgress(i, b.getLong(STREAM_START_TIME), b.getLong(STREAM_END_TIME));
+					}
+
 					if (progress != PROGRESS_DONE) return;
 
 					Uri uri = result.getIconUri();
@@ -233,27 +248,21 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return load;
 	}
 
-	private void setExtras(Bundle extras) {
+	private void setProgress(Item i, long start, long end) {
 		LinearProgressIndicator p = getProgress();
-		progressUpdater = null;
 
-		if (extras != null) {
-			long start = extras.getLong(STREAM_START_TIME);
-			if (start > 0) {
-				long end = extras.getLong(STREAM_END_TIME);
-				if (end > start) {
-					Item i = getItem();
-					if (i != null) {
-						progressUpdater = new ProgressUpdater(i, p, start, end);
-						progressUpdater.run();
-						p.setVisibility(VISIBLE);
-						return;
-					}
-				}
-			}
+		if (progressUpdater != null) {
+			progressUpdater.cancel();
+			progressUpdater = null;
 		}
 
-		p.setVisibility(GONE);
+		if ((start > 0) && (end > start)) {
+			progressUpdater = new ProgressUpdater(i, p, start, end);
+			progressUpdater.run();
+			p.setVisibility(VISIBLE);
+		} else {
+			p.setVisibility(GONE);
+		}
 	}
 
 	private void setDefaults(Item i, boolean loading) {
@@ -320,10 +329,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
 		super.onVisibilityChanged(changedView, visibility);
 		Item item = getItem();
-
-		if ((visibility == VISIBLE) && (item != null)) {
-			refreshState();
-		}
+		if ((visibility == VISIBLE) && (item != null)) refreshState();
 	}
 
 	@Override
@@ -381,49 +387,55 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	private void refreshState(Item item) {
-		boolean last = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed());
-		int type = last ? Typeface.BOLD : Typeface.NORMAL;
-
-		TextView t = getTitle();
-		t.setTypeface(null, type);
-		t.setActivated(last);
-		t = getSubtitle();
-		t.setTypeface(null, type);
-		t.setActivated(last);
+		MainActivityDelegate a = getMainActivity();
 		refreshCheckbox();
-
-		boolean selected = false;
 
 		if (item instanceof EpgItem) {
 			EpgItem e = (EpgItem) item;
 			long time = System.currentTimeMillis();
+			setSelected(false);
+
 			if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
-				selected = true;
-				App.get().getHandler().postDelayed(() -> {
+				setState(Typeface.BOLD, false);
+				a.postDelayed(() -> {
 					if (getItem() != e) return;
 					refreshState(e);
 					EpgItem next = e.getNext();
 
 					if (next != null) {
-						ActivityFragment f = getMainActivity().getActiveFragment();
+						ActivityFragment f = a.getActiveFragment();
 						if (f instanceof MediaLibFragment) {
 							MediaItemView focus = ((MediaLibFragment) f).getListView().focusTo(next);
 							if (focus != null) focus.refreshState();
 						}
 					}
 				}, e.getEndTime() - time);
+
+				if (!a.getBody().isVideoMode()) requestFocus();
+				return;
 			}
-		} else if (item.equals(getMainActivity().getCurrentPlayable())) {
-			selected = true;
 		}
 
-		if (selected) {
-			MainActivityDelegate a = getMainActivity();
+		if (item.equals(a.getCurrentPlayable())) {
 			setSelected(true);
+			setState(Typeface.BOLD, true);
 			if (!a.getBody().isVideoMode()) requestFocus();
 		} else {
+			boolean last = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed());
+			int type = last ? Typeface.BOLD : Typeface.NORMAL;
 			setSelected(false);
+			setState(type, last);
+			if (last && !a.getBody().isVideoMode()) requestFocus();
 		}
+	}
+
+	private void setState(int surfaceType, boolean activated) {
+		TextView t = getTitle();
+		t.setTypeface(null, surfaceType);
+		t.setActivated(activated);
+		t = getSubtitle();
+		t.setTypeface(null, surfaceType);
+		t.setActivated(activated);
 	}
 
 	public void refreshCheckbox() {
@@ -457,6 +469,34 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return true;
 	}
 
+
+	@Override
+	protected void onFocusChanged(boolean gainFocus, int direction, @Nullable Rect previouslyFocusedRect) {
+		super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+		if (!BuildConfig.AUTO || !gainFocus) return;
+
+		// The next item in the list must always be visible for rotary input scrolling
+		MediaItemListView lv = getListView();
+		if (lv == null) return;
+		int idx = lv.indexOfChild(this);
+
+		if (idx == 0) {
+			List<MediaItemWrapper> l = lv.getAdapter().getList();
+			idx = l.indexOf(getItemWrapper());
+			if (idx == 0) return;
+			idx--;
+		} else if (idx == (lv.getChildCount() - 1)) {
+			List<MediaItemWrapper> l = lv.getAdapter().getList();
+			idx = l.indexOf(getItemWrapper());
+			if (idx == (l.size() - 1)) return;
+			idx++;
+		} else {
+			return;
+		}
+
+		lv.scrollToPosition(idx, false);
+	}
+
 	void hideMenu() {
 		OverlayMenu menu = getMainActivity().findViewById(R.id.context_menu);
 		menu.hide();
@@ -466,11 +506,12 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return MainActivityDelegate.get(getContext());
 	}
 
-	private final class ProgressUpdater implements Runnable {
+	private final class ProgressUpdater implements Runnable, Cancellable {
 		private final Item item;
 		private final LinearProgressIndicator progress;
 		private final long start;
 		private final long end;
+		private Cancellable scheduled;
 
 		private ProgressUpdater(Item item, LinearProgressIndicator progress, long start, long end) {
 			this.item = item;
@@ -505,12 +546,18 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			}
 		}
 
+		@Override
+		public boolean cancel() {
+			return (scheduled != null) && scheduled.cancel();
+		}
+
 		private boolean isValid() {
 			return (progressUpdater == this) && (item == getItem()) && (item != null);
 		}
 
 		private void runAt(long curTime, long atTime) {
-			App.get().getHandler().postDelayed(this, atTime - curTime);
+			if (scheduled != null) scheduled.cancel();
+			scheduled = getMainActivity().postDelayed(this, atTime - curTime);
 		}
 
 		private void update() {

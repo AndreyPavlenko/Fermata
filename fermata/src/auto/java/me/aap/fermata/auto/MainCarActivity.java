@@ -83,11 +83,13 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void onDestroy() {
 		super.onDestroy();
 		getActivityDelegate()
 				.onSuccess(MainActivityDelegate::onActivityDestroy)
 				.thenRun(() -> ActivityDelegate.setContextToDelegate(null));
+		delegate = (FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
 	}
 
 	@Override

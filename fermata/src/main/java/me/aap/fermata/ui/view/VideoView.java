@@ -1,5 +1,21 @@
 package me.aap.fermata.ui.view;
 
+import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
+import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
+import static android.view.KeyEvent.KEYCODE_DPAD_LEFT;
+import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
+import static android.view.KeyEvent.KEYCODE_DPAD_UP;
+import static android.view.KeyEvent.KEYCODE_ENTER;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.utils.ui.UiUtils.isVisible;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
@@ -13,7 +29,6 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,22 +50,6 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
-
-import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
-import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
-import static android.view.KeyEvent.KEYCODE_DPAD_LEFT;
-import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
-import static android.view.KeyEvent.KEYCODE_DPAD_UP;
-import static android.view.KeyEvent.KEYCODE_ENTER;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
-import static me.aap.utils.ui.UiUtils.isVisible;
-import static me.aap.utils.ui.UiUtils.toPx;
 
 /**
  * @author Andrey Pavlenko
@@ -95,30 +94,17 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			}
 		});
 
-		addTitle(context);
-		addDescription(context);
+		addInfoView(context);
+		addOnLayoutChangeListener(this);
 		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 		setFocusable(true);
 	}
 
-	protected void addTitle(Context context) {
-		TextView text = new TextView(context);
-		int padding = (int) toPx(context, 10);
-		text.setPadding(padding, padding, padding, 0);
-		text.setTextSize(20);
-		text.setTextColor(Color.WHITE);
-		text.setVisibility(GONE);
-		addView(text);
-		addOnLayoutChangeListener(this);
-	}
-
-	protected void addDescription(Context context) {
-		MediaItemDescriptionView d = new MediaItemDescriptionView(context, null);
-		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
+	protected void addInfoView(Context context) {
+		VideInfoView d = new VideInfoView(context, null);
+		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
 		d.setLayoutParams(lp);
-		int padding = (int) toPx(context, 10);
-		d.setPadding(padding, padding, padding, 0);
 		addView(d);
 	}
 
@@ -126,17 +112,14 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		return (SurfaceView) getChildAt(0);
 	}
 
+	@Nullable
 	public SurfaceView getSubtitleSurface() {
-		return (getChildCount() < 3) ? null : (SurfaceView) getChildAt(1);
-	}
-
-	public TextView getTitle() {
-		return (TextView) getChildAt((getChildCount() < 4) ? 1 : 2);
+		return (SurfaceView) getChildAt(1);
 	}
 
 	@Nullable
-	public MediaItemDescriptionView getDescription() {
-		return (getChildCount() < 4) ? (MediaItemDescriptionView) getChildAt(3) : null;
+	public VideInfoView getVideInfoView() {
+		return (VideInfoView) getChildAt(2);
 	}
 
 	public void showVideo(boolean hideTitle) {
@@ -152,13 +135,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			setSurfaceSize(eng);
 			cb.addVideoView(this, a.isCarActivity() ? 0 : 1);
 
-			TextView title = getTitle();
-			if (hideTitle) title.setVisibility(GONE);
-
-			i.getMediaDescription().main().onSuccess(dsc -> {
-				if (cb.getCurrentItem() != i) return;
-				title.setText(dsc.getTitle());
-			});
+			VideInfoView info = getVideInfoView();
+			if (hideTitle && (info != null)) info.setVisibility(GONE);
 		}
 	}
 
@@ -249,7 +227,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	@Override
 	public void surfaceCreated(@NonNull SurfaceHolder holder) {
 		if (!getVideoSurface().getHolder().getSurface().isValid()) return;
-		if (!getSubtitleSurface().getHolder().getSurface().isValid()) return;
+		SurfaceView s = getSubtitleSurface();
+		if ((s != null) && !s.getHolder().getSurface().isValid()) return;
 		surfaceCreated = true;
 		showVideo(true);
 	}

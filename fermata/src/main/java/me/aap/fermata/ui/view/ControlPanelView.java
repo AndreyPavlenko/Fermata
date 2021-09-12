@@ -1,5 +1,12 @@
 package me.aap.fermata.ui.view;
 
+import static android.media.AudioManager.ADJUST_LOWER;
+import static android.media.AudioManager.ADJUST_RAISE;
+import static android.media.AudioManager.FLAG_SHOW_UI;
+import static android.media.AudioManager.STREAM_MUSIC;
+import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+import static me.aap.utils.ui.UiUtils.isVisible;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -53,13 +60,6 @@ import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.GestureListener;
 import me.aap.utils.ui.view.ImageButton;
 import me.aap.utils.ui.view.NavBarView;
-
-import static android.media.AudioManager.ADJUST_LOWER;
-import static android.media.AudioManager.ADJUST_RAISE;
-import static android.media.AudioManager.FLAG_SHOW_UI;
-import static android.media.AudioManager.STREAM_MUSIC;
-import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
-import static me.aap.utils.ui.UiUtils.isVisible;
 
 /**
  * @author Andrey Pavlenko
@@ -179,22 +179,19 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		a.setBarsHidden(true);
 		setShowHideBarsIcon(a);
 
-		View title = (v != null) ? v.getTitle() : null;
-		MediaItemDescriptionView dsc = (v != null) ? v.getDescription() : null;
+		View info = (v != null) ? v.getVideInfoView() : null;
 		View fb = a.getFloatingButton();
 		int delay = getStartDelay();
 
 		if (delay == 0) {
 			fb.setVisibility(GONE);
-			if (title != null) title.setVisibility(GONE);
-			if (dsc != null) dsc.setVisibility(GONE);
+			if (info != null) info.setVisibility(GONE);
 			super.setVisibility(GONE);
 		} else {
 			fb.setVisibility(VISIBLE);
-			if (title != null) title.setVisibility(VISIBLE);
-			if ((dsc != null) && dsc.hasDescription()) dsc.setVisibility(VISIBLE);
+			if (info != null) info.setVisibility(VISIBLE);
 			super.setVisibility(VISIBLE);
-			hideTimer = new HideTimer(delay, false, title, dsc, fb);
+			hideTimer = new HideTimer(delay, false, info, fb);
 			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
 
@@ -324,19 +321,19 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
 
-		View title = video.getTitle();
+		View info = video.getVideInfoView();
 		View fb = a.getFloatingButton();
 
 		if (getVisibility() == VISIBLE) {
 			super.setVisibility(GONE);
-			title.setVisibility(GONE);
 			fb.setVisibility(GONE);
+			if (info != null) info.setVisibility(GONE);
 		} else {
 			super.setVisibility(VISIBLE);
-			title.setVisibility(VISIBLE);
 			fb.setVisibility(VISIBLE);
+			if (info != null) info.setVisibility(VISIBLE);
 			clearFocus();
-			hideTimer = new HideTimer(delay, false, title, fb);
+			hideTimer = new HideTimer(delay, false, info, fb);
 			App.get().getHandler().postDelayed(hideTimer, delay);
 		}
 
@@ -358,14 +355,14 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			else return;
 		}
 
-		View title = vv.getTitle();
+		View info = vv.getVideInfoView();
 		View fb = a.getFloatingButton();
 		int delay = getSeekDelay();
 		super.setVisibility(VISIBLE);
-		title.setVisibility(VISIBLE);
 		fb.setVisibility(VISIBLE);
+		if (info != null) info.setVisibility(VISIBLE);
 		clearFocus();
-		hideTimer = new HideTimer(delay, true, title, fb);
+		hideTimer = new HideTimer(delay, true, info, fb);
 		App.get().getHandler().postDelayed(hideTimer, delay);
 		checkPlaybackTimer(a.getMediaSessionCallback());
 	}

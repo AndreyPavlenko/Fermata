@@ -111,10 +111,6 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			if (chrome == null) return;
 
 			chrome.enterFullScreen();
-			newItem.getMediaDescription().onSuccess(md -> {
-				VideoView videoView = a.findViewById(R.id.ytVideoView);
-				videoView.getTitle().setText(md.getTitle());
-			});
 		} else if (YoutubeMediaEngine.isYoutubeItem(oldItem)) {
 			FermataWebView v = getWebView();
 			if (v == null) return;
