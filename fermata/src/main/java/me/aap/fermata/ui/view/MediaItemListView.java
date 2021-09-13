@@ -135,6 +135,26 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		}
 	}
 
+	public void pageUp() {
+		int cnt = getChildCount();
+		if (cnt == 0) return;
+		MediaItemWrapper w = ((MediaItemView) getChildAt(0)).getItemWrapper();
+		if (w == null) return;
+		int idx = getAdapter().getList().indexOf(w);
+		if (idx > 0) scrollToPosition(Math.max(idx - cnt, 0), false);
+	}
+
+	public void pageDown() {
+		int cnt = getChildCount();
+		if (cnt == 0) return;
+		MediaItemWrapper w = ((MediaItemView) getChildAt(cnt - 1)).getItemWrapper();
+		if (w == null) return;
+		int idx = getAdapter().getList().indexOf(w);
+		if (idx < 0) return;
+		int size = getAdapter().getList().size();
+		scrollToPosition(Math.min(idx + cnt, size - 1), false);
+	}
+
 	@Nullable
 	public static View focusFirst(View focused) {
 		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
@@ -142,6 +162,17 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 			MediaItemListView v = ((MediaLibFragment) f).getListView();
 			List<MediaItemWrapper> list = v.getAdapter().getList();
 			return ((list != null) && !list.isEmpty()) ? v.focusTo(focused, list, 0) : v.focusEmpty();
+		}
+		return null;
+	}
+
+	@Nullable
+	public static View focusFirstVisible(View focused) {
+		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+		if (f instanceof MediaLibFragment) {
+			MediaItemListView lv = ((MediaLibFragment) f).getListView();
+			View first = lv.getChildAt(0);
+			return (first != null) ? first : lv.focusEmpty();
 		}
 		return null;
 	}
@@ -238,10 +269,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		MainActivityDelegate a = getActivity();
 		NavBarView n = a.getNavBar();
 		if (isVisible(n) && n.isLeft()) return n.focusSearch();
-
-		ToolBarView tb = getActivity().getToolBar();
-		if (isVisible(tb)) return tb.focusSearch();
-
 		List<MediaItemWrapper> list = getAdapter().getList();
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
 	}

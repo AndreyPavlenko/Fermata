@@ -4,6 +4,7 @@ import static android.view.View.FOCUS_DOWN;
 import static android.view.View.FOCUS_UP;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
+import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEFT;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_DATE;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_FILE_NAME;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_BY_NAME;
@@ -18,7 +19,6 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.R;
-import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
@@ -46,6 +46,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	public void enable(ToolBarView tb, ActivityFragment f) {
 		ToolBarView.Mediator.BackTitleFilter.super.enable(tb, f);
 		MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+		View first;
 		View last = null;
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
 		View sort = addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
@@ -55,10 +56,16 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
 		}
 
+		if (f instanceof MediaLibFragment) {
+			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
+			first = addButton(tb, R.drawable.pg_up, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_up, LEFT);
+		} else {
+			first = tb.findViewById(R.id.tool_bar_back_button);
+		}
+
 		if (last == null) last = sort;
-		View first = tb.findViewById(R.id.tool_bar_back_button);
-		last.setNextFocusRightId(R.id.tool_bar_back_button);
-		first.setNextFocusLeftId(R.id.tool_grid);
+		last.setNextFocusRightId(first.getId());
+		first.setNextFocusLeftId(last.getId());
 		setButtonsVisibility(tb, f);
 	}
 
@@ -83,7 +90,10 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			ControlPanelView p = a.getControlPanel();
 			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusLast(focused);
 		} else if (direction == FOCUS_DOWN) {
-			return MediaItemListView.focusFirst(focused);
+			if ((focused != null) &&
+					((focused.getId() == R.id.tool_pg_up) || (focused.getId() == R.id.tool_pg_down))) {
+				return MediaItemListView.focusFirstVisible(focused);
+			}
 		}
 
 		return null;
@@ -116,6 +126,16 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			b.addItem(R.id.tool_view_title, R.string.title).setSubmenu(ToolBarMediator::buildViewTitleMenu);
 			b.addItem(R.id.tool_view_subtitle, R.string.subtitle).setSubmenu(ToolBarMediator::buildViewSubtitleMenu);
 		});
+	}
+
+	private static void onPgUpDownButtonClick(View v) {
+		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
+		MediaLibFragment f = a.getActiveMediaLibFragment();
+		if (f == null) return;
+
+		MediaItemListView lv = f.getListView();
+		if (v.getId() == R.id.tool_pg_up) lv.pageUp();
+		else lv.pageDown();
 	}
 
 	private static void buildViewTitleMenu(OverlayMenu.Builder b) {

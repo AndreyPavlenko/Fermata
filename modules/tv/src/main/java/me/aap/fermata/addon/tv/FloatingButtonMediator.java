@@ -2,6 +2,8 @@ package me.aap.fermata.addon.tv;
 
 import android.view.View;
 
+import androidx.annotation.Nullable;
+
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -25,6 +27,12 @@ class FloatingButtonMediator implements FloatingButton.Mediator.BackMenu {
 		ActivityFragment f = ActivityDelegate.get(v.getContext()).getActiveFragment();
 		if (isAddSourceEnabled(f)) ((TvFragment) f).addSource();
 		else BackMenu.super.onClick(v);
+	}
+
+	@Nullable
+	@Override
+	public View focusSearch(FloatingButton fb, int direction) {
+		return me.aap.fermata.ui.fragment.FloatingButtonMediator.instance.focusSearch(fb, direction);
 	}
 
 	private boolean isAddSourceEnabled(ActivityFragment f) {

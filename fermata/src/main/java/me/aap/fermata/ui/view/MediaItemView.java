@@ -411,7 +411,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					}
 				}, e.getEndTime() - time);
 
-				if (!a.getBody().isVideoMode()) requestFocus();
 				return;
 			}
 		}
@@ -419,13 +418,11 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if (item.equals(a.getCurrentPlayable())) {
 			setSelected(true);
 			setState(Typeface.BOLD, true);
-			if (!a.getBody().isVideoMode()) requestFocus();
 		} else {
 			boolean last = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed());
 			int type = last ? Typeface.BOLD : Typeface.NORMAL;
 			setSelected(false);
 			setState(type, last);
-			if (last && !a.getBody().isVideoMode()) requestFocus();
 		}
 	}
 

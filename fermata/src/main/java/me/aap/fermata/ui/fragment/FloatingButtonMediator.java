@@ -1,13 +1,20 @@
 package me.aap.fermata.ui.fragment;
 
+import static android.view.View.FOCUS_RIGHT;
+import static me.aap.utils.ui.UiUtils.isVisible;
+
 import android.view.View;
+
+import androidx.annotation.Nullable;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.FloatingButton.Mediator.BackMenu;
+import me.aap.utils.ui.view.NavBarView;
 
 /**
  * @author Andrey Pavlenko
@@ -42,6 +49,17 @@ public class FloatingButtonMediator implements BackMenu {
 		if (isAddFolderEnabled(f)) ((FoldersFragment) f).addFolderPicker();
 		else showMenu((FloatingButton) v);
 		return true;
+	}
+
+	@Nullable
+	@Override
+	public View focusSearch(FloatingButton fb, int direction) {
+		if (direction == FOCUS_RIGHT) {
+			MainActivityDelegate a = MainActivityDelegate.get(fb.getContext());
+			NavBarView n = a.getNavBar();
+			return (isVisible(n) && n.isRight()) ? n.focusSearch() : MediaItemListView.focusLast(fb);
+		}
+		return null;
 	}
 
 	private boolean isAddFolderEnabled(ActivityFragment f) {

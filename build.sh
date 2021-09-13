@@ -1,9 +1,8 @@
 #!/bin/sh
 set -e
 
-DEST_DIR="$1"
-[ -z "$DEST_DIR" ] && DEST_DIR="dist"
-
+DIR="$(cd "$(dirname "$0")"; pwd -P)"
+DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
 
 bundletool_universal() {
@@ -21,17 +20,35 @@ bundletool_universal() {
     rm "$APKS"
 }
 
-# ./gradlew clean fermata:bundleRelease -PABI='arm64-v8a,armeabi-v7a'
-# mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.aab "$DEST_DIR"
-# mv ./fermata/build/outputs/bundle/mobileRelease/fermata-*.aab "$DEST_DIR"
+build_apk() {
+    local sfx='arm64'
+    local abi='arm64-v8a'
+
+    if [ "$1" = 'arm' ]; then
+        sfx='arm'
+        abi='armeabi-v7a'
+    fi
+
+    ./gradlew clean fermata:bundleRelease -PABI=$abi
+    bundletool_universal ./fermata/build/outputs/bundle/autoRelease/fermata-*-release.aab -universal-$sfx -release
+    mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.apk "$DEST_DIR"
+}
+
+install_apk() {
+    local apk="$(ls $DEST_DIR/fermata-*-arm64.apk | sort -n | head)"
+    adb push "$apk" /data/local/tmp/fermata.apk
+    adb shell pm install -i "com.android.vending" -r /data/local/tmp/fermata.apk
+    adb shell rm /data/local/tmp/fermata.apk
+}
+
+if [ "$1" = '-i' ] || [ "$1" = '-bi' ]; then
+    [ "$1" = '-bi' ] && build_apk 'arm64'
+    install_apk
+    return 0
+fi
 
 ./gradlew -p control assembleRelease
 mv ./control/build/outputs/apk/release/fermata-auto-control-*-release.apk "$DEST_DIR"
 
-./gradlew clean fermata:bundleRelease -PABI=arm64-v8a
-bundletool_universal ./fermata/build/outputs/bundle/autoRelease/fermata-*-release.aab -universal-arm64 -release
-mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.apk "$DEST_DIR"
-
-./gradlew clean fermata:bundleRelease -PABI=armeabi-v7a
-bundletool_universal ./fermata/build/outputs/bundle/autoRelease/fermata-*-release.aab -universal-arm -release
-mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.apk "$DEST_DIR"
+build_apk 'arm'
+build_apk 'arm64'

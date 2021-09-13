@@ -19,6 +19,8 @@
     <item name="tool_sort_random" type="id" />
     <item name="tool_sort_desc" type="id" />
     <item name="tool_sort_none" type="id" />
+    <item name="tool_pg_up" type="id" />
+    <item name="tool_pg_down" type="id" />
 
     <item name="menu" type="id" />
 
