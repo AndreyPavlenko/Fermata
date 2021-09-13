@@ -1,5 +1,10 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.text.TextUtils.indexOf;
+import static me.aap.utils.text.TextUtils.indexOfChar;
+
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -33,11 +38,6 @@ import me.aap.utils.vfs.VfsManager;
 import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.text.TextUtils.indexOf;
-import static me.aap.utils.text.TextUtils.indexOfChar;
 
 /**
  * @author Andrey Pavlenko
@@ -209,7 +209,7 @@ public class M3uItem extends BrowsableItemBase {
 					}
 
 					continue;
-				} else if (l.startsWith("#")) {
+				} else if ((name == null) || l.startsWith("#")) {
 					continue;
 				}
 
@@ -262,8 +262,7 @@ public class M3uItem extends BrowsableItemBase {
 		}
 
 		String title = (m3uName == null) ? m3uFile.getName() : m3uName;
-		String subtitle = getLib().getContext().getResources().getString(R.string.folder_subtitle,
-				ntracks, ngroups);
+		String subtitle = createSubtitle(ngroups, ntracks);
 		return new Data(title, subtitle, children, cover);
 	}
 
@@ -343,6 +342,11 @@ public class M3uItem extends BrowsableItemBase {
 				.append(trackNumber).append(idPath);
 		return new M3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
 				genre, logo, tvgId, tvgName, duration, type);
+	}
+
+	protected String createSubtitle(int ngroups, int ntracks) {
+		return getLib().getContext().getResources().getString(R.string.folder_subtitle,
+				ntracks, ngroups);
 	}
 
 	@NonNull

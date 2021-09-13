@@ -165,7 +165,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
 			}
 			if (!(bi instanceof Playlist)) {
-				a.addPlaylistMenu(b, bi.getPlayableChildren(true), bi::getName);
+				a.addPlaylistMenu(b, ()-> bi.getPlayableChildren(true), bi::getName);
 			}
 
 			b.addItem(R.id.playback_settings, R.drawable.playback_settings, R.string.playback_settings)

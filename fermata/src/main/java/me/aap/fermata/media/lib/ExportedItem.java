@@ -3,6 +3,7 @@ package me.aap.fermata.media.lib;
 import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
 
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
@@ -102,6 +103,11 @@ public class ExportedItem extends PlayableItemBase {
 		return orig.buildSubtitle(md, tb);
 	}
 
+	@Override
+	protected FutureSupplier<Bundle> buildExtras() {
+		return orig.buildExtras();
+	}
+
 	@NonNull
 	@Override
 	protected FutureSupplier<MediaMetadataCompat> buildMeta(MetadataBuilder meta) {
@@ -183,6 +189,12 @@ public class ExportedItem extends PlayableItemBase {
 		return orig.isTimerRequired();
 	}
 
+	@NonNull
+	@Override
+	public String getName() {
+		return orig.getName();
+	}
+
 	@DrawableRes
 	@Override
 	public int getIcon() {
@@ -241,18 +253,28 @@ public class ExportedItem extends PlayableItemBase {
 		@NonNull
 		@Override
 		public StreamItemPrefs getPrefs() {
-			return ((StreamItem) getOrig()).getPrefs();
+			return getStream().getPrefs();
 		}
 
 		@Override
 		public boolean isSeekable(long time) {
-			return ((StreamItem) getOrig()).isSeekable(time);
+			return getStream().isSeekable(time);
 		}
 
 		@Nullable
 		@Override
 		public Uri getLocation(long time) {
-			return ((StreamItem) getOrig()).getLocation(time);
+			return getStream().getLocation(time);
+		}
+
+		@NonNull
+		@Override
+		public <E extends MediaLib.EpgItem> FutureSupplier<List<E>> getEpg() {
+			return getStream().getEpg();
+		}
+
+		private StreamItem getStream() {
+			return (StreamItem) getOrig();
 		}
 	}
 

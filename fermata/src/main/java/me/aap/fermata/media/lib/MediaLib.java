@@ -456,7 +456,8 @@ public interface MediaLib {
 		@DrawableRes
 		@Override
 		default int getIcon() {
-			return R.drawable.epg;
+			StreamItem s = getParent();
+			return getParent().isSeekable(getStartTime()) ? s.getIcon() : R.drawable.epg;
 		}
 
 		long getStartTime();
@@ -506,16 +507,6 @@ public interface MediaLib {
 		}
 
 		@NonNull
-		default FutureSupplier<List<BrowsableItem>> getBrowsableChildren(boolean recursive) {
-			return getBrowsableChildren(recursive, true, Integer.MAX_VALUE);
-		}
-
-		@NonNull
-		default FutureSupplier<List<BrowsableItem>> getBrowsableChildren(boolean recursive, boolean sorted, int max) {
-			return getChildren(recursive, sorted, max, BrowsableItem.class::isInstance, BrowsableItem.class::cast);
-		}
-
-		@NonNull
 		default <C extends Item> FutureSupplier<List<C>> getChildren(boolean recursive, boolean sorted, int max,
 																																 Predicate<? super Item> predicate, Function<? super Item, C> map) {
 			FutureSupplier<List<Item>> list = sorted ? getChildren() : getUnsortedChildren();
@@ -543,7 +534,7 @@ public interface MediaLib {
 						if (ci.size() >= max) return null;
 					}
 
-					if (i instanceof BrowsableItem) br.add((BrowsableItem) i);
+					if ((i instanceof BrowsableItem) && !(i instanceof StreamItem)) br.add((BrowsableItem) i);
 				}
 
 				return (br.isEmpty()) ? null : requireNonNull(br.poll()).getChildren();

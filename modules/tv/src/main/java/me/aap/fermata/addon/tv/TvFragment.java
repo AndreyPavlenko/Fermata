@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.tv;
 
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
+
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
@@ -21,13 +23,12 @@ import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.FloatingButton;
-
-import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 /**
  * @author Andrey Pavlenko
@@ -88,6 +89,10 @@ public class TvFragment extends MediaLibFragment {
 	@Override
 	public void contributeToContextMenu(OverlayMenu.Builder b, MediaItemMenuHandler h) {
 		if (!(h.getItem() instanceof TvM3uItem)) return;
+		b.addItem(me.aap.fermata.R.id.edit, me.aap.fermata.R.drawable.edit,
+				me.aap.fermata.R.string.edit)
+				.setData(h.getItem())
+				.setHandler(this::contextMenuItemSelected);
 		b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
 				me.aap.fermata.R.string.delete)
 				.setData(h.getItem())
@@ -97,7 +102,17 @@ public class TvFragment extends MediaLibFragment {
 
 	private boolean contextMenuItemSelected(OverlayMenuItem item) {
 		int id = item.getItemId();
-		if (id == me.aap.fermata.R.id.delete) {
+		if (id == me.aap.fermata.R.id.edit) {
+			TvM3uItem i = item.getData();
+			new TvM3uFileSystemProvider().edit(getMainActivity(), i.getResource()).onCompletion((ok, err) -> {
+				if (err != null) {
+					Log.e(err, "Failed to edit TV source ", i);
+					UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+				}
+				getMainActivity().showFragment(getFragmentId());
+				if (ok) i.refresh().thenRun(this::refresh);
+			});
+		} else if (id == me.aap.fermata.R.id.delete) {
 			TvRootItem root = getRootItem();
 			root.removeItem(item.getData()).onSuccess(v -> getAdapter().setParent(root));
 		}

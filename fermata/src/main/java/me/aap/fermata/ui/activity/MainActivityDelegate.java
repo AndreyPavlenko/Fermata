@@ -487,26 +487,28 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection) {
-		addPlaylistMenu(builder, selection, () -> "");
+		addPlaylistMenu(builder, ()-> selection, () -> "");
 	}
 
-	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection,
+	public void addPlaylistMenu(OverlayMenu.Builder builder,
+															Supplier<FutureSupplier<List<PlayableItem>>> selection,
 															Supplier<? extends CharSequence> initName) {
 		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
 				.setSubmenu(b -> createPlaylistMenu(b, selection, initName));
 	}
 
-	private void createPlaylistMenu(OverlayMenu.Builder b, FutureSupplier<List<PlayableItem>> selection,
+	private void createPlaylistMenu(OverlayMenu.Builder b,
+																	Supplier<FutureSupplier<List<PlayableItem>>> selection,
 																	Supplier<? extends CharSequence> initName) {
 		getLib().getPlaylists().getUnsortedChildren().main().onSuccess(playlists -> {
 			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
-					.setHandler(i -> createPlaylist(selection, initName));
+					.setHandler(i -> createPlaylist(selection.get(), initName));
 
 			for (int i = 0; i < playlists.size(); i++) {
 				Playlist pl = (Playlist) playlists.get(i);
 				String name = pl.getName();
 				b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name)
-						.setHandler(item -> addToPlaylist(name, selection));
+						.setHandler(item -> addToPlaylist(name, selection.get()));
 			}
 		});
 	}

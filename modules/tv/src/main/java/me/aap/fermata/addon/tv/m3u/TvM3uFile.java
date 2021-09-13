@@ -1,5 +1,15 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.io.FileUtils.getFileExtension;
+import static me.aap.utils.net.http.HttpFileDownloader.CHARSET;
+import static me.aap.utils.net.http.HttpFileDownloader.ENCODING;
+import static me.aap.utils.net.http.HttpFileDownloader.ETAG;
+import static me.aap.utils.net.http.HttpFileDownloader.MAX_AGE;
+import static me.aap.utils.net.http.HttpFileDownloader.RESP_TIMEOUT;
+import static me.aap.utils.net.http.HttpFileDownloader.TIMESTAMP;
+import static me.aap.utils.text.TextUtils.trim;
+
 import android.content.Context;
 
 import androidx.annotation.NonNull;
@@ -23,16 +33,6 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.ui.notif.HttpDownloadStatusListener;
-
-import static me.aap.utils.async.Completed.failed;
-import static me.aap.utils.io.FileUtils.getFileExtension;
-import static me.aap.utils.net.http.HttpFileDownloader.CHARSET;
-import static me.aap.utils.net.http.HttpFileDownloader.ENCODING;
-import static me.aap.utils.net.http.HttpFileDownloader.ETAG;
-import static me.aap.utils.net.http.HttpFileDownloader.MAX_AGE;
-import static me.aap.utils.net.http.HttpFileDownloader.RESP_TIMEOUT;
-import static me.aap.utils.net.http.HttpFileDownloader.TIMESTAMP;
-import static me.aap.utils.text.TextUtils.trim;
 
 /**
  * @author Andrey Pavlenko
@@ -118,6 +118,15 @@ public class TvM3uFile extends M3uFile {
 
 	public long getEpgTimeStamp() {
 		return getPrefs().getLongPref(EpgPrefs.EPG_TIMESTAMP);
+	}
+
+	public void clearStamps() {
+		try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
+			e.removePref(ETAG);
+			e.removePref(TIMESTAMP);
+			e.removePref(EpgPrefs.EPG_ETAG);
+			e.removePref(EpgPrefs.EPG_TIMESTAMP);
+		}
 	}
 
 	public int getEpgMaxAge() {

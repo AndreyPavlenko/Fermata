@@ -1,6 +1,20 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_DAYS;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_QUERY;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_SHIFT;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_URL;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.LOGO_PREFER_EPG;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.LOGO_URL;
+import static me.aap.fermata.vfs.m3u.M3uFile.NAME;
+import static me.aap.fermata.vfs.m3u.M3uFile.URL;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
+
 import java.util.List;
+import java.util.Objects;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.R;
@@ -15,19 +29,6 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.vfs.VirtualFileSystem;
 
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_DAYS;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_QUERY;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_SHIFT;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_URL;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.LOGO_PREFER_EPG;
-import static me.aap.fermata.addon.tv.m3u.TvM3uFile.LOGO_URL;
-import static me.aap.fermata.vfs.m3u.M3uFile.NAME;
-import static me.aap.fermata.vfs.m3u.M3uFile.URL;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -35,8 +36,49 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 
 	@Override
 	public FutureSupplier<TvM3uFile> select(MainActivityDelegate a, List<? extends VirtualFileSystem> fs) {
-		PreferenceSet prefs = new PreferenceSet();
 		PreferenceStore ps = PrefsHolder.instance;
+		return requestPrefs(a, ps).then(ok -> {
+			if (!ok) return completedNull();
+			return load(ps, TvM3uFileSystem.getInstance()).cast();
+		});
+	}
+
+	public FutureSupplier<Boolean> edit(MainActivityDelegate a, TvM3uFile f) {
+		BasicPreferenceStore ps = new BasicPreferenceStore();
+		String url = f.getUrl();
+		String epgUrl = f.getEpgUrl();
+		float shift = f.getEpgShift();
+
+		try (PreferenceStore.Edit e = ps.editPreferenceStore()) {
+			e.setStringPref(NAME, f.getName());
+			e.setStringPref(URL, f.getUrl());
+			e.setStringPref(EPG_URL, f.getEpgUrl());
+			e.setStringPref(LOGO_URL, f.getLogoUrl());
+			e.setBooleanPref(LOGO_PREFER_EPG, f.isPreferEpgLogo());
+			e.setFloatPref(EPG_SHIFT, f.getEpgShift());
+			e.setStringPref(CATCHUP_QUERY, f.getCatchupQuery());
+			e.setIntPref(CATCHUP_TYPE, f.getCatchupType());
+			e.setIntPref(CATCHUP_DAYS, f.getCatchupDays());
+			e.setIntPref(CATCHUP_DAYS, f.getCatchupDays());
+		}
+
+		return requestPrefs(a, ps).map(ok -> {
+			if (!ok) return false;
+			setPrefs(ps, f);
+
+			if (!Objects.equals(url, f.getUrl())
+					|| !Objects.equals(epgUrl, f.getEpgUrl())
+					|| (shift != f.getEpgShift())) {
+				Log.d("TV source has been modified - clearing stamps.");
+				f.clearStamps();
+			}
+
+			return true;
+		});
+	}
+
+	private FutureSupplier<Boolean> requestPrefs(MainActivityDelegate a, PreferenceStore ps) {
+		PreferenceSet prefs = new PreferenceSet();
 		PreferenceSet sub;
 
 		prefs.addStringPref(o -> {
@@ -110,10 +152,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.stringHint = "Fermata/" + BuildConfig.VERSION_NAME;
 		});
 
-		return requestPrefs(a, prefs, ps).then(ok -> {
-			if (!ok) return completedNull();
-			return load(ps, TvM3uFileSystem.getInstance()).cast();
-		});
+		return requestPrefs(a, prefs, ps);
 	}
 
 	@Override

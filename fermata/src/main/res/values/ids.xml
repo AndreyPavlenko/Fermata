@@ -46,6 +46,7 @@
 
     <item name="refresh" type="id" />
     <item name="rescan" type="id" />
+    <item name="edit" type="id" />
     <item name="delete" type="id" />
 
     <item name="programme_guide" type="id" />

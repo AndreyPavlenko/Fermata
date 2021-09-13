@@ -424,7 +424,7 @@ public class XmlTv implements Closeable {
 			this.db = db;
 			this.idToTrack = idToTrack;
 			this.nameToTrack = nameToTrack;
-			this.epgShift = (long) (60000 * epgShift);
+			this.epgShift = (long) (60 * 60000 * epgShift);
 			int capacity = idToTrack.size() + nameToTrack.size();
 			channels = new HashMap<>(capacity);
 			channelNames = new HashMap<>(capacity);

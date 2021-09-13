@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="sub_ch">Channels: %1$d.</string>
+    <string name="sub_gr">Groups: %1$d.</string>
+    <string name="sub_ch_gr">Channels: %1$d. Groups: %1$d.</string>
     <string name="add_tv_source">Add M3U IPTV source</string>
     <string name="epg" translatable="false">EPG</string>
     <string name="epg_url" translatable="false">XMLTV URL</string>

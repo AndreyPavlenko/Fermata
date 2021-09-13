@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="sub_ch">Каналов: %1$d.</string>
+    <string name="sub_gr">Групп: %1$d.</string>
+    <string name="sub_ch_gr">Каналов: %1$d. Групп: %1$d.</string>
     <string name="add_tv_source">Добавить источник M3U IPTV</string>
     <string name="epg_time_shift">Сдвиг времени EPG (часов)</string>
     <string name="logo">Логотипы каналов</string>

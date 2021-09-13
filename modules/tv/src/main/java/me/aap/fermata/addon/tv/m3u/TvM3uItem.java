@@ -5,7 +5,10 @@ import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
 import static me.aap.utils.async.Completed.completed;
 
+import android.content.res.Resources;
+
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.addon.tv.R;
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.lib.DefaultMediaLib;
@@ -105,6 +108,17 @@ public class TvM3uItem extends M3uItem implements TvItem {
 				.append(trackNumber).append(idPath);
 		return new TvM3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
 				genre, logo, tvgId, tvgName, duration, type);
+	}
+
+	@Override
+	protected String createSubtitle(int gr, int ch) {
+		Resources res = getLib().getContext().getResources();
+		if (ch != 0) {
+			if (gr == 0) return res.getString(R.string.sub_ch, ch);
+		} else if (gr != 0) {
+			return res.getString(R.string.sub_gr, gr);
+		}
+		return res.getString(R.string.sub_ch_gr, ch, gr);
 	}
 
 	FutureSupplier<XmlTv> getXmlTv() {

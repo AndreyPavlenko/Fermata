@@ -21,7 +21,7 @@ import static me.aap.utils.async.Completed.completedNull;
  */
 public class M3uGroupItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3ug";
-	final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
+	protected final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
 	private final String name;
 	private final int groupId;
 

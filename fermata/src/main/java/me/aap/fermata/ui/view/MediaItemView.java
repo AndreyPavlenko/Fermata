@@ -202,7 +202,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 					CharSequence sub = result.getSubtitle();
 					getTitle().setText(ifNull(result.getTitle(), i::getName));
-					if (sub != null) getSubtitle().setText(sub);
+					getSubtitle().setText(sub);
 
 					if ((progress >= 3) && (i instanceof StreamItem)) {
 						Bundle b = result.getExtras();
