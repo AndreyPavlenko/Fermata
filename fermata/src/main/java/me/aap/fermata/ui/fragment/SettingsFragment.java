@@ -240,6 +240,11 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.title = R.string.fullscreen_mode;
 		});
 		sub1.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.SHOW_PG_UP_DOWN;
+			o.title = R.string.show_pg_up_down;
+		});
+		sub1.addBooleanPref(o -> {
 			o.store = mediaPrefs;
 			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
 			o.title = R.string.show_track_icons;

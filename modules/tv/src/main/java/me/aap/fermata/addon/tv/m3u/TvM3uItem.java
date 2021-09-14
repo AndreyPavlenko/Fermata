@@ -32,7 +32,6 @@ public class TvM3uItem extends M3uItem implements TvItem {
 	private String tvgUrl;
 	private String catchUpSource;
 	private int catchUpType = CATCHUP_TYPE_DEFAULT;
-	private int catchUpDays;
 	private final FutureRef<XmlTv> xmlTv = new FutureRef<XmlTv>() {
 		@Override
 		protected FutureSupplier<XmlTv> create() {
@@ -102,12 +101,23 @@ public class TvM3uItem extends M3uItem implements TvItem {
 	protected M3uTrackItem createTrack(BrowsableItem parent, int groupNumber, int trackNumber,
 																		 String idPath, VirtualResource file, String name, String album,
 																		 String artist, String genre, String logo, String tvgId,
-																		 String tvgName, long duration, byte type) {
+																		 String tvgName, long duration, byte type,
+																		 String catchupDays) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
 				.append(trackNumber).append(idPath);
+		int cd = -1;
+
+		if (catchupDays != null) {
+			try {
+				cd = Integer.parseInt(catchupDays);
+			} catch (NumberFormatException ex) {
+				Log.e(ex, "Invalid catchup days: ", catchupDays);
+			}
+		}
+
 		return new TvM3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
-				genre, logo, tvgId, tvgName, duration, type);
+				genre, logo, tvgId, tvgName, duration, type, cd);
 	}
 
 	@Override
@@ -158,17 +168,14 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		return (t == CATCHUP_TYPE_DEFAULT) ? catchUpType : t;
 	}
 
-	public int getCatchUpDays() {
-		int d = getResource().getCatchupDays();
-		return (d == 0) ? catchUpDays : d;
-	}
-
+	@Override
 	protected void setTvgUrl(String url) {
 		tvgUrl = url = url.trim();
 		TvM3uFile f = getResource();
 		if (f.getEpgUrl() == null) f.setEpgUrl(url);
 	}
 
+	@Override
 	protected void setCatchup(String catchup) {
 		if (catchup != null) {
 			switch (catchup) {
@@ -185,17 +192,8 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		}
 	}
 
+	@Override
 	protected void setCatchupSource(String src) {
 		catchUpSource = src;
-	}
-
-	protected void setCatchupDays(String days) {
-		if (days != null) {
-			try {
-				catchUpDays = Integer.parseInt(days);
-			} catch (NumberFormatException ex) {
-				Log.d(ex, "Invalid catchup-days: ", days);
-			}
-		}
 	}
 }

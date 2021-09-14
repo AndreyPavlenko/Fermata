@@ -22,7 +22,6 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
-import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.view.NavBarView;
@@ -194,10 +193,10 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	public static View focusActive(View focused) {
 		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
 		return (f instanceof MediaLibFragment)
-				? (((MediaLibFragment) f).getListView()).focusSearch() : null;
+				? (((MediaLibFragment) f).getListView()).focusToActive(focused) : null;
 	}
 
-	public View focusSearch() {
+	private View focusToActive(View focused) {
 		List<MediaItemWrapper> list = getAdapter().getList();
 		MainActivityDelegate a = getActivity();
 		PlayableItem p = a.getCurrentPlayable();
@@ -205,7 +204,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		if (p != null) {
 			for (int i = 0, n = list.size(); i < n; i++) {
 				MediaItemWrapper w = list.get(i);
-				if (w.getItem() == p) return focusTo(this, w, i);
+				if (w.getItem() == p) return focusTo(focused, w, i);
 			}
 		}
 
@@ -216,11 +215,11 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 			MediaItemWrapper w = list.get(i);
 			Item item = w.getItem();
 			if ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed()) {
-				return focusTo(this, w, i);
+				return focusTo(focused, w, i);
 			}
 		}
 
-		return focusTo(this, list.get(0), 0);
+		return focusTo(focused, list.get(0), 0);
 	}
 
 	private View focusEmpty() {
@@ -230,7 +229,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public View focusSearch(View focused, int direction) {
-		Log.i(new Throwable(), "focusSearch: ", direction);
 		if (!(focused instanceof MediaItemView) || (focused.getParent() != this)) return focused;
 
 		if (grid) {
@@ -246,7 +244,6 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 			return super.focusSearch(focused, direction);
 		}
-
 
 		if (direction == FOCUS_LEFT) return focusLeft(focused);
 		if (direction == FOCUS_RIGHT) return focusRight(focused);

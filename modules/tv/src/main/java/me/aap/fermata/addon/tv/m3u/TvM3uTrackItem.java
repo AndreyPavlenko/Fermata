@@ -50,6 +50,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 	static final int EPG_ID_UNKNOWN = -1;
 	static final int EPG_ID_NOT_FOUND = -2;
 	public static final String SCHEME = "tvm3ut";
+	private final int catchUpDays;
 	private int epgId = EPG_ID_UNKNOWN;
 	private long epgStart;
 	private long epgStop;
@@ -62,9 +63,11 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	protected TvM3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
 													 String name, String album, String artist, String genre,
-													 String logo, String tvgId, String tvgName, long duration, byte type) {
+													 String logo, String tvgId, String tvgName, long duration, byte type,
+													 int catchUpDays) {
 		super(id, parent, trackNumber, file, name, album, artist, genre, logo, tvgId, tvgName,
 				duration, (type > 2) ? 2 : type);
+		this.catchUpDays = catchUpDays;
 	}
 
 	public static FutureSupplier<TvM3uTrackItem> create(TvRootItem root, String id) {
@@ -273,6 +276,19 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		return true;
 	}
 
+	@Override
+	public boolean isSeekable() {
+		return getCatchUpDays() > 0;
+	}
+
+	@Override
+	public boolean isSeekable(long time) {
+		int cd = getCatchUpDays();
+		if (cd < 0) return false;
+		long ct = System.currentTimeMillis();
+		return (time <= ct) && (time >= (ct - (cd * 60000L * 60L * 24L)));
+	}
+
 	int getEpgId() {
 		return epgId;
 	}
@@ -299,6 +315,10 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	public String getEpgProgIcon() {
 		return epgProgIcon;
+	}
+
+	int getCatchUpDays() {
+		return (catchUpDays > 0) ? catchUpDays : getM3uItem().getResource().getCatchupDays();
 	}
 
 	void update(int epgId, String epgIcon, long epgStart, long epgStop, String epgTitle,

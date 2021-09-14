@@ -466,7 +466,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		return true;
 	}
 
-
 	@Override
 	protected void onFocusChanged(boolean gainFocus, int direction, @Nullable Rect previouslyFocusedRect) {
 		super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);

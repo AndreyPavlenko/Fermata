@@ -395,7 +395,8 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	@Override
 	public <F extends ActivityFragment> F showFragment(int id, Object input) {
-		setVideoMode(false, null);
+		BodyLayout b = getBody();
+		if (b.isVideoMode()) b.setMode(BodyLayout.Mode.BOTH);
 		return super.showFragment(id, input);
 	}
 
@@ -487,7 +488,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection) {
-		addPlaylistMenu(builder, ()-> selection, () -> "");
+		addPlaylistMenu(builder, () -> selection, () -> "");
 	}
 
 	public void addPlaylistMenu(OverlayMenu.Builder builder,

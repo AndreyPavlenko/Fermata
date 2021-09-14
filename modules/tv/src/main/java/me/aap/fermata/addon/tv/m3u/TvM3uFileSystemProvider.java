@@ -114,7 +114,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.title = R.string.epg_time_shift;
 		});
 
-		/* sub = prefs.subSet(o -> o.title = R.string.catchup);
+		sub = prefs.subSet(o -> o.title = R.string.catchup);
 		sub.addStringPref(o -> {
 			o.store = ps;
 			o.pref = CATCHUP_QUERY;
@@ -142,7 +142,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.mode = FilePickerFragment.FILE;
 			o.title = R.string.logo_location;
 			o.stringHint = a.getString(R.string.logo_location_hint);
-		}); */
+		});
 
 		sub = prefs.subSet(o -> o.title = R.string.connection_settings);
 		sub.addStringPref(o -> {

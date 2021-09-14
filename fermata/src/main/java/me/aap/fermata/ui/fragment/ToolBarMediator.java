@@ -56,7 +56,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
 		}
 
-		if (f instanceof MediaLibFragment) {
+		if ((f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref()) {
 			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
 			first = addButton(tb, R.drawable.pg_up, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_up, LEFT);
 		} else {
@@ -90,9 +90,13 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			ControlPanelView p = a.getControlPanel();
 			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusLast(focused);
 		} else if (direction == FOCUS_DOWN) {
-			if ((focused != null) &&
-					((focused.getId() == R.id.tool_pg_up) || (focused.getId() == R.id.tool_pg_down))) {
-				return MediaItemListView.focusFirstVisible(focused);
+			if (focused != null) {
+				int id = focused.getId();
+				if (id == R.id.tool_bar_back_button) {
+					return MediaItemListView.focusFirst(focused);
+				} else if ((id == R.id.tool_pg_up) || (id == R.id.tool_pg_down)) {
+					return MediaItemListView.focusFirstVisible(focused);
+				}
 			}
 		}
 

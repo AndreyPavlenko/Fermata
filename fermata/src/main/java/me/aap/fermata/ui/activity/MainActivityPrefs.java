@@ -32,6 +32,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<DoubleSupplier> P_SPLIT_PERCENT = Pref.f("P_SPLIT_PERCENT", 0.6f);
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
+	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
 
 	static MainActivityPrefs get() {
 		return MainActivityDelegate.Prefs.instance;
@@ -104,5 +105,13 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default void setShowAddonOnStartPref(@Nullable String className) {
 		applyStringPref(SHOW_ADDON_ON_START, className);
+	}
+
+	default boolean getShowPgUpDownPref() {
+		return getBooleanPref(SHOW_PG_UP_DOWN);
+	}
+
+	default void setShowPgUpDownPref(boolean value) {
+		applyBooleanPref(SHOW_PG_UP_DOWN, value);
 	}
 }

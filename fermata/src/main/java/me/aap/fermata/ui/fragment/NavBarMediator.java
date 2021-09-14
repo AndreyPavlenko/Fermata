@@ -1,5 +1,18 @@
 package me.aap.fermata.ui.fragment;
 
+import static android.view.View.FOCUS_DOWN;
+import static android.view.View.FOCUS_LEFT;
+import static android.view.View.FOCUS_RIGHT;
+import static android.view.View.FOCUS_UP;
+import static me.aap.fermata.BuildConfig.VERSION_CODE;
+import static me.aap.fermata.BuildConfig.VERSION_NAME;
+import static me.aap.utils.collection.CollectionUtils.newLinkedHashSet;
+import static me.aap.utils.ui.UiUtils.isVisible;
+import static me.aap.utils.ui.UiUtils.showInfo;
+import static me.aap.utils.ui.view.NavBarItem.create;
+import static me.aap.utils.ui.view.NavBarView.POSITION_LEFT;
+import static me.aap.utils.ui.view.NavBarView.POSITION_RIGHT;
+
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -26,6 +39,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.utils.collection.CollectionUtils;
@@ -45,19 +59,6 @@ import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.NavButtonView;
 import me.aap.utils.ui.view.PrefNavBarMediator;
 import me.aap.utils.ui.view.ToolBarView;
-
-import static android.view.View.FOCUS_DOWN;
-import static android.view.View.FOCUS_LEFT;
-import static android.view.View.FOCUS_RIGHT;
-import static android.view.View.FOCUS_UP;
-import static me.aap.fermata.BuildConfig.VERSION_CODE;
-import static me.aap.fermata.BuildConfig.VERSION_NAME;
-import static me.aap.utils.collection.CollectionUtils.newLinkedHashSet;
-import static me.aap.utils.ui.UiUtils.isVisible;
-import static me.aap.utils.ui.UiUtils.showInfo;
-import static me.aap.utils.ui.view.NavBarItem.create;
-import static me.aap.utils.ui.view.NavBarView.POSITION_LEFT;
-import static me.aap.utils.ui.view.NavBarView.POSITION_RIGHT;
 
 /**
  * @author Andrey Pavlenko
@@ -189,6 +190,13 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 		} else {
 			return super.extItemSelected(item);
 		}
+	}
+
+	@Override
+	public void itemReselected(View item, int id, ActivityDelegate a) {
+		BodyLayout b = ((MainActivityDelegate) a).getBody();
+		if (b.isVideoMode()) b.setMode(BodyLayout.Mode.BOTH);
+		else super.itemReselected(item, id, a);
 	}
 
 	@Nullable

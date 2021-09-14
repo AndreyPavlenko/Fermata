@@ -40,6 +40,7 @@
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="fullscreen_mode">Fullscreen mode</string>
+    <string name="show_pg_up_down">Show page up/down buttons</string>
     <string name="show_track_icons">Show track icons</string>
     <string name="text_icon_scale">Text and icon scale</string>
 

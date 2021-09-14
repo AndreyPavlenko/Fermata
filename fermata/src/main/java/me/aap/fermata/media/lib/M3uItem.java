@@ -74,6 +74,7 @@ public class M3uItem extends BrowsableItemBase {
 		String m3uArtist = null;
 		String m3uGenre = null;
 		String cover = null;
+		String catchupDays = null;
 		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 0; // 0 - unknown, 1 - audio, 2 - video
 
 		String name = null;
@@ -84,6 +85,7 @@ public class M3uItem extends BrowsableItemBase {
 		String logo = null;
 		String tvgId = null;
 		String tvgName = null;
+		String trackCatchupDays = null;
 		long duration = 0;
 		byte type = 0;
 		boolean first = true;
@@ -123,7 +125,7 @@ public class M3uItem extends BrowsableItemBase {
 								setCatchupSource(trim(l.substring(off, i)));
 								break;
 							case "catchup-days":
-								setCatchupDays(trim(l.substring(off, i)));
+								catchupDays = trim(l.substring(off, i));
 								break;
 						}
 
@@ -173,6 +175,9 @@ public class M3uItem extends BrowsableItemBase {
 								break;
 							case "group-title":
 								group = trim(l.substring(start, i));
+							case "tvg-rec":
+							case "catchup-days":
+								trackCatchupDays = trim(l.substring(start, i));
 								break;
 						}
 					}
@@ -224,7 +229,7 @@ public class M3uItem extends BrowsableItemBase {
 
 					if (group == null) {
 						tracks.add(createTrack(this, -1, tracks.size(), idPath, file, name, album, artist, genre,
-								logo, tvgId, tvgName, duration, type));
+								logo, tvgId, tvgName, duration, type, trackCatchupDays));
 					} else {
 						M3uGroupItem g = groups.get(group);
 
@@ -234,11 +239,12 @@ public class M3uItem extends BrowsableItemBase {
 						}
 
 						g.tracks.add(createTrack(g, g.getGroupId(), g.tracks.size(), idPath, file, name, album,
-								artist, genre, logo, tvgId, tvgName, duration, type));
+								artist, genre, logo, tvgId, tvgName, duration, type, trackCatchupDays));
 					}
 				}
 
 				name = group = album = artist = genre = logo = tvgId = tvgName = null;
+				trackCatchupDays = catchupDays;
 				duration = 0;
 				type = 0;
 			}
@@ -336,7 +342,8 @@ public class M3uItem extends BrowsableItemBase {
 	protected M3uTrackItem createTrack(BrowsableItem parent, int groupNumber, int trackNumber,
 																		 String idPath, VirtualResource file, String name, String album,
 																		 String artist, String genre, String logo, String tvgId,
-																		 String tvgName, long duration, byte type) {
+																		 String tvgName, long duration, byte type,
+																		 String catchupDays) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
 				.append(trackNumber).append(idPath);
@@ -473,9 +480,6 @@ public class M3uItem extends BrowsableItemBase {
 	}
 
 	protected void setCatchupSource(String src) {
-	}
-
-	protected void setCatchupDays(String days) {
 	}
 
 	private boolean isVideo(VirtualFile f) {
