@@ -44,7 +44,7 @@ public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 		this.icon = icon;
 	}
 
-	public static FutureSupplier<TvM3uEpgItem> create(@NonNull TvRootItem root, String id) {
+	public static FutureSupplier<? extends Item> create(@NonNull TvRootItem root, String id) {
 		assert id.startsWith(SCHEME);
 		int slash = id.indexOf('/');
 		if (slash < 0) return completedNull();
@@ -65,7 +65,7 @@ public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 				for (TvM3uEpgItem e : l) {
 					if ((e.start == start) && (e.end == end)) return e;
 				}
-				return null;
+				return t;
 			});
 		});
 	}

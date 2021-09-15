@@ -41,6 +41,7 @@ import androidx.media.app.NotificationCompat.MediaStyle;
 import androidx.media.session.MediaButtonReceiver;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
@@ -49,6 +50,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.utils.app.App;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
@@ -74,7 +76,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 	private static final String EXTRA_MEDIA_SEARCH_SUPPORTED = "android.media.browse.SEARCH_SUPPORTED";
 	private static final int NOTIF_ID = 1;
 	private static final String NOTIF_CHANNEL_ID = "Fermata";
-	private MediaLib lib;
+	private DefaultMediaLib lib;
 	private MediaSessionCompat session;
 	MediaSessionCallback callback;
 	FermataToControlConnection controlConnection;
@@ -114,6 +116,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 				MediaButtonReceiver.class);
 		session.setMediaButtonReceiver(PendingIntent.getBroadcast(ctx, 0, mediaButtonIntent, FLAG_IMMUTABLE));
 		notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
+		App.get().getScheduler().schedule(lib::cleanUpPrefs, 1, TimeUnit.HOURS);
 	}
 
 	@Override

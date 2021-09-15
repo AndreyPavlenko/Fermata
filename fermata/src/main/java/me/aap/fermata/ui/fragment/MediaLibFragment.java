@@ -153,12 +153,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		BrowsableItem p = i.getParent();
 		if (p == null) return;
 		if (!p.equals(a.getParent())) a.setParent(p);
-
 		// Make sure the list is loaded
-		p.getChildren().main().onSuccess(l -> {
-			scrollPosition = indexOf(a.getList(), i);
-			FermataApplication.get().getHandler().post(this::scrollToPosition);
-		});
+		p.getChildren().main().onSuccess(l -> getListView().focusTo(i));
 	}
 
 	public boolean onBackPressed() {
@@ -171,11 +167,12 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		}
 
 		ListAdapter a = getAdapter();
-		BrowsableItem p = a.getParent();
-		if (p == null) return false;
-		p = p.getParent();
-		if (p == null) return false;
-		a.setParent(p);
+		BrowsableItem oldParent = a.getParent();
+		if (oldParent == null) return false;
+		BrowsableItem newParent = oldParent.getParent();
+		if (newParent == null) return false;
+		a.setParent(newParent);
+		FermataApplication.get().getHandler().post(() -> revealItem(oldParent));
 		return true;
 	}
 

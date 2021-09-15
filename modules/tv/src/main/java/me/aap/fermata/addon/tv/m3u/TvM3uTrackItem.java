@@ -31,7 +31,7 @@ import me.aap.fermata.media.lib.M3uTrackItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
-import me.aap.fermata.media.lib.MediaLib.StreamItem.StreamItemPrefs;
+import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;

@@ -22,6 +22,7 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
+import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;

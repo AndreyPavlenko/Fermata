@@ -36,6 +36,7 @@ import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
+import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
@@ -436,14 +437,6 @@ public interface MediaLib {
 		@Override
 		default FutureSupplier<Iterator<PlayableItem>> getShuffleIterator() {
 			return completed(Collections.emptyIterator());
-		}
-
-		interface StreamItemPrefs extends PlayableItemPrefs, BrowsableItemPrefs {
-
-			@Override
-			default int getSortByPref() {
-				return SORT_BY_NONE;
-			}
 		}
 	}
 

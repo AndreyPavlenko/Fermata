@@ -1,5 +1,11 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -8,11 +14,14 @@ import androidx.annotation.NonNull;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
@@ -20,6 +29,8 @@ import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
+import me.aap.fermata.media.pref.PlayableItemPrefs;
+import me.aap.fermata.media.pref.StreamItemPrefs;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
@@ -28,11 +39,6 @@ import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedEmptyList;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
@@ -346,6 +352,52 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	public void clearCache() {
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
+		}
+	}
+
+	public void cleanUpPrefs() {
+		SharedPreferences prefs = getSharedPreferences();
+		List<String> keys = new ArrayList<>(prefs.getAll().keySet());
+		Set<String> names = new HashSet<>();
+		getPrefNames(PlayableItemPrefs.class, names);
+		getPrefNames(BrowsableItemPrefs.class, names);
+		getPrefNames(StreamItemPrefs.class, names);
+
+		Async.forEach(k -> {
+			int idx = k.lastIndexOf('#');
+
+			if ((idx <= 0) || (idx == k.length() - 1) || !names.contains(k.substring(idx + 1))) {
+				return completedVoid();
+			} else {
+				return getItem(k.substring(0, idx)).then(i -> {
+					if (i == null) {
+						Log.i("Item not found - removing preference key ", k);
+						prefs.edit().remove(k).apply();
+						return completedVoid();
+					} else {
+						return i.getResource().exists().then(exists -> {
+							if (!exists) {
+								Log.i("Resource does not exist - removing preference key ", k);
+								prefs.edit().remove(k).apply();
+							}
+							return completedVoid();
+						});
+					}
+				});
+			}
+		}, keys);
+	}
+
+	private static void getPrefNames(Class<?> c, Set<String> names) {
+		try {
+			for (Field f : c.getDeclaredFields()) {
+				if (Pref.class.isAssignableFrom(f.getType())) {
+					Pref<?> p = (Pref<?>) f.get(null);
+					if (p != null) names.add(p.getName());
+				}
+			}
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to get field names from ", c);
 		}
 	}
 
