@@ -6,5 +6,6 @@
     <string name="full_screen">Полноэкранный режим</string>
     <string name="full_screen_exit">Выйти из полноэкранного режима</string>
     <string name="video_scaling_fill_proportional">Заполнить пропорционально</string>
+    <string name="video_quality">Качество видео</string>
     <string name="open_on_start">Открывать при старте</string>
 </resources>

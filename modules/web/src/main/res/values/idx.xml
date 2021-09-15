@@ -7,4 +7,5 @@
     <item name="fullscreen" type="id" />
     <item name="fullscreen_exit" type="id" />
     <item name="video_scaling_fill_proportional" type="id" />
+    <item name="video_quality" type="id" />
 </resources>

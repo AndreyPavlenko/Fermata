@@ -1,5 +1,13 @@
 package me.aap.fermata.addon.web.yt;
 
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_ERR;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_EVENT;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_ENDED;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
+
 import android.content.Context;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
@@ -15,17 +23,11 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_ERR;
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_EVENT;
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_ENDED;
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
-import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
-
 /**
  * @author Andrey Pavlenko
  */
 public class YoutubeWebView extends FermataWebView {
+	private YoutubeJsInterface js;
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -42,7 +44,7 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	protected FermataJsInterface createJsInterface() {
 		MainActivityDelegate a = MainActivityDelegate.get(getContext());
-		return new YoutubeJsInterface(this, new YoutubeMediaEngine(this, a));
+		return js = new YoutubeJsInterface(this, new YoutubeMediaEngine(this, a));
 	}
 
 	@Override
@@ -144,6 +146,66 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<Long> getPosition() {
 		return getMilliseconds("currentTime");
+	}
+
+	FutureSupplier<String> getVideoQualities() {
+		Promise<String> p = js.getResultPromise();
+		loadUrl("javascript:\n" +
+				"function retryGetVideoQualities(attempt, openMenu) {\n" +
+				"  if (attempt < 10) setTimeout(getVideoQualities, 100, attempt + 1, openMenu);\n" +
+				"  else " + JS_EVENT + '(' + JS_VIDEO_QUALITIES + ", null);\n" +
+				"  return null;\n" +
+				"}\n" +
+				"function getVideoQualities(attempt, openMenu) {\n" +
+				"  if (openMenu) {\n" +
+				"    var b = document.querySelector('.player-settings-icon');\n" +
+				"    if (b == null) return retryGetVideoQualities(attempt, true);\n" +
+				"    b.click();\n" +
+				"  }\n" +
+				"  var settings = document.querySelector('.player-quality-settings');\n" +
+				"  if (settings == null) return retryGetVideoQualities(attempt, false);\n" +
+				"  var select = settings.querySelector('.select');\n" +
+				"  if (select == null) return retryGetVideoQualities(attempt, false);\n" +
+				"  var options = select.querySelectorAll('.option');\n" +
+				"  var result = '';\n" +
+				"  for (let i = 0; i < options.length; i++) {\n" +
+				"    if (i != 0) result += ';';\n" +
+				"    if (i == select.selectedIndex) result += '*';\n" +
+				"    result += options[i].innerText;\n" +
+				"  }\n" +
+				"  " + JS_EVENT + '(' + JS_VIDEO_QUALITIES + ", result);\n" +
+				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('.c3-material-button-button').click();}, 100);\n" +
+				"  return result;\n" +
+				"}\n" +
+				"getVideoQualities(0, true);");
+		return p;
+	}
+	void setVideoQuality(int idx) {
+		loadUrl("javascript:\n" +
+				"function retrySetVideoQuality(idx, attempt, openMenu) {\n" +
+				"  if (attempt < 10) setTimeout(setVideoQuality, 100, idx, attempt + 1, openMenu);\n" +
+				"  return false;\n" +
+				"}\n" +
+				"function setVideoQuality(idx, attempt, openMenu) {\n" +
+				"  if (openMenu) {\n" +
+				"    var b = document.querySelector('.player-settings-icon');\n" +
+				"    if (b == null) return retrySetVideoQuality(idx, attempt, true);\n" +
+				"    b.click();\n" +
+				"  }\n" +
+				"  var settings = document.querySelector('.player-quality-settings');\n" +
+				"  if (settings == null) return retrySetVideoQuality(idx, attempt, false);\n" +
+				"  var select = settings.querySelector('.select');\n" +
+				"  if (select == null) return retrySetVideoQuality(idx, attempt, false);\n" +
+				"  var options = select.querySelectorAll('.option');\n" +
+				"  var evt = document.createEvent(\"HTMLEvents\");\n" +
+				"  evt.initEvent(\"change\", true, true);\n" +
+				"  select.selectedIndex = idx;\n" +
+				"  options[idx].selected = true;\n" +
+				"  select.dispatchEvent(evt);\n" +
+				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('.c3-material-button-button').click();}, 100);\n" +
+				"  return true;\n" +
+				"}\n" +
+				"setVideoQuality(" + idx + ", 0, true);");
 	}
 
 	private FutureSupplier<Long> getMilliseconds(String value) {

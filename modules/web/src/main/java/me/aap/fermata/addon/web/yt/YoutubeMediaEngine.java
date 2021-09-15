@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.media.AudioFocusRequestCompat;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.yt.YoutubeAddon.VideoScale;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -26,7 +27,9 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.vfs.VirtualResource;
@@ -36,6 +39,7 @@ import me.aap.utils.vfs.generic.GenericFileSystem;
  * @author Andrey Pavlenko
  */
 class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
+	private static final int VIDEO_QUALITY_MASK = 1 << 31;
 	private static final String ID = "youtube";
 	private static final String CURRENT_ID = ID + ":current";
 	private static final String NEXT_ID = ID + ":next";
@@ -66,6 +70,14 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void playing(String url) {
+		if (BuildConfig.AUTO) {
+			web.loadUrl("javascript:\n" +
+					"if (document.querySelectorAll('.ad-showing').length > 0) {\n" +
+					"  var video = document.querySelector('video');\n" +
+					"  if (video != null) video.currentTime = video.duration;\n" +
+					"}");
+		}
+
 		if (url.startsWith("blob:")) url = url.substring(5);
 		current = new Current(url);
 		cb.setEngine(this);
@@ -177,9 +189,35 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	public void contributeToMenu(OverlayMenu.Builder b) {
 		Context ctx = web.getContext();
 		Resources r = ctx.getResources();
+		b.addItem(R.id.video_quality,
+				ResourcesCompat.getDrawable(r, R.drawable.video_quality, ctx.getTheme()),
+				r.getString(R.string.video_quality)).setFutureSubmenu(this::videoQualityMenu);
 		b.addItem(me.aap.fermata.R.id.video_scaling,
 				ResourcesCompat.getDrawable(r, R.drawable.video_scaling, ctx.getTheme()),
 				r.getString(me.aap.fermata.R.string.video_scaling)).setSubmenu(this::videoScalingMenu);
+	}
+
+	private FutureSupplier<Void> videoQualityMenu(OverlayMenu.Builder b) {
+		b.setSelectionHandler(this);
+		return web.getVideoQualities().timeout(1100).main()
+				.onFailure(err -> Log.e(err, "Failed to load video qualities"))
+				.map(qualities -> {
+					if ((qualities == null) || (qualities.isEmpty())) {
+						b.addItem(me.aap.fermata.R.id.auto, null, me.aap.fermata.R.string.auto)
+								.setChecked(true, true);
+						return null;
+					}
+
+					String[] all = qualities.split(";");
+					for (int i = 0; i < all.length; i++) {
+						String q = all[i];
+						if (q.startsWith("*")) q = q.substring(1);
+						//noinspection StringEquality
+						b.addItem(UiUtils.getArrayItemId(i), null, q).setChecked(q != all[i], true)
+								.setData(i | VIDEO_QUALITY_MASK);
+					}
+					return null;
+				});
 	}
 
 	private void videoScalingMenu(OverlayMenu.Builder b) {
@@ -210,6 +248,9 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		} else if (itemId == me.aap.fermata.R.id.video_scaling_orig) {
 			web.setScale(VideoScale.NONE);
 			return true;
+		} else if (item.getData() instanceof Integer) {
+			int d = item.getData();
+			if ((d & VIDEO_QUALITY_MASK) != 0) web.setVideoQuality(d & ~VIDEO_QUALITY_MASK);
 		}
 		return false;
 	}

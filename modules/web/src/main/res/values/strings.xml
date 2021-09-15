@@ -8,5 +8,6 @@
     <string name="full_screen_exit">Exit full screen</string>
     <string name="url" translatable="false">URL</string>
     <string name="video_scaling_fill_proportional">Fill proportional</string>
+    <string name="video_quality">Video quality</string>
     <string name="open_on_start">Open on start</string>
 </resources>

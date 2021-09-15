@@ -3,6 +3,8 @@ package me.aap.fermata.media.service;
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_FAST_FORWARD;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
@@ -29,7 +31,6 @@ import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
-import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_STRENGTH;
@@ -47,6 +48,7 @@ import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.function.CheckedRunnable.runWithRetry;
 import static me.aap.utils.misc.Assert.assertNotNull;
+import static me.aap.utils.misc.MiscUtils.ifNotNull;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -902,7 +904,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			assertNotNull(md);
 		} else {
 			MediaMetadataCompat.Builder b = new MediaMetadataCompat.Builder();
-			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, i.getResource().getName());
+			b.putString(METADATA_KEY_DISPLAY_TITLE, i.getResource().getName());
 			md = b.build();
 			update.set(m -> engine.getPosition().main().onSuccess(position -> {
 				if (getCurrentItem() != i) return;
@@ -920,8 +922,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private FutureSupplier<MediaMetadataCompat> buildMetadata(MediaMetadataCompat.Builder b,
 																														MediaMetadataCompat meta,
 																														MediaDescriptionCompat dsc) {
-		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, requireNonNull(dsc.getTitle()).toString());
-		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, requireNonNull(dsc.getSubtitle()).toString());
+		ifNotNull(dsc.getTitle(), t->b.putString(METADATA_KEY_DISPLAY_TITLE, t.toString()));
+		ifNotNull(dsc.getSubtitle(), t->b.putString(METADATA_KEY_DISPLAY_SUBTITLE, t.toString()));
 		if (meta.getBitmap(METADATA_KEY_ALBUM_ART) != null) return completed(b.build());
 
 		String art = meta.getString(METADATA_KEY_ALBUM_ART_URI);

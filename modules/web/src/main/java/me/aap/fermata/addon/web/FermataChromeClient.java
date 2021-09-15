@@ -1,10 +1,19 @@
 package me.aap.fermata.addon.web;
 
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static android.view.MotionEvent.ACTION_DOWN;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
+
 import android.Manifest;
 import android.content.Context;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ConsoleMessage;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
@@ -28,14 +37,6 @@ import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.view.FloatingButton;
-
-import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.view.MotionEvent.ACTION_DOWN;
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 /**
  * @author Andrey Pavlenko
@@ -309,5 +310,11 @@ public class FermataChromeClient extends WebChromeClient {
 				}
 			}
 		});
+	}
+
+	@Override
+	public boolean onConsoleMessage(ConsoleMessage m) {
+		Log.d("[JS:", m.lineNumber(), "] ", m.message());
+		return true;
 	}
 }
