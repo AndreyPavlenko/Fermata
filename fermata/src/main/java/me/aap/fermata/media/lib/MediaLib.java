@@ -391,6 +391,20 @@ public interface MediaLib {
 			return Completed.completedEmptyList();
 		}
 
+		default FutureSupplier<Long> getStartTime() {
+			return getMediaDescription().map(md -> {
+				Bundle b = md.getExtras();
+				return (b != null) ? b.getLong(STREAM_START_TIME, 0) : 0L;
+			});
+		}
+
+		default FutureSupplier<Long> getEndTime() {
+			return getMediaDescription().map(md -> {
+				Bundle b = md.getExtras();
+				return (b != null) ? b.getLong(STREAM_END_TIME, 0) : 0L;
+			});
+		}
+
 		@NonNull
 		@Override
 		default FutureSupplier<Long> getDuration() {

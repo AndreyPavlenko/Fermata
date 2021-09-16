@@ -107,9 +107,10 @@ public class BodyLayout extends ConstraintLayout implements
 				getSplitLine().setVisibility(VISIBLE);
 				getSplitHandle().setVisibility(VISIBLE);
 				getSwipeRefresh().setVisibility(VISIBLE);
-				lp.guidePercent = getActivity().getPrefs().getSplitPercent(getContext());
+				lp.guidePercent = a.getPrefs().getSplitPercent(getContext());
 				vv.showVideo(true);
 				a.setVideoMode(true, vv);
+				MediaItemListView.focusActive(vv);
 				break;
 		}
 

@@ -85,8 +85,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		if (item instanceof PlayableItem) {
 			buildPlayableMenu(a, builder, (PlayableItem) item, true);
 			r = completedVoid();
-		} else {
+		} else if (item instanceof BrowsableItem) {
 			r = buildBrowsableMenu(a, builder, (BrowsableItem) item);
+		} else {
+			r = completedVoid();
 		}
 
 		return r.onSuccess(v -> {
@@ -110,17 +112,21 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
 		}
 
-		if (pi.getPrefs().hasPref(BOOKMARKS)) {
-			b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
-		} else {
-			b.addItem(R.id.bookmark_create, R.drawable.bookmark, R.string.create_bookmark).setSubmenu(this::buildCreateBookmarkMenu);
-		}
-
-		if (initRepeat) {
-			if (pi.isRepeatItemEnabled()) {
-				b.addItem(R.id.repeat_disable, R.drawable.repeat_filled, R.string.repeat_disable);
+		if (!(item instanceof StreamItem)) {
+			if (pi.getPrefs().hasPref(BOOKMARKS)) {
+				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks)
+						.setFutureSubmenu(this::buildBookmarksMenu);
 			} else {
-				b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat);
+				b.addItem(R.id.bookmark_create, R.drawable.bookmark, R.string.create_bookmark)
+						.setSubmenu(this::buildCreateBookmarkMenu);
+			}
+
+			if (initRepeat) {
+				if (pi.isRepeatItemEnabled()) {
+					b.addItem(R.id.repeat_disable, R.drawable.repeat_filled, R.string.repeat_disable);
+				} else {
+					b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat);
+				}
 			}
 		}
 
@@ -165,7 +171,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
 			}
 			if (!(bi instanceof Playlist)) {
-				a.addPlaylistMenu(b, ()-> bi.getPlayableChildren(true), bi::getName);
+				a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true), bi::getName);
 			}
 
 			b.addItem(R.id.playback_settings, R.drawable.playback_settings, R.string.playback_settings)
@@ -187,11 +193,11 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	protected void buildMediaEngineMenu(OverlayMenu.Builder b) {
 		b.setSelectionHandler(this);
 
-		if (item instanceof BrowsableItem) {
+		if (item instanceof PlayableItem) {
+			buildMediaEngMenu(b, ((PlayableItem) item).isVideo());
+		} else if (item instanceof BrowsableItem) {
 			b.addItem(R.id.preferred_audio_engine, R.string.preferred_audio_engine).setSubmenu(this::buildAudioEngMenu);
 			b.addItem(R.id.preferred_video_engine, R.string.preferred_video_engine).setSubmenu(this::buildVideoEngMenu);
-		} else {
-			buildMediaEngMenu(b, ((PlayableItem) item).isVideo());
 		}
 	}
 
@@ -268,14 +274,16 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			s.addItem(R.id.bookmark_remove_all_confirm, R.string.remove_all_bookmarks);
 		});
 
-		if (item instanceof BrowsableItem) {
+		if (item instanceof PlayableItem) {
+			addBookmarks(b, Collections.singletonList((PlayableItem) item));
+			b.addItem(R.id.bookmark_create, R.string.create_bookmark).setSubmenu(this::buildCreateBookmarkMenu);
+			return completedVoid();
+		} else if (item instanceof BrowsableItem) {
 			return ((BrowsableItem) item).getPlayableChildren(true).main().then(items -> {
 				addBookmarks(b, items);
 				return completedVoid();
 			});
 		} else {
-			addBookmarks(b, Collections.singletonList((PlayableItem) item));
-			b.addItem(R.id.bookmark_create, R.string.create_bookmark).setSubmenu(this::buildCreateBookmarkMenu);
 			return completedVoid();
 		}
 	}
@@ -360,16 +368,16 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			if (af instanceof MediaLibFragment)
 				((MediaLibFragment) af).getAdapter().openEpg((StreamItem) item);
 		} else if (id == R.id.favorites_add) {
-			if (item instanceof BrowsableItem) {
+			if (item instanceof PlayableItem) {
+				item.getLib().getFavorites().addItem((PlayableItem) item);
+				f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
+				if (f != null) f.reload();
+			} else if (item instanceof BrowsableItem) {
 				((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
 					item.getLib().getFavorites().addItems(list);
 					MediaLibFragment mf = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 					if (mf != null) mf.reload();
 				});
-			} else {
-				item.getLib().getFavorites().addItem((PlayableItem) item);
-				f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
-				if (f != null) f.reload();
 			}
 		} else if (id == R.id.favorites_remove) {
 			item.getLib().getFavorites().removeItem((PlayableItem) item);
@@ -383,14 +391,14 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			Playlist p = i.getData();
 			p.getParent().removeItems(Collections.singletonList(p));
 		} else if (id == R.id.bookmark_remove_all_confirm) {
-			if ((item instanceof BrowsableItem)) {
+			if ((item instanceof PlayableItem)) {
+				((PlayableItem) item).getPrefs().removePref(BOOKMARKS);
+			} else if ((item instanceof BrowsableItem)) {
 				((BrowsableItem) item).getPlayableChildren(true).main().onSuccess(list -> {
 					for (PlayableItem pi : list) {
 						pi.getPrefs().removePref(BOOKMARKS);
 					}
 				});
-			} else {
-				((PlayableItem) item).getPrefs().removePref(BOOKMARKS);
 			}
 		} else if (id == R.id.repeat_enable || id == R.id.repeat_disable) {
 			((PlayableItem) item).setRepeatItemEnabled(id == R.id.repeat_enable);

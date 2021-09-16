@@ -88,14 +88,14 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		if (direction == FOCUS_UP) {
 			MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
 			ControlPanelView p = a.getControlPanel();
-			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusLast(focused);
+			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusSearchLast(focused);
 		} else if (direction == FOCUS_DOWN) {
 			if (focused != null) {
 				int id = focused.getId();
 				if (id == R.id.tool_bar_back_button) {
-					return MediaItemListView.focusFirst(focused);
+					return MediaItemListView.focusSearchFirst(focused);
 				} else if ((id == R.id.tool_pg_up) || (id == R.id.tool_pg_down)) {
-					return MediaItemListView.focusFirstVisible(focused);
+					return MediaItemListView.focusSearchFirstVisible(focused);
 				}
 			}
 		}

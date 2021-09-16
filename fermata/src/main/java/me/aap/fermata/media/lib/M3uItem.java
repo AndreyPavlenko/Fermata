@@ -73,6 +73,7 @@ public class M3uItem extends BrowsableItemBase {
 		String m3uAlbum = null;
 		String m3uArtist = null;
 		String m3uGenre = null;
+		String logoUrlBase = null;
 		String cover = null;
 		String catchupDays = null;
 		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 0; // 0 - unknown, 1 - audio, 2 - video
@@ -114,6 +115,10 @@ public class M3uItem extends BrowsableItemBase {
 						}
 
 						switch (key) {
+							case "logo-url":
+							case "url-logo":
+								logoUrlBase = trim(l.substring(off, i));
+								break;
 							case "tvg-url":
 							case "url-tvg":
 								setTvgUrl(trim(l.substring(off, i)));
@@ -226,6 +231,7 @@ public class M3uItem extends BrowsableItemBase {
 					if (genre == null) genre = m3uGenre;
 					if (type == 0) type = m3uType;
 					if (logo == null) logo = cover;
+					else if ((logoUrlBase != null) && !logo.contains("://")) logo = logoUrlBase + '/' + logo;
 
 					if (group == null) {
 						tracks.add(createTrack(this, -1, tracks.size(), idPath, file, name, album, artist, genre,

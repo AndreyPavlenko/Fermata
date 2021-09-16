@@ -278,7 +278,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	@Override
 	public boolean isSeekable() {
-		return getCatchUpDays() > 0;
+		return (getCatchUpDays() > 0) && (epgStart > 0) && (epgStart < epgStop);
 	}
 
 	@Override

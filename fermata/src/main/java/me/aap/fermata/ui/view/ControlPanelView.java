@@ -403,7 +403,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 		if (direction == FOCUS_UP) {
 			if (isLine1(focused)) {
-				View v = MediaItemListView.focusLast(focused);
+				View v = MediaItemListView.focusSearchLast(focused);
 				if (v != null) return v;
 			} else {
 				if (!isVisible(findViewById(R.id.seek_bar))) return findViewById(R.id.control_menu_button);

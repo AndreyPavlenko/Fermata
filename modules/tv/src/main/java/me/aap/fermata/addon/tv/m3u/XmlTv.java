@@ -1,5 +1,6 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static java.lang.Character.NON_SPACING_MARK;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
 import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_NOT_FOUND;
 import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_UNKNOWN;
@@ -22,6 +23,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.Normalizer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,6 +49,7 @@ import me.aap.utils.db.SQLite;
 import me.aap.utils.holder.BooleanHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpFileDownloader.Status;
+import me.aap.utils.text.SharedTextBuilder;
 
 /**
  * @author Andrey Pavlenko
@@ -142,7 +145,7 @@ public class XmlTv implements Closeable {
 		if (id == EPG_ID_UNKNOWN) {
 			String tvgId = track.getTvgId();
 			String tvgName = track.getTvgName();
-			String name = track.getName().toLowerCase();
+			String name = normalizeName(track.getName());
 			String nameSel;
 			String[] nameArgs;
 
@@ -151,7 +154,7 @@ public class XmlTv implements Closeable {
 				nameArgs = new String[]{name};
 			} else {
 				nameSel = Q_SEL_NAME_OR;
-				nameArgs = new String[]{tvgName.toLowerCase(), name};
+				nameArgs = new String[]{normalizeName(tvgName), name};
 			}
 
 			if (tvgId != null) {
@@ -311,13 +314,24 @@ public class XmlTv implements Closeable {
 				if (id != null) computeIfAbsent(idToTrack, id, k -> new ArrayList<>(1)).add(track);
 				id = track.getTvgName();
 				if (id != null)
-					computeIfAbsent(nameToTrack, id.toLowerCase(), k -> new ArrayList<>(1)).add(track);
-				computeIfAbsent(nameToTrack, track.getName().toLowerCase(), k -> new ArrayList<>(1)).add(track);
+					computeIfAbsent(nameToTrack, normalizeName(id), k -> new ArrayList<>(1)).add(track);
+				computeIfAbsent(nameToTrack, normalizeName(track.getName()), k -> new ArrayList<>(1)).add(track);
 				return completedVoid();
 			} else {
 				return loadChannels((BrowsableItem) c, idToTrack, nameToTrack);
 			}
 		}, children));
+	}
+
+	private static String normalizeName(String name) {
+		name = Normalizer.normalize(name, Normalizer.Form.NFD);
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			for (int i = 0, s = name.length(); i < s; i++) {
+				char c = name.charAt(i);
+				if (Character.getType(c) != NON_SPACING_MARK) b.append(Character.toLowerCase(c));
+			}
+			return b.toString();
+		}
 	}
 
 	private XmlTv loadXml(TvM3uItem item, Status status, SQLiteDatabase db,
@@ -485,7 +499,7 @@ public class XmlTv implements Closeable {
 
 			switch (tag) {
 				case DISPLAY_NAME:
-					names.add(sb.toString().trim().toLowerCase());
+					names.add(normalizeName(sb.toString().trim()));
 					break;
 				case TITLE:
 					title = sb.toString().trim();

@@ -1,5 +1,10 @@
 package me.aap.fermata.media.service;
 
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
+import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
+
 import android.os.Handler;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -24,11 +29,6 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.TextUtils;
-
-import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
-import static android.view.View.GONE;
-import static android.view.View.INVISIBLE;
-import static android.view.View.VISIBLE;
 
 /**
  * @author Andrey Pavlenko
@@ -436,7 +436,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 				}
 				if (rwButton != null) rwButton.setVisibility(VISIBLE);
 				if (ffButton != null) ffButton.setVisibility(VISIBLE);
+				startProgressUpdate();
 			} else {
+				stopProgressUpdate();
 				if (progressBar != null) {
 					progressBar.setEnabled(false);
 					progressBar.setVisibility(GONE);
@@ -449,7 +451,6 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 			if (st == STATE_PLAYING) {
 				updateDuration = (dur <= 0);
-				startProgressUpdate();
 
 				if (playPauseButton != null) {
 					if (eng.canPause()) {
@@ -460,13 +461,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 						playPauseButton.setActivated(false);
 					}
 				}
-			} else {
-				stopProgressUpdate();
-
-				if (playPauseButton != null) {
-					playPauseButton.setSelected(true);
-					playPauseButton.setActivated(false);
-				}
+			} else if (playPauseButton != null) {
+				playPauseButton.setSelected(true);
+				playPauseButton.setActivated(false);
 			}
 
 			showPanel(true);

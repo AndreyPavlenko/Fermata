@@ -1,5 +1,13 @@
 package me.aap.fermata.engine.vlc;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
+import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.utils.async.Completed.completed;
+
 import android.content.ContentResolver;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -33,6 +41,7 @@ import me.aap.fermata.media.engine.MediaEngineException;
 import me.aap.fermata.media.engine.MediaStreamInfo;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
@@ -41,14 +50,6 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.text.TextUtils;
-
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
-import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
-import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
@@ -191,13 +192,25 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	}
 
 	@Override
+	public boolean canPause() {
+		Source src = source;
+		return (src != Source.NULL) && !(src.getItem() instanceof StreamItem) && src.getItem().isSeekable();
+	}
+
+	@Override
 	public FutureSupplier<Long> getPosition() {
 		Source src = source;
 
-		if ((src != Source.NULL) && src.isSeekable()) {
-			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition);
-		} else {
+		if ((src == Source.NULL) || !src.isSeekable()) {
 			return completed(0L);
+		} else if (src.getItem() instanceof StreamItem) {
+			return ((StreamItem) src.getItem()).getStartTime().map(t -> {
+				if (t == 0L) return 0L;
+				long now = System.currentTimeMillis();
+				return (t < now) ? (now - t) : 0L;
+			});
+		} else {
+			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition);
 		}
 	}
 
