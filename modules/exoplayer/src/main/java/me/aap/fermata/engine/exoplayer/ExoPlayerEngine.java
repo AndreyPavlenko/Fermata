@@ -1,5 +1,8 @@
 package me.aap.fermata.engine.exoplayer;
 
+import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
+import static me.aap.utils.async.Completed.completed;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
@@ -29,9 +32,6 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 
-import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
-import static me.aap.utils.async.Completed.completed;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -45,6 +45,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	private HlsMediaSource.Factory hls;
 	private PlayableItem source;
 	private boolean preparing;
+	private boolean buffering;
 	private boolean isHls;
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
@@ -68,6 +69,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	public void prepare(PlayableItem source) {
 		this.source = source;
 		preparing = true;
+		buffering = false;
 
 		Uri uri = source.getLocation();
 		MediaItem m = MediaItem.fromUri(uri);
@@ -179,7 +181,14 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 
 	@Override
 	public void onPlaybackStateChanged(int playbackState) {
-		if (playbackState == Player.STATE_READY) {
+		if (playbackState == Player.STATE_BUFFERING) {
+			buffering = true;
+			listener.onEngineBuffering(this, player.getBufferedPercentage());
+		} else if (playbackState == Player.STATE_READY) {
+			if (buffering) {
+				buffering = false;
+				listener.onEngineBufferingCompleted(this);
+			}
 			if (preparing) {
 				preparing = false;
 				listener.onEnginePrepared(this);

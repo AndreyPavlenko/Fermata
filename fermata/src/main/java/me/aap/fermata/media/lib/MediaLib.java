@@ -41,6 +41,7 @@ import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
@@ -283,6 +284,7 @@ public interface MediaLib {
 		boolean isVideo();
 
 		default boolean isSeekable() {
+			if (isStream()) return false;
 			VirtualFileSystem.Provider p = getResource().getVirtualFileSystem().getProvider();
 			return !(p instanceof GenericFileSystem.Provider);
 		}
@@ -309,6 +311,10 @@ public interface MediaLib {
 		default boolean isNetResource() {
 			VirtualResource file = getResource();
 			return !file.isLocalFile() && !(file.getVirtualFileSystem() instanceof GenericFileSystem);
+		}
+
+		default boolean isStream() {
+			return false;
 		}
 
 		@NonNull
@@ -377,6 +383,10 @@ public interface MediaLib {
 		@Override
 		StreamItemPrefs getPrefs();
 
+		default boolean isStream() {
+			return true;
+		}
+
 		default boolean isSeekable(long time) {
 			return false;
 		}
@@ -391,17 +401,16 @@ public interface MediaLib {
 			return Completed.completedEmptyList();
 		}
 
-		default FutureSupplier<Long> getStartTime() {
-			return getMediaDescription().map(md -> {
-				Bundle b = md.getExtras();
-				return (b != null) ? b.getLong(STREAM_START_TIME, 0) : 0L;
-			});
-		}
-
-		default FutureSupplier<Long> getEndTime() {
-			return getMediaDescription().map(md -> {
-				Bundle b = md.getExtras();
-				return (b != null) ? b.getLong(STREAM_END_TIME, 0) : 0L;
+		@NonNull
+		default <E extends EpgItem> FutureSupplier<E> getEpg(long time) {
+			return getEpg().map(l -> {
+				int idx = CollectionUtils.binarySearch(l, e -> {
+					if (time < e.getStartTime()) return 1;
+					if (time < e.getEndTime()) return 0;
+					return -1;
+				});
+				//noinspection unchecked
+				return (idx < 0) ? null : (E) l.get(idx);
 			});
 		}
 
@@ -460,18 +469,19 @@ public interface MediaLib {
 		@Override
 		StreamItem getParent();
 
-		@DrawableRes
-		@Override
-		default int getIcon() {
-			StreamItem s = getParent();
-			return getParent().isSeekable(getStartTime()) ? s.getIcon() : R.drawable.epg;
-		}
-
 		long getStartTime();
 
 		long getEndTime();
 
+		EpgItem getPrev();
+
 		EpgItem getNext();
+
+		@DrawableRes
+		@Override
+		default int getIcon() {
+			return R.drawable.epg;
+		}
 
 		@Override
 		default int compareTo(EpgItem o) {
@@ -481,9 +491,25 @@ public interface MediaLib {
 
 	interface ArchiveItem extends PlayableItem, EpgItem {
 
+		long getExpirationTime();
+
+		default boolean isExpired() {
+			return getExpirationTime() <= System.currentTimeMillis();
+		}
+
+		default boolean isStream() {
+			return true;
+		}
+
 		@Override
 		default int getIcon() {
-			return PlayableItem.super.getIcon();
+			return EpgItem.super.getIcon();
+		}
+
+		@Nullable
+		@Override
+		default String getUserAgent() {
+			return getParent().getUserAgent();
 		}
 	}
 

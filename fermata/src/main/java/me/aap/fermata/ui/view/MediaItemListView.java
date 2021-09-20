@@ -128,6 +128,24 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		else focusReq = position;
 	}
 
+	public int getScrollPosition() {
+		List<MediaItemWrapper> list = getAdapter().getList();
+		if (list.isEmpty()) return 0;
+
+		for (int i = 0, n = getChildCount(); i < n; i++) {
+			MediaItemView v = (MediaItemView) getChildAt(i);
+			MediaItemWrapper w = v.getItemWrapper();
+			if (w == null) continue;
+			MediaItemViewHolder h = w.getViewHolder();
+			if ((h != null) && h.isAttached() && (h.getItemWrapper() == w)) {
+				for (int j = 0, s = list.size(); j < s; j++) {
+					if (list.get(j) == w) return j;
+				}
+			}
+		}
+		return 0;
+	}
+
 	void holderAttached(MediaItemViewHolder h) {
 		if ((focusReq != -1) && (h.getAdapterPosition() == focusReq)) {
 			focusReq = -1;

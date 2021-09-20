@@ -39,13 +39,14 @@ import me.aap.utils.ui.notif.HttpDownloadStatusListener;
  */
 public class TvM3uFile extends M3uFile {
 	public static final int EPG_FILE_AGE = M3U_FILE_AGE;
-	public static final int CATCHUP_TYPE_DEFAULT = 0;
+	public static final int CATCHUP_TYPE_AUTO = 0;
 	public static final int CATCHUP_TYPE_APPEND = 1;
-	public static final int CATCHUP_TYPE_SHIFT = 2;
+	public static final int CATCHUP_TYPE_DEFAULT = 2;
+	public static final int CATCHUP_TYPE_SHIFT = 3;
 	public static final Pref<Supplier<String>> EPG_URL = Pref.s("EPG_URL");
 	public static final Pref<DoubleSupplier> EPG_SHIFT = Pref.f("EPG_SHIFT", 0);
 	public static final Pref<Supplier<String>> CATCHUP_QUERY = Pref.s("CATCHUP_QUERY");
-	public static final Pref<IntSupplier> CATCHUP_TYPE = Pref.i("CATCHUP_TYPE", CATCHUP_TYPE_DEFAULT);
+	public static final Pref<IntSupplier> CATCHUP_TYPE = Pref.i("CATCHUP_TYPE", CATCHUP_TYPE_AUTO);
 	public static final Pref<IntSupplier> CATCHUP_DAYS = Pref.i("CATCHUP_DAYS", 0);
 	public static final Pref<Supplier<String>> LOGO_URL = Pref.s("LOGO_URL");
 	public static final Pref<BooleanSupplier> LOGO_PREFER_EPG = Pref.b("LOGO_PREFER_EPG", true);

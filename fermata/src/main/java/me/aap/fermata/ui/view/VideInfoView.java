@@ -17,7 +17,10 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.material.textview.MaterialTextView;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.engine.StreamEngine;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -44,6 +47,18 @@ public class VideInfoView extends ConstraintLayout
 	}
 
 	@Override
+	public void setVisibility(int visibility) {
+		if (visibility == VISIBLE) {
+			MediaEngine eng = getActivity().getMediaServiceBinder().getCurrentEngine();
+			if (eng == null) return;
+			PlayableItem i = eng.getSource();
+			if ((i instanceof StreamItem) && !(eng instanceof StreamEngine)) onPlayableChanged(i, i);
+		}
+
+		super.setVisibility(visibility);
+	}
+
+	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		if (handleActivityDestroyEvent(a, e)) a.getMediaServiceBinder().removeBroadcastListener(this);
 	}
@@ -57,40 +72,41 @@ public class VideInfoView extends ConstraintLayout
 
 		FutureSupplier<MediaDescriptionCompat> getDsc = newItem.getMediaDescription();
 		FutureSupplier<MediaMetadataCompat> getMd = newItem.getMediaData();
+		setData(newItem, getDsc, getMd);
+	}
 
+	public void setData(PlayableItem item, FutureSupplier<MediaDescriptionCompat> getDsc,
+											FutureSupplier<MediaMetadataCompat> getMd) {
 		if (getDsc.isDone() && !getDsc.isFailed()) {
-			apply(newItem, getDsc.getOrThrow());
+			setDescription(item, getDsc.getOrThrow());
 
 			if (getMd.isDone() && !getMd.isFailed()) {
-				apply(newItem, getMd.getOrThrow());
+				setMetadata(item, getMd.getOrThrow());
 			} else {
 				getMd.main().onSuccess(md -> {
-					if (isCurrent(newItem)) apply(newItem, md);
+					if (isCurrent(item)) setMetadata(item, md);
 				});
 			}
 		} else {
-			getTitleView().setText(newItem.getName());
+			getTitleView().setText(item.getName());
 			getIconView().setVisibility(GONE);
 			getSubtitleView().setVisibility(GONE);
 			getSubtitleView().setVisibility(GONE);
 			getDescriptionView().setVisibility(GONE);
 
 			getDsc.main().onSuccess(dsc -> {
-				if (isCurrent(newItem)) {
-					apply(newItem, dsc);
+				if (isCurrent(item)) {
+					setDescription(item, dsc);
 					getMd.main().onSuccess(md -> {
-						if (isCurrent(newItem)) apply(newItem, md);
+						if (isCurrent(item)) setMetadata(item, md);
 					});
 				}
 			});
 		}
 	}
 
-	private boolean isCurrent(PlayableItem i) {
-		return (getActivity().getCurrentPlayable() == i);
-	}
-
-	private void apply(PlayableItem item, MediaDescriptionCompat md) {
+	public void setDescription(PlayableItem item, MediaDescriptionCompat md) {
+		if (md == null) return;
 		Uri i = md.getIconUri();
 		CharSequence t = md.getTitle();
 		CharSequence s = md.getSubtitle();
@@ -116,7 +132,8 @@ public class VideInfoView extends ConstraintLayout
 		}
 	}
 
-	private void apply(PlayableItem item, MediaMetadataCompat md) {
+	public void setMetadata(PlayableItem item, MediaMetadataCompat md) {
+		if (md == null) return;
 		String i = md.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI);
 		String s = md.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE);
 		String d = md.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION);
@@ -145,6 +162,10 @@ public class VideInfoView extends ConstraintLayout
 				}
 			});
 		}
+	}
+
+	private boolean isCurrent(PlayableItem i) {
+		return (getActivity().getCurrentPlayable() == i);
 	}
 
 	private AppCompatImageView getIconView() {

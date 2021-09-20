@@ -30,7 +30,7 @@ public class YoutubeVideoView extends VideoView {
 
 	@NonNull
 	@Override
-	public VideInfoView getVideInfoView() {
+	public VideInfoView getVideoInfoView() {
 		return (VideInfoView) getChildAt(1);
 	}
 

@@ -18,6 +18,7 @@ import me.aap.fermata.media.lib.ItemBase;
 import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
@@ -27,33 +28,35 @@ import me.aap.utils.text.TextUtils;
  */
 public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 	public static final String SCHEME = "tvm3ue";
-	private final long start;
-	private final long end;
-	private final String title;
-	private final String description;
-	private final String icon;
-	TvM3uEpgItem next;
+	final long start;
+	final long end;
+	final String title;
+	final String descr;
+	final String icon;
+	private TvM3uEpgItem prev;
+	private TvM3uEpgItem next;
 
-	private TvM3uEpgItem(String id, @NonNull TvM3uTrackItem track, long start, long end, String title,
-											 String description, String icon) {
+	TvM3uEpgItem(String id, @NonNull TvM3uTrackItem track, long start, long end, String title,
+							 String descr, String icon) {
 		super(id, track, track.getResource());
 		this.start = start;
 		this.end = end;
 		this.title = title;
-		this.description = description;
+		this.descr = descr;
 		this.icon = icon;
+	}
+
+	TvM3uEpgItem(TvM3uArchiveItem i) {
+		this(i.getId(), i.getParent(), i.start, i.end, i.title, i.descr, i.icon);
+		set(i);
 	}
 
 	public static FutureSupplier<? extends Item> create(@NonNull TvRootItem root, String id) {
 		assert id.startsWith(SCHEME);
 		int slash = id.indexOf('/');
 		if (slash < 0) return completedNull();
-
 		int dash = id.indexOf('-', slash + 1);
 		if (dash < 0) return completedNull();
-		long start = Long.parseLong(id.substring(slash + 1, dash));
-		long end = Long.parseLong(id.substring(dash + 1));
-
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uTrackItem.SCHEME);
 		tb.append(id, SCHEME.length(), slash);
@@ -63,7 +66,7 @@ public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 			if (t == null) return completedNull();
 			return ((TvM3uTrackItem) t).getEpg().map(l -> {
 				for (TvM3uEpgItem e : l) {
-					if ((e.start == start) && (e.end == end)) return e;
+					if (id.equals(e.getId())) return e;
 				}
 				return t;
 			});
@@ -83,6 +86,8 @@ public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 				TvM3uEpgItem e = (TvM3uEpgItem) i;
 				if (BuildConfig.D && !track.equals(e.getParent())) throw new AssertionError();
 				return e;
+			} else if (track.isArchive(start, end)) {
+				return new TvM3uArchiveItem(id, track, start, end, title, description, icon);
 			} else {
 				return new TvM3uEpgItem(id, track, start, end, title, description, icon);
 			}
@@ -97,7 +102,7 @@ public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
 		try (SharedTextBuilder b = SharedTextBuilder.get()) {
-			if (description != null) b.append(description).append(".\n");
+			if (descr != null) b.append(descr).append(".\n");
 			Calendar c = Calendar.getInstance();
 			Locale l = Locale.getDefault();
 			c.setTimeInMillis(start);
@@ -134,7 +139,42 @@ public class TvM3uEpgItem extends ItemBase implements TvItem, EpgItem {
 	}
 
 	@Override
+	public TvM3uEpgItem getPrev() {
+		return prev;
+	}
+
+	void setPrev(TvM3uEpgItem prev) {
+		this.prev = prev;
+
+		if (prev instanceof TvM3uArchiveItem) {
+			scheduleReplacement();
+		} else if ((prev == null) && (next == null)) {
+			scheduleReplacement();
+		}
+	}
+
+	@Override
 	public TvM3uEpgItem getNext() {
 		return next;
+	}
+
+	public void setNext(TvM3uEpgItem next) {
+		this.next = next;
+
+		if (next instanceof TvM3uArchiveItem) {
+			next.scheduleReplacement();
+		} else if ((next == null) && (prev == null)) {
+			scheduleReplacement();
+		}
+	}
+
+	void scheduleReplacement() {
+		long delay = end + 1000 - System.currentTimeMillis();
+		if (delay < 0) return;
+		App.get().getHandler().postDelayed(() -> {
+			TvM3uTrackItem t = getParent();
+			if (!t.isArchive(start, end)) return;
+			t.replace(this, TvM3uArchiveItem::new);
+		}, delay);
 	}
 }

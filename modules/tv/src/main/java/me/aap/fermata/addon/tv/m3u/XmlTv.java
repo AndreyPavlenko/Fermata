@@ -1,11 +1,11 @@
 package me.aap.fermata.addon.tv.m3u;
 
 import static java.lang.Character.NON_SPACING_MARK;
+import static java.util.Collections.emptyList;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
 import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_NOT_FOUND;
 import static me.aap.fermata.addon.tv.m3u.TvM3uTrackItem.EPG_ID_UNKNOWN;
 import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
@@ -138,7 +138,7 @@ public class XmlTv implements Closeable {
 		});
 	}
 
-	private static void updateTrack(SQLiteDatabase db, TvM3uTrackItem track) {
+	private static int updateTrack(SQLiteDatabase db, TvM3uTrackItem track) {
 		int id = track.getEpgId();
 		String icon = track.getEpgChIcon();
 
@@ -199,7 +199,7 @@ public class XmlTv implements Closeable {
 		if (id == EPG_ID_UNKNOWN) {
 			Log.d("Channel not found: ", track.getName());
 			track.update(EPG_ID_NOT_FOUND, null, 0, 0, null, null, null, false);
-			return;
+			return EPG_ID_UNKNOWN;
 		}
 
 		String time = String.valueOf(System.currentTimeMillis());
@@ -213,42 +213,48 @@ public class XmlTv implements Closeable {
 				track.update(id, icon, 0, 0, null, null, null, false);
 			}
 		}
+
+		return id;
 	}
 
 	public FutureSupplier<List<TvM3uEpgItem>> getEpg(TvM3uTrackItem track) {
-		int id = track.getEpgId();
-		if (id == EPG_ID_UNKNOWN) {
-			return track.getMediaData().then(m -> {
-				int eid = track.getEpgId();
-				return (eid == EPG_ID_UNKNOWN) ? completedEmptyList() : getEpg(track, eid);
-			});
-		}
-		return getEpg(track, id);
-	}
-
-	private FutureSupplier<List<TvM3uEpgItem>> getEpg(TvM3uTrackItem track, int id) {
 		return sql.query(db -> {
 			try {
-				return getEpg(db, track, id);
+				return getEpg(db, track);
 			} catch (Throwable ex) {
 				Log.e(ex, "Failed to load epg for channel: ", track.getName());
-				return Collections.emptyList();
+				return emptyList();
 			}
 		});
 	}
 
-	private List<TvM3uEpgItem> getEpg(SQLiteDatabase db, TvM3uTrackItem track, int id) {
+	private List<TvM3uEpgItem> getEpg(SQLiteDatabase db, TvM3uTrackItem track) {
+		int id = track.getEpgId();
+
+		if (id == EPG_ID_UNKNOWN) {
+			id = updateTrack(db, track);
+			if (id == EPG_ID_UNKNOWN) return emptyList();
+		}
+
 		try (Cursor c = db.query(TABLE_PROG, Q_COL_EPG, Q_SEL_CH_ID,
 				new String[]{String.valueOf(id)}, null, null, null)) {
 			int cnt = c.getCount();
-			if (cnt == 0) return Collections.emptyList();
+			if (cnt == 0) return emptyList();
 			List<TvM3uEpgItem> l = new ArrayList<>(cnt);
 			while (c.moveToNext()) {
 				l.add(TvM3uEpgItem.create(track, c.getLong(0), c.getLong(1), c.getString(2),
 						c.getString(3), c.getString(4)));
 			}
+			if (l.isEmpty()) return emptyList();
 			Collections.sort(l);
-			for (int i = 1, s = l.size(); i < s; i++) l.get(i - 1).next = l.get(i);
+			for (int i = 1, s = l.size(); i < s; i++) {
+				TvM3uEpgItem cur = l.get(i);
+				TvM3uEpgItem prev = l.get(i - 1);
+				prev.setNext(cur);
+				cur.setPrev(prev);
+			}
+			l.get(0).setPrev(null);
+			l.get(l.size() - 1).setNext(null);
 			return l;
 		}
 	}

@@ -407,20 +407,22 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		}
 
 		public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction, boolean scroll) {
+			BrowsableItem prev = super.getParent();
+			boolean same = parent == prev;
+			MediaItemListView list = scroll && same ? getListView() : null;
+			int scrollPos = (list != null) ? list.getScrollPosition() : 0;
 			FutureSupplier<?> set = super.setParent(parent, userAction);
 
 			if (!isHidden()) {
 				getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 
 				if (scroll && (parent != null)) {
-					BrowsableItem prev = super.getParent();
-
-					if (set.isDone()) {
+					if (!same && set.isDone()) {
 						scrollToPrev(prev);
 					} else {
-						scrollPosition = 0;
+						scrollPosition = scrollPos;
 						scrollToPosition();
-						set.onSuccess(v -> scrollToPrev(prev));
+						if (!same) set.onSuccess(v -> scrollToPrev(prev));
 					}
 				}
 			}

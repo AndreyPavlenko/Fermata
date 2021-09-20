@@ -75,7 +75,9 @@ public class M3uItem extends BrowsableItemBase {
 		String m3uGenre = null;
 		String logoUrlBase = null;
 		String cover = null;
+		String catchup = null;
 		String catchupDays = null;
+		String catchupSource = null;
 		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 0; // 0 - unknown, 1 - audio, 2 - video
 
 		String name = null;
@@ -86,7 +88,9 @@ public class M3uItem extends BrowsableItemBase {
 		String logo = null;
 		String tvgId = null;
 		String tvgName = null;
+		String trackCatchup = null;
 		String trackCatchupDays = null;
+		String trackCatchupSource = null;
 		long duration = 0;
 		byte type = 0;
 		boolean first = true;
@@ -124,13 +128,13 @@ public class M3uItem extends BrowsableItemBase {
 								setTvgUrl(trim(l.substring(off, i)));
 								break;
 							case "catchup":
-								setCatchup(trim(l.substring(off, i)));
-								break;
-							case "catchup-source":
-								setCatchupSource(trim(l.substring(off, i)));
+								catchup = trim(l.substring(off, i));
 								break;
 							case "catchup-days":
 								catchupDays = trim(l.substring(off, i));
+								break;
+							case "catchup-source":
+								catchupSource = trim(l.substring(off, i));
 								break;
 						}
 
@@ -180,9 +184,16 @@ public class M3uItem extends BrowsableItemBase {
 								break;
 							case "group-title":
 								group = trim(l.substring(start, i));
+								break;
+							case "catchup":
+								trackCatchup = trim(l.substring(start, i));
+								break;
 							case "tvg-rec":
 							case "catchup-days":
 								trackCatchupDays = trim(l.substring(start, i));
+								break;
+							case "catchup-source":
+								trackCatchupSource = trim(l.substring(start, i));
 								break;
 						}
 					}
@@ -234,8 +245,9 @@ public class M3uItem extends BrowsableItemBase {
 					else if ((logoUrlBase != null) && !logo.contains("://")) logo = logoUrlBase + '/' + logo;
 
 					if (group == null) {
-						tracks.add(createTrack(this, -1, tracks.size(), idPath, file, name, album, artist, genre,
-								logo, tvgId, tvgName, duration, type, trackCatchupDays));
+						tracks.add(createTrack(this, -1, tracks.size(), idPath, file, name, album, artist,
+								genre, logo, tvgId, tvgName, duration, type, trackCatchup, trackCatchupDays,
+								trackCatchupSource));
 					} else {
 						M3uGroupItem g = groups.get(group);
 
@@ -245,12 +257,15 @@ public class M3uItem extends BrowsableItemBase {
 						}
 
 						g.tracks.add(createTrack(g, g.getGroupId(), g.tracks.size(), idPath, file, name, album,
-								artist, genre, logo, tvgId, tvgName, duration, type, trackCatchupDays));
+								artist, genre, logo, tvgId, tvgName, duration, type, trackCatchup,
+								trackCatchupDays, trackCatchupSource));
 					}
 				}
 
 				name = group = album = artist = genre = logo = tvgId = tvgName = null;
+				trackCatchup = catchup;
 				trackCatchupDays = catchupDays;
+				trackCatchupSource = catchupSource;
 				duration = 0;
 				type = 0;
 			}
@@ -349,7 +364,7 @@ public class M3uItem extends BrowsableItemBase {
 																		 String idPath, VirtualResource file, String name, String album,
 																		 String artist, String genre, String logo, String tvgId,
 																		 String tvgName, long duration, byte type,
-																		 String catchupDays) {
+																		 String catchup, String catchupDays, String catchupSource) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(M3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
 				.append(trackNumber).append(idPath);
@@ -376,6 +391,8 @@ public class M3uItem extends BrowsableItemBase {
 			return getData().get().then(d -> {
 				if (d.cover == null) {
 					return iconUri = completedNull();
+				} else if (d.cover.contains(":/")) {
+					return iconUri = completed(Uri.parse(d.cover));
 				} else {
 					return getResource().getParent().then(folder -> {
 						if (folder == null) return iconUri = completedNull();
@@ -480,12 +497,6 @@ public class M3uItem extends BrowsableItemBase {
 	}
 
 	protected void setTvgUrl(String url) {
-	}
-
-	protected void setCatchup(String catchup) {
-	}
-
-	protected void setCatchupSource(String src) {
 	}
 
 	private boolean isVideo(VirtualFile f) {

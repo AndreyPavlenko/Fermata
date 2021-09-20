@@ -179,7 +179,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		a.setBarsHidden(true);
 		setShowHideBarsIcon(a);
 
-		View info = (v != null) ? v.getVideInfoView() : null;
+		View info = (v != null) ? v.getVideoInfoView() : null;
 		View fb = a.getFloatingButton();
 		int delay = getStartDelay();
 
@@ -321,7 +321,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		int delay = getTouchDelay();
 		if (delay == 0) return false;
 
-		View info = video.getVideInfoView();
+		View info = video.getVideoInfoView();
 		View fb = a.getFloatingButton();
 
 		if (getVisibility() == VISIBLE) {
@@ -355,7 +355,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			else return;
 		}
 
-		View info = vv.getVideInfoView();
+		View info = vv.getVideoInfoView();
 		View fb = a.getFloatingButton();
 		int delay = getSeekDelay();
 		super.setVisibility(VISIBLE);
@@ -522,9 +522,10 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			MediaEngine eng = a.getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 
+			boolean stream = (pi.isStream());
 			eng.contributeToMenu(b);
 
-			if (!pi.isExternal()) {
+			if (!stream && !pi.isExternal()) {
 				if (pi.isRepeatItemEnabled() || p.getRepeatPref()) {
 					b.addItem(R.id.repeat, R.drawable.repeat_filled, R.string.repeat)
 							.setSubmenu(s -> {
@@ -546,7 +547,11 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 				b.addItem(R.id.audio_effects_fragment, R.drawable.equalizer, R.string.audio_effects);
 			}
 
-			b.addItem(R.id.speed, R.drawable.speed, R.string.speed).setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
+			if (!stream) {
+				b.addItem(R.id.speed, R.drawable.speed, R.string.speed)
+						.setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
+			}
+
 			b.addItem(R.id.timer, R.drawable.timer, R.string.timer).setSubmenu(s -> new TimerMenuHandler(a).build(s));
 		}
 

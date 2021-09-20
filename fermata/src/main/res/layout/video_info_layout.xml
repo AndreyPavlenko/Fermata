@@ -4,7 +4,7 @@
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/media_item_icon"
-        style="?attr/appMediaItemStyle"
+        style="?attr/appVideoInfoStyle"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginLeft="5dp"
@@ -19,7 +19,7 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/media_item_title"
-        style="?attr/appMediaItemStyle"
+        style="?attr/appVideoInfoStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:ellipsize="marquee"
@@ -39,7 +39,7 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/media_item_subtitle"
-        style="?attr/appMediaItemStyle"
+        style="?attr/appVideoInfoStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:ellipsize="marquee"
@@ -59,7 +59,7 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/media_item_dsc"
-        style="?attr/appMediaItemStyle"
+        style="?attr/appVideoInfoStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:ellipsize="marquee"

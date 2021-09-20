@@ -2,7 +2,7 @@
 <resources>
     <string name="sub_ch">Каналов: %1$d.</string>
     <string name="sub_gr">Групп: %1$d.</string>
-    <string name="sub_ch_gr">Каналов: %1$d. Групп: %1$d.</string>
+    <string name="sub_ch_gr">Каналов: %1$d. Групп: %2$d.</string>
     <string name="add_tv_source">Добавить источник M3U IPTV</string>
     <string name="epg_time_shift">Сдвиг времени EPG (часов)</string>
     <string name="logo">Логотипы каналов</string>
@@ -12,7 +12,7 @@
     <string name="catchup_query">Формат строки запроса</string>
     <string name="catchup_type">Тип catchup</string>
     <string name="catchup_type_cur">Текущий тип: %1$s</string>
-    <string name="catchup_type_default">По умолчанию</string>
+    <string name="catchup_type_auto">Авто</string>
     <string name="catchup_days">Количество дней</string>
     <string name="connection_settings">Настройки соединения</string>
 

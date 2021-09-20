@@ -97,6 +97,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
@@ -143,7 +144,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private final BroadcastReceiver onNoisy;
 	private MediaEngine engine;
 	private long keyPressTime;
-	private int preBufferingState;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
 	private boolean tryAnotherEngine;
@@ -790,28 +790,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	@Override
-	public void onEngineBuffering(MediaEngine engine, int percent) {
-		engine.getSpeed().and(engine.getPosition()).main().onSuccess(h -> {
-			PlaybackStateCompat state = getPlaybackState();
-			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state)
-					.setState(PlaybackStateCompat.STATE_BUFFERING, h.value2, h.value1);
-			setPlaybackState(b.build());
-			if (preBufferingState == -1) preBufferingState = state.getState();
-		});
-	}
-
-	@Override
-	public void onEngineBufferingCompleted(MediaEngine engine) {
-		engine.getSpeed().and(engine.getPosition()).main().onSuccess(h -> {
-			PlaybackStateCompat state = getPlaybackState();
-			PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state)
-					.setState(preBufferingState, h.value2, h.value1);
-			setPlaybackState(b.build());
-			preBufferingState = -1;
-		});
-	}
-
-	@Override
 	public void onEnginePrepared(MediaEngine engine) {
 		playerTask.cancel();
 		PlayableItem i = engine.getSource();
@@ -922,8 +900,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private FutureSupplier<MediaMetadataCompat> buildMetadata(MediaMetadataCompat.Builder b,
 																														MediaMetadataCompat meta,
 																														MediaDescriptionCompat dsc) {
-		ifNotNull(dsc.getTitle(), t->b.putString(METADATA_KEY_DISPLAY_TITLE, t.toString()));
-		ifNotNull(dsc.getSubtitle(), t->b.putString(METADATA_KEY_DISPLAY_SUBTITLE, t.toString()));
+		ifNotNull(dsc.getTitle(), t -> b.putString(METADATA_KEY_DISPLAY_TITLE, t.toString()));
+		ifNotNull(dsc.getSubtitle(), t -> b.putString(METADATA_KEY_DISPLAY_SUBTITLE, t.toString()));
 		if (meta.getBitmap(METADATA_KEY_ALBUM_ART) != null) return completed(b.build());
 
 		String art = meta.getString(METADATA_KEY_ALBUM_ART_URI);
@@ -1058,8 +1036,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 			PlayableItem current = eng.getSource();
 
 			if ((current != null) && !current.isExternal()) {
-				eng.getPosition().main().onSuccess(currentPos
-						-> playPreparedItem(eng, i, pos, current, currentPos));
+				if (current instanceof StreamItem) {
+					playPreparedItem(eng, i, pos, current, 0);
+				} else {
+					eng.getPosition().main().onSuccess(currentPos
+							-> playPreparedItem(eng, i, pos, current, currentPos));
+				}
 				return;
 			}
 		}
@@ -1067,7 +1049,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		playPreparedItem(eng, i, pos, null, -1);
 	}
 
-	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current, long currentPos) {
+	private void playPreparedItem(MediaEngine eng, PlayableItem i, long pos, PlayableItem current,
+																long currentPos) {
 		engine = eng = getEngineManager().createEngine(eng, i, this);
 
 		if (eng == null) {
@@ -1083,17 +1066,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		BrowsableItem p = i.getParent();
 		boolean updateQueue = false;
-		if (pos != -1) lib.setLastPlayed(i, pos);
 
 		if (current != null) {
+			lib.setLastPlayed(current, currentPos);
 			if (current.equals(i)) {
 				if (pos != -1) eng.setPosition(pos);
 			} else {
-				lib.setLastPlayed(current, currentPos);
+				lib.setLastPlayed(i, pos);
 				if (!p.equals(current.getParent())) updateQueue = true;
 			}
 		} else {
 			updateQueue = true;
+			lib.setLastPlayed(i, pos);
 		}
 
 		if (i.isVideo() && (videoView != null)) engine.setVideoView(getVideoView());

@@ -1,5 +1,11 @@
 package me.aap.fermata.ui.view;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.collection.CollectionUtils.filterMap;
+import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
+
 import android.support.v4.media.MediaDescriptionCompat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,17 +31,11 @@ import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.collection.CollectionUtils.filterMap;
-import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
-import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
-
 /**
  * @author Andrey Pavlenko
  */
 public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaItemViewHolder>
-		implements OnClickListener {
+		implements OnClickListener, Item.ChangeListener {
 	private final MainActivityDelegate activity;
 	private BrowsableItem parent;
 	private String filterText = "";
@@ -67,10 +67,12 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@CallSuper
 	public FutureSupplier<?> setParent(BrowsableItem parent, boolean userAction) {
 		ensureMainThread(true);
+		if (this.parent != null) this.parent.removeChangeListener(this);
 		this.parent = parent;
 		list = Collections.emptyList();
 		notifyDataSetChanged();
 		if (parent == null) return completedVoid();
+		parent.addChangeListener(this);
 
 		FutureSupplier<?> f = parent.getChildren().main()
 				.addConsumer((result, fail, progress, total) -> {
@@ -117,6 +119,12 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		return list;
 	}
 
+	@Override
+	public void mediaItemChanged(Item i) {
+		ensureMainThread(true);
+		if (i == parent) setParent(parent, false);
+	}
+
 	@CallSuper
 	@Override
 	protected void onItemDismiss(int position) {
@@ -154,6 +162,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	}
 
 	public void onDestroy() {
+		setParent(null, false);
 		for (MediaItemWrapper w : getList()) {
 			MediaItemViewHolder h = w.getViewHolder();
 			if (h != null) h.recycled();

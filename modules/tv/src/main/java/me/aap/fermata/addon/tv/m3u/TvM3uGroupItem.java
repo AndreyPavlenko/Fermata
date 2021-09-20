@@ -46,5 +46,4 @@ public class TvM3uGroupItem extends M3uGroupItem implements TvItem {
 		String t = getLib().getContext().getResources().getString(R.string.sub_ch, tracks.size());
 		return completed(t);
 	}
-
 }

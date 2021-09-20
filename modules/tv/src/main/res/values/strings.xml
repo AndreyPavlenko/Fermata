@@ -2,7 +2,7 @@
 <resources>
     <string name="sub_ch">Channels: %1$d.</string>
     <string name="sub_gr">Groups: %1$d.</string>
-    <string name="sub_ch_gr">Channels: %1$d. Groups: %1$d.</string>
+    <string name="sub_ch_gr">Channels: %1$d. Groups: %2$d.</string>
     <string name="add_tv_source">Add M3U IPTV source</string>
     <string name="epg" translatable="false">EPG</string>
     <string name="epg_url" translatable="false">XMLTV URL</string>
@@ -15,8 +15,9 @@
     <string name="catchup_query">Query format</string>
     <string name="catchup_type">Catchup type</string>
     <string name="catchup_type_cur">Current catchup type: %1$s</string>
-    <string name="catchup_type_default">Default</string>
+    <string name="catchup_type_auto">Auto</string>
     <string name="catchup_type_append" translatable="false">Append</string>
+    <string name="catchup_type_default" translatable="false">Default</string>
     <string name="catchup_type_shift" translatable="false">Shift</string>
     <string name="catchup_days">Number of days</string>
     <string name="connection_settings">Connection settings</string>

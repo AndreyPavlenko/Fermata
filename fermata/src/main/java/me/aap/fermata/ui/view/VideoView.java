@@ -118,7 +118,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	@Nullable
-	public VideInfoView getVideInfoView() {
+	public VideInfoView getVideoInfoView() {
 		return (VideInfoView) getChildAt(2);
 	}
 
@@ -135,7 +135,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			setSurfaceSize(eng);
 			cb.addVideoView(this, a.isCarActivity() ? 0 : 1);
 
-			VideInfoView info = getVideInfoView();
+			VideInfoView info = getVideoInfoView();
 			if (hideTitle && (info != null)) info.setVisibility(GONE);
 		}
 	}

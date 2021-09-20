@@ -253,4 +253,10 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 	protected void reset() {
 		description = null;
 	}
+
+	protected void set(ItemBase i) {
+		FutureSupplier<MediaDescriptionCompat> d = i.description;
+		if ((d != null) && d.isDone() && !d.isFailed()) description = d;
+		seqNum = i.seqNum;
+	}
 }

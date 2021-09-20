@@ -1,5 +1,12 @@
 package me.aap.fermata.media.engine;
 
+import static me.aap.fermata.media.pref.MediaLibPrefs.EXO_ENABLED;
+import static me.aap.fermata.media.pref.MediaLibPrefs.VLC_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
+import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_ENGINE;
+
 import android.content.Context;
 import android.widget.Toast;
 
@@ -24,13 +31,6 @@ import me.aap.utils.log.Log;
 import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityBase;
-
-import static me.aap.fermata.media.pref.MediaLibPrefs.EXO_ENABLED;
-import static me.aap.fermata.media.pref.MediaLibPrefs.VLC_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
-import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_ENGINE;
 
 /**
  * @author Andrey Pavlenko
@@ -81,46 +81,74 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	public MediaEngine createEngine(MediaEngine current, PlayableItem i, Listener listener) {
 		if (!isAdditionalPlayerSupported()) {
 			if (current != null) {
-				if (current.getId() == MEDIA_ENG_MP) return current;
+				if (current.getId() == MEDIA_ENG_MP) return create(mediaPlayer, current, i, listener);
 				current.close();
 			}
 
-			return mediaPlayer.createEngine(listener);
+			return create(mediaPlayer, null, i, listener);
 		}
 
 		PlayableItemPrefs pref = i.getPrefs();
 		int id = i.isVideo() ? pref.getVideoEnginePref() : pref.getAudioEnginePref();
 
 		if (current != null) {
-			if (current.getId() == id) return current;
+			if (current.getId() == id) return create(null, current, i, listener);
 			current.close();
 		}
 
-		switch (id) {
-			case MEDIA_ENG_EXO:
-				if (exoPlayer != null) return exoPlayer.createEngine(listener);
-			case MEDIA_ENG_VLC:
-				if (vlcPlayer != null) return vlcPlayer.createEngine(listener);
-			default:
-				return mediaPlayer.createEngine(listener);
-		}
+		return create(getProvider(id), current, i, listener);
 	}
 
 	public MediaEngine createAnotherEngine(@NonNull MediaEngine current, Listener listener) {
 		int id = current.getId();
+		PlayableItem i = current.getSource();
 		current.close();
 
 		if ((vlcPlayer != null) && (id != MEDIA_ENG_VLC)) {
-			return vlcPlayer.createEngine(listener);
+			return create(vlcPlayer, null, i, listener);
 		}
 		if ((exoPlayer != null) && (id != MEDIA_ENG_EXO)) {
-			return exoPlayer.createEngine(listener);
+			return create(exoPlayer, null, i, listener);
 		}
 		if (id != MEDIA_ENG_MP) {
-			return mediaPlayer.createEngine(listener);
+			return create(mediaPlayer, null, i, listener);
 		}
 
 		return null;
+	}
+
+	private MediaEngineProvider getProvider(int id) {
+		switch (id) {
+			case MEDIA_ENG_EXO:
+				if (exoPlayer != null) return exoPlayer;
+			case MEDIA_ENG_VLC:
+				if (vlcPlayer != null) return vlcPlayer;
+			default:
+				return mediaPlayer;
+		}
+	}
+
+	public MediaEngine create(MediaEngineProvider p, MediaEngine c, PlayableItem i, Listener l) {
+		if (c != null) {
+			if (isStream(i)) {
+				if (c instanceof StreamEngine) return c;
+				c.close();
+				return new StreamEngine((p != null) ? p : getProvider(c.getId()), l);
+			} else if (c instanceof StreamEngine) {
+				c.close();
+				return ((p != null) ? p : getProvider(c.getId())).createEngine(l);
+			} else {
+				return c;
+			}
+		} else if (isStream(i)) {
+			return new StreamEngine(p, l);
+		} else {
+			return p.createEngine(l);
+		}
+	}
+
+	private static boolean isStream(PlayableItem i) {
+		return i.isStream() && i.isSeekable();
 	}
 
 	private boolean isProviderAvailable(String providerClass) {

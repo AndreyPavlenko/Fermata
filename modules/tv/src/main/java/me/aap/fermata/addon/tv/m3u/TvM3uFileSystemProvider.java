@@ -3,6 +3,9 @@ package me.aap.fermata.addon.tv.m3u;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_DAYS;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_QUERY;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_AUTO;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_FILE_AGE;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_SHIFT;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_URL;
@@ -24,8 +27,10 @@ import me.aap.fermata.vfs.m3u.M3uFileSystemProvider;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.vfs.VirtualFileSystem;
 
@@ -115,24 +120,38 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		});
 
 		sub = prefs.subSet(o -> o.title = R.string.catchup);
-		sub.addStringPref(o -> {
-			o.store = ps;
-			o.pref = CATCHUP_QUERY;
-			o.title = R.string.catchup_query;
-		});
 		sub.addListPref(o -> {
 			o.store = ps;
 			o.pref = CATCHUP_TYPE;
 			o.title = R.string.catchup_type;
 			o.subtitle = R.string.catchup_type_cur;
 			o.formatSubtitle = true;
-			o.values = new int[]{R.string.catchup_type_default, R.string.catchup_type_append, R.string.catchup_type_shift};
+			o.values = new int[]{R.string.catchup_type_auto, R.string.catchup_type_append,
+					R.string.catchup_type_default, R.string.catchup_type_shift};
 		});
 		sub.addIntPref(o -> {
 			o.store = ps;
 			o.pref = CATCHUP_DAYS;
 			o.seekMax = 30;
 			o.title = R.string.catchup_days;
+			o.visibility = new PrefCondition<>(ps, CATCHUP_TYPE,
+					p -> ps.getIntPref(CATCHUP_TYPE) != CATCHUP_TYPE_AUTO);
+		});
+		sub.addStringPref(o -> {
+			o.store = ps;
+			o.pref = CATCHUP_QUERY;
+			o.title = R.string.catchup_query;
+			o.stringHint = "?timeshift=${start}&timenow=${timestamp}";
+			o.visibility = new PrefCondition<>(ps, CATCHUP_TYPE,
+					p -> ps.getIntPref(CATCHUP_TYPE) == CATCHUP_TYPE_APPEND);
+		});
+		sub.addStringPref(o -> {
+			o.store = ps;
+			o.pref = CATCHUP_QUERY;
+			o.title = R.string.catchup_query;
+			o.stringHint = "http://example.com/stream1_${offset}.m3u8";
+			o.visibility = new PrefCondition<>(ps, CATCHUP_TYPE,
+					p -> ps.getIntPref(CATCHUP_TYPE) == CATCHUP_TYPE_DEFAULT);
 		});
 
 		sub = prefs.subSet(o -> o.title = R.string.logo);
@@ -156,8 +175,27 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 	}
 
 	@Override
+	protected boolean validate(PreferenceStore ps) {
+		if (!super.validate(ps)) return false;
+		String q;
+
+		switch (ps.getIntPref(CATCHUP_TYPE)) {
+			case CATCHUP_TYPE_APPEND:
+				q = ps.getStringPref(CATCHUP_QUERY);
+				return (q != null) && !TextUtils.isBlank(q);
+			case CATCHUP_TYPE_DEFAULT:
+				q = ps.getStringPref(CATCHUP_QUERY);
+				return (q != null) && !TextUtils.isBlank(q) &&
+						(q.startsWith("http://") || q.startsWith("https://"));
+			default:
+				return true;
+		}
+	}
+
+	@Override
 	protected void setPrefs(PreferenceStore ps, M3uFile m3u) {
 		TvM3uFile f = (TvM3uFile) m3u;
+		KnownProviders.configure(ps);
 		super.setPrefs(ps, f);
 		f.setVideo(true);
 		f.setEpgUrl(ps.getStringPref(EPG_URL));

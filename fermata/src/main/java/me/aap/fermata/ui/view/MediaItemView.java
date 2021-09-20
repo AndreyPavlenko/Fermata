@@ -45,6 +45,7 @@ import java.util.Objects;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -77,6 +78,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	private final int mediaItemMarkColor;
 	private VectorDrawableCompat watchedVideoDrawable;
 	private VectorDrawableCompat watchingVideoDrawable;
+	private VectorDrawableCompat archiveLabelDrawable;
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
@@ -336,30 +338,39 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	public void onDrawForeground(Canvas canvas) {
 		super.onDrawForeground(canvas);
 		Item item = getItem();
-		if (!(item instanceof PlayableItem) || (item instanceof StreamItem)) return;
-
-		PlayableItem p = (PlayableItem) item;
-		if (!p.isVideo()) return;
-
-		PlayableItemPrefs prefs = p.getPrefs();
 		VectorDrawableCompat d;
 
-		if (prefs.getWatchedPref()) {
-			d = watchedVideoDrawable;
+		if ((item instanceof ArchiveItem) && !((ArchiveItem) item).isExpired()) {
+			d = archiveLabelDrawable;
 			if (d == null) {
-				d = watchedVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.done, null);
-				if (d == null) return;
-				d.setTint(mediaItemMarkColor);
-			}
-		} else if (prefs.getPositionPref() > 0) {
-			d = watchingVideoDrawable;
-			if (d == null) {
-				d = watchingVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.watching, null);
+				d = archiveLabelDrawable = VectorDrawableCompat.create(getResources(), R.drawable.archive_label, null);
 				if (d == null) return;
 				d.setTint(mediaItemMarkColor);
 			}
 		} else {
-			return;
+			if (!(item instanceof PlayableItem) || (item instanceof StreamItem)) return;
+			PlayableItem p = (PlayableItem) item;
+			if (!p.isVideo()) return;
+
+			PlayableItemPrefs prefs = p.getPrefs();
+
+			if (prefs.getWatchedPref()) {
+				d = watchedVideoDrawable;
+				if (d == null) {
+					d = watchedVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.done, null);
+					if (d == null) return;
+					d.setTint(mediaItemMarkColor);
+				}
+			} else if (prefs.getPositionPref() > 0) {
+				d = watchingVideoDrawable;
+				if (d == null) {
+					d = watchingVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.watching, null);
+					if (d == null) return;
+					d.setTint(mediaItemMarkColor);
+				}
+			} else {
+				return;
+			}
 		}
 
 		ImageView i = getIcon();
@@ -392,10 +403,19 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 		if (item instanceof EpgItem) {
 			EpgItem e = (EpgItem) item;
+			EpgItem prev = e.getPrev();
+			boolean arch = e instanceof ArchiveItem;
 			long time = System.currentTimeMillis();
-			setSelected(false);
+			long end = e.getEndTime();
+			long updateDelay = 0;
+			if ((end > time) && (e.getStartTime() <= time)) updateDelay = end - time;
 
-			if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
+			if (arch && (!(prev instanceof ArchiveItem))) {
+				long delay = ((ArchiveItem) e).getExpirationTime() - time;
+				if ((delay > 0) && (delay > updateDelay)) updateDelay = delay;
+			}
+
+			if (updateDelay > 0) {
 				setState(Typeface.BOLD, false);
 				a.postDelayed(() -> {
 					if (getItem() != e) return;
@@ -409,9 +429,13 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 							if (focus != null) focus.refreshState();
 						}
 					}
-				}, e.getEndTime() - time);
+				}, updateDelay);
 
-				return;
+				if (!arch) {
+					setSelected(false);
+					setState(Typeface.NORMAL, false);
+					return;
+				}
 			}
 		}
 

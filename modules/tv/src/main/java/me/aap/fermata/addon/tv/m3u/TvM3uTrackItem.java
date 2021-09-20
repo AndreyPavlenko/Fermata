@@ -6,6 +6,10 @@ import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_AUTO;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
 import static me.aap.utils.async.Completed.cancelled;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
@@ -13,20 +17,26 @@ import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
 import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.TvItem;
 import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.engine.MetadataBuilder;
+import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.M3uTrackItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -36,6 +46,8 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.event.ListenerLeakDetector;
+import me.aap.utils.function.Function;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VirtualResource;
@@ -47,10 +59,15 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static final AtomicReferenceFieldUpdater<TvM3uTrackItem, FutureSupplier<List<TvM3uEpgItem>>> EPG =
 			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(TvM3uTrackItem.class, FutureSupplier.class, "epg");
+	@SuppressWarnings("RegExpRedundantEscape")
+	private static final Pattern CATCHUP_REPL = Pattern.
+			compile("(\\$\\{start\\})|(\\$\\{timestamp\\})|(\\$\\{offset\\})");
 	static final int EPG_ID_UNKNOWN = -1;
 	static final int EPG_ID_NOT_FOUND = -2;
 	public static final String SCHEME = "tvm3ut";
+	private final int catchUpType;
 	private final int catchUpDays;
+	private final String catchUpSource;
 	private int epgId = EPG_ID_UNKNOWN;
 	private long epgStart;
 	private long epgStop;
@@ -64,10 +81,12 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 	protected TvM3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
 													 String name, String album, String artist, String genre,
 													 String logo, String tvgId, String tvgName, long duration, byte type,
-													 int catchUpDays) {
+													 int catchUpType, int catchUpDays, String catchUpSource) {
 		super(id, parent, trackNumber, file, name, album, artist, genre, logo, tvgId, tvgName,
 				duration, (type > 2) ? 2 : type);
+		this.catchUpType = catchUpType;
 		this.catchUpDays = catchUpDays;
+		this.catchUpSource = catchUpSource;
 	}
 
 	public static FutureSupplier<TvM3uTrackItem> create(TvRootItem root, String id) {
@@ -289,6 +308,74 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		return (time <= ct) && (time >= (ct - (cd * 60000L * 60L * 24L)));
 	}
 
+	boolean isArchive(long start, long end) {
+		int cd = getCatchUpDays();
+		if (cd < 0) return false;
+		long ct = System.currentTimeMillis();
+		return (end <= ct) && (start >= (ct - (cd * 60000L * 60L * 24L)));
+	}
+
+	@Nullable
+	@Override
+	public Uri getLocation(long time) {
+		if (!isSeekable(time)) return null;
+		long utc = toTimeStamp(time);
+		long lutc = toTimeStamp(System.currentTimeMillis());
+		if (utc >= lutc) return getLocation();
+
+		switch (getCatchUpType()) {
+			case CATCHUP_TYPE_APPEND:
+				return getCatchupUri(utc, lutc, true);
+			case CATCHUP_TYPE_DEFAULT:
+				return getCatchupUri(utc, lutc, false);
+			case CATCHUP_TYPE_SHIFT:
+				return getShiftUri(utc, lutc);
+			default:
+				return null;
+		}
+	}
+
+	private Uri getCatchupUri(long utc, long lutc, boolean append) {
+		String q = getCatchupQuery();
+		if ((q == null) || q.isEmpty()) return null;
+		Matcher m = CATCHUP_REPL.matcher(q);
+
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			int idx = 0;
+			int len = q.length();
+			if (append) b.append(getLocation());
+
+			while (m.find()) {
+				int start;
+				if ((start = m.start(1)) != -1) {
+					b.append(q, idx, start).append(utc);
+					idx = m.end(1);
+				} else if ((start = m.start(2)) != -1) {
+					b.append(q, idx, start).append(lutc);
+					idx = m.end(2);
+				} else if ((start = m.start(3)) != -1) {
+					b.append(q, idx, start).append(lutc - utc);
+					idx = m.end(3);
+				} else {
+					Log.e("Unrecognized group: ", m.group());
+					return null;
+				}
+			}
+
+			if (idx < len) b.append(q, idx, len);
+			return Uri.parse(b.toString());
+		}
+	}
+
+	private Uri getShiftUri(long utc, long lutc) {
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			b.append(getLocation());
+			b.append("?utc=").append(utc);
+			b.append("&lutc=").append(lutc);
+			return Uri.parse(b.toString());
+		}
+	}
+
 	int getEpgId() {
 		return epgId;
 	}
@@ -321,6 +408,15 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		return (catchUpDays > 0) ? catchUpDays : getM3uItem().getResource().getCatchupDays();
 	}
 
+	String getCatchupQuery() {
+		return (catchUpSource != null) ? catchUpSource : getM3uItem().getResource().getCatchupQuery();
+	}
+
+	int getCatchUpType() {
+		return (catchUpType != CATCHUP_TYPE_AUTO) ? catchUpType :
+				getM3uItem().getResource().getCatchupType();
+	}
+
 	void update(int epgId, String epgIcon, long epgStart, long epgStop, String epgTitle,
 							String epgDesc, String epgProgIcon, boolean force) {
 		App.get().run(() -> {
@@ -345,10 +441,44 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		epg = null;
 	}
 
+	<From extends TvM3uEpgItem, To extends TvM3uEpgItem> void replace(From i, Function<From, To> convert) {
+		FutureSupplier<List<TvM3uEpgItem>> f = EPG.get(this);
+		if (f == null) return;
+		List<TvM3uEpgItem> l = f.peek();
+		if (l == null) return;
+		int idx = Collections.binarySearch(l, i);
+		TvM3uEpgItem old = (idx < 0) ? null : l.get(idx);
+		if (old != i) return;
+		DefaultMediaLib lib = (DefaultMediaLib) getLib();
+		TvM3uEpgItem repl;
+
+		synchronized (lib.cacheLock()) {
+			lib.removeFromCache(i);
+			repl = convert.apply(i);
+		}
+
+		TvM3uEpgItem prev = i.getPrev();
+		TvM3uEpgItem next = i.getNext();
+		l.set(idx, repl);
+		if (prev != null) {
+			repl.setPrev(prev);
+			prev.setNext(repl);
+		}
+		if (next != null) {
+			repl.setNext(next);
+			next.setPrev(repl);
+		}
+		notifyListeners();
+	}
+
 	private void notifyListeners() {
 		List<Item.ChangeListener> listeners = this.listeners;
 		if ((listeners != null) && !listeners.isEmpty()) {
 			for (Item.ChangeListener l : listeners) l.mediaItemChanged(this);
 		}
+	}
+
+	private static long toTimeStamp(long time) {
+		return time / 1000L;
 	}
 }

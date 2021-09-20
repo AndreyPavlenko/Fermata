@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.tv.m3u;
 
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_AUTO;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
 import static me.aap.utils.async.Completed.completed;
@@ -30,8 +31,6 @@ import me.aap.utils.vfs.VirtualResource;
 public class TvM3uItem extends M3uItem implements TvItem {
 	public static final String SCHEME = "tvm3u";
 	private String tvgUrl;
-	private String catchUpSource;
-	private int catchUpType = CATCHUP_TYPE_DEFAULT;
 	private final FutureRef<XmlTv> xmlTv = new FutureRef<XmlTv>() {
 		@Override
 		protected FutureSupplier<XmlTv> create() {
@@ -102,12 +101,26 @@ public class TvM3uItem extends M3uItem implements TvItem {
 																		 String idPath, VirtualResource file, String name, String album,
 																		 String artist, String genre, String logo, String tvgId,
 																		 String tvgName, long duration, byte type,
-																		 String catchupDays) {
+																		 String catchup, String catchupDays, String catchupSource) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
 				.append(trackNumber).append(idPath);
+		int ct = CATCHUP_TYPE_AUTO;
 		int cd = -1;
 
+		if (catchup != null) {
+			switch (catchup) {
+				case "default":
+					ct = CATCHUP_TYPE_DEFAULT;
+					break;
+				case "append":
+					ct = CATCHUP_TYPE_APPEND;
+					break;
+				case "shift":
+					ct = CATCHUP_TYPE_SHIFT;
+					break;
+			}
+		}
 		if (catchupDays != null) {
 			try {
 				cd = Integer.parseInt(catchupDays);
@@ -117,7 +130,7 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		}
 
 		return new TvM3uTrackItem(tb.releaseString(), parent, trackNumber, file, name, album, artist,
-				genre, logo, tvgId, tvgName, duration, type, cd);
+				genre, logo, tvgId, tvgName, duration, type, ct, cd, catchupSource);
 	}
 
 	@Override
@@ -158,42 +171,10 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		return ((url != null) && !url.isEmpty()) ? url : tvgUrl;
 	}
 
-	public String getCatchupQuery() {
-		String q = getResource().getCatchupQuery();
-		return (q == null) ? catchUpSource : q;
-	}
-
-	public int getCatchUpType() {
-		int t = getResource().getCatchupType();
-		return (t == CATCHUP_TYPE_DEFAULT) ? catchUpType : t;
-	}
-
 	@Override
 	protected void setTvgUrl(String url) {
 		tvgUrl = url = url.trim();
 		TvM3uFile f = getResource();
 		if (f.getEpgUrl() == null) f.setEpgUrl(url);
-	}
-
-	@Override
-	protected void setCatchup(String catchup) {
-		if (catchup != null) {
-			switch (catchup) {
-				case "default":
-					catchUpType = CATCHUP_TYPE_DEFAULT;
-					break;
-				case "append":
-					catchUpType = CATCHUP_TYPE_APPEND;
-					break;
-				case "shift":
-					catchUpType = CATCHUP_TYPE_SHIFT;
-					break;
-			}
-		}
-	}
-
-	@Override
-	protected void setCatchupSource(String src) {
-		catchUpSource = src;
 	}
 }

@@ -21,6 +21,7 @@ import java.util.List;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
 import me.aap.fermata.media.lib.MediaLib.Folders;
@@ -112,7 +113,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
 		}
 
-		if (!(item instanceof StreamItem)) {
+		if (!(item instanceof StreamItem) && !(item instanceof ArchiveItem)) {
 			if (pi.getPrefs().hasPref(BOOKMARKS)) {
 				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks)
 						.setFutureSubmenu(this::buildBookmarksMenu);

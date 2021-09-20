@@ -41,7 +41,6 @@ import me.aap.fermata.media.engine.MediaEngineException;
 import me.aap.fermata.media.engine.MediaStreamInfo;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.view.VideoView;
@@ -49,6 +48,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.io.IoUtils;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.TextUtils;
 
 /**
@@ -192,25 +192,13 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	}
 
 	@Override
-	public boolean canPause() {
-		Source src = source;
-		return (src != Source.NULL) && !(src.getItem() instanceof StreamItem) && src.getItem().isSeekable();
-	}
-
-	@Override
 	public FutureSupplier<Long> getPosition() {
 		Source src = source;
 
-		if ((src == Source.NULL) || !src.isSeekable()) {
-			return completed(0L);
-		} else if (src.getItem() instanceof StreamItem) {
-			return ((StreamItem) src.getItem()).getStartTime().map(t -> {
-				if (t == 0L) return 0L;
-				long now = System.currentTimeMillis();
-				return (t < now) ? (now - t) : 0L;
-			});
-		} else {
+		if ((src != Source.NULL) && src.isSeekable()) {
 			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition);
+		} else {
+			return completed(0L);
 		}
 	}
 
@@ -346,6 +334,11 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	@Override
 	public void onEvent(MediaPlayer.Event event) {
 		switch (event.type) {
+			case MediaPlayer.Event.Buffering:
+				float percent = event.getBuffering();
+				if (percent == 100F) listener.onEngineBufferingCompleted(this);
+				else listener.onEngineBuffering(this, (int) percent);
+				break;
 			case MediaPlayer.Event.Playing:
 				startPlaying();
 				break;

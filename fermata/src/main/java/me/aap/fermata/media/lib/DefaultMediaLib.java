@@ -209,13 +209,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public void setLastPlayed(PlayableItem i, long position) {
-		if (i.isExternal()) return;
+		if ((position < 0) || i.isExternal()) return;
 
 		i.getDuration().main().onSuccess(dur -> {
 			String id;
 			BrowsableItemPrefs p;
 
-			if (dur <= 0) {
+			if ((i instanceof StreamItem) || (dur <= 0)) {
 				id = i.getId();
 				p = i.getParent().getPrefs();
 				setLastPlayedItemPref(id);
@@ -316,12 +316,15 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
 			String id = i.getId();
-			if (BuildConfig.D && itemCache.containsKey(id)) throw new AssertionError(id);
+			if (BuildConfig.D && itemCache.containsKey(id)) {
+				throw new AssertionError("Unable to add item " + i +
+						". Item with id=" + id + "already exists: " + itemCache.get(id));
+			}
 			itemCache.put(id, new WeakRef<>(id, i, itemRefQueue));
 		}
 	}
 
-	void removeFromCache(Item i) {
+	public void removeFromCache(Item i) {
 		synchronized (itemCache) {
 			clearRefs(itemCache, itemRefQueue);
 			if (i == null) return;
