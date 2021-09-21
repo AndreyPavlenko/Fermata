@@ -15,12 +15,17 @@ import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 
+import android.content.Context;
+
 import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.lib.FileItem;
+import me.aap.fermata.media.lib.FolderItem;
+import me.aap.fermata.media.lib.M3uItem;
 import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
@@ -38,14 +43,17 @@ import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.vfs.VirtualResource;
 
 /**
  * @author Andrey Pavlenko
@@ -95,8 +103,16 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		return r.onSuccess(v -> {
 			MediaLibFragment f = a.getActiveMediaLibFragment();
 			if (f != null) f.contributeToContextMenu(builder, this);
+			if (canDelete()) builder.addItem(R.id.delete, R.drawable.delete, R.string.delete);
 			builder.setSelectionHandler(this);
 		});
+	}
+
+	private boolean canDelete() {
+		BrowsableItem p = item.getParent();
+		if ((p == null) || (p.getParent() == null)) return false;
+		return (((item instanceof FileItem) || (item instanceof FolderItem) || (item instanceof M3uItem))
+				&& item.getResource().canDelete());
 	}
 
 	protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
@@ -442,9 +458,32 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			item.getPrefs().setVideoScalePref(SCALE_4_3);
 		} else if (id == R.id.video_scaling_16) {
 			item.getPrefs().setVideoScalePref(SCALE_16_9);
+		} else if (id == R.id.delete) {
+			UiUtils.showQuestion(getContext(), R.string.delete_file_title,
+					R.string.delete_file_question).onSuccess(v -> {
+				VirtualResource res = item.getResource();
+				res.delete().main().onCompletion((deleted, err) -> {
+					if ((err == null) && deleted) {
+						MainActivityDelegate a = getMainActivity();
+						MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
+						if ((eng != null) && item.equals(eng.getSource()))
+							a.getMediaSessionCallback().onSkipToNext();
+						ActivityFragment mf = a.getActiveFragment();
+						if (mf instanceof MediaLibFragment) ((MediaLibFragment) mf).refresh();
+						return;
+					}
+					if (err != null) Log.e(err, "Failed to delete file " + res);
+					Context ctx = getContext();
+					UiUtils.showAlert(ctx, ctx.getString(R.string.delete_file_failed, res.getName()));
+				});
+			});
 		}
 
 		return true;
+	}
+
+	private Context getContext() {
+		return getMenu().getContext();
 	}
 
 	private MainActivityDelegate getMainActivity() {

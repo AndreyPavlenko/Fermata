@@ -1135,7 +1135,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		if (state.getState() == STATE_PLAYING) {
 			MediaEngine engine = getEngine();
-			assert (engine != null);
+			if (engine == null) {
+				stopTimer();
+				return;
+			}
 			PlayableItem i = engine.getSource();
 			if (i.isTimerRequired()) startTimer(i, state.getPosition(), state.getPlaybackSpeed());
 		} else {

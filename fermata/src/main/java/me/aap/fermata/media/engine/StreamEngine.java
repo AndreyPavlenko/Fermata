@@ -217,7 +217,7 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 			if (position >= max) {
 				if (playing) {
 					positionChanged = false;
-					if (getSource().getLocation().equals(source.getLocation())) return;
+					if (eng.getSource().getLocation().equals(source.getLocation())) return;
 				}
 				this.position = max;
 			} else {
@@ -268,6 +268,7 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 		}
 
 		if (u == null) {
+			eng.stop();
 			onEngineError(this, new IllegalArgumentException("Failed to play " + source.getName()));
 			return null;
 		} else {

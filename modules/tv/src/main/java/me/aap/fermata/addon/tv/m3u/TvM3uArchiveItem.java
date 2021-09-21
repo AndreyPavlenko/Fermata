@@ -88,8 +88,13 @@ class TvM3uArchiveItem extends TvM3uEpgItem implements ArchiveItem, PlayableItem
 	}
 
 	@Override
+	public boolean isExpired() {
+		return !getParent().isCatchupSupported() || ArchiveItem.super.isExpired();
+	}
+
+	@Override
 	public boolean isSeekable() {
-		return true;
+		return getParent().isCatchupSupported();
 	}
 
 	@Override

@@ -1,5 +1,13 @@
 package me.aap.fermata.vfs.m3u;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
+import static me.aap.utils.net.http.HttpFileDownloader.CHARSET;
+import static me.aap.utils.net.http.HttpFileDownloader.ENCODING;
+import static me.aap.utils.net.http.HttpFileDownloader.MAX_AGE;
+import static me.aap.utils.text.TextUtils.isInt;
+import static me.aap.utils.text.TextUtils.trim;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -25,14 +33,6 @@ import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.local.LocalFileSystem;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
-import static me.aap.utils.net.http.HttpFileDownloader.CHARSET;
-import static me.aap.utils.net.http.HttpFileDownloader.ENCODING;
-import static me.aap.utils.net.http.HttpFileDownloader.MAX_AGE;
-import static me.aap.utils.text.TextUtils.isInt;
-import static me.aap.utils.text.TextUtils.trim;
 
 /**
  * @author Andrey Pavlenko
@@ -219,6 +219,7 @@ public class M3uFile implements VirtualFile {
 		private final SharedPreferences prefs;
 		private Collection<ListenerRef<Listener>> listeners;
 
+		@SuppressWarnings("CopyConstructorMissesField")
 		protected M3uPrefs(M3uPrefs prefs) {
 			this(prefs.key, prefs.prefs);
 		}

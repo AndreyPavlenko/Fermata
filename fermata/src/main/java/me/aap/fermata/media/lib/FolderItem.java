@@ -26,7 +26,7 @@ import static me.aap.utils.async.Completed.completedNull;
 /**
  * @author Andrey Pavlenko
  */
-class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
+public class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 	public static final String SCHEME = "folder";
 	private volatile FutureSupplier<Uri> iconUri;
 

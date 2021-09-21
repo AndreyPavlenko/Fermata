@@ -25,6 +25,7 @@ import java.util.Set;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -455,6 +456,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 							if (same) onClick((PlayableItem) i);
 						}, 300);
 					}
+				} else if (i instanceof ArchiveItem) {
+					clicked = null;
+					if (!((ArchiveItem) i).isExpired()) onClick((PlayableItem) i);
 				} else {
 					clicked = null;
 					onClick((PlayableItem) i);

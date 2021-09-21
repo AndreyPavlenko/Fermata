@@ -297,13 +297,14 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	@Override
 	public boolean isSeekable() {
-		return (getCatchUpDays() > 0) && (epgStart > 0) && (epgStart < epgStop);
+		return (getCatchUpDays() > 0) && (epgStart > 0) && (epgStart < epgStop) &&
+				isCatchupSupported();
 	}
 
 	@Override
 	public boolean isSeekable(long time) {
 		int cd = getCatchUpDays();
-		if (cd < 0) return false;
+		if ((cd < 0) || !isCatchupSupported()) return false;
 		long ct = System.currentTimeMillis();
 		return (time <= ct) && (time >= (ct - (cd * 60000L * 60L * 24L)));
 	}
@@ -313,6 +314,18 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		if (cd < 0) return false;
 		long ct = System.currentTimeMillis();
 		return (end <= ct) && (start >= (ct - (cd * 60000L * 60L * 24L)));
+	}
+
+	boolean isCatchupSupported() {
+		switch (getCatchUpType()) {
+			case CATCHUP_TYPE_APPEND:
+			case CATCHUP_TYPE_DEFAULT:
+				return !isNullOrBlank(getCatchupQuery());
+			case CATCHUP_TYPE_SHIFT:
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	@Nullable

@@ -20,7 +20,7 @@ import static me.aap.utils.text.TextUtils.appendHexString;
  * @author Andrey Pavlenko
  */
 @SuppressLint("InlinedApi")
-class FileItem extends PlayableItemBase {
+public class FileItem extends PlayableItemBase {
 	public static final String SCHEME = "file";
 	private final boolean isVideo;
 
