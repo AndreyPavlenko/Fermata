@@ -1,9 +1,13 @@
 package me.aap.fermata.ui.activity;
 
+import static me.aap.fermata.BuildConfig.AUTO;
+
 import android.content.Context;
 import android.content.res.Configuration;
 
 import androidx.annotation.Nullable;
+
+import java.util.List;
 
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
@@ -23,16 +27,28 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int THEME_DAY_NIGHT = 2;
 	int THEME_BLACK = 3;
 	Pref<IntSupplier> THEME = Pref.i("THEME", THEME_DARK);
-	Pref<IntSupplier> NAV_BAR_POS = Pref.i("NAV_BAR_POS", NavBarView.POSITION_BOTTOM);
-	Pref<IntSupplier> NAV_BAR_POS_AA = Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_BOTTOM);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
+	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
+	Pref<IntSupplier> NAV_BAR_POS = Pref.i("NAV_BAR_POS", NavBarView.POSITION_BOTTOM);
+	Pref<DoubleSupplier> NAV_BAR_SIZE = Pref.f("NAV_BAR_SIZE", 1f);
+	Pref<DoubleSupplier> TOOL_BAR_SIZE = Pref.f("TOOL_BAR_SIZE", 1f);
+	Pref<DoubleSupplier> CONTROL_PANEL_SIZE = Pref.f("CONTROL_PANEL_SIZE", 1f);
+	Pref<DoubleSupplier> TEXT_ICON_SIZE = Pref.f("TEXT_ICON_SIZE", 1f);
 	Pref<BooleanSupplier> GRID_VIEW = Pref.b("GRID_VIEW", false);
-	Pref<DoubleSupplier> MEDIA_ITEM_SCALE = Pref.f("MEDIA_ITEM_SCALE", 1);
 	Pref<DoubleSupplier> P_SPLIT_PERCENT = Pref.f("P_SPLIT_PERCENT", 0.6f);
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
-	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
+
+	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
+	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
+	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
+	Pref<IntSupplier> NAV_BAR_POS_AA = AUTO ? Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_BOTTOM) : null;
+	Pref<DoubleSupplier> NAV_BAR_SIZE_AA = AUTO ? Pref.f("NAV_BAR_SIZE_AA", 1f) : null;
+	Pref<DoubleSupplier> TOOL_BAR_SIZE_AA = AUTO ? Pref.f("TOOL_BAR_SIZE_AA", 1f) : null;
+	Pref<DoubleSupplier> CONTROL_PANEL_SIZE_AA = AUTO ? Pref.f("CONTROL_PANEL_SIZE_AA", 1f) : null;
+	Pref<DoubleSupplier> TEXT_ICON_SIZE_AA = AUTO ? Pref.f("TEXT_ICON_SIZE_AA", 1f) : null;
+	Pref<BooleanSupplier> GRID_VIEW_AA = AUTO ? Pref.b("GRID_VIEW_AA", false) : null;
 
 	static MainActivityPrefs get() {
 		return MainActivityDelegate.Prefs.instance;
@@ -40,46 +56,6 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default int getThemePref() {
 		return getIntPref(THEME);
-	}
-
-	default int getNavBarPosPref() {
-		return getIntPref(NAV_BAR_POS);
-	}
-
-	default int getNavBarPosAAPref() {
-		return getIntPref(NAV_BAR_POS_AA);
-	}
-
-	default void setThemePref(int value) {
-		applyIntPref(THEME, value);
-	}
-
-	default boolean getHideBarsPref() {
-		return getBooleanPref(HIDE_BARS);
-	}
-
-	default void setHideBarsPref(boolean value) {
-		applyBooleanPref(HIDE_BARS, value);
-	}
-
-	default boolean getFullscreenPref() {
-		return getBooleanPref(FULLSCREEN);
-	}
-
-	default void setFullscreenPref(boolean value) {
-		applyBooleanPref(FULLSCREEN, value);
-	}
-
-	default boolean getGridViewPref() {
-		return getBooleanPref(GRID_VIEW);
-	}
-
-	default void setGridViewPref(boolean value) {
-		applyBooleanPref(GRID_VIEW, value);
-	}
-
-	default float getMediaItemScalePref() {
-		return getFloatPref(MEDIA_ITEM_SCALE);
 	}
 
 	default float getSplitPercent(Context ctx) {
@@ -107,11 +83,95 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 		applyStringPref(SHOW_ADDON_ON_START, className);
 	}
 
-	default boolean getShowPgUpDownPref() {
+	static boolean hasFullscreenPref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(FULLSCREEN_AA);
+		return prefs.contains(FULLSCREEN);
+	}
+
+	default boolean getFullscreenPref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getBooleanPref(FULLSCREEN_AA);
+		return getBooleanPref(FULLSCREEN);
+	}
+
+	static boolean hasHideBarsPref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(HIDE_BARS_AA);
+		return prefs.contains(HIDE_BARS);
+	}
+
+	default boolean getHideBarsPref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getBooleanPref(HIDE_BARS_AA);
+		return getBooleanPref(HIDE_BARS);
+	}
+
+	default boolean getShowPgUpDownPref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getBooleanPref(SHOW_PG_UP_DOWN_AA);
 		return getBooleanPref(SHOW_PG_UP_DOWN);
 	}
 
-	default void setShowPgUpDownPref(boolean value) {
-		applyBooleanPref(SHOW_PG_UP_DOWN, value);
+	static boolean hasNavBarPosPref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(NAV_BAR_POS_AA);
+		return prefs.contains(NAV_BAR_POS);
+	}
+
+	default int getNavBarPosPref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getIntPref(NAV_BAR_POS_AA);
+		return getIntPref(NAV_BAR_POS);
+	}
+
+	static boolean hasNavBarSizePref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(NAV_BAR_SIZE_AA);
+		return prefs.contains(NAV_BAR_SIZE);
+	}
+
+	default float getNavBarSizePref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getFloatPref(NAV_BAR_SIZE_AA);
+		return getFloatPref(NAV_BAR_SIZE);
+	}
+
+	static boolean hasToolBarSizePref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(TOOL_BAR_SIZE_AA);
+		return prefs.contains(TOOL_BAR_SIZE);
+	}
+
+	default float getToolBarSizePref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getFloatPref(TOOL_BAR_SIZE_AA);
+		return getFloatPref(TOOL_BAR_SIZE);
+	}
+
+	static boolean hasControlPanelSizePref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(CONTROL_PANEL_SIZE_AA);
+		return prefs.contains(CONTROL_PANEL_SIZE);
+	}
+
+	default float getControlPanelSizePref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getFloatPref(CONTROL_PANEL_SIZE_AA);
+		return getFloatPref(CONTROL_PANEL_SIZE);
+	}
+
+	static boolean hasTextIconSizePref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(TEXT_ICON_SIZE_AA);
+		return prefs.contains(TEXT_ICON_SIZE);
+	}
+
+	default float getTextIconSizePref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getFloatPref(TEXT_ICON_SIZE_AA);
+		return getFloatPref(TEXT_ICON_SIZE);
+	}
+
+	static boolean hasGridViewPref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		return prefs.contains(getGridViewPrefKey(a));
+	}
+
+	static Pref<BooleanSupplier> getGridViewPrefKey(MainActivityDelegate a) {
+		return (AUTO && a.isCarActivity()) ? GRID_VIEW_AA : GRID_VIEW;
+	}
+
+	default boolean getGridViewPref(MainActivityDelegate a) {
+		if (AUTO && a.isCarActivity()) return getBooleanPref(GRID_VIEW_AA);
+		return getBooleanPref(GRID_VIEW);
+	}
+
+	default void setGridViewPref(MainActivityDelegate a, boolean value) {
+		applyBooleanPref(getGridViewPrefKey(a), value);
 	}
 }

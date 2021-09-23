@@ -32,7 +32,7 @@
         <item name="colorAccent">#4B78AF</item>
         <item name="rippleColor">#83A5CF</item>
 
-        <item name="android:textColorHint">#504E4E</item>
+        <item name="android:textColorHint">#0F0F0F</item>
 
         <item name="colorControlNormal">#999CA1</item>
         <item name="colorControlActivated">#095381</item>

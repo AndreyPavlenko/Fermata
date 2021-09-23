@@ -1,6 +1,6 @@
 ext {
     def abi = project.properties['ABI']
-    VERSION_CODE = 128
+    VERSION_CODE = 131
     VERSION_NAME = "1.8.1"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 30

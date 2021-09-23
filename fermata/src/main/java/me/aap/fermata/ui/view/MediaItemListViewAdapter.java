@@ -25,6 +25,7 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
@@ -70,7 +71,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if (this.parent != null) this.parent.removeChangeListener(this);
 		this.parent = parent;
 		list = Collections.emptyList();
-		notifyDataSetChanged();
+		notifyChanged();
 		if (parent == null) return completedVoid();
 		parent.addChangeListener(this);
 
@@ -95,7 +96,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	protected void setChildren(List<? extends Item> children) {
 		ensureMainThread(true);
 		list = filterMap(children, this::filter, (i, c, l) -> l.add(new MediaItemWrapper(c)), ArrayList::new);
-		notifyDataSetChanged();
+		notifyChanged();
 	}
 
 	public void setFilter(String filter) {
@@ -162,11 +163,11 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	}
 
 	public void onDestroy() {
-		setParent(null, false);
 		for (MediaItemWrapper w : getList()) {
 			MediaItemViewHolder h = w.getViewHolder();
 			if (h != null) h.recycled();
 		}
+		setParent(null, false);
 	}
 
 	@Override
@@ -229,6 +230,12 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 				selection.add((PlayableItem) w.getItem());
 		}
 		return selection;
+	}
+
+	private void notifyChanged() {
+		if ((listView != null) && listView.isComputingLayout())
+			App.get().getHandler().post(this::notifyDataSetChanged);
+		else notifyDataSetChanged();
 	}
 
 	private boolean filter(Item i) {

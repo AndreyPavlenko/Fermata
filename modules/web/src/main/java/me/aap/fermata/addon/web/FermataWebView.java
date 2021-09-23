@@ -341,7 +341,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 				else av = VERSION.RELEASE;
 				String wv = m.group(1);
 				String cv = m.group(2);
-				UserAgent.ua = a.getPreferenceStore().getStringPref(a.getUserAgentPref()).trim()
+				UserAgent.ua = a.getUserAgent()
 						.replace("{ANDROID_VERSION}", av)
 						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
 						.replace("{CHROME_VERSION}", requireNonNull(cv));
@@ -364,7 +364,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 			if (m.matches()) {
 				String wv = m.group(1);
 				String cv = m.group(2);
-				uaDesktop = a.getPreferenceStore().getStringPref(a.getUserAgentDesktopPref())
+				uaDesktop = a.getUserAgentDesktop()
 						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
 						.replace("{CHROME_VERSION}", requireNonNull(cv));
 			} else {

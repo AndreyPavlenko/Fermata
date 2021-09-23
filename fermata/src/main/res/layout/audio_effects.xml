@@ -20,7 +20,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:numLabels="2">
 
-        <com.google.android.material.textview.MaterialTextView
+        <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/equalizer_title"
             style="?attr/appEqualizerStyle"
             android:layout_width="wrap_content"
@@ -128,7 +128,7 @@
         app:layout_constraintTop_toBottomOf="@id/equalizer"
         app:numLabels="2">
 
-        <com.google.android.material.textview.MaterialTextView
+        <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/virtualizer_title"
             style="?attr/appEqualizerStyle"
             android:layout_width="wrap_content"
@@ -172,7 +172,7 @@
             app:layout_constraintTop_toBottomOf="@id/virtualizer_title"
             tools:ignore="RtlSymmetry" />
 
-        <com.google.android.material.textview.MaterialTextView
+        <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/virtualizer_seek_title"
             style="?attr/appEqualizerStyle"
             android:layout_width="wrap_content"
@@ -220,7 +220,7 @@
         app:layout_constraintTop_toBottomOf="@id/virtualizer"
         app:numLabels="2">
 
-        <com.google.android.material.textview.MaterialTextView
+        <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/bass_title"
             style="?attr/appEqualizerStyle"
             android:layout_width="wrap_content"
@@ -249,7 +249,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/bass_title" />
 
-        <com.google.android.material.textview.MaterialTextView
+        <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/bass_seek_title"
             style="?attr/appEqualizerStyle"
             android:layout_width="wrap_content"
@@ -295,7 +295,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/bass">
 
-        <com.google.android.material.textview.MaterialTextView
+        <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/apply_to_title"
             style="?attr/appEqualizerStyle"
             android:layout_width="wrap_content"

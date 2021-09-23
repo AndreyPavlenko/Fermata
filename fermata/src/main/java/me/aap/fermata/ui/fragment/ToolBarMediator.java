@@ -56,7 +56,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
 		}
 
-		if ((f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref()) {
+		if ((f instanceof MediaLibFragment) && a.getPrefs().getShowPgUpDownPref(a)) {
 			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
 			first = addButton(tb, R.drawable.pg_up, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_up, LEFT);
 		} else {
@@ -220,10 +220,11 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 	}
 
 	private static void onGridButtonClick(View v) {
-		MainActivityPrefs prefs = MainActivityDelegate.get(v.getContext()).getPrefs();
-		boolean grid = prefs.getGridViewPref();
+		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
+		MainActivityPrefs prefs = a.getPrefs();
+		boolean grid = a.isGridView();
 		((ImageButton) v).setImageResource(grid ? R.drawable.view_grid : R.drawable.view_list);
-		prefs.setGridViewPref(!grid);
+		prefs.setGridViewPref(a, !grid);
 	}
 
 	private static void onSortButtonClick(View v) {

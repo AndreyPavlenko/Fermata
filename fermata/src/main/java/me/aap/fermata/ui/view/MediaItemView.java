@@ -5,6 +5,7 @@ import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_END_TIME;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
 import static me.aap.utils.misc.MiscUtils.ifNull;
+import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
@@ -33,6 +34,7 @@ import android.widget.TextView;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StyleRes;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
@@ -70,28 +72,34 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	private static Drawable loadingDrawable;
 	@ColorInt
 	private static int iconColor;
+	@ColorInt
+	private static int hintColor;
+	@StyleRes
+	private final int titleTextAppearance;
+	@StyleRes
+	private final int subtitleTextAppearance;
 	private final ColorStateList iconTint;
+	private final ColorStateList textTint;
 	@Nullable
 	private MediaItemViewHolder holder;
 	private ProgressUpdater progressUpdater;
-	@ColorInt
-	private final int mediaItemMarkColor;
 	private VectorDrawableCompat watchedVideoDrawable;
 	private VectorDrawableCompat watchingVideoDrawable;
 	private VectorDrawableCompat archiveLabelDrawable;
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
-		TypedArray ta = ctx.obtainStyledAttributes(attrs, new int[]{
-				R.attr.colorOnSecondary,
-				R.attr.elevation,
-				R.attr.mediaItemMarkColor
-		}, R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
-		iconColor = ta.getColor(0, 0);
-		setElevation(ta.getDimension(1, 0));
-		mediaItemMarkColor = ta.getColor(2, 0);
+		TypedArray ta = ctx.obtainStyledAttributes(attrs, R.styleable.MediaItemView,
+				R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
+		iconColor = ta.getColor(R.styleable.MediaItemView_iconColor, 0);
+		hintColor = ta.getColor(R.styleable.MediaItemView_hintColor, 0);
+		titleTextAppearance = ta.getResourceId(R.styleable.MediaItemView_titleTextAppearance, 0);
+		subtitleTextAppearance = ta.getResourceId(R.styleable.MediaItemView_subtitleTextAppearance, 0);
+		setElevation(ta.getDimension(R.styleable.MediaItemView_elevation, 0));
+		textTint = ta.getColorStateList(R.styleable.MediaItemView_android_textColor);
 		ta.recycle();
-		applyLayout(ctx, getMainActivity());
+		MainActivityDelegate a = getMainActivity();
+		applyLayout(ctx, a.isGridView(), a.getPrefs().getTextIconSizePref(a));
 		iconTint = getIcon().getImageTintList();
 		setLongClickable(true);
 		setOnLongClickListener(this);
@@ -100,42 +108,30 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		setFocusable(true);
 	}
 
-	public void applyLayout(Context ctx, MainActivityDelegate a) {
-		boolean grid = a.isGridView();
-		float scale = a.getPrefs().getMediaItemScalePref();
+	public void applyLayout(Context ctx, boolean grid, float size) {
 		removeAllViews();
+		inflate(ctx, grid ? R.layout.media_item_grid_layout : R.layout.media_item_list_layout, this);
+		setSize(ctx, grid, size);
+	}
 
-		if (grid) {
-			inflate(ctx, R.layout.media_item_grid_layout, this);
-			setTextSize(ctx, scale);
-		} else {
-			inflate(ctx, R.layout.media_item_list_layout, this);
-			setTextSize(ctx, scale);
+	public void setSize(Context ctx, boolean grid, float size) {
+		setTextAppearance(ctx, getTitle(), titleTextAppearance, size);
+		setTextAppearance(ctx, getSubtitle(), subtitleTextAppearance, size);
+		if (!grid) {
 			int iconSize = (int) (getTitle().getTextSize() + getSubtitle().getTextSize() + toPx(ctx, 10));
-			ViewGroup.LayoutParams lp = getIcon().getLayoutParams();
+			ImageView i = getIcon();
+			ViewGroup.LayoutParams lp = i.getLayoutParams();
 			lp.height = iconSize;
 			lp.width = iconSize;
+			i.setLayoutParams(lp);
 		}
 	}
 
-	private void setTextSize(Context ctx, float scale) {
-		TypedArray ta = ctx.obtainStyledAttributes(null, new int[]{
-				R.attr.textAppearanceListItem,
-				R.attr.textAppearanceCaption
-		}, R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
-		int titleTextAppearance = ta.getResourceId(0, 0);
-		int subtitleTextAppearance = ta.getResourceId(1, 0);
-		ta.recycle();
-
-		ta = ctx.obtainStyledAttributes(titleTextAppearance, new int[]{android.R.attr.textSize});
-		int titleTextSize = ta.getDimensionPixelSize(0, 0);
-		ta.recycle();
-		ta = ctx.obtainStyledAttributes(subtitleTextAppearance, new int[]{android.R.attr.textSize});
-		int subtitleTextSize = ta.getDimensionPixelSize(0, 0);
-		ta.recycle();
-
-		getTitle().setTextSize(COMPLEX_UNIT_PX, titleTextSize * scale);
-		getSubtitle().setTextSize(COMPLEX_UNIT_PX, subtitleTextSize * scale);
+	private void setTextAppearance(Context ctx, TextView v, @StyleRes int res,
+																 float scale) {
+		v.setTextAppearance(res);
+		v.setTextSize(COMPLEX_UNIT_PX, getTextAppearanceSize(ctx, res) * scale);
+		v.setTextColor(textTint);
 	}
 
 	public void setHolder(@Nullable MediaItemViewHolder holder) {
@@ -345,7 +341,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			if (d == null) {
 				d = archiveLabelDrawable = VectorDrawableCompat.create(getResources(), R.drawable.archive_label, null);
 				if (d == null) return;
-				d.setTint(mediaItemMarkColor);
+				d.setTint(hintColor);
 			}
 		} else {
 			if (!(item instanceof PlayableItem) || (item instanceof StreamItem)) return;
@@ -359,14 +355,14 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 				if (d == null) {
 					d = watchedVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.done, null);
 					if (d == null) return;
-					d.setTint(mediaItemMarkColor);
+					d.setTint(hintColor);
 				}
 			} else if (prefs.getPositionPref() > 0) {
 				d = watchingVideoDrawable;
 				if (d == null) {
 					d = watchingVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.watching, null);
 					if (d == null) return;
-					d.setTint(mediaItemMarkColor);
+					d.setTint(hintColor);
 				}
 			} else {
 				return;
@@ -385,7 +381,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	public void refresh() {
 		MediaItemWrapper w = getItemWrapper();
 		if (w == null) return;
-		rebind(null, w);
+		rebind(w, w);
 		refreshState(w.getItem());
 	}
 
@@ -393,7 +389,10 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		MediaItemWrapper w = getItemWrapper();
 		if (w == null) return;
 		Item item = w.getItem();
-		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) rebind(null, w);
+		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) {
+			rebind(w, null);
+			rebind(null, w);
+		}
 		refreshState(item);
 	}
 

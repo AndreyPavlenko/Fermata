@@ -55,6 +55,7 @@ public class ControlPanelSeekView extends AppCompatSeekBar {
 		}
 
 		super.setEnabled(enabled);
+		p.computeSize();
 	}
 
 	private ConstraintSet load(@LayoutRes int layout) {

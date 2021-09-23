@@ -22,6 +22,7 @@ import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
 
 /**
@@ -124,6 +125,18 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 
 	public Pref<Supplier<String>> getUserAgentDesktopPref() {
 		return USER_AGENT_DESKTOP;
+	}
+
+	public String getUserAgentDesktop() {
+		Pref<Supplier<String>> p = getUserAgentDesktopPref();
+		String ua = getPreferenceStore().getStringPref(p);
+		return TextUtils.isNullOrBlank(ua) ? p.getDefaultValue().get() : ua;
+	}
+
+	public String getUserAgent() {
+		Pref<Supplier<String>> p = getUserAgentPref();
+		String ua = getPreferenceStore().getStringPref(p);
+		return TextUtils.isNullOrBlank(ua) ? p.getDefaultValue().get() : ua;
 	}
 
 	public boolean isForceDark() {

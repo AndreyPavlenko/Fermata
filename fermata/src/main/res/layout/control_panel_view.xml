@@ -16,12 +16,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <me.aap.utils.ui.view.ImageButton
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/show_hide_bars_icon"
             style="?attr/appControlPanelStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_weight="1"
+            android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:src="@drawable/collapse" />
 
@@ -30,9 +33,9 @@
             style="?attr/appSeekBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:maxLines="1"
-            android:padding="4dp"
-            android:textAppearance="?attr/textAppearanceBody1" />
+            android:padding="4dp" />
     </LinearLayout>
 
     <me.aap.fermata.ui.view.ControlPanelSeekView
@@ -64,16 +67,19 @@
             style="?attr/appSeekBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:maxLines="1"
-            android:padding="4dp"
-            android:textAppearance="?attr/textAppearanceBody1" />
+            android:padding="4dp" />
 
-        <me.aap.utils.ui.view.ImageButton
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/control_menu_button_icon"
             style="?attr/appControlPanelStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_weight="1"
+            android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:src="@drawable/more" />
     </LinearLayout>

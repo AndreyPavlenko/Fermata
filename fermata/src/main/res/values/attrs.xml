@@ -1,0 +1,16 @@
+<resources>
+    <declare-styleable name="MediaItemView">
+        <attr name="elevation" />
+        <attr name="android:textColor" />
+        <attr name="iconColor" format="color|reference" />
+        <attr name="hintColor" format="color|reference" />
+        <attr name="titleTextAppearance" format="reference" />
+        <attr name="subtitleTextAppearance" format="reference" />
+    </declare-styleable>
+
+    <declare-styleable name="ControlPanelView">
+        <attr name="size" />
+        <attr name="textAppearance" />
+        <attr name="android:colorBackground" />
+    </declare-styleable>
+</resources>

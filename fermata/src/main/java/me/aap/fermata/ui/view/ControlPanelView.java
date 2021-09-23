@@ -4,13 +4,15 @@ import static android.media.AudioManager.ADJUST_LOWER;
 import static android.media.AudioManager.ADJUST_RAISE;
 import static android.media.AudioManager.FLAG_SHOW_UI;
 import static android.media.AudioManager.STREAM_MUSIC;
+import static android.util.TypedValue.COMPLEX_UNIT_PX;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.isVisible;
+import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Color;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -18,9 +20,13 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.DimenRes;
+import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
+import androidx.annotation.StyleRes;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GestureDetectorCompat;
 
@@ -58,7 +64,6 @@ import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.GestureListener;
-import me.aap.utils.ui.view.ImageButton;
 import me.aap.utils.ui.view.NavBarView;
 
 /**
@@ -69,8 +74,11 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	private static final byte MASK_VISIBLE = 1;
 	private static final byte MASK_VIDEO_MODE = 2;
 	private final GestureDetectorCompat gestureDetector;
-	private final ImageButton showHideBars;
-	private final int timerTextAppearance;
+	private final ImageView showHideBars;
+	@DimenRes
+	private final int size;
+	@StyleRes
+	private final int textAppearance;
 	private PlaybackControlPrefs prefs;
 	private HideTimer hideTimer;
 	private byte mask;
@@ -84,11 +92,11 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		gestureDetector = new GestureDetectorCompat(context, this);
 		inflate(context, R.layout.control_panel_view, this);
 
-		TypedArray ta = context.obtainStyledAttributes(attrs,
-				new int[]{android.R.attr.colorBackground, R.attr.textAppearanceBody1},
+		TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.ControlPanelView,
 				R.attr.appControlPanelStyle, R.style.AppTheme_ControlPanelStyle);
-		setBackgroundColor(ta.getColor(0, Color.TRANSPARENT));
-		timerTextAppearance = ta.getResourceId(1, R.style.TextAppearance_MaterialComponents_Body1);
+		size = ta.getLayoutDimension(R.styleable.ControlPanelView_size, 0);
+		textAppearance = ta.getResourceId(R.styleable.ControlPanelView_textAppearance, 0);
+		setBackgroundColor(ta.getColor(R.styleable.ControlPanelView_android_colorBackground, 0));
 		ta.recycle();
 
 		MainActivityDelegate a = getActivity();
@@ -96,12 +104,10 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		a.getPrefs().addBroadcastListener(this);
 
 		ViewGroup g = findViewById(R.id.show_hide_bars);
-		showHideBars = (ImageButton) g.getChildAt(0);
+		showHideBars = (ImageView) g.getChildAt(0);
 		g.setOnClickListener(this::showHideBars);
-		showHideBars.setOnClickListener(this::showHideBars);
 		g = findViewById(R.id.control_menu_button);
 		g.setOnClickListener(this::showMenu);
-		g.getChildAt(1).setOnClickListener(this::showMenu);
 		setShowHideBarsIcon(a);
 	}
 
@@ -126,6 +132,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	}
 
 	public void bind(FermataServiceUiBinder b) {
+		computeSize();
 		prefs = b.getMediaSessionCallback().getPlaybackControlPrefs();
 		b.bindControlPanel(this);
 		b.bindPrevButton(findViewById(R.id.control_prev));
@@ -137,6 +144,70 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		b.bindProgressTime(findViewById(R.id.seek_time));
 		b.bindProgressTotal(findViewById(R.id.seek_total));
 		b.bound();
+	}
+
+	void computeSize() {
+		MainActivityDelegate a = getActivity();
+		setSize(a.getPrefs().getControlPanelSizePref(a));
+	}
+
+	private void setSize(float scale) {
+		TextView seekTime = findViewById(R.id.seek_time);
+		TextView seekTotal = findViewById(R.id.seek_total);
+		float textSize = getTextAppearanceSize(getContext(), textAppearance) * scale;
+		int textPad = seekTime.getPaddingTop() + seekTime.getPaddingBottom();
+		int pad = 2 * toIntPx(getContext(), 4) + textPad;
+		int iconSize = (int) (textSize + pad);
+		int panelSize = (int) (size * scale);
+		int buttonSize = (int) (panelSize - textSize - pad);
+		ControlPanelSeekView seek = findViewById(R.id.seek_bar);
+
+		if (seek.isEnabled()) {
+			setHeight(seek, iconSize);
+			setSize(R.id.show_hide_bars_icon, iconSize);
+			setSize(R.id.control_menu_button_icon, iconSize);
+			seTextAppearance(seekTime, textSize);
+			seTextAppearance(seekTotal, textSize);
+			setHeight(R.id.control_prev, buttonSize);
+			setHeight(R.id.control_rw, buttonSize);
+			setHeight(R.id.control_play_pause, buttonSize);
+			setHeight(R.id.control_ff, buttonSize);
+			setHeight(R.id.control_next, buttonSize);
+		} else {
+			panelSize = buttonSize;
+			setSize(R.id.show_hide_bars_icon, buttonSize);
+			setSize(R.id.control_menu_button_icon, buttonSize);
+			setHeight(R.id.control_prev, buttonSize);
+			setHeight(R.id.control_play_pause, buttonSize);
+			setHeight(R.id.control_next, buttonSize);
+		}
+
+		getLayoutParams().height = panelSize;
+	}
+
+	private void seTextAppearance(TextView t, float size) {
+		t.setTextAppearance(textAppearance);
+		t.setTextSize(COMPLEX_UNIT_PX, size);
+	}
+
+	private void setSize(@IdRes int id, int size) {
+		View v = findViewById(id);
+		ViewGroup.LayoutParams lp = v.getLayoutParams();
+		lp.width = lp.height = size;
+		v.setLayoutParams(lp);
+	}
+
+	private void setHeight(@IdRes int id, int h) {
+		View v = findViewById(id);
+		ViewGroup.LayoutParams lp = v.getLayoutParams();
+		lp.height = h;
+		v.setLayoutParams(lp);
+	}
+
+	private void setHeight(View v, int h) {
+		ViewGroup.LayoutParams lp = v.getLayoutParams();
+		lp.height = h;
+		v.setLayoutParams(lp);
 	}
 
 	public boolean isActive() {
@@ -153,7 +224,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 			super.setVisibility(VISIBLE);
 
-			if (a.getPrefs().getHideBarsPref()) {
+			if (a.getPrefs().getHideBarsPref(a)) {
 				a.setBarsHidden(true);
 				setShowHideBarsIcon(a);
 			}
@@ -209,7 +280,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			a.setBarsHidden(false);
 		} else {
 			super.setVisibility(VISIBLE);
-			a.setBarsHidden(a.getPrefs().getHideBarsPref());
+			a.setBarsHidden(a.getPrefs().getHideBarsPref(a));
 		}
 
 		setShowHideBarsIcon(a);
@@ -382,11 +453,12 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
-		if (mask != MASK_VISIBLE) return;
+		MainActivityDelegate a = getActivity();
 
-		if (prefs.contains(MainActivityPrefs.HIDE_BARS)) {
-			MainActivityDelegate a = getActivity();
-			if (a.getPrefs().getHideBarsPref()) a.setBarsHidden(getVisibility() == VISIBLE);
+		if (MainActivityPrefs.hasControlPanelSizePref(a, prefs)) {
+			setSize(a.getPrefs().getControlPanelSizePref(a));
+		} else if ((mask == MASK_VISIBLE) && MainActivityPrefs.hasHideBarsPref(a, prefs)) {
+			if (a.getPrefs().getHideBarsPref(a)) a.setBarsHidden(getVisibility() == VISIBLE);
 			else if (a.isBarsHidden()) a.setBarsHidden(false);
 			setShowHideBarsIcon(a);
 		}
@@ -475,7 +547,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 				playbackTimer = new MaterialTextView(ctx);
 				((ViewGroup) getParent()).addView(playbackTimer);
 				playbackTimer.setBackgroundResource(R.drawable.playback_timer_bg);
-				playbackTimer.setTextAppearance(timerTextAppearance);
+				playbackTimer.setTextAppearance(textAppearance);
 				ViewGroup.LayoutParams lp = playbackTimer.getLayoutParams();
 
 				if (lp instanceof ConstraintLayout.LayoutParams) {

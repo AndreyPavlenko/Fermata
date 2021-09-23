@@ -1,7 +1,11 @@
 package me.aap.fermata.ui.fragment;
 
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.getGridViewPrefKey;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.hasGridViewPref;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.hasTextIconSizePref;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 import android.annotation.SuppressLint;
@@ -58,6 +62,7 @@ import me.aap.utils.ui.view.ToolBarView;
 public abstract class MediaLibFragment extends MainActivityFragment implements MainActivityListener,
 		PreferenceStore.Listener, FermataServiceUiBinder.Listener, ToolBarView.Listener {
 	private ListAdapter adapter;
+	private boolean noScroll;
 	private int scrollPosition;
 	private Item clicked;
 
@@ -119,6 +124,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	private void cleanUp(MainActivityDelegate a) {
+		Log.d("Cleaning up fragment: ", this);
 		MediaItemListView v = (MediaItemListView) getView();
 		PreferenceStore ap = a.getPrefs();
 		FermataServiceUiBinder b = a.getMediaServiceBinder();
@@ -350,8 +356,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		if (e == MODE_CHANGED) {
 			if (isHidden()) return;
 			MainActivityPrefs store = a.getPrefs();
-			if (!store.getGridViewPref()) return;
-			List<PreferenceStore.Pref<?>> prefs = Collections.singletonList(MainActivityPrefs.GRID_VIEW);
+			if (!store.getGridViewPref(a)) return;
+			List<PreferenceStore.Pref<?>> prefs = singletonList(getGridViewPrefKey(a));
 			store.fireBroadcastEvent(l -> l.onPreferenceChanged(store, prefs));
 		} else if (e == ACTIVITY_DESTROY) {
 			cleanUp(a);
@@ -360,21 +366,32 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onToolBarEvent(ToolBarView tb, byte event) {
-		adapter.setFilter(tb.getFilter().getText().toString());
+		try {
+			noScroll = true;
+			adapter.setFilter(tb.getFilter().getText().toString());
+		} finally {
+			noScroll = false;
+		}
 	}
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
+		MainActivityDelegate a = getMainActivity();
+		boolean viewChanged = hasGridViewPref(a, prefs);
+
+		if (viewChanged || hasTextIconSizePref(getMainActivity(), prefs)) {
 			MediaItemListView list = (MediaItemListView) getView();
 
 			if (list != null) {
 				Context ctx = getContext();
-				MainActivityDelegate a = getMainActivity();
+				boolean grid = a.isGridView();
+				float size = a.getPrefs().getTextIconSizePref(a);
 
 				for (MediaItemWrapper w : getAdapter().getList()) {
 					MediaItemView v = w.getView();
-					if (v != null) v.applyLayout(ctx, a);
+					if (v == null) continue;
+					if (viewChanged) v.applyLayout(ctx, grid, size);
+					else v.setSize(ctx, grid, size);
 				}
 			}
 
@@ -414,7 +431,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			int scrollPos = (list != null) ? list.getScrollPosition() : 0;
 			FutureSupplier<?> set = super.setParent(parent, userAction);
 
-			if (!isHidden()) {
+			if (!isHidden() && !noScroll) {
 				getMainActivity().fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 
 				if (scroll && (parent != null)) {
@@ -504,6 +521,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		@Override
 		protected void setChildren(List<? extends Item> children) {
 			super.setChildren(children);
+			if (noScroll) return;
 			BrowsableItem p = getParent();
 			PlayableItem current = getMainActivity().getCurrentPlayable();
 

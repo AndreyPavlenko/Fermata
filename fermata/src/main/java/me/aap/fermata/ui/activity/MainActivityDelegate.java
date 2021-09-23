@@ -65,6 +65,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.function.Cancellable;
+import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.IntObjectFunction;
 import me.aap.utils.function.Supplier;
@@ -113,7 +114,17 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public void onActivityCreate(@Nullable Bundle state) {
 		super.onActivityCreate(state);
 		getPrefs().addBroadcastListener(this);
-		int recreate = (state != null) ? state.getInt("recreate", ID_NULL) : ID_NULL;
+		int navId;
+		int fragmentId;
+
+		if (state != null) {
+			navId = state.getInt("navId", ID_NULL);
+			fragmentId = state.getInt("fragmentId", ID_NULL);
+		} else {
+			navId = ID_NULL;
+			fragmentId = ID_NULL;
+		}
+
 		AppActivity a = getAppActivity();
 		FermataServiceUiBinder b = getMediaServiceBinder();
 		Context ctx = a.getContext();
@@ -130,8 +141,9 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				Log.d("Requested permissions: ", Arrays.toString(perms), ". Result: " + Arrays.toString(result));
 			}
 
-			if (recreate != ID_NULL) {
-				showFragment(recreate);
+			if (fragmentId != ID_NULL) {
+				setActiveNavItemId(navId);
+				showFragment(fragmentId);
 				return;
 			}
 
@@ -168,7 +180,10 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	@Override
 	protected void onActivitySaveInstanceState(@NonNull Bundle outState) {
 		super.onActivitySaveInstanceState(outState);
-		if (recreating) outState.putInt("recreate", getActiveFragmentId());
+		if (recreating) {
+			outState.putInt("navId", getActiveNavItemId());
+			outState.putInt("fragmentId", getActiveFragmentId());
+		}
 	}
 
 	public void recreate() {
@@ -189,7 +204,6 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		super.onActivityDestroy();
 		handler.close();
 		getPrefs().removeBroadcastListener(this);
-		removeListeners(getPrefs());
 
 		if (me.aap.utils.BuildConfig.D) {
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
@@ -213,7 +227,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public boolean isCarActivity() {
-		return getAppActivity().isCarActivity();
+		return BuildConfig.AUTO && getAppActivity().isCarActivity();
 	}
 
 	@NonNull
@@ -262,7 +276,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	@Override
 	public boolean isFullScreen() {
-		if (videoMode || getPrefs().getFullscreenPref()) {
+		if (videoMode || getPrefs().getFullscreenPref(this)) {
 			if (isCarActivity()) {
 				FermataServiceUiBinder b = getMediaServiceBinder();
 				return !b.getMediaSessionCallback().getPlaybackControlPrefs().getVideoAaShowStatusPref();
@@ -278,7 +292,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		ActivityFragment f = getActiveFragment();
 
 		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGreedSupported()) {
-			return getPrefs().getGridViewPref();
+			return getPrefs().getGridViewPref(this);
 		} else {
 			return false;
 		}
@@ -303,8 +317,22 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		return getMediaServiceBinder().getCurrentItem();
 	}
 
+	public ToolBarView getToolBar() {
+		return toolBar;
+	}
+
+	@Override
+	public float getToolBarSize() {
+		return getPrefs().getToolBarSizePref(this);
+	}
+
 	public NavBarView getNavBar() {
 		return navBar;
+	}
+
+	@Override
+	public float getNavBarSize() {
+		return getPrefs().getNavBarSizePref(this);
 	}
 
 	public BodyLayout getBody() {
@@ -315,9 +343,6 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		return navBarMediator;
 	}
 
-	public ToolBarView getToolBar() {
-		return toolBar;
-	}
 
 	public ControlPanelView getControlPanel() {
 		return controlPanel;
@@ -325,6 +350,11 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	public FloatingButton getFloatingButton() {
 		return floatingButton;
+	}
+
+	@Override
+	public float getTextIconSize() {
+		return getPrefs().getTextIconSizePref(this);
 	}
 
 	public boolean isBarsHidden() {
@@ -585,10 +615,9 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	@LayoutRes
 	private int getLayout() {
-		FermataActivity a = getAppActivity();
 		MainActivityPrefs prefs = getPrefs();
 
-		switch (a.isCarActivity() ? prefs.getNavBarPosAAPref() : prefs.getNavBarPosPref()) {
+		switch (prefs.getNavBarPosPref(this)) {
 			default:
 				return R.layout.main_activity;
 			case NavBarView.POSITION_LEFT:
@@ -613,9 +642,13 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (prefs.contains(MainActivityPrefs.THEME)) {
 			recreate();
-		} else if (prefs.contains(MainActivityPrefs.NAV_BAR_POS) || prefs.contains(MainActivityPrefs.NAV_BAR_POS_AA)) {
+		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {
 			recreate();
-		} else if (prefs.contains(MainActivityPrefs.FULLSCREEN)) {
+		} else if (MainActivityPrefs.hasNavBarSizePref(this, prefs)) {
+			if (navBar != null) navBar.setSize(getPrefs().getNavBarSizePref(this));
+		} else if (MainActivityPrefs.hasToolBarSizePref(this, prefs)) {
+			if (toolBar != null) toolBar.setSize(getPrefs().getToolBarSizePref(this));
+		} else if (MainActivityPrefs.hasFullscreenPref(this, prefs)) {
 			setSystemUiVisibility();
 		}
 	}
@@ -668,6 +701,20 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		static final Prefs instance = new Prefs();
 		private final List<ListenerRef<PreferenceStore.Listener>> listeners = new LinkedList<>();
 		private final SharedPreferences prefs = FermataApplication.get().getDefaultSharedPreferences();
+
+		private Prefs() {
+			// Rename old prefs
+			Pref<DoubleSupplier> old = Pref.f("MEDIA_ITEM_SCALE", 1f);
+			float scale = getFloatPref(old);
+
+			if (scale != 1f) {
+				try (PreferenceStore.Edit e = editPreferenceStore()) {
+					e.setFloatPref(TEXT_ICON_SIZE, scale);
+					e.setFloatPref(TEXT_ICON_SIZE_AA, scale);
+					e.removePref(old);
+				}
+			}
+		}
 
 		@NonNull
 		@Override

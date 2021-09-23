@@ -65,7 +65,7 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		EditText t = createEditText(tb);
 		ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
 		lp.horizontalWeight = 2;
-		t.setBackgroundResource(me.aap.utils.R.drawable.tool_bar_edittext_bg);
+		t.setBackgroundResource(me.aap.utils.R.color.tool_bar_edittext_bg);
 		t.setOnKeyListener((v, keyCode, event) -> onKey(f, t, keyCode, event));
 		t.setMaxLines(1);
 		t.setSingleLine(true);

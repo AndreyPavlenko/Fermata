@@ -5,6 +5,7 @@
     <string name="addon_name_web_browser">Веб браузер</string>
 
     <string name="interface_prefs">Интерфейс</string>
+    <string name="interface_prefs_aa">Андроид Авто</string>
     <string name="playback_settings">Настройки воспроизведения</string>
     <string name="playback_control">Управление воспроизведением</string>
     <string name="engine_prefs">Медиа движок</string>
@@ -17,18 +18,20 @@
     <string name="theme_black">Черная</string>
 
     <string name="nav_bar_pos">Расположении панели навигации</string>
-    <string name="nav_bar_pos_aa">Расположении панели навигации (Android Auto)</string>
     <string name="nav_bar_pos_sub">Текущее расположение: %1$s</string>
     <string name="nav_bar_pos_bottom">Внизу</string>
     <string name="nav_bar_pos_left">Слева</string>
     <string name="nav_bar_pos_right">Справа</string>
 
+    <string name="show_track_icons">Показывать иконки треков</string>
     <string name="hide_bars">Скрывать панели</string>
     <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
     <string name="fullscreen_mode">Полноэкранный режим</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
-    <string name="show_track_icons">Показывать иконки треков</string>
-    <string name="text_icon_scale">Маштаб текста и иконки</string>
+    <string name="nav_bar_size">Размер панели навигации</string>
+    <string name="tool_bar_size">Размер панели инструментов</string>
+    <string name="control_panel_size">Размер панели управления</string>
+    <string name="text_icon_size">Размер текста и иконок</string>
 
     <string name="play_next_on_completion">Воспроизводить следующий трек</string>
 

@@ -55,7 +55,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		grid = a.isGridView();
 
 		if (grid) {
-			float scale = prefs.getMediaItemScalePref();
+			float scale = prefs.getTextIconSizePref(a);
 			int span = (int) Math.max(cfg.screenWidthDp / (128 * scale), 2);
 			setLayoutManager(new GridLayoutManager(ctx, span));
 		} else {
@@ -359,9 +359,10 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MainActivityPrefs.GRID_VIEW) || prefs.contains(MainActivityPrefs.MEDIA_ITEM_SCALE)) {
+		MainActivityDelegate a = getActivity();
+
+		if (MainActivityPrefs.hasGridViewPref(a, prefs)) {
 			configure(getContext().getResources().getConfiguration());
-			MainActivityDelegate a = getActivity();
 			MediaLibFragment f = a.getActiveMediaLibFragment();
 
 			if ((f != null) && (f.getView() == this)) {

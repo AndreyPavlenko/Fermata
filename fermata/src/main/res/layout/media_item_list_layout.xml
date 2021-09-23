@@ -6,11 +6,12 @@
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/media_item_icon"
         style="?attr/appMediaItemStyle"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_margin="4dp"
         android:scaleType="fitCenter"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -21,7 +22,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:layout_marginBottom="1dp"
-        android:textAppearance="?attr/textAppearanceListItem"
         app:layout_constraintBottom_toTopOf="@id/media_item_subtitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/media_item_icon"
@@ -34,7 +34,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
-        android:textAppearance="?attr/textAppearanceCaption"
         app:layout_constraintBottom_toTopOf="@id/media_stream_progress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="1"

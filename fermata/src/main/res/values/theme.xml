@@ -7,22 +7,22 @@
     <attr name="appEqualizerStyle" format="reference" />
     <attr name="appStreamProgressStyle" format="reference" />
     <attr name="appVideoInfoStyle" format="reference" />
-    <attr name="mediaItemMarkColor" format="color|reference" />
 
     <style name="AppTheme" parent="Theme.Utils.Base">
         <item name="android:windowBackground">@drawable/app_background</item>
-        <item name="android:navigationBarColor">?attr/colorPrimary</item>
-
         <item name="appMediaItemStyle">@style/AppTheme.MediaItemStyle</item>
         <item name="appControlPanelStyle">@style/AppTheme.ControlPanelStyle</item>
         <item name="appSeekBarStyle">@style/AppTheme.SeekBarStyle</item>
         <item name="appEqualizerStyle">@style/AppTheme.EqualizerStyle</item>
         <item name="appStreamProgressStyle">@style/AppTheme.StreamProgressStyle</item>
         <item name="appVideoInfoStyle">@style/AppTheme.VideoInfoStyle</item>
-        <item name="mediaItemMarkColor">@android:color/holo_green_light</item>
     </style>
 
     <style name="AppTheme.MediaItemStyle">
+        <item name="iconColor">?attr/colorOnSecondary</item>
+        <item name="hintColor">@android:color/holo_green_light</item>
+        <item name="titleTextAppearance">?attr/textAppearanceListItem</item>
+        <item name="subtitleTextAppearance">?attr/textAppearanceCaption</item>
         <item name="android:textColor">@color/media_item_text_color</item>
         <item name="tint">@color/media_item_tint</item>
         <item name="indicatorColor">@color/media_item_tint</item>
@@ -30,9 +30,14 @@
     </style>
 
     <style name="AppTheme.ControlPanelStyle">
-        <item name="android:colorBackground">?attr/colorPrimary</item>
-        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="size">70dp</item>
         <item name="tint">?attr/colorOnPrimary</item>
+        <item name="android:colorBackground">?attr/colorPrimary</item>
+        <item name="textAppearance">@style/AppTheme.ControlPanelTextAppearance</item>
+    </style>
+
+    <style name="AppTheme.ControlPanelTextAppearance" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
     </style>
 
     <style name="AppTheme.SeekBarStyle">

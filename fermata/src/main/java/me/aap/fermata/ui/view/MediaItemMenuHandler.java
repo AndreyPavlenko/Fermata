@@ -460,7 +460,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			item.getPrefs().setVideoScalePref(SCALE_16_9);
 		} else if (id == R.id.delete) {
 			UiUtils.showQuestion(getContext(), R.string.delete_file_title,
-					R.string.delete_file_question).onSuccess(v -> {
+					R.string.delete_file_question, R.drawable.delete).onSuccess(v -> {
 				VirtualResource res = item.getResource();
 				res.delete().main().onCompletion((deleted, err) -> {
 					if ((err == null) && deleted) {

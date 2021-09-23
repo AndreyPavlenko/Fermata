@@ -1,5 +1,13 @@
 package me.aap.fermata.ui.fragment;
 
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
+import static me.aap.utils.ui.UiUtils.ID_NULL;
+
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +19,7 @@ import androidx.annotation.StringRes;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
 import java.util.Locale;
 
 import me.aap.fermata.BuildConfig;
@@ -27,6 +36,7 @@ import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Consumer;
+import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
@@ -35,18 +45,11 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceView;
 import me.aap.utils.pref.PreferenceViewAdapter;
 
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_EXO;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_MP;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.utils.ui.UiUtils.ID_NULL;
-
 /**
  * @author Andrey Pavlenko
  */
-public class SettingsFragment extends MainActivityFragment implements MainActivityListener {
+public class SettingsFragment extends MainActivityFragment implements MainActivityListener,
+		PreferenceStore.Listener {
 	private PreferenceViewAdapter adapter;
 
 	@Override
@@ -77,7 +80,9 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
 		super.onViewCreated(view, state);
 		adapter = createAdapter();
-		getActivityDelegate().addBroadcastListener(this);
+		MainActivityDelegate a = getActivityDelegate();
+		a.addBroadcastListener(this);
+		a.getPrefs().addBroadcastListener(this);
 
 		RecyclerView listView = view.findViewById(R.id.prefs_list_view);
 		listView.setHasFixedSize(true);
@@ -98,6 +103,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 
 	private void cleanUp(MainActivityDelegate a) {
 		a.removeBroadcastListener(this);
+		a.getPrefs().removeBroadcastListener(this);
 		FermataApplication.get().getAddonManager()
 				.removeBroadcastListeners(l -> l instanceof AddonPrefsBuilder);
 		if (adapter != null) adapter.onDestroy();
@@ -107,6 +113,15 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		if (e == ACTIVITY_DESTROY) cleanUp(a);
+	}
+
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		if (adapter == null) return;
+		MainActivityDelegate a = getMainActivity();
+		if (MainActivityPrefs.hasTextIconSizePref(a, prefs)) {
+			adapter.setSize(a.getTextIconSize());
+		}
 	}
 
 	@Override
@@ -202,6 +217,11 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 		PreferenceSet sub2;
 
 		sub1 = set.subSet(o -> o.title = R.string.interface_prefs);
+
+		if (BuildConfig.AUTO && !a.isCarActivity()) {
+			addAAInterface(a, sub1.subSet(o -> o.title = R.string.interface_prefs_aa));
+		}
+
 		sub1.addListPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.THEME;
@@ -210,53 +230,26 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.formatSubtitle = true;
 			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night, R.string.theme_black};
 		});
-		sub1.addListPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.NAV_BAR_POS;
-			o.title = R.string.nav_bar_pos;
-			o.subtitle = R.string.nav_bar_pos_sub;
-			o.formatSubtitle = true;
-			o.values = new int[]{R.string.nav_bar_pos_bottom, R.string.nav_bar_pos_left, R.string.nav_bar_pos_right};
-		});
-		if (BuildConfig.AUTO) {
-			sub1.addListPref(o -> {
-				o.store = a.getPrefs();
-				o.pref = MainActivityPrefs.NAV_BAR_POS_AA;
-				o.title = R.string.nav_bar_pos_aa;
-				o.subtitle = R.string.nav_bar_pos_sub;
-				o.formatSubtitle = true;
-				o.values = new int[]{R.string.nav_bar_pos_bottom, R.string.nav_bar_pos_left, R.string.nav_bar_pos_right};
-			});
-		}
-		sub1.addBooleanPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.HIDE_BARS;
-			o.title = R.string.hide_bars;
-			o.subtitle = R.string.hide_bars_sub;
-		});
-		sub1.addBooleanPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.FULLSCREEN;
-			o.title = R.string.fullscreen_mode;
-		});
-		sub1.addBooleanPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.SHOW_PG_UP_DOWN;
-			o.title = R.string.show_pg_up_down;
-		});
+
 		sub1.addBooleanPref(o -> {
 			o.store = mediaPrefs;
 			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
 			o.title = R.string.show_track_icons;
 		});
-		sub1.addFloatPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.MEDIA_ITEM_SCALE;
-			o.title = R.string.text_icon_scale;
-			o.scale = 0.1f;
-			o.seekMin = 1;
-			o.seekMax = 20;
-		});
+
+		if (BuildConfig.AUTO && a.isCarActivity()) {
+			addAAInterface(a, sub1);
+		} else {
+			addInterface(a, sub1,
+					MainActivityPrefs.HIDE_BARS,
+					MainActivityPrefs.FULLSCREEN,
+					MainActivityPrefs.SHOW_PG_UP_DOWN,
+					MainActivityPrefs.NAV_BAR_POS,
+					MainActivityPrefs.NAV_BAR_SIZE,
+					MainActivityPrefs.TOOL_BAR_SIZE,
+					MainActivityPrefs.CONTROL_PANEL_SIZE,
+					MainActivityPrefs.TEXT_ICON_SIZE);
+		}
 
 		sub1 = set.subSet(o -> o.title = R.string.playback_settings);
 		sub1.addBooleanPref(o -> {
@@ -437,6 +430,88 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 				a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 			}
 		};
+	}
+
+	private void addAAInterface(MainActivityDelegate a, PreferenceSet ps) {
+		if (BuildConfig.AUTO) {
+			addInterface(a, ps,
+					MainActivityPrefs.HIDE_BARS_AA,
+					MainActivityPrefs.FULLSCREEN_AA,
+					MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
+					MainActivityPrefs.NAV_BAR_POS_AA,
+					MainActivityPrefs.NAV_BAR_SIZE_AA,
+					MainActivityPrefs.TOOL_BAR_SIZE_AA,
+					MainActivityPrefs.CONTROL_PANEL_SIZE_AA,
+					MainActivityPrefs.TEXT_ICON_SIZE_AA);
+		}
+	}
+
+	private void addInterface(
+			MainActivityDelegate a, PreferenceSet ps,
+			PreferenceStore.Pref<BooleanSupplier> hideBars,
+			PreferenceStore.Pref<BooleanSupplier> fullScreen,
+			PreferenceStore.Pref<BooleanSupplier> pgUpDown,
+			PreferenceStore.Pref<IntSupplier> nbPos,
+			PreferenceStore.Pref<DoubleSupplier> nbSize,
+			PreferenceStore.Pref<DoubleSupplier> tbSize,
+			PreferenceStore.Pref<DoubleSupplier> cpSize,
+			PreferenceStore.Pref<DoubleSupplier> textIconSize) {
+		ps.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = hideBars;
+			o.title = R.string.hide_bars;
+			o.subtitle = R.string.hide_bars_sub;
+		});
+		ps.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = fullScreen;
+			o.title = R.string.fullscreen_mode;
+		});
+		ps.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = pgUpDown;
+			o.title = R.string.show_pg_up_down;
+		});
+		ps.addListPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = nbPos;
+			o.title = R.string.nav_bar_pos;
+			o.subtitle = R.string.nav_bar_pos_sub;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.nav_bar_pos_bottom, R.string.nav_bar_pos_left, R.string.nav_bar_pos_right};
+		});
+		ps.addFloatPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = nbSize;
+			o.title = R.string.nav_bar_size;
+			o.scale = 0.05f;
+			o.seekMin = 10;
+			o.seekMax = 40;
+		});
+		ps.addFloatPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = tbSize;
+			o.title = R.string.tool_bar_size;
+			o.scale = 0.05f;
+			o.seekMin = 10;
+			o.seekMax = 40;
+		});
+		ps.addFloatPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = cpSize;
+			o.title = R.string.control_panel_size;
+			o.scale = 0.05f;
+			o.seekMin = 10;
+			o.seekMax = 40;
+		});
+		ps.addFloatPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = textIconSize;
+			o.title = R.string.text_icon_size;
+			o.scale = 0.05f;
+			o.seekMin = 10;
+			o.seekMax = 40;
+		});
 	}
 
 	private void addAddons(PreferenceSet set) {

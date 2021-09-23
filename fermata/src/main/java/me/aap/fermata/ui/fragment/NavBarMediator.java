@@ -24,8 +24,6 @@ import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
 
-import com.google.android.material.textview.MaterialTextView;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,6 +56,7 @@ import me.aap.utils.ui.view.NavBarItem;
 import me.aap.utils.ui.view.NavBarView;
 import me.aap.utils.ui.view.NavButtonView;
 import me.aap.utils.ui.view.PrefNavBarMediator;
+import me.aap.utils.ui.view.ScalableTextView;
 import me.aap.utils.ui.view.ToolBarView;
 
 /**
@@ -255,7 +254,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 			f.setTitle(item.getContext().getString(R.string.about));
 			f.setContentProvider(g -> {
 				Context ctx = g.getContext();
-				MaterialTextView v = new MaterialTextView(ctx);
+				ScalableTextView v = new ScalableTextView(ctx);
 				String url = "https://github.com/AndreyPavlenko/Fermata";
 				String html = ctx.getString(R.string.about_html, VERSION_NAME, VERSION_CODE, url);
 				int pad = UiUtils.toIntPx(ctx, 10);

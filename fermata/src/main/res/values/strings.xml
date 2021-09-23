@@ -19,6 +19,7 @@
     <string name="addon_name_youtube" translatable="false">Youtube</string>
 
     <string name="interface_prefs">Interface</string>
+    <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Playback settings</string>
     <string name="playback_control">Playback control</string>
     <string name="engine_prefs">Media engine</string>
@@ -31,18 +32,20 @@
     <string name="theme_black">Black</string>
 
     <string name="nav_bar_pos">Navigation bar position</string>
-    <string name="nav_bar_pos_aa">Navigation bar position (Android Auto)</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>
     <string name="nav_bar_pos_bottom">Bottom</string>
     <string name="nav_bar_pos_left">Left</string>
     <string name="nav_bar_pos_right">Right</string>
 
+    <string name="show_track_icons">Show track icons</string>
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
-    <string name="fullscreen_mode">Fullscreen mode</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
-    <string name="show_track_icons">Show track icons</string>
-    <string name="text_icon_scale">Text and icon scale</string>
+    <string name="fullscreen_mode">Fullscreen mode</string>
+    <string name="nav_bar_size">Navigation bar size</string>
+    <string name="tool_bar_size">Tool bar size</string>
+    <string name="control_panel_size">Control panel size</string>
+    <string name="text_icon_size">Text and icons size</string>
 
     <string name="play_next_on_completion">Play next on completion</string>
 
