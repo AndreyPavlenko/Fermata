@@ -402,6 +402,11 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 		});
 		sub1.addBooleanPref(o -> {
 			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.LANDSCAPE_VIDEO;
+			o.title = R.string.play_video_landscape;
+		});
+		sub1.addBooleanPref(o -> {
+			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.CHANGE_BRIGHTNESS;
 			o.title = R.string.change_brightness;
 		});

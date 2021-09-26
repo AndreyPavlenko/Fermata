@@ -113,6 +113,10 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		return true;
 	}
 
+	@Override
+	public void setRequestedOrientation(int requestedOrientation) {
+	}
+
 
 	public void recreate() {
 		UiUtils.showAlert(getContext(), R.string.please_restart_app);

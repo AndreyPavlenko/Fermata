@@ -40,6 +40,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
 	Pref<BooleanSupplier> CHECK_UPDATES = Pref.b("CHECK_UPDATES", true);
+	Pref<BooleanSupplier> LANDSCAPE_VIDEO = Pref.b("LANDSCAPE_VIDEO", false);
 	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
 	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
 
@@ -186,6 +187,10 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default void setGridViewPref(MainActivityDelegate a, boolean value) {
 		applyBooleanPref(getGridViewPrefKey(a), value);
+	}
+
+	default boolean getLandscapeVideoPref() {
+		return getBooleanPref(LANDSCAPE_VIDEO);
 	}
 
 	default boolean getChangeBrightnessPref() {

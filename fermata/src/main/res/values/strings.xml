@@ -251,6 +251,7 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
 
+    <string name="play_video_landscape">Playing video in landscape mode</string>
     <string name="change_brightness">Change brightness while playing video</string>
     <string name="video_brightness">Video brightness</string>
     <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>

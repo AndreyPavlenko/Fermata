@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.activity;
 
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -19,6 +20,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
@@ -106,7 +108,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	private boolean videoMode;
 	private boolean recreating;
 	private boolean exitPressed;
-	private int brightness;
+	private int brightness = 255;
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -413,6 +415,13 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				setBrightness(brightness);
 			}
 		}
+		if (p.getLandscapeVideoPref()) {
+			if (videoMode) {
+				getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+			} else {
+				getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+			}
+		}
 
 		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 	}
@@ -420,6 +429,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public int getBrightness() {
 		return Settings.System.getInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, 255);
 	}
+
 	public void setBrightness(int br) {
 		Settings.System.putInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, br);
 	}
@@ -692,8 +702,8 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 					startActivity(i);
 				}
 			}
-		} else if (prefs.contains(BRIGHTNESS) && isVideoMode()) {
-			setBrightness(getPrefs().getBrightnessPref());
+		} else if (prefs.contains(BRIGHTNESS)) {
+			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
 		}
 	}
 
