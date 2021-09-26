@@ -4,23 +4,48 @@ import static android.media.AudioManager.ADJUST_LOWER;
 import static android.media.AudioManager.ADJUST_RAISE;
 import static android.media.AudioManager.FLAG_SHOW_UI;
 import static android.media.AudioManager.STREAM_MUSIC;
+import static android.os.Build.VERSION.SDK_INT;
 import static android.view.InputDevice.SOURCE_CLASS_POINTER;
 import static android.view.MotionEvent.ACTION_SCROLL;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.media.AudioManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.FileProvider;
 
 import com.google.android.play.core.splitcompat.SplitCompat;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+
+import me.aap.fermata.BuildConfig;
+import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
-import me.aap.utils.async.Completed;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.collection.NaturalOrderComparator;
+import me.aap.utils.log.Log;
+import me.aap.utils.net.http.HttpConnection;
+import me.aap.utils.net.http.HttpFileDownloader;
+import me.aap.utils.text.TextUtils;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.activity.SplitCompatActivityBase;
 
@@ -33,7 +58,7 @@ public class MainActivity extends SplitCompatActivityBase
 		FermataMediaServiceConnection s = service;
 
 		if ((s != null) && s.isConnected()) {
-			return Completed.completed(new MainActivityDelegate(a, service.createBinder()));
+			return completed(new MainActivityDelegate(a, service.createBinder()));
 		}
 
 		return FermataMediaServiceConnection.connect(a, false).map(c -> {
@@ -98,5 +123,107 @@ public class MainActivity extends SplitCompatActivityBase
 		}
 
 		return super.onGenericMotionEvent(event);
+	}
+
+	public void checkUpdates() {
+		if (!BuildConfig.AUTO) return;
+
+		String reqUrl = "https://api.github.com/repos/AndreyPavlenko/Fermata/releases/latest";
+		HttpConnection.connect(o -> o.url(reqUrl), (resp, err) -> {
+			if (err != null) {
+				Log.e(err, "Failed to check updates");
+				return failed(err);
+			}
+
+			resp.getPayload((p, perr) -> {
+				if (perr != null) {
+					Log.e(perr, "Failed to read response");
+					return completedNull();
+				}
+
+				try {
+					JSONObject json = new JSONObject(TextUtils.toString(p, UTF_8));
+					String tag = json.getString("tag_name");
+					String[] res = new String[3];
+					res[0] = tag;
+					int idx = tag.indexOf('(');
+					if (idx != -1) tag = tag.substring(0, idx);
+
+					if (NaturalOrderComparator.compareNatural(BuildConfig.VERSION_NAME, tag.trim()) < 0) {
+						Log.i("New version is available: ", res[0]);
+						JSONArray assets = json.getJSONArray("assets");
+						String ext = "armeabi".equals(Build.SUPPORTED_ABIS[0]) ? "-arm.apk" : "-arm64.apk";
+
+						for (int i = 0, n = assets.length(); i < n; i++) {
+							JSONObject asset = assets.getJSONObject(i);
+							String name = asset.getString("name");
+
+							if (name.endsWith(ext)) res[1] = asset.getString("browser_download_url");
+							else if (name.contains("-control-"))
+								res[2] = asset.getString("browser_download_url");
+						}
+
+						return (res[1] != null) && (res[2] != null) ? completed(res) : completedNull();
+					} else {
+						Log.i("The latest release version - ", res[0], ". Application is up to date");
+						return completedNull();
+					}
+				} catch (Exception ex) {
+					Log.e(ex, "Failed to parse response");
+					return failed(ex);
+				}
+			}).main().onSuccess(res -> {
+				if (res == null) return;
+				UiUtils.showQuestion(getContext(), getString(R.string.update),
+						getString(R.string.update_question, res[0]),
+						AppCompatResources.getDrawable(getContext(), R.drawable.fermata))
+						.onSuccess(r -> update(res[1]).onSuccess(v -> update(res[2])));
+			});
+
+			return completedVoid();
+		});
+	}
+
+	private FutureSupplier<Void> update(String uri) {
+		if (!BuildConfig.AUTO) return completedVoid();
+		try {
+			File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+			if (dir == null) {
+				App app = App.get();
+				File cache = app.getExternalCacheDir();
+				if (cache == null) cache = app.getCacheDir();
+				dir = new File(cache, "updates");
+				//noinspection ResultOfMethodCallIgnored
+				dir.mkdirs();
+			}
+
+			File f = File.createTempFile("Fermata-", ".apk", dir);
+			f.deleteOnExit();
+			HttpFileDownloader d = new HttpFileDownloader();
+			return d.download(uri, f).then(s -> {
+				Uri u = (SDK_INT >= Build.VERSION_CODES.N)
+						? FileProvider.getUriForFile(getApplicationContext(), getPackageName() + ".FileProvider", f)
+						: Uri.fromFile(f);
+
+				try {
+					installApk(u, true);
+				} catch (Exception ex) {
+					Log.e(ex, "Update failed");
+					App.get().run(() -> showAlert(this, "Update failed: " + ex.getLocalizedMessage()));
+					return failed(ex);
+				}
+
+				App.get().getScheduler().schedule(f::delete, 1, MINUTES);
+				return completedVoid();
+			}).onFailure(err -> {
+				Log.e(err, "Failed to download apk: ", uri);
+				App.get().run(() -> showAlert(this, "Failed to download apk: " + uri));
+			});
+		} catch (Exception ex) {
+			Log.e(ex, "Update failed");
+			App.get().run(() -> showAlert(this, "Update failed: " + ex.getLocalizedMessage()));
+			return failed(ex);
+		}
 	}
 }

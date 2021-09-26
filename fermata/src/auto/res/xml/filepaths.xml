@@ -1,0 +1,13 @@
+<paths>
+    <cache-path
+        name="updates"
+        path="updates/" />
+    <external-cache-path
+        name="ext_updates"
+        path="updates/" />
+    <paths>
+        <external-path
+            name="ext_files"
+            path="." />
+    </paths>
+</paths>

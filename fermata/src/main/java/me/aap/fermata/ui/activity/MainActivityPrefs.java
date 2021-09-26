@@ -26,7 +26,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int THEME_LIGHT = 1;
 	int THEME_DAY_NIGHT = 2;
 	int THEME_BLACK = 3;
-	Pref<IntSupplier> THEME = Pref.i("THEME", THEME_DARK);
+	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
@@ -39,7 +39,9 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<DoubleSupplier> P_SPLIT_PERCENT = Pref.f("P_SPLIT_PERCENT", 0.6f);
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
+	Pref<BooleanSupplier> CHECK_UPDATES = Pref.b("CHECK_UPDATES", true);
 
+	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
@@ -54,8 +56,13 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 		return MainActivityDelegate.Prefs.instance;
 	}
 
-	default int getThemePref() {
-		return getIntPref(THEME);
+	static boolean hasThemePref(MainActivityDelegate a, List<Pref<?>> prefs) {
+		if (AUTO && a.isCarActivity()) return prefs.contains(THEME_AA);
+		return prefs.contains(THEME_MAIN);
+	}
+
+	default int getThemePref(boolean auto) {
+		return (AUTO && auto) ? getIntPref(THEME_AA) : getIntPref(THEME_MAIN);
 	}
 
 	default float getSplitPercent(Context ctx) {
@@ -81,6 +88,10 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default void setShowAddonOnStartPref(@Nullable String className) {
 		applyStringPref(SHOW_ADDON_ON_START, className);
+	}
+
+	default boolean getCheckUpdatesPref() {
+		return getBooleanPref(CHECK_UPDATES);
 	}
 
 	static boolean hasFullscreenPref(MainActivityDelegate a, List<Pref<?>> prefs) {

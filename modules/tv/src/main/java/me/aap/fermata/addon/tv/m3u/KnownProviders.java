@@ -16,6 +16,7 @@ class KnownProviders {
 		String playlistUrl = ps.getStringPref(URL);
 		if (isNullOrBlank(playlistUrl)) return;
 		String host = Uri.parse(playlistUrl).getHost();
+		if (host == null) return;
 		int i1 = host.lastIndexOf('.');
 
 		if (i1 != -1) {
@@ -44,10 +45,10 @@ class KnownProviders {
 			if (isNullOrBlank(ps.getStringPref(TvM3uFile.EPG_URL))) {
 				e.setStringPref(TvM3uFile.EPG_URL, epg);
 			}
-			if(ps.getIntPref(TvM3uFile.CATCHUP_TYPE) == TvM3uFile.CATCHUP_TYPE_AUTO) {
+			if (ps.getIntPref(TvM3uFile.CATCHUP_TYPE) == TvM3uFile.CATCHUP_TYPE_AUTO) {
 				e.setIntPref(TvM3uFile.CATCHUP_TYPE, catchup);
 			}
-			if((q != null) && isNullOrBlank(ps.getStringPref(TvM3uFile.CATCHUP_QUERY))) {
+			if ((q != null) && isNullOrBlank(ps.getStringPref(TvM3uFile.CATCHUP_QUERY))) {
 				e.setStringPref(TvM3uFile.CATCHUP_QUERY, epg);
 			}
 		}

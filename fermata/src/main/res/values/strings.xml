@@ -251,6 +251,11 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
 
+    <string name="other">Other</string>
+    <string name="check_updates">Check for updates on startup</string>
+    <string name="update">Update</string>
+    <string name="update_question">New version %1$s is available.\nWould you like to update the app?</string>
+
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player is a free, open source audio and video player with a simple and

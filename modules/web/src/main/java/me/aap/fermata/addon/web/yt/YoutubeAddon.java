@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
+import static me.aap.fermata.BuildConfig.AUTO;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -31,6 +33,7 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_DESKTOP_VERSION = Pref.b("YT_DESKTOP_VERSION", false);
 	private static final Pref<Supplier<String>> VIDEO_SCALE = Pref.s("VIDEO_SCALE", VideoScale.CONTAIN::prefName);
 	private static final Pref<BooleanSupplier> YT_OPEN_ON_START = Pref.b("YT_OPEN_ON_START", false);
+	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
 	private boolean ignorePrefChange;
 
 	@IdRes
@@ -60,6 +63,10 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		return YT_DESKTOP_VERSION;
 	}
 
+	boolean skipAd() {
+		return AUTO && getPreferenceStore().getBooleanPref(YT_SKIP_ADD);
+	}
+
 	@Override
 	public void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
 		super.contributeSettings(store, set, visibility);
@@ -73,6 +80,15 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.title = R.string.open_on_start;
 			o.visibility = visibility;
 		});
+
+		if (AUTO) {
+			set.addBooleanPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = YT_SKIP_ADD;
+				o.title = R.string.try_to_skip_ad;
+				o.visibility = visibility;
+			});
+		}
 	}
 
 	@Override

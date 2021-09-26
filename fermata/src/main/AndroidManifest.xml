@@ -46,7 +46,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Dark"
         android:usesCleartextTraffic="true"
-        tools:targetApi="q">
+        tools:targetApi="R">
 
         <meta-data
             android:name="com.google.android.gms.car.application"

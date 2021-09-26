@@ -4,6 +4,7 @@ import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+import static me.aap.fermata.BuildConfig.AUTO;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
@@ -34,7 +35,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
@@ -68,6 +68,7 @@ import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.IntObjectFunction;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
@@ -154,6 +155,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 				if (addon != null) {
 					showFragment(addon.getFragmentId());
+					checkUpdates();
 					return;
 				}
 			}
@@ -162,6 +164,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				if ((fail1 != null) && !isCancellation(fail1)) {
 					Log.e(fail1, "Last played track not found");
 				}
+				checkUpdates();
 			});
 
 			if (!f.isDone() || f.isFailed() || !Boolean.TRUE.equals(f.peek())) {
@@ -171,9 +174,15 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		});
 	}
 
+	private void checkUpdates() {
+		if (!AUTO || !getPrefs().getCheckUpdatesPref()) return;
+		FermataActivity a = getAppActivity();
+		if (a instanceof MainActivity) ((MainActivity) a).checkUpdates();
+	}
+
 	@Override
 	protected void setUncaughtExceptionHandler() {
-		if (!BuildConfig.AUTO || getAppActivity().isCarActivity()) return;
+		if (!AUTO || getAppActivity().isCarActivity()) return;
 		super.setUncaughtExceptionHandler();
 	}
 
@@ -227,7 +236,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public boolean isCarActivity() {
-		return BuildConfig.AUTO && getAppActivity().isCarActivity();
+		return AUTO && getAppActivity().isCarActivity();
 	}
 
 	@NonNull
@@ -241,28 +250,28 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void setTheme(Context ctx) {
-		switch (Prefs.instance.getThemePref()) {
+	public static void setTheme(FermataActivity a) {
+		switch (Prefs.instance.getThemePref(a.isCarActivity())) {
 			default:
 			case MainActivityPrefs.THEME_DARK:
-				ctx.setTheme(R.style.AppTheme_Dark);
+				a.setTheme(R.style.AppTheme_Dark);
 				break;
 			case MainActivityPrefs.THEME_LIGHT:
-				ctx.setTheme(R.style.AppTheme_Light);
+				a.setTheme(R.style.AppTheme_Light);
 				break;
 			case MainActivityPrefs.THEME_DAY_NIGHT:
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_TIME);
-				ctx.setTheme(R.style.AppTheme_DayNight);
+				a.setTheme(R.style.AppTheme_DayNight);
 				break;
 			case MainActivityPrefs.THEME_BLACK:
-				ctx.setTheme(R.style.AppTheme_Black);
+				a.setTheme(R.style.AppTheme_Black);
 				break;
 		}
 	}
 
 	@Override
 	public boolean interceptTouchEvent(MotionEvent e, Function<MotionEvent, Boolean> view) {
-		if (BuildConfig.AUTO && (e.getAction() == MotionEvent.ACTION_DOWN)) {
+		if (AUTO && (e.getAction() == MotionEvent.ACTION_DOWN)) {
 			FermataActivity a = getAppActivity();
 
 			if (a.isInputActive()) {
@@ -640,7 +649,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (prefs.contains(MainActivityPrefs.THEME)) {
+		if (MainActivityPrefs.hasThemePref(this, prefs)) {
 			recreate();
 		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {
 			recreate();
@@ -704,14 +713,23 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 		private Prefs() {
 			// Rename old prefs
-			Pref<DoubleSupplier> old = Pref.f("MEDIA_ITEM_SCALE", 1f);
-			float scale = getFloatPref(old);
+			Pref<IntSupplier> oldTheme = Pref.i("THEME", THEME_DARK);
+			Pref<DoubleSupplier> oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);
+			int theme = getIntPref(oldTheme);
+			float scale = getFloatPref(oldScale);
 
-			if (scale != 1f) {
+			if ((theme != THEME_DARK) || (scale != 1f)) {
 				try (PreferenceStore.Edit e = editPreferenceStore()) {
-					e.setFloatPref(TEXT_ICON_SIZE, scale);
-					e.setFloatPref(TEXT_ICON_SIZE_AA, scale);
-					e.removePref(old);
+					if (theme != THEME_DARK) {
+						e.setIntPref(THEME_MAIN, theme);
+						if (AUTO) e.setIntPref(THEME_AA, theme);
+						e.removePref(oldTheme);
+					}
+					if (scale != 1f) {
+						e.setFloatPref(TEXT_ICON_SIZE, scale);
+						if (AUTO) e.setFloatPref(TEXT_ICON_SIZE_AA, scale);
+						e.removePref(oldScale);
+					}
 				}
 			}
 		}

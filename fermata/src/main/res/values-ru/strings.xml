@@ -232,6 +232,11 @@
     <string name="move_up">Сдвинуть вверх</string>
     <string name="move_down">Сдвинуть вниз</string>
 
+    <string name="other">Другое</string>
+    <string name="check_updates">Проверять наличие обновлений при старте</string>
+    <string name="update">Обновление</string>
+    <string name="update_question">Доступна новая версия %1$s.\nХотите обновить приложение?</string>
+
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player - это бесплатный, с открытым исходным кодом, аудио и видео плеер

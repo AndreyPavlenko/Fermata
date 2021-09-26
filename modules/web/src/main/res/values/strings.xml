@@ -10,4 +10,5 @@
     <string name="video_scaling_fill_proportional">Fill proportional</string>
     <string name="video_quality">Video quality</string>
     <string name="open_on_start">Open on start</string>
+    <string name="try_to_skip_ad">Try to skip advertising</string>
 </resources>

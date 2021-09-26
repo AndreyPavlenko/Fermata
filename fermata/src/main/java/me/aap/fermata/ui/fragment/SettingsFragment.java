@@ -42,6 +42,7 @@ import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.pref.PreferenceView;
 import me.aap.utils.pref.PreferenceViewAdapter;
 
@@ -116,7 +117,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	}
 
 	@Override
-	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
 		if (adapter == null) return;
 		MainActivityDelegate a = getMainActivity();
 		if (MainActivityPrefs.hasTextIconSizePref(a, prefs)) {
@@ -138,7 +139,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	}
 
 	public static void addDelayPrefs(PreferenceSet set, PreferenceStore store,
-																	 PreferenceStore.Pref<IntSupplier> pref, @StringRes int title,
+																	 Pref<IntSupplier> pref, @StringRes int title,
 																	 ChangeableCondition visibility) {
 		set.addIntPref(o -> {
 			o.store = store;
@@ -218,29 +219,14 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 
 		sub1 = set.subSet(o -> o.title = R.string.interface_prefs);
 
-		if (BuildConfig.AUTO && !a.isCarActivity()) {
-			addAAInterface(a, sub1.subSet(o -> o.title = R.string.interface_prefs_aa));
-		}
-
-		sub1.addListPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.THEME;
-			o.title = R.string.theme;
-			o.subtitle = R.string.theme_sub;
-			o.formatSubtitle = true;
-			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night, R.string.theme_black};
-		});
-
-		sub1.addBooleanPref(o -> {
-			o.store = mediaPrefs;
-			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
-			o.title = R.string.show_track_icons;
-		});
-
 		if (BuildConfig.AUTO && a.isCarActivity()) {
 			addAAInterface(a, sub1);
 		} else {
+			if (BuildConfig.AUTO) {
+				addAAInterface(a, sub1.subSet(o -> o.title = R.string.interface_prefs_aa));
+			}
 			addInterface(a, sub1,
+					MainActivityPrefs.THEME_MAIN,
 					MainActivityPrefs.HIDE_BARS,
 					MainActivityPrefs.FULLSCREEN,
 					MainActivityPrefs.SHOW_PG_UP_DOWN,
@@ -250,6 +236,12 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 					MainActivityPrefs.CONTROL_PANEL_SIZE,
 					MainActivityPrefs.TEXT_ICON_SIZE);
 		}
+
+		sub1.addBooleanPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
+			o.title = R.string.show_track_icons;
+		});
 
 		sub1 = set.subSet(o -> o.title = R.string.playback_settings);
 		sub1.addBooleanPref(o -> {
@@ -423,6 +415,13 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 
 		addAddons(set);
 
+		sub1 = set.subSet(o -> o.title = R.string.other);
+		sub1.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.CHECK_UPDATES;
+			o.title = R.string.check_updates;
+		});
+
 		return new PreferenceViewAdapter(set) {
 			@Override
 			public void setPreferenceSet(PreferenceSet set) {
@@ -435,6 +434,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	private void addAAInterface(MainActivityDelegate a, PreferenceSet ps) {
 		if (BuildConfig.AUTO) {
 			addInterface(a, ps,
+					MainActivityPrefs.THEME_AA,
 					MainActivityPrefs.HIDE_BARS_AA,
 					MainActivityPrefs.FULLSCREEN_AA,
 					MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
@@ -448,14 +448,23 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 
 	private void addInterface(
 			MainActivityDelegate a, PreferenceSet ps,
-			PreferenceStore.Pref<BooleanSupplier> hideBars,
-			PreferenceStore.Pref<BooleanSupplier> fullScreen,
-			PreferenceStore.Pref<BooleanSupplier> pgUpDown,
-			PreferenceStore.Pref<IntSupplier> nbPos,
-			PreferenceStore.Pref<DoubleSupplier> nbSize,
-			PreferenceStore.Pref<DoubleSupplier> tbSize,
-			PreferenceStore.Pref<DoubleSupplier> cpSize,
-			PreferenceStore.Pref<DoubleSupplier> textIconSize) {
+			Pref<IntSupplier> theme,
+			Pref<BooleanSupplier> hideBars,
+			Pref<BooleanSupplier> fullScreen,
+			Pref<BooleanSupplier> pgUpDown,
+			Pref<IntSupplier> nbPos,
+			Pref<DoubleSupplier> nbSize,
+			Pref<DoubleSupplier> tbSize,
+			Pref<DoubleSupplier> cpSize,
+			Pref<DoubleSupplier> textIconSize) {
+		ps.addListPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = theme;
+			o.title = R.string.theme;
+			o.subtitle = R.string.theme_sub;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night, R.string.theme_black};
+		});
 		ps.addBooleanPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = hideBars;
