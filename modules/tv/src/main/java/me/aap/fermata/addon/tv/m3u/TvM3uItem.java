@@ -3,6 +3,7 @@ package me.aap.fermata.addon.tv.m3u;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_AUTO;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_FLUSSONIC;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
 import static me.aap.utils.async.Completed.completed;
 
@@ -118,6 +119,9 @@ public class TvM3uItem extends M3uItem implements TvItem {
 					break;
 				case "shift":
 					ct = CATCHUP_TYPE_SHIFT;
+					break;
+				case "flussonic":
+					ct = CATCHUP_TYPE_FLUSSONIC;
 					break;
 			}
 		}

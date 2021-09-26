@@ -128,13 +128,13 @@ public class M3uItem extends BrowsableItemBase {
 								setTvgUrl(trim(l.substring(off, i)));
 								break;
 							case "catchup":
-								catchup = trim(l.substring(off, i));
+								catchup = trackCatchup = trim(l.substring(off, i));
 								break;
 							case "catchup-days":
-								catchupDays = trim(l.substring(off, i));
+								catchupDays = trackCatchupDays = trim(l.substring(off, i));
 								break;
 							case "catchup-source":
-								catchupSource = trim(l.substring(off, i));
+								catchupSource = trackCatchupSource = trim(l.substring(off, i));
 								break;
 						}
 

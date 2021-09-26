@@ -19,6 +19,7 @@
     <string name="catchup_type_append" translatable="false">Append</string>
     <string name="catchup_type_default" translatable="false">Default</string>
     <string name="catchup_type_shift" translatable="false">Shift</string>
+    <string name="catchup_type_flussonic" translatable="false">Flussonic</string>
     <string name="catchup_days">Number of days</string>
     <string name="connection_settings">Connection settings</string>
 

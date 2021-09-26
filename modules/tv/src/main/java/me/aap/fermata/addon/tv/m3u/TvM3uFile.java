@@ -43,6 +43,7 @@ public class TvM3uFile extends M3uFile {
 	public static final int CATCHUP_TYPE_APPEND = 1;
 	public static final int CATCHUP_TYPE_DEFAULT = 2;
 	public static final int CATCHUP_TYPE_SHIFT = 3;
+	public static final int CATCHUP_TYPE_FLUSSONIC = 4;
 	public static final Pref<Supplier<String>> EPG_URL = Pref.s("EPG_URL");
 	public static final Pref<DoubleSupplier> EPG_SHIFT = Pref.f("EPG_SHIFT", 0);
 	public static final Pref<Supplier<String>> CATCHUP_QUERY = Pref.s("CATCHUP_QUERY");

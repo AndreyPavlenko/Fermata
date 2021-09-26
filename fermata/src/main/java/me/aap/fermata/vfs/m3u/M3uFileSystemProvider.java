@@ -53,6 +53,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 			o.pref = URL;
 			o.mode = FilePickerFragment.FILE;
 			o.title = me.aap.fermata.R.string.m3u_playlist_location;
+			o.maxLines = 3;
 			o.stringHint = a.getString(me.aap.fermata.R.string.m3u_playlist_location_hint);
 		});
 		prefs.addStringPref(o -> {

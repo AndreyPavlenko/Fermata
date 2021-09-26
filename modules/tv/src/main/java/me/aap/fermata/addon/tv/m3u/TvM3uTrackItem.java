@@ -9,6 +9,7 @@ import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_APPEND;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_AUTO;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_FLUSSONIC;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
 import static me.aap.utils.async.Completed.cancelled;
 import static me.aap.utils.async.Completed.completed;
@@ -322,6 +323,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 			case CATCHUP_TYPE_DEFAULT:
 				return !isNullOrBlank(getCatchupQuery());
 			case CATCHUP_TYPE_SHIFT:
+			case CATCHUP_TYPE_FLUSSONIC:
 				return true;
 			default:
 				return false;
@@ -343,6 +345,8 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 				return getCatchupUri(utc, lutc, false);
 			case CATCHUP_TYPE_SHIFT:
 				return getShiftUri(utc, lutc);
+			case CATCHUP_TYPE_FLUSSONIC:
+				return getFlussonicUri(utc);
 			default:
 				return null;
 		}
@@ -385,6 +389,18 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 			b.append(getLocation());
 			b.append("?utc=").append(utc);
 			b.append("&lutc=").append(lutc);
+			return Uri.parse(b.toString());
+		}
+	}
+
+	private Uri getFlussonicUri(long utc) {
+		String url = getLocation().toString();
+		int idx = url.lastIndexOf('/');
+		if (idx < 0) return null;
+
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			b.append(url, 0, idx);
+			b.append("/timeshift_abs-").append(utc).append(".m3u8");
 			return Uri.parse(b.toString());
 		}
 	}

@@ -39,6 +39,7 @@ import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.vfs.VirtualResource;
 
 /**
  * @author Andrey Pavlenko
@@ -378,7 +379,9 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 						prefs.edit().remove(k).apply();
 						return completedVoid();
 					} else {
-						return i.getResource().exists().then(exists -> {
+						VirtualResource r = i.getResource();
+						if (r == null) return completedVoid();
+						return r.exists().then(exists -> {
 							if (!exists) {
 								Log.i("Resource does not exist - removing preference key ", k);
 								prefs.edit().remove(k).apply();

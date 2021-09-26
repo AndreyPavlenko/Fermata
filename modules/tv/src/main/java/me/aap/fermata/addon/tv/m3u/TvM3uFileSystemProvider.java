@@ -127,7 +127,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.subtitle = R.string.catchup_type_cur;
 			o.formatSubtitle = true;
 			o.values = new int[]{R.string.catchup_type_auto, R.string.catchup_type_append,
-					R.string.catchup_type_default, R.string.catchup_type_shift};
+					R.string.catchup_type_default, R.string.catchup_type_shift, R.string.catchup_type_flussonic};
 		});
 		sub.addIntPref(o -> {
 			o.store = ps;
