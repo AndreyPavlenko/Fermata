@@ -1,10 +1,13 @@
 package me.aap.fermata.ui.activity;
 
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
+import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static me.aap.fermata.BuildConfig.AUTO;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
@@ -16,8 +19,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
+import android.net.Uri;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -100,6 +106,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	private boolean videoMode;
 	private boolean recreating;
 	private boolean exitPressed;
+	private int brightness;
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -396,7 +403,25 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			if (cp != null) cp.disableVideoMode();
 		}
 
+		MainActivityPrefs p = getPrefs();
+
+		if (p.getChangeBrightnessPref()) {
+			if (videoMode) {
+				brightness = getBrightness();
+				setBrightness(p.getBrightnessPref());
+			} else {
+				setBrightness(brightness);
+			}
+		}
+
 		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+	}
+
+	public int getBrightness() {
+		return Settings.System.getInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, 255);
+	}
+	public void setBrightness(int br) {
+		Settings.System.putInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, br);
 	}
 
 	public boolean isVideoMode() {
@@ -637,10 +662,10 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	private static String[] getRequiredPermissions() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+		if (VERSION.SDK_INT >= VERSION_CODES.Q) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE,
 					permission.ACCESS_MEDIA_LOCATION, permission.USE_FULL_SCREEN_INTENT};
-		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+		} else if (VERSION.SDK_INT >= VERSION_CODES.P) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE};
 		} else {
 			return new String[]{permission.READ_EXTERNAL_STORAGE};
@@ -659,6 +684,16 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			if (toolBar != null) toolBar.setSize(getPrefs().getToolBarSizePref(this));
 		} else if (MainActivityPrefs.hasFullscreenPref(this, prefs)) {
 			setSystemUiVisibility();
+		} else if (prefs.contains(CHANGE_BRIGHTNESS)) {
+			if (getPrefs().getChangeBrightnessPref()) {
+				if (!Settings.System.canWrite(getContext())) {
+					Intent i = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+					i.setData(Uri.parse("package:" + getContext().getPackageName()));
+					startActivity(i);
+				}
+			}
+		} else if (prefs.contains(BRIGHTNESS) && isVideoMode()) {
+			setBrightness(getPrefs().getBrightnessPref());
 		}
 	}
 

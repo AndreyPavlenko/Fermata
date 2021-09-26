@@ -358,6 +358,12 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			}
 
 			onVideoSeek();
+		} else if (e2.getPointerCount() == 2) {
+			if (!getActivity().getPrefs().getChangeBrightnessPref()) return true;
+			MainActivityDelegate a = getActivity();
+			int br = a.getBrightness();
+			br = (distanceY > 0) ? Math.min(255, br + 10) : Math.max(0, br - 10);
+			a.setBrightness(br);
 		} else {
 			AudioManager amgr = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 			if (amgr == null) return false;

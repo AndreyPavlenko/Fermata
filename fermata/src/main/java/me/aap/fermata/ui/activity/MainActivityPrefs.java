@@ -40,6 +40,8 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
 	Pref<BooleanSupplier> CHECK_UPDATES = Pref.b("CHECK_UPDATES", true);
+	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
+	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
@@ -184,5 +186,13 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default void setGridViewPref(MainActivityDelegate a, boolean value) {
 		applyBooleanPref(getGridViewPrefKey(a), value);
+	}
+
+	default boolean getChangeBrightnessPref() {
+		return getBooleanPref(CHANGE_BRIGHTNESS);
+	}
+
+	default int getBrightnessPref() {
+		return getIntPref(BRIGHTNESS);
 	}
 }

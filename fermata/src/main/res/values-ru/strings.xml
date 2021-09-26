@@ -232,6 +232,10 @@
     <string name="move_up">Сдвинуть вверх</string>
     <string name="move_down">Сдвинуть вниз</string>
 
+    <string name="change_brightness">Менять яркость, при проигрывании видео</string>
+    <string name="video_brightness">Яркость видео</string>
+    <string name="change_brightness_sub">Яркость, так же, можно изменять скроллом двумя пальцами</string>
+
     <string name="other">Другое</string>
     <string name="check_updates">Проверять наличие обновлений при старте</string>
     <string name="update">Обновление</string>

@@ -400,6 +400,20 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.values = new int[]{R.string.video_scaling_best, R.string.video_scaling_fill,
 					R.string.video_scaling_orig, R.string.video_scaling_4, R.string.video_scaling_16};
 		});
+		sub1.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.CHANGE_BRIGHTNESS;
+			o.title = R.string.change_brightness;
+		});
+		sub1.addIntPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.BRIGHTNESS;
+			o.title = R.string.video_brightness;
+			o.subtitle = R.string.change_brightness_sub;
+			o.seekMin = 0;
+			o.seekMax = 255;
+			o.visibility = PrefCondition.create(a.getPrefs(), MainActivityPrefs.CHANGE_BRIGHTNESS);
+		});
 
 		sub2 = sub1.subSet(o -> {
 			o.title = R.string.audio;
