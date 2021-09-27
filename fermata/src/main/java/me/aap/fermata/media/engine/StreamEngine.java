@@ -259,12 +259,13 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 				u = s.getLocation();
 				position = System.currentTimeMillis() - startTime;
 			} else {
-				u = s.getLocation(startTime + position);
+				u = s.getLocation(startTime + position, Long.MAX_VALUE);
 			}
 		} else if (src instanceof ArchiveItem) {
 			ArchiveItem a = (ArchiveItem) source;
 			if (position == -1) position = 0;
-			u = a.getParent().getLocation(a.getStartTime() + position);
+			long start = a.getStartTime() + position;
+			u = a.getParent().getLocation(start, a.getEndTime() - start);
 		}
 
 		if (u == null) {

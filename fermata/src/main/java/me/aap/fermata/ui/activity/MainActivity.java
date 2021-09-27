@@ -9,6 +9,7 @@ import static android.view.InputDevice.SOURCE_CLASS_POINTER;
 import static android.view.MotionEvent.ACTION_SCROLL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static me.aap.fermata.util.Utils.createDownloader;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -200,7 +201,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 			File f = File.createTempFile("Fermata-", ".apk", dir);
 			f.deleteOnExit();
-			HttpFileDownloader d = new HttpFileDownloader();
+			HttpFileDownloader d = createDownloader(getContext(), uri);
 			return d.download(uri, f).then(s -> {
 				Uri u = (SDK_INT >= Build.VERSION_CODES.N)
 						? FileProvider.getUriForFile(getApplicationContext(), getPackageName() + ".FileProvider", f)

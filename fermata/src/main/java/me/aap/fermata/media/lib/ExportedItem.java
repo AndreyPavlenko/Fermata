@@ -264,8 +264,8 @@ public class ExportedItem extends PlayableItemBase {
 
 		@Nullable
 		@Override
-		public Uri getLocation(long time) {
-			return getStream().getLocation(time);
+		public Uri getLocation(long time, long duration) {
+			return getStream().getLocation(time, duration);
 		}
 
 		@NonNull

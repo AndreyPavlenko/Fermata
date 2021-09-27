@@ -392,7 +392,7 @@ public interface MediaLib {
 		}
 
 		@Nullable
-		default Uri getLocation(long time) {
+		default Uri getLocation(long time, long duration) {
 			return null;
 		}
 

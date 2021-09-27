@@ -1,7 +1,19 @@
 package me.aap.fermata.media.engine;
 
+import static android.content.Context.MODE_PRIVATE;
+import static java.util.Collections.emptyList;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.io.FileUtils.getFileExtension;
+import static me.aap.utils.net.http.HttpFileDownloader.MAX_AGE;
+import static me.aap.utils.security.SecurityUtils.sha1;
+import static me.aap.utils.text.TextUtils.appendHexString;
+import static me.aap.utils.ui.UiUtils.resizedBitmap;
+
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -29,6 +41,8 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,23 +51,17 @@ import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.async.Promise;
 import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
-import me.aap.utils.io.ByteBufferInputStream;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.log.Log;
-import me.aap.utils.net.http.HttpConnection;
+import me.aap.utils.net.http.HttpFileDownloader;
+import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.ui.UiUtils;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.security.SecurityUtils.sha1;
-import static me.aap.utils.text.TextUtils.appendHexString;
-import static me.aap.utils.ui.UiUtils.resizedBitmap;
 
 /**
  * @author Andrey Pavlenko
@@ -64,6 +72,7 @@ public class BitmapCache {
 	private final File imageCache;
 	private final String iconsCacheUri;
 	private final String imageCacheUri;
+	private final SharedPreferences prefs;
 	private final Map<String, Ref> cache = new HashMap<>();
 	private final ReferenceQueue<Bitmap> refQueue = new ReferenceQueue<>();
 	private final PromiseQueue queue = new PromiseQueue(App.get().getExecutor());
@@ -77,6 +86,7 @@ public class BitmapCache {
 		imageCache = new File(cache, "images").getAbsoluteFile();
 		iconsCacheUri = Uri.fromFile(iconsCache).toString() + '/';
 		imageCacheUri = Uri.fromFile(imageCache).toString() + '/';
+		prefs = lib.getContext().getSharedPreferences("image-cache", MODE_PRIVATE);
 	}
 
 	@Nullable
@@ -176,41 +186,43 @@ public class BitmapCache {
 	}
 
 	private FutureSupplier<Bitmap> loadHttpBitmap(String uri, String cacheUri, int size) {
-		if (invalidBitmapUris.containsKey(uri)) return completedNull();
+		if (invalidBitmapUris.containsKey(uri)) {
+			Log.d("Invalid bitmap uri: ", uri);
+			return completedNull();
+		}
 
-		Promise<Bitmap> p = new Promise<>();
+		String path;
 
-		HttpConnection.connect(o -> {
-			o.url(uri);
-			o.responseTimeout = 10;
-		}, (resp, err) -> {
-			if (err != null) {
-				p.completeExceptionally(err);
-				return p;
-			}
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			b.append("/X/");
+			appendHexString(b, sha1(uri));
+			b.setCharAt(1, b.charAt(3));
+			b.append('.').append(getFileExtension(uri, "img"));
+			path = b.toString();
+		}
 
-			return resp.getPayload((payload, fail) -> {
-				if (fail != null) {
-					p.completeExceptionally(fail);
-					return p;
-				}
-
-				Bitmap bm = BitmapFactory.decodeStream(new ByteBufferInputStream(payload));
+		File dst = new File(imageCache, path);
+		ImagePrefs ip = new ImagePrefs(prefs, path);
+		HttpFileDownloader d = new HttpFileDownloader();
+		d.setReturnExistingOnFail(true);
+		return d.download(uri, dst, ip).then(s -> {
+			try (InputStream is = s.getFileStream(true)) {
+				Bitmap bm = BitmapFactory.decodeStream(is);
 
 				if (bm == null) {
-					invalidBitmapUris.put(uri, uri);
-					p.completeExceptionally(new IOException("Failed to load bitmap: " + uri));
+					return failed(new IOException("Failed to decode image"));
 				} else {
 					if (size != 0) bm = resizedBitmap(bm, size);
 					if (cacheUri != null) bm = cacheBitmap(cacheUri, bm);
-					p.complete(bm);
+					return completed(bm);
 				}
-
-				return p;
-			});
+			} catch (Exception ex) {
+				return failed(ex);
+			}
+		}).onFailure(ex -> {
+			Log.d(ex, "Failed to load image: ", uri);
+			invalidBitmapUris.put(uri, uri);
 		});
-
-		return p;
 	}
 
 	private Bitmap loadContentBitmap(Context ctx, String uri) throws IOException {
@@ -356,6 +368,54 @@ public class BitmapCache {
 		public Ref(String key, Bitmap value, ReferenceQueue<Bitmap> q) {
 			super(value, q);
 			this.key = key;
+		}
+	}
+
+	public void cleanUpPrefs() {
+		SharedPreferences.Editor edit = prefs.edit();
+		boolean removed = false;
+		for (String k : new ArrayList<>(prefs.getAll().keySet())) {
+			int idx = k.lastIndexOf('#');
+			if ((idx <= 0) || (idx == k.length() - 1)) continue;
+			File f = new File(imageCache, k.substring(0, idx));
+			if (f.exists()) continue;
+			Log.i("Image file does not exist - removing preference key ", k);
+			edit.remove(k);
+			removed = true;
+		}
+		if (removed) edit.apply();
+	}
+
+	private static final class ImagePrefs implements SharedPreferenceStore {
+		private static final int IMAGE_MAX_AGE = 7 * 24 * 3600;
+		private final SharedPreferences prefs;
+		private final String id;
+
+		private ImagePrefs(SharedPreferences prefs, String id) {
+			this.prefs = prefs;
+			this.id = id;
+		}
+
+		@Override
+		public String getPreferenceKey(Pref<?> pref) {
+			return id + '#' + pref.getName();
+		}
+
+		@Override
+		public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
+			return emptyList();
+		}
+
+		@NonNull
+		@Override
+		public SharedPreferences getSharedPreferences() {
+			return prefs;
+		}
+
+		@Override
+		public int getIntPref(Pref<? extends IntSupplier> pref) {
+			if (pref.equals(MAX_AGE)) return IMAGE_MAX_AGE;
+			return SharedPreferenceStore.super.getIntPref(pref);
 		}
 	}
 }

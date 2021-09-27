@@ -332,7 +332,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 
 	@Nullable
 	@Override
-	public Uri getLocation(long time) {
+	public Uri getLocation(long time, long duration) {
 		if (!isSeekable(time)) return null;
 		long utc = toTimeStamp(time);
 		long lutc = toTimeStamp(System.currentTimeMillis());
@@ -346,7 +346,7 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 			case CATCHUP_TYPE_SHIFT:
 				return getShiftUri(utc, lutc);
 			case CATCHUP_TYPE_FLUSSONIC:
-				return getFlussonicUri(utc);
+				return getFlussonicUri(utc, duration);
 			default:
 				return null;
 		}
@@ -393,16 +393,23 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		}
 	}
 
-	private Uri getFlussonicUri(long utc) {
-		String url = getLocation().toString();
-		int idx = url.lastIndexOf('/');
+	private Uri getFlussonicUri(long utc, long duration) {
+		Uri u = getLocation();
+		String path = u.getEncodedPath();
+		if (path == null) return null;
+		int idx = path.lastIndexOf('/');
 		if (idx < 0) return null;
-
-		try (SharedTextBuilder b = SharedTextBuilder.get()) {
-			b.append(url, 0, idx);
-			b.append("/timeshift_abs-").append(utc).append(".m3u8");
-			return Uri.parse(b.toString());
+		Uri.Builder b = new Uri.Builder();
+		b.scheme(u.getScheme());
+		b.encodedAuthority(u.getEncodedAuthority());
+		if (duration == Long.MAX_VALUE) {
+			b.appendEncodedPath(path.substring(0, idx) + "/timeshift_abs-" + utc + ".m3u8");
+		} else {
+			long d = toTimeStamp(duration);
+			b.appendEncodedPath(path.substring(0, idx) + "/index-" + utc + '-' + d + ".m3u8");
 		}
+		b.encodedQuery(u.getEncodedQuery());
+		return b.build();
 	}
 
 	int getEpgId() {

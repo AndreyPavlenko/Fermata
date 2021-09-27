@@ -360,6 +360,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	}
 
 	public void cleanUpPrefs() {
+		metadataRetriever.getBitmapCache().cleanUpPrefs();
 		SharedPreferences prefs = getSharedPreferences();
 		List<String> keys = new ArrayList<>(prefs.getAll().keySet());
 		Set<String> names = new HashSet<>();

@@ -1,5 +1,9 @@
 package me.aap.fermata.vfs.m3u;
 
+import static me.aap.fermata.util.Utils.createDownloader;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -9,7 +13,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Set;
 
-import me.aap.fermata.R;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
@@ -17,11 +21,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpFileDownloader;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.resource.Rid;
-import me.aap.utils.ui.notif.HttpDownloadStatusListener;
 import me.aap.utils.vfs.VirtualFileSystem;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
 
 /**
  * @author Andrey Pavlenko
@@ -88,13 +88,8 @@ public class M3uFileSystem implements VirtualFileSystem {
 		}
 
 		File cacheFile = file.getLocalFile();
-		HttpFileDownloader d = new HttpFileDownloader();
 		Context ctx = App.get();
-		HttpDownloadStatusListener l = new HttpDownloadStatusListener(ctx);
-		l.setSmallIcon(R.drawable.ic_notification);
-		l.setTitle(ctx.getResources().getString(R.string.downloading, url));
-		l.setFailureTitle(s -> ctx.getResources().getString(R.string.err_failed_to_download, url));
-		d.setStatusListener(l);
+		HttpFileDownloader d = createDownloader(ctx,url);
 		d.setReturnExistingOnFail(true);
 		d.download(url, cacheFile, file.getPrefs()).onCompletion((f, err) -> {
 			if (err == null) {
