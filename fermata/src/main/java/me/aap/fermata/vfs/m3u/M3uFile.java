@@ -110,13 +110,11 @@ public class M3uFile implements VirtualFile {
 	}
 
 	@Nullable
-	@Override
 	public String getContentEncoding() {
 		return getPrefs().getStringPref(ENCODING);
 	}
 
 	@Nullable
-	@Override
 	public String getCharacterEncoding() {
 		return getPrefs().getStringPref(CHARSET);
 	}

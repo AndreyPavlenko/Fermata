@@ -23,9 +23,11 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
+import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.event.EventBroadcaster;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.vfs.VirtualResource;
@@ -79,11 +81,8 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		Promise<MediaDescriptionCompat> load = new Promise<>();
 
 		for (; !MD.compareAndSet(this, d, load); d = MD.get(this)) {
-			if (d != null) return d;
+			if (d != null) return d.fork();
 		}
-
-		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
-		b.setMediaId(getId());
 
 		FutureSupplier<String> title = buildTitle();
 		FutureSupplier<String> subtitle = buildSubtitle();
@@ -91,6 +90,7 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		FutureSupplier<Uri> icon = getIconUri();
 
 		if (title.isDone() && subtitle.isDone() && icon.isDone() && extras.isDone()) {
+			MediaDescriptionCompat.Builder b = builder();
 			b.setTitle(title.get(this::getName));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
@@ -101,30 +101,30 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 			return MD.compareAndSet(this, load, d) ? d : getMediaDescription();
 		}
 
-		title.onProgress((t, progress, total) -> {
-			MediaDescriptionCompat.Builder build = new MediaDescriptionCompat.Builder();
-			build.setMediaId(getId());
-			build.setTitle(t);
-			load.setProgress(build.build(), 1, 4);
-		}).then(t -> {
-			b.setTitle(t);
-			load.setProgress(b.build(), 1, 4);
-			return subtitle.then(s -> {
-				b.setSubtitle(s);
-				load.setProgress(b.build(), 2, 4);
-				return extras.then(ex -> {
-					b.setExtras(ex);
-					load.setProgress(b.build(), 3, 4);
-					return icon.then(u -> {
-						if (u != null) b.setIconUri(u);
-						return completed(b.build());
-					});
-				});
-			});
-		}).thenReplaceOrClear(MD, this, load);
+		title.onSuccess(t -> load.setProgress(builder().setTitle(t).build(), 1, 4));
+		subtitle.onSuccess(s -> load.setProgress(builder().setSubtitle(s).build(), 2, 4));
+		extras.onSuccess(e -> load.setProgress(builder().setExtras(e).build(), 3, 4));
+		icon.onSuccess(i -> load.setProgress(builder().setIconUri(i).build(), 4, 4));
+		Async.all(title, subtitle, extras, icon).onCompletion((e, err) -> {
+			if (err != null) Log.d(err, "Failed to build MediaDescription: ", this);
+			MediaDescriptionCompat.Builder b = builder();
+			b.setTitle(title.get(this::getName));
+			b.setSubtitle(subtitle.get(() -> ""));
+			b.setIconUri(icon.get(null));
+			b.setExtras(extras.get(null));
+			MediaDescriptionCompat md = b.build();
+			MD.compareAndSet(this, load, completed(md));
+			load.complete(md);
+		});
 
 		d = MD.get(this);
-		return (d != null) ? d : load;
+		return ((d != null) ? d : load).fork();
+	}
+
+	private MediaDescriptionCompat.Builder builder() {
+		MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+		b.setMediaId(getId());
+		return b;
 	}
 
 	protected boolean isMediaDescriptionValid(FutureSupplier<MediaDescriptionCompat> d) {
@@ -142,7 +142,7 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 				return buildTitle(seqNum, prefs);
 			} else {
 				Promise<String> load = new Promise<>();
-				parent.getChildren().then(children -> {
+				getChildren.then(children -> {
 					assertNotEquals(seqNum, 0);
 					return buildTitle(seqNum, prefs);
 				}).thenComplete(load);

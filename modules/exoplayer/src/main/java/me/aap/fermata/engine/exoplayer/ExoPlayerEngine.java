@@ -14,6 +14,7 @@ import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -54,7 +55,6 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 		player = new SimpleExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
 				.setExtensionRendererMode(EXTENSION_RENDERER_MODE_PREFER)).build();
 		player.addListener(this);
-		player.addVideoListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
 		dsFactory = new DefaultDataSourceFactory(ctx, "Fermata/" + BuildConfig.VERSION_NAME);
 	}
@@ -204,7 +204,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	}
 
 	@Override
-	public void onPlayerError(@NonNull ExoPlaybackException error) {
+	public void onPlayerError(@NonNull PlaybackException error) {
 		listener.onEngineError(this, error);
 	}
 }

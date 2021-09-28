@@ -4,6 +4,7 @@ import static android.util.TypedValue.COMPLEX_UNIT_PX;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_END_TIME;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
 import static me.aap.utils.function.ProgressiveResultConsumer.PROGRESS_DONE;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.misc.MiscUtils.ifNull;
 import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.toPx;
@@ -86,6 +87,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	private VectorDrawableCompat watchedVideoDrawable;
 	private VectorDrawableCompat watchingVideoDrawable;
 	private VectorDrawableCompat archiveLabelDrawable;
+	private FutureSupplier<MediaDescriptionCompat> loading;
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
@@ -163,12 +165,14 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	public void rebind(@Nullable MediaItemWrapper oldItem, @Nullable MediaItemWrapper newItem) {
 		if (oldItem == newItem) return;
+		cancelLoading();
 		if (oldItem != null) oldItem.getItem().removeChangeListener(this);
-		if (newItem == null) return;
+		if ((newItem == null) || (getVisibility() != VISIBLE)) return;
 		boolean hasListener = newItem.getItem().addChangeListener(this);
 		load(newItem, !hasListener).onCompletion((r, err) -> {
 			if (getItemWrapper() != newItem) return;
-			if (err != null) Log.e(err, "Failed to load media description: ", newItem);
+			if ((err != null) && !isCancellation(err))
+				Log.e(err, "Failed to load media description: ", newItem);
 		});
 	}
 
@@ -178,7 +182,14 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if ((w != null) && (w.getItem() == i)) load(w, false);
 	}
 
+	private void cancelLoading() {
+		if (loading == null) return;
+		loading.cancel();
+		loading = null;
+	}
+
 	private FutureSupplier<MediaDescriptionCompat> load(MediaItemWrapper w, boolean showLoading) {
+		cancelLoading();
 		Item i = w.getItem();
 
 		if (i instanceof EpgItem) {
@@ -188,57 +199,61 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			setProgress(i, 0, 0);
 		}
 
-		FutureSupplier<MediaDescriptionCompat> load = i.getMediaDescription().main()
-				.addConsumer((result, fail, progress, total) -> {
+		FutureSupplier<MediaDescriptionCompat> load = loading = i.getMediaDescription().main()
+				.addConsumer((md, fail, p, total) -> {
 					if (getItemWrapper() != w) return;
 
 					if (fail != null) {
+						if (isCancellation(fail)) return;
 						Log.e(fail, "Failed to load media description: ", i);
-						setDefaults(i, showLoading);
+						setDefaults(i, false);
 						return;
 					}
 
-					CharSequence sub = result.getSubtitle();
-					getTitle().setText(ifNull(result.getTitle(), i::getName));
-					getSubtitle().setText(sub);
-
-					if ((progress >= 3) && (i instanceof StreamItem)) {
-						Bundle b = result.getExtras();
+					if ((p == PROGRESS_DONE) || (p == 1)) {
+						getTitle().setText(ifNull(md.getTitle(), i::getName));
+					}
+					if ((p == PROGRESS_DONE) || (p == 2)) {
+						getSubtitle().setText(md.getSubtitle());
+					}
+					if ((p == PROGRESS_DONE) || (p == 3)) {
+						Bundle b = md.getExtras();
 						if (b != null) setProgress(i, b.getLong(STREAM_START_TIME), b.getLong(STREAM_END_TIME));
 					}
+					if ((p == PROGRESS_DONE) || (p == 4)) {
+						Uri uri = md.getIconUri();
 
-					if (progress != PROGRESS_DONE) return;
+						if (uri != null) {
+							FutureSupplier<Bitmap> loadIcon = i.getLib().getBitmap(uri.toString(), true, true)
+									.main().onCompletion((bm, err) -> {
+										if (getItemWrapper() != w) return;
 
-					Uri uri = result.getIconUri();
+										ImageView icon = getIcon();
+										icon.clearAnimation();
+										cancelLoading();
 
-					if (uri != null) {
-						FutureSupplier<Bitmap> loadIcon = i.getLib().getBitmap(uri.toString(), true, true)
-								.main().onCompletion((bm, err) -> {
-									if (getItemWrapper() != w) return;
+										if (bm != null) {
+											icon.setImageTintList(null);
+											icon.setImageBitmap(bm);
+										} else {
+											icon.setImageTintList(iconTint);
+											icon.setImageResource(i.getIcon());
+										}
+									});
 
-									ImageView icon = getIcon();
-									icon.clearAnimation();
-
-									if (bm != null) {
-										icon.setImageTintList(null);
-										icon.setImageBitmap(bm);
-									} else {
-										icon.setImageTintList(iconTint);
-										icon.setImageResource(i.getIcon());
-									}
-								});
-
-						if (!loadIcon.isDone()) {
+							if (!loadIcon.isDone()) {
+								ImageView icon = getIcon();
+								icon.clearAnimation();
+								icon.setImageTintList(iconTint);
+								icon.setImageResource(i.getIcon());
+							}
+						} else {
 							ImageView icon = getIcon();
 							icon.clearAnimation();
 							icon.setImageTintList(iconTint);
 							icon.setImageResource(i.getIcon());
+							cancelLoading();
 						}
-					} else {
-						ImageView icon = getIcon();
-						icon.clearAnimation();
-						icon.setImageTintList(iconTint);
-						icon.setImageResource(i.getIcon());
 					}
 				});
 
@@ -580,7 +595,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		}
 
 		private void update() {
-			item.getMediaItemDescription().main().onSuccess(d -> {
+			item.getMediaDescription().main().onSuccess(d -> {
 				if (!isValid()) return;
 				Bundle b = d.getExtras();
 				if (b != null) {

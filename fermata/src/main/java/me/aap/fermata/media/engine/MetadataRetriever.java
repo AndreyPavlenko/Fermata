@@ -1,6 +1,17 @@
 package me.aap.fermata.media.engine;
 
+import static android.os.Build.VERSION.SDK_INT;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyMap;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
+import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.security.SecurityUtils.SHA1_DIGEST_LEN;
+
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -8,6 +19,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.media.MediaMetadata;
 import android.net.Uri;
+import android.os.Build.VERSION_CODES;
 import android.provider.MediaStore;
 import android.support.v4.media.MediaMetadataCompat;
 
@@ -15,12 +27,15 @@ import androidx.annotation.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.media.lib.FileItem;
+import me.aap.fermata.media.lib.FolderItem;
+import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -31,15 +46,11 @@ import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
+import me.aap.utils.vfs.VirtualFileSystem;
+import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.content.ContentFileSystem;
-
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.utils.async.Completed.completedEmptyMap;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
+import me.aap.utils.vfs.local.LocalFileSystem;
 
 /**
  * @author Andrey Pavlenko
@@ -59,14 +70,36 @@ public class MetadataRetriever implements Closeable {
 	private static final String COL_ID_PATTERN = COL_ID + " LIKE ? AND NOT " + COL_ID + " LIKE ?";
 	private static final String[] QUERY_COLUMNS = {COL_ID, COL_TITLE, COL_ALBUM, COL_ARTIST,
 			COL_DURATION, COL_ART};
-	private static final String[] CONTENT_COLUMNS = {
-			MediaStore.MediaColumns.TITLE,
-			MediaStore.Audio.AudioColumns.DURATION,
-			MediaStore.Audio.AudioColumns.ARTIST,
-			"album_artist",
-			MediaStore.Audio.AudioColumns.ALBUM,
-			MediaStore.Audio.AudioColumns.COMPOSER,
-			"genre"};
+	private static final byte ART_URI = 0;
+	private static final byte ART_HASH = 1;
+	private static final String[] CONTENT_COLUMNS;
+	private static final String[] CONTENT_COLUMNS_DATA;
+
+	static {
+		if (SDK_INT >= VERSION_CODES.R) {
+			CONTENT_COLUMNS = new String[]{
+					MediaStore.MediaColumns._ID,
+					MediaStore.MediaColumns.TITLE,
+					MediaStore.Audio.AudioColumns.DURATION,
+					MediaStore.Audio.AudioColumns.ARTIST,
+					MediaStore.Audio.AudioColumns.ALBUM,
+					MediaStore.Audio.AudioColumns.ALBUM_ARTIST,
+					MediaStore.Audio.AudioColumns.COMPOSER,
+					MediaStore.Audio.AudioColumns.GENRE
+			};
+		} else {
+			CONTENT_COLUMNS = new String[]{
+					MediaStore.MediaColumns._ID,
+					MediaStore.MediaColumns.TITLE,
+					MediaStore.Audio.AudioColumns.DURATION,
+					MediaStore.Audio.AudioColumns.ARTIST,
+					MediaStore.Audio.AudioColumns.ALBUM
+			};
+		}
+
+		CONTENT_COLUMNS_DATA = Arrays.copyOf(CONTENT_COLUMNS, CONTENT_COLUMNS.length + 1);
+		CONTENT_COLUMNS_DATA[CONTENT_COLUMNS.length] = "_data";
+	}
 
 	private final MediaEngineManager mgr;
 	private final BitmapCache bitmapCache;
@@ -76,7 +109,7 @@ public class MetadataRetriever implements Closeable {
 
 	public MetadataRetriever(MediaEngineManager mgr) {
 		this.mgr = mgr;
-		bitmapCache = new BitmapCache(mgr.lib);
+		bitmapCache = FermataApplication.get().getBitmapCache();
 		Context ctx = mgr.lib.getContext();
 		File cache = ctx.getExternalCacheDir();
 		if (cache == null) cache = ctx.getCacheDir();
@@ -117,17 +150,26 @@ public class MetadataRetriever implements Closeable {
 		if (meta != null) return meta;
 
 		MetaBuilder mb = new MetaBuilder();
-		VirtualResource file = item.getResource();
+		VirtualResource res = item.getResource();
+		VirtualFileSystem fs = res.getVirtualFileSystem();
 
-		if (file.getVirtualFileSystem() instanceof ContentFileSystem) {
-			if (queryContentProvider(file.getRid().toAndroidUri(), mb)) {
-				try {
+		if ((fs instanceof LocalFileSystem)) {
+			try {
+				if (queryMediaStore(item, mb)) {
 					insertMetadata(mb, item);
-				} catch (Throwable ex) {
-					Log.e(ex, "Failed to update MediaStore");
+					return mb;
 				}
-
-				return mb;
+			} catch (Throwable ex) {
+				Log.e(ex, "Failed retrieve data from MediaStore: ", res);
+			}
+		} else if (fs instanceof ContentFileSystem) {
+			try {
+				if (queryContentProvider(item, mb)) {
+					insertMetadata(mb, item);
+					return mb;
+				}
+			} catch (Throwable ex) {
+				Log.e(ex, "Failed retrieve data from MediaStore: ", res);
 			}
 		}
 
@@ -152,49 +194,145 @@ public class MetadataRetriever implements Closeable {
 		return mb;
 	}
 
-	private boolean queryContentProvider(Uri uri, MetaBuilder mb) {
-		App app = App.get();
-		ContentResolver cr = app.getContentResolver();
+	private boolean queryContentProvider(PlayableItem item, MetaBuilder mb) {
+		Uri uri = item.getResource().getRid().toAndroidUri();
+		ContentResolver cr = App.get().getContentResolver();
 
 		try (Cursor c = cr.query(uri, CONTENT_COLUMNS, null, null, null)) {
-			if ((c == null) || !c.moveToFirst()) return false;
-
-			String m = c.getString(1);
-
-			if ((m != null) && !m.isEmpty()) {
-				try {
-					mb.putLong(MediaMetadata.METADATA_KEY_DURATION, Long.parseLong(m));
-				} catch (NumberFormatException ex) {
-					Log.d(ex);
-					return false;
-				}
-			} else {
-				return false;
-			}
-
-			m = c.getString(0);
-			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_TITLE, m);
-			m = c.getString(2);
-			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, m);
-			m = c.getString(3);
-			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, m);
-			m = c.getString(4);
-			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, m);
-			m = c.getString(5);
-			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_COMPOSER, m);
-			m = c.getString(6);
-			if (m != null) mb.putString(MediaMetadataCompat.METADATA_KEY_GENRE, m);
-
+			if ((c == null) || !c.moveToFirst() || !addFields(c, mb)) return false;
 			mb.setImageUri(uri.toString());
 			return true;
-		} catch (Exception ex) {
-			Log.e(ex, "Failed to query content provider: " + uri);
-			return false;
 		}
 	}
 
-	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern) {
-		return (db != null) ? queue.enqueue(() -> query(idPattern)) : completedEmptyMap();
+	private boolean queryMediaStore(PlayableItem item, MetaBuilder mb) {
+		String path = item.getResource().getRid().getPath();
+		if (path == null) return false;
+		String dataQuery;
+		String[] dataArgs;
+		String canonical = null;
+		ContentResolver cr = App.get().getContentResolver();
+		boolean video = item.isVideo();
+		Uri uri = video
+				? MediaStore.Video.Media.getContentUri("external")
+				: MediaStore.Audio.Media.getContentUri("external");
+
+		try {
+			canonical = new File(path).getCanonicalPath();
+		} catch (Throwable ignore) {
+		}
+
+		if (canonical != null) {
+			dataQuery = "_data = ? OR _data = ?";
+			dataArgs = new String[]{canonical, path};
+		} else {
+			dataQuery = "_data = ?";
+			dataArgs = new String[]{path};
+		}
+
+		try (Cursor c = cr.query(uri, CONTENT_COLUMNS, dataQuery, dataArgs, null)) {
+			if ((c != null) && c.moveToFirst()) {
+				Uri img = ContentUris.withAppendedId(uri, c.getLong(0));
+				if (!bitmapCache.isResourceImageAvailable(img) || !addFields(c, mb)) return false;
+				mb.setImageUri(img.toString());
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private Map<String, MetadataBuilder> queryMediaStore(BrowsableItem item) {
+		if (!(item instanceof FolderItem)) return emptyMap();
+		VirtualResource r = item.getResource();
+		if (!(r.getVirtualFileSystem() instanceof LocalFileSystem) || !(r instanceof VirtualFolder)) {
+			return emptyMap();
+		}
+
+		String path = item.getResource().getRid().getPath();
+		if (path == null) return emptyMap();
+		String dataQuery;
+		String[] dataArgs;
+		String canonical = null;
+		String id = item.getId();
+		Map<String, MetadataBuilder> m = new HashMap<>();
+		ContentResolver cr = App.get().getContentResolver();
+
+		try {
+			canonical = new File(path).getCanonicalPath();
+		} catch (Throwable ignore) {
+		}
+
+		if (canonical != null) {
+			dataQuery = "_data LIKE ? OR _data LIKE ?";
+			dataArgs = new String[]{canonical + "/%", path + "/%"};
+		} else {
+			dataQuery = "_data LIKE ?";
+			dataArgs = new String[]{path + "/%"};
+		}
+
+		id = FileItem.SCHEME + id.substring(FolderItem.SCHEME.length());
+		queryMediaStore(cr, MediaStore.Audio.Media.getContentUri("external"), dataQuery, dataArgs, id, m);
+		queryMediaStore(cr, MediaStore.Video.Media.getContentUri("external"), dataQuery, dataArgs, id, m);
+		return m;
+	}
+
+	private void queryMediaStore(ContentResolver cr, Uri uri, String dataQuery, String[] dataArgs,
+															 String idPref, Map<String, MetadataBuilder> m) {
+		try (Cursor c = cr.query(uri, CONTENT_COLUMNS_DATA, dataQuery, dataArgs, null)) {
+			if (c == null) return;
+			while (c.moveToNext()) {
+				String data = c.getString(CONTENT_COLUMNS_DATA.length - 1);
+				if (data == null) continue;
+				Uri img = ContentUris.withAppendedId(uri, c.getLong(0));
+				if (!bitmapCache.isResourceImageAvailable(img)) continue;
+				MetaBuilder mb = new MetaBuilder();
+				if (!addFields(c, mb)) continue;
+				int idx = data.lastIndexOf('/');
+				if (idx < 0) continue;
+				String id = idPref + '/' + data.substring(idx + 1);
+				mb.setImageUri(img.toString());
+				m.put(id, mb);
+				insertMetadata(mb, id);
+			}
+		}
+	}
+
+	private boolean addFields(Cursor c, MetaBuilder mb) {
+		try {
+			long dur = c.getLong(2);
+			if (dur <= 0) return false;
+			mb.putLong(MediaMetadata.METADATA_KEY_DURATION, dur);
+		} catch (Exception ex) {
+			Log.d(ex, "Invalid duration: ", c.getString(2));
+			return false;
+		}
+
+		String s = c.getString(1);
+		if (s != null) mb.putString(MediaMetadataCompat.METADATA_KEY_TITLE, s);
+		s = c.getString(3);
+		if (s != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, s);
+		s = c.getString(4);
+		if (s != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, s);
+
+		if (SDK_INT >= VERSION_CODES.R) {
+			s = c.getString(5);
+			if (s != null) mb.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, s);
+			s = c.getString(6);
+			if (s != null) mb.putString(MediaMetadataCompat.METADATA_KEY_COMPOSER, s);
+			s = c.getString(7);
+			if (s != null) mb.putString(MediaMetadataCompat.METADATA_KEY_GENRE, s);
+		}
+
+		return true;
+	}
+
+	public FutureSupplier<Map<String, MetadataBuilder>> queryMetadata(String idPattern, BrowsableItem br) {
+		if (db == null) return queue.enqueue(() -> queryMediaStore(br));
+		return queue.enqueue(() -> {
+			Map<String, MetadataBuilder> m = query(idPattern);
+			return m.isEmpty() ? queryMediaStore(br) : m;
+		});
 	}
 
 	public FutureSupplier<String> queryId(String pattern) {
@@ -221,10 +359,10 @@ public class MetadataRetriever implements Closeable {
 		return (db != null) ? queue.enqueue(() -> clear(idPattern)) : completedVoid();
 	}
 
-	public FutureSupplier<Void> updateDuration(PlayableItem item, long duration) {
-		if (db == null) return completedVoid();
+	public void updateDuration(PlayableItem item, long duration) {
+		if (db == null) return;
 
-		return queue.enqueue(() -> {
+		queue.enqueue(() -> {
 			ContentValues values = new ContentValues(1);
 			values.put(COL_DURATION, duration);
 			db.update(TABLE, values, COL_ID + " = ?", new String[]{item.getId()});
@@ -239,7 +377,7 @@ public class MetadataRetriever implements Closeable {
 				 Cursor c = db.query(TABLE, QUERY_COLUMNS, COL_ID_PATTERN,
 						 new String[]{idPattern, tb.toString()}, null, null, null)) {
 			int count = c.getCount();
-			if (count == 0) return Collections.emptyMap();
+			if (count == 0) return emptyMap();
 
 			Map<String, MetadataBuilder> result = new HashMap<>((int) (count * 1.5f));
 
@@ -253,7 +391,7 @@ public class MetadataRetriever implements Closeable {
 			return result;
 		} catch (Throwable ex) {
 			Log.d(ex, "Failed to query media metadata");
-			return Collections.emptyMap();
+			return emptyMap();
 		}
 	}
 
@@ -297,32 +435,51 @@ public class MetadataRetriever implements Closeable {
 		meta.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, c.getLong(4));
 
 		byte[] art = c.getBlob(5);
-		if (art != null) meta.setImageUri(bitmapCache.getImageUri(art, tb));
+		if (art != null) {
+			String uri = null;
+			if (art.length == SHA1_DIGEST_LEN) { // Old format in pure sha1
+				uri = bitmapCache.getImageUri(art, tb);
+			} else if ((art.length == SHA1_DIGEST_LEN + 1) && (art[art.length - 1] == ART_HASH)) {
+				uri = bitmapCache.getImageUri(art, tb);
+			} else if ((art.length > 1) && (art[art.length - 1] == ART_URI)) {
+				uri = new String(art, 0, art.length - 1, UTF_8);
+			}
+			if (uri != null) meta.setImageUri(uri);
+		}
 	}
 
 	private void insertMetadata(MetaBuilder meta, PlayableItem item) {
-		if ((db == null) || !meta.durationSet) return;
-		ContentValues values = meta.values;
-		Bitmap bm = meta.image;
+		insertMetadata(meta, item.getId());
+	}
 
-		if (bm == null) {
-			String u = meta.getImageUri();
-			if (u != null) bm = item.getLib().getBitmap(u, false, false).get(null);
-		}
+	private void insertMetadata(MetaBuilder meta, String id) {
+		if ((db == null) || !meta.durationSet) return;
+		Bitmap bm = meta.image;
 
 		if (bm != null) {
 			try (SharedTextBuilder tb = SharedTextBuilder.get()) {
-				byte[] art = bitmapCache.saveBitmap(bm, tb);
+				byte[] hash = bitmapCache.saveBitmap(bm, tb);
 
-				if (art != null) {
-					meta.setImageUri(bitmapCache.getImageUri(art, tb));
-					values.put(COL_ART, art);
+				if (hash != null) {
+					meta.setImageUri(bitmapCache.getImageUri(hash, tb));
+					byte[] art = Arrays.copyOf(hash, hash.length + 1);
+					art[hash.length] = ART_HASH;
+					meta.setArt(art);
 				}
+			}
+		} else {
+			String uri = meta.getImageUri();
+
+			if (uri != null) {
+				byte[] b = uri.getBytes(UTF_8);
+				byte[] art = Arrays.copyOf(b, b.length + 1);
+				art[b.length] = ART_URI;
+				meta.setArt(art);
 			}
 		}
 
-		values.put(COL_ID, item.getId());
-		db.insert(TABLE, null, values);
+		meta.setId(id);
+		meta.insert(db);
 	}
 
 	private void createTable() {
@@ -351,7 +508,7 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	private static final class MetaBuilder extends MetadataBuilder {
-		final ContentValues values = new ContentValues(10);
+		private final ContentValues values = new ContentValues(10);
 		boolean durationSet;
 		Bitmap image;
 
@@ -401,6 +558,18 @@ public class MetadataRetriever implements Closeable {
 		public void putBitmap(String key, Bitmap value) {
 			if (MediaMetadata.METADATA_KEY_ALBUM_ART.equals(key)) image = value;
 			else super.putBitmap(key, value);
+		}
+
+		void setId(String id) {
+			values.put(COL_ID, id);
+		}
+
+		void setArt(byte[] art) {
+			values.put(COL_ART, art);
+		}
+
+		void insert(SQLiteDatabase db) {
+			db.insert(TABLE, null, values);
 		}
 	}
 }

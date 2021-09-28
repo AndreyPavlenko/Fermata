@@ -5,6 +5,9 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.net.Uri;
 
+import com.google.android.play.core.splitcompat.SplitCompat;
+
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.net.http.HttpFileDownloader;
@@ -41,5 +44,11 @@ public class Utils {
 		l.setFailureTitle(s -> ctx.getResources().getString(R.string.err_failed_to_download, url));
 		d.setStatusListener(l);
 		return d;
+	}
+
+	// A workaround for Resources$NotFoundException
+	public static Context dynCtx(Context ctx) {
+		if (!BuildConfig.AUTO) SplitCompat.install(ctx);
+		return ctx;
 	}
 }

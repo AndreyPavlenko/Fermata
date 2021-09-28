@@ -60,11 +60,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	public DefaultMediaLib(Context ctx) {
 		this.ctx = ctx;
 		sharedPreferences = ctx.getSharedPreferences("medialib", Context.MODE_PRIVATE);
+		mediaEngineManager = new MediaEngineManager(this);
+		metadataRetriever = new MetadataRetriever(mediaEngineManager);
 		folders = new DefaultFolders(this);
 		favorites = new DefaultFavorites(this);
 		playlists = new DefaultPlaylists(this);
-		mediaEngineManager = new MediaEngineManager(this);
-		metadataRetriever = new MetadataRetriever(mediaEngineManager);
 		addBroadcastListener(this);
 	}
 

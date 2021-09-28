@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Queue;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.engine.BitmapCache;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
@@ -37,6 +38,7 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.media.pref.StreamItemPrefs;
+import me.aap.fermata.provider.FermataContentProvider;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
@@ -81,9 +83,13 @@ public interface MediaLib {
 	@NonNull
 	MetadataRetriever getMetadataRetriever();
 
+	default BitmapCache getBitmapCache() {
+		return getMetadataRetriever().getBitmapCache();
+	}
+
 	@NonNull
 	default FutureSupplier<Bitmap> getBitmap(String uri, boolean cache, boolean resize) {
-		return getMetadataRetriever().getBitmapCache().getBitmap(getContext(), uri, cache, resize);
+		return getBitmapCache().getBitmap(getContext(), uri, cache, resize);
 	}
 
 	@NonNull
@@ -162,10 +168,10 @@ public interface MediaLib {
 
 		default FutureSupplier<MediaDescriptionCompat> getMediaItemDescription() {
 			return getMediaDescription().then(md -> {
-				if ((md.getIconUri() != null) || (getParent() == null)) {
+				if (getParent() == null) {
 					MediaLib lib = getLib();
-					Uri uri = (getParent() == null) ? getResourceUri(lib.getContext(), getIcon()) : md.getIconUri();
-					return getLib().getBitmap(uri.toString(), true, true).map(bm -> {
+					return lib.getBitmap(getResourceUri(lib.getContext(), getIcon()).toString(),
+							true, true).map(bm -> {
 						MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
 						b.setMediaId(md.getMediaId());
 						b.setTitle(md.getTitle());
@@ -175,7 +181,20 @@ public interface MediaLib {
 					});
 				}
 
-				return completed(md);
+
+				Uri uri = md.getIconUri();
+				if (uri == null) return completed(md);
+
+				MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
+				b.setMediaId(md.getMediaId());
+				b.setTitle(md.getTitle());
+				b.setSubtitle(md.getSubtitle());
+
+				if (FermataContentProvider.isSupportedFileScheme(uri.getScheme())) {
+					b.setIconUri(FermataContentProvider.toContentUri(uri));
+				}
+
+				return completed(b.build());
 			});
 		}
 

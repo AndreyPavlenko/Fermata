@@ -100,6 +100,12 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
+
+        <provider
+            android:name="me.aap.fermata.provider.FermataContentProvider"
+            android:authorities="${applicationId}"
+            android:exported="true"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

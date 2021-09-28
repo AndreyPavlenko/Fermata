@@ -123,8 +123,10 @@ public class M3uItem extends BrowsableItemBase {
 							case "url-logo":
 								logoUrlBase = trim(l.substring(off, i));
 								break;
-							case "tvg-url":
+							case "url-epg":
 							case "url-tvg":
+							case "tvg-url":
+							case "x-tvg-url":
 								setTvgUrl(trim(l.substring(off, i)));
 								break;
 							case "catchup":
@@ -478,10 +480,16 @@ public class M3uItem extends BrowsableItemBase {
 		});
 	}
 
-	protected Reader createReader(VirtualFile m3uFile) throws IOException {
-		InputStream in = m3uFile.getInputStream().asInputStream();
-		String enc = m3uFile.getContentEncoding();
-		String cs = m3uFile.getCharacterEncoding();
+	protected Reader createReader(VirtualFile f) throws IOException {
+		InputStream in = f.getInputStream().asInputStream();
+		String enc = null;
+		String cs = enc;
+
+		if (f instanceof M3uFile) {
+			M3uFile m3u = (M3uFile) f;
+			enc = m3u.getContentEncoding();
+			cs = m3u.getCharacterEncoding();
+		}
 
 		if (enc != null) {
 			if ("gzip".equals(enc)) {

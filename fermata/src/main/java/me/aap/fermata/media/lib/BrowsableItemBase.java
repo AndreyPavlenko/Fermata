@@ -118,7 +118,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		String pattern = getChildrenIdPattern();
 
 		if (pattern != null) {
-			return getLib().getMetadataRetriever().queryMetadata(pattern).then(meta -> {
+			return getLib().getMetadataRetriever().queryMetadata(pattern, this).then(meta -> {
 				List<PlayableItem> playable;
 				int size = meta.size();
 

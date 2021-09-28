@@ -1,5 +1,9 @@
 package me.aap.fermata.media.lib;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
+
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.Keep;
@@ -12,15 +16,12 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
+import me.aap.utils.async.Completable;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VirtualResource;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -113,14 +114,21 @@ public abstract class PlayableItemBase extends ItemBase implements PlayableItem,
 		m.thenReplaceOrClear(META, this);
 	}
 
+	@SuppressWarnings("unchecked")
 	protected void setMeta(MetadataBuilder mb) {
-		FutureSupplier<MediaMetadataCompat> m = META.get(this);
-		if (isMediaDataValid(m)) return;
+		FutureSupplier<MediaMetadataCompat> old = META.get(this);
+		if (isMediaDataValid(old)) return;
 
-		m = buildMeta(mb);
+		FutureSupplier<MediaMetadataCompat> m = buildMeta(mb);
 
-		if (META.compareAndSet(this, null, m)) m.thenReplace(META, this);
-		else m.cancel();
+		if (META.compareAndSet(this, old, m)) {
+			m.onSuccess(md -> {
+				if (!META.compareAndSet(this, m, completed(md))) return;
+				if (old instanceof Completable<?>) ((Completable<MediaMetadataCompat>) old).complete(md);
+			});
+		} else {
+			m.cancel();
+		}
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon.web;
 
+import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
+
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
@@ -28,8 +30,6 @@ import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ToolBarView;
-
-import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
 
 /**
  * @author Andrey Pavlenko

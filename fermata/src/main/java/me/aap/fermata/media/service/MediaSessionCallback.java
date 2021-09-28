@@ -28,7 +28,9 @@ import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_O
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_ALL;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_NONE;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_FAST_FORWARDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_REWINDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
 import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
@@ -607,6 +609,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 																 boolean ff, int time, int timeUnit, int multiply) {
 		if (getCurrentItem() != i) return;
 
+		PlaybackStateCompat state = getPlaybackState();
+		PlaybackStateCompat.Builder b = new PlaybackStateCompat.Builder(state);
+		b.setState(ff ? STATE_FAST_FORWARDING : STATE_REWINDING, state.getPosition(),
+				state.getPlaybackSpeed());
+		setPlaybackState(b.build());
 		long timeShift = getTimeMillis(dur, time, timeUnit) * multiply;
 
 		if (ff) {
@@ -619,6 +626,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		eng.setPosition(pos);
+		setPlaybackState(b.setState(state.getState(), pos, state.getPlaybackSpeed()).build());
 	}
 
 	private void progressiveRwFF(long time, boolean ff) {
@@ -720,6 +728,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 					}
 				}
 			});
+		} else {
+			setPlaybackState(new PlaybackStateCompat.Builder(state).build());
 		}
 	}
 

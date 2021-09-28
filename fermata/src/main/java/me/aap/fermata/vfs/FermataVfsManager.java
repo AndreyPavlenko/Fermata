@@ -1,5 +1,9 @@
 package me.aap.fermata.vfs;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.failed;
+
 import android.content.Context;
 
 import androidx.annotation.StringRes;
@@ -26,10 +30,6 @@ import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.content.ContentFileSystem;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 import me.aap.utils.vfs.local.LocalFileSystem;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
@@ -81,7 +81,7 @@ public class FermataVfsManager extends VfsManager {
 	private static List<VirtualFileSystem> filesystems() {
 		FermataApplication app = FermataApplication.get();
 		PreferenceStore ps = app.getPreferenceStore();
-		List<VirtualFileSystem> p = new ArrayList<>(6);
+		List<VirtualFileSystem> p = new ArrayList<>(7);
 		p.add(LocalFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(GenericFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(ContentFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());

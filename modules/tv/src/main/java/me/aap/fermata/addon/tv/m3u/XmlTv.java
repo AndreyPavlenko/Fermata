@@ -266,7 +266,7 @@ public class XmlTv implements Closeable {
 	private FutureSupplier<XmlTv> load(TvM3uItem item, boolean hasIndex) {
 		BooleanHolder noUpdate = new BooleanHolder();
 		return item.getResource().downloadEpg().then(status -> {
-			if ((status.getDownloadedSize() == 0) && hasIndex) {
+			if ((status.bytesDownloaded() == 0) && hasIndex) {
 				Log.i("XMLTV is up to date: ", status.getUrl());
 				return completed(this);
 			}
@@ -350,7 +350,7 @@ public class XmlTv implements Closeable {
 		SAXParser parser = factory.newSAXParser();
 
 		try (InputStream fis = status.getFileStream(true)) {
-			InputStream in = (status.getFile().getName().endsWith(".gz")) ? new GZIPInputStream(fis) : fis;
+			InputStream in = (status.getLocalFile().getName().endsWith(".gz")) ? new GZIPInputStream(fis) : fis;
 			createTables(db);
 			db.beginTransaction();
 			parser.parse(in, new XmlHandler(db, idToTrack, nameToTrack, item.getResource().getEpgShift()));

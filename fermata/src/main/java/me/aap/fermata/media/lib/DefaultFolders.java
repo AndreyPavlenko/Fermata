@@ -1,5 +1,12 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.fermata.vfs.m3u.M3uFileSystem.SCHEME_M3U;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.collection.CollectionUtils.mapToArray;
+import static me.aap.utils.security.SecurityUtils.sha1String;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -12,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Folders;
@@ -33,13 +41,6 @@ import me.aap.utils.vfs.VirtualFile;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.vfs.m3u.M3uFileSystem.SCHEME_M3U;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.collection.CollectionUtils.mapToArray;
-import static me.aap.utils.security.SecurityUtils.sha1String;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -54,7 +55,7 @@ class DefaultFolders extends BrowsableItemBase implements Folders, FoldersPrefs 
 		this.lib = lib;
 		SharedPreferences prefs = lib.getContext().getSharedPreferences("folders", Context.MODE_PRIVATE);
 		foldersPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
-		vfsManager = new FermataVfsManager();
+		vfsManager = FermataApplication.get().getVfsManager();
 	}
 
 	@Override

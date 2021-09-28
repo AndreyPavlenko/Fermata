@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.web.yt;
 
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_YT;
+import static me.aap.fermata.util.Utils.dynCtx;
 import static me.aap.utils.async.Completed.completed;
 
 import android.content.Context;
@@ -13,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.media.AudioFocusRequestCompat;
+
+import com.google.android.play.core.splitcompat.SplitCompat;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.R;
@@ -187,8 +190,9 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public void contributeToMenu(OverlayMenu.Builder b) {
-		Context ctx = web.getContext();
+		Context ctx = dynCtx(web.getContext());
 		Resources r = ctx.getResources();
+		SplitCompat.install(ctx);
 		b.addItem(R.id.video_quality,
 				ResourcesCompat.getDrawable(r, R.drawable.video_quality, ctx.getTheme()),
 				r.getString(R.string.video_quality)).setFutureSubmenu(this::videoQualityMenu);

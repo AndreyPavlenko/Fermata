@@ -118,6 +118,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Override
 	public void onDestroyView() {
+		scrollPosition = -1;
 		cleanUp(getMainActivity());
 		super.onDestroyView();
 		Log.d("MediaLibFragment view destroyed: ", this);

@@ -7,6 +7,8 @@ import androidx.annotation.Nullable;
 import java.io.File;
 
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.media.engine.BitmapCache;
+import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.app.NetSplitCompatApp;
 import me.aap.utils.pref.PreferenceStore;
@@ -16,11 +18,28 @@ import me.aap.utils.pref.SharedPreferenceStore;
  * @author Andrey Pavlenko
  */
 public class FermataApplication extends NetSplitCompatApp {
+	private FermataVfsManager vfsManager;
+	private BitmapCache bitmapCache;
 	private volatile SharedPreferenceStore preferenceStore;
 	private volatile AddonManager addonManager;
 
 	public static FermataApplication get() {
 		return App.get();
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		vfsManager = new FermataVfsManager();
+		bitmapCache = new BitmapCache();
+	}
+
+	public FermataVfsManager getVfsManager() {
+		return vfsManager;
+	}
+
+	public BitmapCache getBitmapCache() {
+		return bitmapCache;
 	}
 
 	public PreferenceStore getPreferenceStore() {
