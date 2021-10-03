@@ -50,7 +50,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		MainActivityDelegate.setTheme(this);
 		super.onCreate(savedInstanceState);
-		setIgnoreConfigChanges(0xFFFF);
+		setIgnoreConfigChanges(0xFFFFFFFF);
 		CarUiController ctrl = getCarUiController();
 		ctrl.getStatusBarController().hideAppHeader();
 		ctrl.getMenuController().hideMenuButton();

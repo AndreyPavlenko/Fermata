@@ -1,8 +1,10 @@
 package me.aap.fermata.addon.web;
 
 import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
+import static me.aap.fermata.util.Utils.dynCtx;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,6 +15,7 @@ import android.webkit.WebView;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
 
 import java.util.Map;
 
@@ -175,12 +178,17 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebView v = getWebView();
 		if ((a == null) || (v == null)) return;
 
-		b.addItem(me.aap.fermata.R.id.refresh, me.aap.fermata.R.drawable.refresh,
-				me.aap.fermata.R.string.refresh).setHandler(this);
+		Context ctx = dynCtx(requireContext());
+		Resources res = ctx.getResources();
+		Resources.Theme theme = ctx.getTheme();
+		b.addItem(me.aap.fermata.R.id.refresh,
+				ResourcesCompat.getDrawable(res, me.aap.fermata.R.drawable.refresh, theme),
+				res.getString(me.aap.fermata.R.string.refresh)).setHandler(this);
 
 		if (isDesktopVersionSupported()) {
-			b.addItem(R.id.desktop_version, R.drawable.desktop, R.string.desktop_version)
-					.setChecked(a.isDesktopVersion()).setHandler(this);
+			b.addItem(R.id.desktop_version,
+					ResourcesCompat.getDrawable(res, R.drawable.desktop, theme),
+					res.getString(R.string.desktop_version)).setChecked(a.isDesktopVersion()).setHandler(this);
 		}
 
 		FermataChromeClient chrome = v.getWebChromeClient();
@@ -188,14 +196,19 @@ public class WebBrowserFragment extends MainActivityFragment
 
 		if (!chrome.isFullScreen()) {
 			if (chrome.canEnterFullScreen()) {
-				b.addItem(R.id.fullscreen, R.drawable.fullscreen, R.string.full_screen).setHandler(this);
+				b.addItem(R.id.fullscreen,
+						ResourcesCompat.getDrawable(res, R.drawable.fullscreen, theme),
+						res.getString(R.string.full_screen)).setHandler(this);
 			}
 		} else {
-			b.addItem(R.id.fullscreen_exit, R.drawable.fullscreen_exit, R.string.full_screen_exit).setHandler(this);
+			b.addItem(R.id.fullscreen_exit,
+					ResourcesCompat.getDrawable(res, R.drawable.fullscreen_exit, theme),
+					res.getString(R.string.full_screen_exit)).setHandler(this);
 		}
 
-		b.addItem(me.aap.fermata.R.id.bookmarks, me.aap.fermata.R.drawable.bookmark_filled,
-				me.aap.fermata.R.string.bookmarks).setSubmenu(this::bookmarksMenu);
+		b.addItem(me.aap.fermata.R.id.bookmarks,
+				ResourcesCompat.getDrawable(res, me.aap.fermata.R.drawable.bookmark_filled, theme),
+				res.getText(me.aap.fermata.R.string.bookmarks)).setSubmenu(this::bookmarksMenu);
 	}
 
 	protected boolean isDesktopVersionSupported() {

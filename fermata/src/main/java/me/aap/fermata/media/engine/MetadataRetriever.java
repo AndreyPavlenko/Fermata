@@ -264,11 +264,11 @@ public class MetadataRetriever implements Closeable {
 		}
 
 		if (canonical != null) {
-			dataQuery = "_data LIKE ? OR _data LIKE ?";
-			dataArgs = new String[]{canonical + "/%", path + "/%"};
+			dataQuery = "(_data LIKE ? AND NOT _data LIKE ?) OR (_data LIKE ? AND NOT _data LIKE ?)";
+			dataArgs = new String[]{canonical + "/%", canonical + "/%/%", path + "/%", path + "/%/%"};
 		} else {
-			dataQuery = "_data LIKE ?";
-			dataArgs = new String[]{path + "/%"};
+			dataQuery = "_data LIKE ? AND NOT _data LIKE ?";
+			dataArgs = new String[]{path + "/%", path + "/%/%"};
 		}
 
 		id = FileItem.SCHEME + id.substring(FolderItem.SCHEME.length());

@@ -157,6 +157,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	public void revealItem(Item i) {
+		if (isHidden()) return;
 		ListAdapter a = getAdapter();
 		BrowsableItem p = i.getParent();
 		if (p == null) return;
