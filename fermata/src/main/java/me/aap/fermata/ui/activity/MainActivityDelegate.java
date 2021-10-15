@@ -120,6 +120,12 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		return (MainActivityDelegate) ActivityDelegate.get(ctx);
 	}
 
+	@NonNull
+	@SuppressWarnings("unchecked")
+	public static FutureSupplier<MainActivityDelegate> getActivityDelegate(Context ctx) {
+		return (FutureSupplier<MainActivityDelegate>) ActivityDelegate.getActivityDelegate(ctx);
+	}
+
 	@Override
 	public void onActivityCreate(@Nullable Bundle state) {
 		super.onActivityCreate(state);
@@ -309,7 +315,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public boolean isGridView() {
 		ActivityFragment f = getActiveFragment();
 
-		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGreedSupported()) {
+		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGridSupported()) {
 			return getPrefs().getGridViewPref(this);
 		} else {
 			return false;
@@ -431,7 +437,11 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public void setBrightness(int br) {
-		Settings.System.putInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, br);
+		try {
+			Settings.System.putInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, br);
+		} catch (SecurityException ex) {
+			Log.e(ex, "Failed to change brightness");
+		}
 	}
 
 	public boolean isVideoMode() {
@@ -588,8 +598,10 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		});
 	}
 
-	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection, Supplier<? extends CharSequence> initName) {
-		UiUtils.queryText(getContext(), R.string.playlist_name, initName.get()).onSuccess(name -> {
+	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection,
+																 Supplier<? extends CharSequence> initName) {
+		UiUtils.queryText(getContext(), R.string.playlist_name, R.drawable.playlist,
+				initName.get()).onSuccess(name -> {
 			discardSelection();
 			if (name == null) return;
 
@@ -747,8 +759,12 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		return super.onKeyDown(keyCode, keyEvent, next);
 	}
 
+	public HandlerExecutor getHandler() {
+		return handler;
+	}
+
 	public Cancellable postDelayed(Runnable task, long delay) {
-		return handler.schedule(task, delay);
+		return getHandler().schedule(task, delay);
 	}
 
 	static final class Prefs implements MainActivityPrefs {

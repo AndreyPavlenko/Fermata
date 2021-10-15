@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @author Andrey Pavlenko
  */
-class CueItem extends BrowsableItemBase {
+public class CueItem extends BrowsableItemBase {
 	public static final String SCHEME = "cue";
 	private final FutureRef<Data> data = new FutureRef<Data>() {
 		@Override

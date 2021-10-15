@@ -5,6 +5,7 @@ import static android.view.View.FOCUS_RIGHT;
 import static android.view.View.FOCUS_UP;
 import static me.aap.utils.ui.UiUtils.isVisible;
 
+import android.content.Context;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -58,10 +59,11 @@ public class FloatingButtonMediator implements BackMenu {
 	@Override
 	public View focusSearch(FloatingButton fb, int direction) {
 		if (direction == FOCUS_RIGHT) {
-			NavBarView n = MainActivityDelegate.get(fb.getContext()).getNavBar();
-			return (isVisible(n) && n.isRight()) ? n.focusSearch() : MediaItemListView.focusSearchLast(fb);
+			Context ctx = fb.getContext();
+			NavBarView n = MainActivityDelegate.get(ctx).getNavBar();
+			return (isVisible(n) && n.isRight()) ? n.focusSearch() : MediaItemListView.focusSearchLast(ctx, fb);
 		} else if (direction == FOCUS_LEFT) {
-			return MediaItemListView.focusSearchActive(fb);
+			return MediaItemListView.focusSearchActive(fb.getContext(), fb);
 		} else if (direction == FOCUS_UP) {
 			ToolBarView tb = MainActivityDelegate.get(fb.getContext()).getToolBar();
 			if (isVisible(tb)) return tb.focusSearch();

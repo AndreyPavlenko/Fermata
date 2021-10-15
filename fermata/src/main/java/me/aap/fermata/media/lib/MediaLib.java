@@ -2,6 +2,8 @@ package me.aap.fermata.media.lib;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_MASK_ALL;
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_MASK_NAME_RND;
 import static me.aap.fermata.util.Utils.getResourceUri;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -48,6 +50,7 @@ import me.aap.utils.function.Function;
 import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
 import me.aap.utils.vfs.VirtualFileSystem;
+import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.generic.GenericFileSystem;
 
@@ -655,6 +658,11 @@ public interface MediaLib {
 		@NonNull
 		default FutureSupplier<Void> updateSorting() {
 			return completedVoid();
+		}
+
+		default int getSupportedSortOpts() {
+			VirtualResource res = getResource();
+			return (res instanceof VirtualFolder) ? SORT_MASK_ALL : SORT_MASK_NAME_RND;
 		}
 	}
 

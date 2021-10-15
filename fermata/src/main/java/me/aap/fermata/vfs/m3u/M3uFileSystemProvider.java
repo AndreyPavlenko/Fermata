@@ -68,7 +68,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 			o.title = R.string.m3u_playlist_video;
 		});
 
-		return requestPrefs(a, prefs, ps).then(ok -> {
+		return requestPrefs(a, prefs, ps).thenRun(ps::removeBroadcastListeners).then(ok -> {
 			if (!ok) return completedNull();
 			return load(ps, M3uFileSystem.getInstance());
 		});

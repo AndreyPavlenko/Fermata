@@ -39,20 +39,23 @@ public class VideInfoView extends ConstraintLayout
 	public VideInfoView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
 		inflate(context, R.layout.video_info_layout, this);
-		MainActivityDelegate a = getActivity();
-		a.addBroadcastListener(this, ACTIVITY_DESTROY);
-		a.getMediaServiceBinder().addBroadcastListener(this);
-		setBackgroundColor(Color.BLACK);
-		onPlayableChanged(null, a.getCurrentPlayable());
+		getActivity().onSuccess(a -> {
+			a.addBroadcastListener(this, ACTIVITY_DESTROY);
+			a.getMediaServiceBinder().addBroadcastListener(this);
+			setBackgroundColor(Color.BLACK);
+			onPlayableChanged(null, a.getCurrentPlayable());
+		});
 	}
 
 	@Override
 	public void setVisibility(int visibility) {
 		if (visibility == VISIBLE) {
-			MediaEngine eng = getActivity().getMediaServiceBinder().getCurrentEngine();
-			if (eng == null) return;
-			PlayableItem i = eng.getSource();
-			if ((i instanceof StreamItem) && !(eng instanceof StreamEngine)) onPlayableChanged(i, i);
+			getActivity().onSuccess(a -> {
+				MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
+				if (eng == null) return;
+				PlayableItem i = eng.getSource();
+				if ((i instanceof StreamItem) && !(eng instanceof StreamEngine)) onPlayableChanged(i, i);
+			});
 		}
 
 		super.setVisibility(visibility);
@@ -83,9 +86,9 @@ public class VideInfoView extends ConstraintLayout
 			if (getMd.isDone() && !getMd.isFailed()) {
 				setMetadata(item, getMd.getOrThrow());
 			} else {
-				getMd.main().onSuccess(md -> {
-					if (isCurrent(item)) setMetadata(item, md);
-				});
+				getMd.main().onSuccess(md -> getActivity().onSuccess(a -> {
+					if (isCurrent(a, item)) setMetadata(item, md);
+				}));
 			}
 		} else {
 			getTitleView().setText(item.getName());
@@ -94,14 +97,14 @@ public class VideInfoView extends ConstraintLayout
 			getSubtitleView().setVisibility(GONE);
 			getDescriptionView().setVisibility(GONE);
 
-			getDsc.main().onSuccess(dsc -> {
-				if (isCurrent(item)) {
+			getDsc.main().onSuccess(dsc -> getActivity().onSuccess(a -> {
+				if (isCurrent(a, item)) {
 					setDescription(item, dsc);
 					getMd.main().onSuccess(md -> {
-						if (isCurrent(item)) setMetadata(item, md);
+						if (isCurrent(a, item)) setMetadata(item, md);
 					});
 				}
-			});
+			}));
 		}
 	}
 
@@ -154,18 +157,21 @@ public class VideInfoView extends ConstraintLayout
 	private void setIcon(PlayableItem item, String icon) {
 		if (icon != null) {
 			item.getLib().getBitmap(icon, true, false).main().onSuccess(b -> {
-				if ((b != null) && isCurrent(item)) {
-					AppCompatImageView iv = getIconView();
-					iv.setImageBitmap(b);
-					iv.setImageTintList(null);
-					iv.setVisibility(VISIBLE);
-				}
+				if (b == null) return;
+				getActivity().onSuccess(a -> {
+					if (isCurrent(a, item)) {
+						AppCompatImageView iv = getIconView();
+						iv.setImageBitmap(b);
+						iv.setImageTintList(null);
+						iv.setVisibility(VISIBLE);
+					}
+				});
 			});
 		}
 	}
 
-	private boolean isCurrent(PlayableItem i) {
-		return (getActivity().getCurrentPlayable() == i);
+	private boolean isCurrent(MainActivityDelegate a, PlayableItem i) {
+		return (a.getCurrentPlayable() == i);
 	}
 
 	private AppCompatImageView getIconView() {
@@ -184,7 +190,7 @@ public class VideInfoView extends ConstraintLayout
 		return findViewById(R.id.media_item_dsc);
 	}
 
-	private MainActivityDelegate getActivity() {
-		return MainActivityDelegate.get(getContext());
+	private FutureSupplier<MainActivityDelegate> getActivity() {
+		return MainActivityDelegate.getActivityDelegate(getContext());
 	}
 }

@@ -298,8 +298,8 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 			if (i2 instanceof BrowsableItem) {
 				VirtualResource f1 = i1.getResource();
 				VirtualResource f2 = i2.getResource();
-				return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc) :
-						compareNatural(name(i1), name(i2), desc);
+				return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc, true) :
+						compareNatural(name(i1), name(i2), desc, true);
 			} else {
 				return -1;
 			}
@@ -308,18 +308,18 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		} else {
 			VirtualResource f1 = i1.getResource();
 			VirtualResource f2 = i2.getResource();
-			return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc) :
-					compareNatural(name(i1), name(i2), desc);
+			return (f1 != null) && (f2 != null) ? compareNatural(f1.getName(), f2.getName(), desc, true) :
+					compareNatural(name(i1), name(i2), desc, true);
 		}
 	}
 
 	private int compareByName(Item i1, Item i2, boolean desc) {
 		if (i1 instanceof BrowsableItem) {
-			return (i2 instanceof BrowsableItem) ? compareNatural(name(i1), name(i2), desc) : -1;
+			return (i2 instanceof BrowsableItem) ? compareNatural(name(i1), name(i2), desc, true) : -1;
 		} else if (i2 instanceof BrowsableItem) {
 			return 1;
 		} else {
-			return compareNatural(name(i1), name(i2), desc);
+			return compareNatural(name(i1), name(i2), desc, true);
 		}
 	}
 

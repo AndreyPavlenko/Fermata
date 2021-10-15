@@ -38,7 +38,7 @@
     <application
         android:name="me.aap.fermata.FermataApplication"
         android:allowBackup="true"
-        android:banner="@mipmap/ic_launcher"
+        android:banner="@mipmap/banner"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"

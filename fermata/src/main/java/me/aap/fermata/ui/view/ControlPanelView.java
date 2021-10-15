@@ -34,7 +34,6 @@ import com.google.android.material.textview.MaterialTextView;
 
 import java.util.List;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -50,7 +49,6 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
@@ -172,16 +170,15 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			setHeight(R.id.control_rw, buttonSize);
 			setHeight(R.id.control_play_pause, buttonSize);
 			setHeight(R.id.control_ff, buttonSize);
-			setHeight(R.id.control_next, buttonSize);
 		} else {
 			panelSize = buttonSize;
 			setSize(R.id.show_hide_bars_icon, buttonSize);
 			setSize(R.id.control_menu_button_icon, buttonSize);
 			setHeight(R.id.control_prev, buttonSize);
 			setHeight(R.id.control_play_pause, buttonSize);
-			setHeight(R.id.control_next, buttonSize);
 		}
 
+		setHeight(R.id.control_next, buttonSize);
 		getLayoutParams().height = panelSize;
 	}
 
@@ -239,7 +236,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			}
 		}
 
-		checkPlaybackTimer(a.getMediaSessionCallback());
+		checkPlaybackTimer(a);
 	}
 
 	public void enableVideoMode(@Nullable VideoView v) {
@@ -263,10 +260,10 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			if (info != null) info.setVisibility(VISIBLE);
 			super.setVisibility(VISIBLE);
 			hideTimer = new HideTimer(delay, false, info, fb);
-			App.get().getHandler().postDelayed(hideTimer, delay);
+			a.postDelayed(hideTimer, delay);
 		}
 
-		checkPlaybackTimer(a.getMediaSessionCallback());
+		checkPlaybackTimer(a);
 	}
 
 	public void disableVideoMode() {
@@ -288,12 +285,13 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent e) {
+		MainActivityDelegate a = getActivity();
 		if (hideTimer != null) {
 			int delay = getTouchDelay();
 			hideTimer = new HideTimer(delay, false, hideTimer.views);
-			FermataApplication.get().getHandler().postDelayed(hideTimer, delay);
+			a.postDelayed(hideTimer, delay);
 		}
-		return getActivity().interceptTouchEvent(e, me -> {
+		return a.interceptTouchEvent(e, me -> {
 			gestureSource = this;
 			gestureDetector.onTouchEvent(me);
 			return super.onTouchEvent(me);
@@ -411,10 +409,10 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			if (info != null) info.setVisibility(VISIBLE);
 			clearFocus();
 			hideTimer = new HideTimer(delay, false, info, fb);
-			App.get().getHandler().postDelayed(hideTimer, delay);
+			a.postDelayed(hideTimer, delay);
 		}
 
-		checkPlaybackTimer(a.getMediaSessionCallback());
+		checkPlaybackTimer(a);
 		return true;
 	}
 
@@ -440,8 +438,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		if (info != null) info.setVisibility(VISIBLE);
 		clearFocus();
 		hideTimer = new HideTimer(delay, true, info, fb);
-		App.get().getHandler().postDelayed(hideTimer, delay);
-		checkPlaybackTimer(a.getMediaSessionCallback());
+		a.postDelayed(hideTimer, delay);
+		checkPlaybackTimer(a);
 	}
 
 	public boolean isVideoSeekMode() {
@@ -481,7 +479,9 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 		if (direction == FOCUS_UP) {
 			if (isLine1(focused)) {
-				View v = MediaItemListView.focusSearchLast(focused);
+				MainActivityDelegate a = getActivity();
+				if (a.isVideoMode()) return a.getBody().getVideoView();
+				View v = MediaItemListView.focusSearchLast(getContext(), focused);
 				if (v != null) return v;
 			} else {
 				if (!isVisible(findViewById(R.id.seek_bar))) return findViewById(R.id.control_menu_button);
@@ -526,7 +526,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	}
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
-		App.get().getHandler().post(() ->
+		a.getHandler().submit(() ->
 				showHideBars.setImageResource(a.isBarsHidden() ? R.drawable.expand : R.drawable.collapse));
 	}
 
@@ -539,7 +539,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		return true;
 	}
 
-	private void checkPlaybackTimer(MediaSessionCallback cb) {
+	private void checkPlaybackTimer(MainActivityDelegate a) {
+		MediaSessionCallback cb = a.getMediaSessionCallback();
 		int t = cb.getPlaybackTimer();
 
 		if (t <= 0) {
@@ -564,10 +565,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 					clp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
 				}
 
-				playbackTimer.setOnClickListener(v -> {
-					MainActivityDelegate a = getActivity();
-					getMenu(a).show(b -> new TimerMenuHandler(a).build(b));
-				});
+				playbackTimer.setOnClickListener(v -> getMenu(a).show(b -> new TimerMenuHandler(a).build(b)));
 			}
 
 			if (getVisibility() != VISIBLE) {
@@ -581,7 +579,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			}
 
 			playbackTimer.setVisibility(VISIBLE);
-			App.get().getHandler().postDelayed(() -> checkPlaybackTimer(cb), 1000);
+			a.postDelayed(() -> checkPlaybackTimer(a), 1000);
 		}
 	}
 
@@ -860,17 +858,17 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	private final class TimerMenuHandler extends BasicPreferenceStore implements OverlayMenu.CloseHandler {
 		private final Pref<IntSupplier> H = Pref.i("H", 0);
 		private final Pref<IntSupplier> M = Pref.i("M", 0);
-		private final MediaSessionCallback cb;
+		private final MainActivityDelegate activity;
 		private boolean changed;
 		private boolean closed;
 
 		TimerMenuHandler(MainActivityDelegate activity) {
-			cb = activity.getMediaSessionCallback();
+			this.activity = activity;
 		}
 
 		void build(OverlayMenu.Builder b) {
 			PreferenceSet set = new PreferenceSet();
-			int time = cb.getPlaybackTimer();
+			int time = activity.getMediaSessionCallback().getPlaybackTimer();
 
 			if (time > 0) {
 				int h = time / 3600;
@@ -914,12 +912,12 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			if (!changed) return;
 			int h = getIntPref(H);
 			int m = getIntPref(M);
-			cb.setPlaybackTimer(h * 3600 + m * 60);
-			checkPlaybackTimer(cb);
+			activity.getMediaSessionCallback().setPlaybackTimer(h * 3600 + m * 60);
+			checkPlaybackTimer(activity);
 		}
 
 		private void startTimer() {
-			App.get().getHandler().postDelayed(() -> {
+			activity.postDelayed(() -> {
 				if (!closed) getMenu(getActivity()).hide();
 			}, 60000);
 		}
@@ -954,7 +952,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 			if (ControlPanelView.this.hasFocus()) {
 				hideTimer = new HideTimer(delay, seekMode, views);
-				App.get().getHandler().postDelayed(hideTimer, delay);
+				getActivity().postDelayed(hideTimer, delay);
 				return;
 			}
 

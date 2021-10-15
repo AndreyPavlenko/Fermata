@@ -192,8 +192,10 @@ public class TvFragment extends MediaLibFragment {
 			parent.getUnsortedChildren().onSuccess(c -> {
 				if (!c.isEmpty()) return;
 
+				FloatingButton fb = getMainActivity().getFloatingButton();
+				fb.requestFocus();
 				Animation shake = AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
-				getMainActivity().getFloatingButton().startAnimation(shake);
+				fb.startAnimation(shake);
 			});
 		}
 	}

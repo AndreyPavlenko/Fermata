@@ -29,6 +29,9 @@ public interface BrowsableItemPrefs extends MediaPrefs {
 	int SORT_BY_FILE_NAME = 2;
 	int SORT_BY_DATE = 3;
 	int SORT_BY_RND = 4;
+	int SORT_MASK_ALL = 1 | (1 << SORT_BY_NAME) | (1 << SORT_BY_FILE_NAME)
+			| (1 << SORT_BY_DATE) | (1 << SORT_BY_RND);
+	int SORT_MASK_NAME_RND = 1 | (1 << SORT_BY_NAME) | (1 << SORT_BY_RND);
 	Pref<IntSupplier> SORT_BY = Pref.i("SORT_BY", SORT_BY_NONE);
 	Pref<BooleanSupplier> SORT_DESC = Pref.b("SORT_DESC", false);
 

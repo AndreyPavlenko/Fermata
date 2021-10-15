@@ -394,7 +394,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			userPresets[p - numPresets - 1] = MediaPrefs.toUserPreset(opts.stringValues[p], bands);
 			ctrlPrefs.applyStringArrayPref(MediaPrefs.EQ_USER_PRESETS, userPresets);
 		} else {
-			UiUtils.queryText(getContext(), R.string.preset_name).onSuccess(name -> {
+			UiUtils.queryText(getContext(), R.string.preset_name, R.drawable.equalizer).onSuccess(name -> {
 				if (name == null) return;
 
 				int[] bands = getBandValues(eq);

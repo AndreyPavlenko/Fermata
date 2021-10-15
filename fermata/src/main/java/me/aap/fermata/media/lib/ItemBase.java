@@ -108,10 +108,10 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		Async.all(title, subtitle, extras, icon).onCompletion((e, err) -> {
 			if (err != null) Log.d(err, "Failed to build MediaDescription: ", this);
 			MediaDescriptionCompat.Builder b = builder();
-			b.setTitle(title.get(this::getName));
-			b.setSubtitle(subtitle.get(() -> ""));
-			b.setIconUri(icon.get(null));
-			b.setExtras(extras.get(null));
+			b.setTitle(title.peek(this::getName));
+			b.setSubtitle(subtitle.peek(() -> ""));
+			b.setIconUri(icon.peek(() -> null));
+			b.setExtras(extras.peek(() -> null));
 			MediaDescriptionCompat md = b.build();
 			MD.compareAndSet(this, load, completed(md));
 			load.complete(md);

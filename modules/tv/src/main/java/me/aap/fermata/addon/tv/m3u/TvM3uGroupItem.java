@@ -1,7 +1,10 @@
 package me.aap.fermata.addon.tv.m3u;
 
+import static me.aap.fermata.util.Utils.dynCtx;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
+
+import android.content.Context;
 
 import me.aap.fermata.addon.tv.R;
 import me.aap.fermata.addon.tv.TvItem;
@@ -9,6 +12,7 @@ import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.lib.M3uGroupItem;
 import me.aap.fermata.media.lib.M3uItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 
@@ -43,7 +47,8 @@ public class TvM3uGroupItem extends M3uGroupItem implements TvItem {
 
 	@Override
 	protected FutureSupplier<String> buildSubtitle() {
-		String t = getLib().getContext().getResources().getString(R.string.sub_ch, tracks.size());
+		Context ctx = dynCtx(getLib().getContext());
+		String t = ctx.getResources().getString(R.string.sub_ch, tracks.size());
 		return completed(t);
 	}
 }

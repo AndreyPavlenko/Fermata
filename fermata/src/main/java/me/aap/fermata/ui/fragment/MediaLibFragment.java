@@ -3,6 +3,7 @@ package me.aap.fermata.ui.fragment;
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_MASK_NAME_RND;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.getGridViewPrefKey;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.hasGridViewPref;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.hasTextIconSizePref;
@@ -163,7 +164,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		if (p == null) return;
 		if (!p.equals(a.getParent())) a.setParent(p);
 		// Make sure the list is loaded
-		p.getChildren().main().onSuccess(l -> getListView().focusTo(i));
+		p.getChildren().main(getMainActivity().getHandler()).onSuccess(l -> getListView().focusTo(i));
 	}
 
 	public boolean onBackPressed() {
@@ -309,9 +310,14 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return false;
 	}
 
-	public boolean isGreedSupported() {
+	public boolean isGridSupported() {
 		return (getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) ||
 				!getActivityDelegate().getBody().isBothMode();
+	}
+
+	public int getSupportedSortOpts() {
+		BrowsableItem p = getAdapter().getParent();
+		return (p == null) ? SORT_MASK_NAME_RND : p.getSupportedSortOpts();
 	}
 
 	protected boolean isSupportedItem(Item i) {

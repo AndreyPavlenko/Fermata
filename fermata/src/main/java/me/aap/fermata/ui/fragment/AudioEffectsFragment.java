@@ -19,6 +19,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.view.AudioEffectsView;
+import me.aap.utils.async.FutureSupplier;
 
 /**
  * @author Andrey Pavlenko
@@ -40,17 +41,17 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		MainActivityDelegate a = getMainActivity();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		a.addBroadcastListener(this, ACTIVITY_FINISH | ACTIVITY_DESTROY);
-		b.getMediaSessionCallback().addBroadcastListener(this);
+		getMainActivity().onSuccess(a -> {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			a.addBroadcastListener(this, ACTIVITY_FINISH | ACTIVITY_DESTROY);
+			b.getMediaSessionCallback().addBroadcastListener(this);
+		});
 	}
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		removeListeners(getMainActivity());
+		getMainActivity().onSuccess(this::removeListeners);
 	}
 
 	private void removeListeners(MainActivityDelegate a) {
@@ -74,11 +75,12 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 	public void onDestroyView() {
 		super.onDestroyView();
 
-		MainActivityDelegate a = getMainActivity();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		AudioEffectsView view = getView();
-		if (view == null) return;
-		view.apply(b.getMediaSessionCallback());
+		getMainActivity().onSuccess(a -> {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			AudioEffectsView view = getView();
+			if (view == null) return;
+			view.apply(b.getMediaSessionCallback());
+		});
 	}
 
 	@Nullable
@@ -91,42 +93,44 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 	public void onHiddenChanged(boolean hidden) {
 		super.onHiddenChanged(hidden);
 
-		MainActivityDelegate a = getMainActivity();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		AudioEffectsView view = getView();
-		if (view == null) return;
-		MediaSessionCallback cb = b.getMediaSessionCallback();
+		getMainActivity().onSuccess(a -> {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			AudioEffectsView view = getView();
+			if (view == null) return;
+			MediaSessionCallback cb = b.getMediaSessionCallback();
 
-		if (hidden) {
-			view.apply(cb);
-			view.cleanup();
-			return;
-		}
+			if (hidden) {
+				view.apply(cb);
+				view.cleanup();
+				return;
+			}
 
-		MediaEngine eng = cb.getEngine();
+			MediaEngine eng = cb.getEngine();
 
-		if (eng != null) {
-			PlayableItem pi = eng.getSource();
+			if (eng != null) {
+				PlayableItem pi = eng.getSource();
 
-			if (pi != null) {
-				AudioEffects effects = eng.getAudioEffects();
+				if (pi != null) {
+					AudioEffects effects = eng.getAudioEffects();
 
-				if (effects != null) {
-					view.init(cb, effects, pi);
-					return;
+					if (effects != null) {
+						view.init(cb, effects, pi);
+						return;
+					}
 				}
 			}
-		}
 
-		close(a);
+			close(a);
+		});
 	}
 
 	@Override
 	public boolean onBackPressed() {
-		MainActivityDelegate a = getMainActivity();
-		AudioEffectsView view = getView();
-		if (view != null) view.apply(a.getMediaServiceBinder().getMediaSessionCallback());
-		close(a);
+		getMainActivity().onSuccess(a -> {
+			AudioEffectsView view = getView();
+			if (view != null) view.apply(a.getMediaServiceBinder().getMediaSessionCallback());
+			close(a);
+		});
 		return true;
 	}
 
@@ -151,8 +155,8 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 	}
 
 	@NonNull
-	private MainActivityDelegate getMainActivity() {
-		return MainActivityDelegate.get(getContext());
+	private FutureSupplier<MainActivityDelegate> getMainActivity() {
+		return MainActivityDelegate.getActivityDelegate(getContext());
 	}
 
 	@SuppressLint("SwitchIntDef")
@@ -175,7 +179,7 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 
 				break;
 			case PlaybackStateCompat.STATE_STOPPED:
-				close(getMainActivity());
+				getMainActivity().onSuccess(this::close);
 				break;
 			default:
 				MediaEngine eng = cb.getEngine();
@@ -184,7 +188,7 @@ public class AudioEffectsFragment extends MainActivityFragment implements
 
 				if ((eng == null) || ((pi = eng.getSource()) == null)
 						|| ((effects = eng.getAudioEffects()) == null) || ((view = getView()) == null)) {
-					close(getMainActivity());
+					getMainActivity().onSuccess(this::close);
 				} else if (view.getEffects() != effects) {
 					view.cleanup();
 					view.init(cb, effects, pi);

@@ -203,16 +203,18 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 	public View focusSearch(NavBarView nb, View focused, int direction) {
 		if (direction == FOCUS_UP) {
 			if (!nb.isBottom()) return null;
-			ControlPanelView p = MainActivityDelegate.get(nb.getContext()).getControlPanel();
-			return isVisible(p) ? p.focusSearch() : MediaItemListView.focusSearchLast(focused);
+			Context ctx = nb.getContext();
+			ControlPanelView p = MainActivityDelegate.get(ctx).getControlPanel();
+			return isVisible(p) ? p.focusSearch() : MediaItemListView.focusSearchLast(ctx, focused);
 		} else if (direction == FOCUS_DOWN) {
 			if (!nb.isBottom()) return null;
-			ToolBarView tb = MainActivityDelegate.get(nb.getContext()).getToolBar();
+			Context ctx = nb.getContext();
+			ToolBarView tb = MainActivityDelegate.get(ctx).getToolBar();
 			if (isVisible(tb)) return tb.focusSearch();
 		} else if (direction == FOCUS_RIGHT) {
-			if (nb.isLeft()) return MediaItemListView.focusSearchActive(focused);
+			if (nb.isLeft()) return MediaItemListView.focusSearchActive(nb.getContext(), focused);
 		} else if (direction == FOCUS_LEFT) {
-			if (nb.isRight()) return MediaItemListView.focusSearchActive(focused);
+			if (nb.isRight()) return MediaItemListView.focusSearchActive(nb.getContext(), focused);
 		}
 
 		return null;

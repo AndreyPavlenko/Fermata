@@ -42,7 +42,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 	@Override
 	public FutureSupplier<TvM3uFile> select(MainActivityDelegate a, List<? extends VirtualFileSystem> fs) {
 		PreferenceStore ps = PrefsHolder.instance;
-		return requestPrefs(a, ps).then(ok -> {
+		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).then(ok -> {
 			if (!ok) return completedNull();
 			return load(ps, TvM3uFileSystem.getInstance()).cast();
 		});
@@ -67,7 +67,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			e.setIntPref(CATCHUP_DAYS, f.getCatchupDays());
 		}
 
-		return requestPrefs(a, ps).map(ok -> {
+		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).map(ok -> {
 			if (!ok) return false;
 			setPrefs(ps, f);
 

@@ -19,7 +19,8 @@ import static me.aap.utils.async.Completed.completedNull;
 /**
  * @author Andrey Pavlenko
  */
-public class M3uGroupItem extends BrowsableItemBase {
+public class
+M3uGroupItem extends BrowsableItemBase {
 	public static final String SCHEME = "m3ug";
 	protected final ArrayList<M3uTrackItem> tracks = new ArrayList<>();
 	private final String name;

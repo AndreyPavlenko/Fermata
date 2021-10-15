@@ -174,8 +174,8 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	}
 
 	@Nullable
-	public static View focusSearchFirst(View focused) {
-		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+	public static View focusSearchFirst(Context ctx, @Nullable View focused) {
+		ActivityFragment f = MainActivityDelegate.get(ctx).getActiveFragment();
 		if (f instanceof MediaLibFragment) {
 			MediaItemListView v = ((MediaLibFragment) f).getListView();
 			List<MediaItemWrapper> list = v.getAdapter().getList();
@@ -185,19 +185,19 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	}
 
 	@Nullable
-	public static View focusSearchFirstVisible(View focused) {
-		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+	public static View focusSearchFirstVisible(Context ctx, @Nullable View focused) {
+		ActivityFragment f = MainActivityDelegate.get(ctx).getActiveFragment();
 		if (f instanceof MediaLibFragment) {
 			MediaItemListView lv = ((MediaLibFragment) f).getListView();
 			View first = lv.getChildAt(0);
 			return (first != null) ? first : lv.focusEmpty();
 		}
-		return null;
+		return focused;
 	}
 
 	@Nullable
-	public static View focusSearchLast(View focused) {
-		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+	public static View focusSearchLast(Context ctx, @Nullable View focused) {
+		ActivityFragment f = MainActivityDelegate.get(ctx).getActiveFragment();
 		if (f instanceof MediaLibFragment) {
 			MediaItemListView v = ((MediaLibFragment) f).getListView();
 			List<MediaItemWrapper> list = v.getAdapter().getList();
@@ -208,13 +208,13 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return null;
 	}
 
-	public static void focusActive(@NonNull View focused) {
-		View v = focusSearchActive(focused);
+	public static void focusActive(Context ctx, @Nullable View focused) {
+		View v = focusSearchActive(ctx, focused);
 		if (v != null) App.get().getHandler().post(v::requestFocus);
 	}
 
-	public static View focusSearchActive(@NonNull View focused) {
-		ActivityFragment f = MainActivityDelegate.get(focused.getContext()).getActiveFragment();
+	public static View focusSearchActive(Context ctx, @Nullable View focused) {
+		ActivityFragment f = MainActivityDelegate.get(ctx).getActiveFragment();
 		return (f instanceof MediaLibFragment)
 				? (((MediaLibFragment) f).getListView()).findActive(focused) : null;
 	}
@@ -251,7 +251,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	}
 
 	@Override
-	public View focusSearch(View focused, int direction) {
+	public View focusSearch(@Nullable View focused, int direction) {
 		if (!(focused instanceof MediaItemView) || (focused.getParent() != this)) return focused;
 
 		if (grid) {
@@ -285,7 +285,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return focusTo(focused, list, (direction == FOCUS_UP) ? (pos - 1) : (pos + 1));
 	}
 
-	private View focusLeft(View focused) {
+	private View focusLeft(@Nullable View focused) {
 		MainActivityDelegate a = getActivity();
 		NavBarView n = a.getNavBar();
 		if (isVisible(n) && n.isLeft()) return n.focusSearch();
@@ -293,7 +293,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, 0) : focused;
 	}
 
-	private View focusRight(View focused) {
+	private View focusRight(@Nullable View focused) {
 		MainActivityDelegate a = getActivity();
 		BodyLayout b = a.getBody();
 		if (b.isBothMode() || b.isVideoMode()) return b.getVideoView();
@@ -303,7 +303,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return (isVisible(n) && n.isRight()) ? n.focusSearch() : focused;
 	}
 
-	private View focusUp(View focused) {
+	private View focusUp(@Nullable View focused) {
 		ToolBarView tb = getActivity().getToolBar();
 		if (isVisible(tb)) return tb.focusSearch();
 
@@ -311,7 +311,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return ((list != null) && !list.isEmpty()) ? focusTo(focused, list, list.size() - 1) : focused;
 	}
 
-	private View focusDown(View focused) {
+	private View focusDown(@Nullable View focused) {
 		MainActivityDelegate a = getActivity();
 		ControlPanelView p = a.getControlPanel();
 		if (isVisible(p)) return p.focusSearch();
@@ -338,13 +338,13 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		return null;
 	}
 
-	public View focusTo(View focused, List<MediaItemWrapper> list, int pos) {
+	public View focusTo(@Nullable View focused, List<MediaItemWrapper> list, int pos) {
 		if (pos < 0) return focusUp(focused);
 		if (pos >= list.size()) return focusDown(focused);
 		return focusTo(focused, list.get(pos), pos);
 	}
 
-	private View focusTo(View focused, MediaItemWrapper w, int pos) {
+	private View focusTo(@Nullable View focused, MediaItemWrapper w, int pos) {
 		MediaItemViewHolder h = w.getViewHolder();
 
 		if ((h != null) && h.isAttached() && (h.getItemWrapper() == w)) {

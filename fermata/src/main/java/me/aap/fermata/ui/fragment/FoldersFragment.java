@@ -32,6 +32,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.local.LocalFileSystem;
@@ -309,8 +310,10 @@ public class FoldersFragment extends MediaLibFragment {
 			parent.getUnsortedChildren().onSuccess(c -> {
 				if (!c.isEmpty()) return;
 
+				FloatingButton fb = getMainActivity().getFloatingButton();
+				fb.requestFocus();
 				Animation shake = AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
-				getMainActivity().getFloatingButton().startAnimation(shake);
+				fb.startAnimation(shake);
 			});
 		}
 	}

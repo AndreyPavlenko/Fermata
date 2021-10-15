@@ -344,7 +344,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		if (!a.getBody().isBothMode()) return focused;
 
 		if (direction == FOCUS_LEFT) {
-			return MediaItemListView.focusSearchActive(focused);
+			return MediaItemListView.focusSearchActive(getContext(), focused);
 		} else if (direction == FOCUS_RIGHT) {
 			NavBarView n = a.getNavBar();
 			if (n.isRight()) return n.focusSearch();

@@ -5,8 +5,10 @@ import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_AUTO;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_DEFAULT;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_FLUSSONIC;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.CATCHUP_TYPE_SHIFT;
+import static me.aap.fermata.util.Utils.dynCtx;
 import static me.aap.utils.async.Completed.completed;
 
+import android.content.Context;
 import android.content.res.Resources;
 
 import me.aap.fermata.BuildConfig;
@@ -139,7 +141,8 @@ public class TvM3uItem extends M3uItem implements TvItem {
 
 	@Override
 	protected String createSubtitle(int gr, int ch) {
-		Resources res = getLib().getContext().getResources();
+		Context ctx = dynCtx(getLib().getContext());
+		Resources res = ctx.getResources();
 		if (ch != 0) {
 			if (gr == 0) return res.getString(R.string.sub_ch, ch);
 		} else if (gr != 0) {

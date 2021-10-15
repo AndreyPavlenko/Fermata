@@ -14,9 +14,12 @@ import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CHANGED;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
+import android.content.Context;
 import android.view.View;
 
+import androidx.annotation.IdRes;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -51,7 +54,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
 		View sort = addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
 
-		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGreedSupported()) {
+		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGridSupported()) {
 			int gridIcon = a.isGridView() ? R.drawable.view_list : R.drawable.view_grid;
 			last = addButton(tb, gridIcon, ToolBarMediator::onGridButtonClick, R.id.tool_grid);
 		}
@@ -86,17 +89,17 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		if (v != null) return v;
 
 		if (direction == FOCUS_UP) {
-			MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
+			Context ctx = tb.getContext();
+			MainActivityDelegate a = MainActivityDelegate.get(ctx);
 			ControlPanelView p = a.getControlPanel();
-			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusSearchLast(focused);
+			return (isVisible(p)) ? p.focusSearch() : MediaItemListView.focusSearchLast(ctx, focused);
 		} else if (direction == FOCUS_DOWN) {
-			if (focused != null) {
-				int id = focused.getId();
-				if (id == R.id.tool_bar_back_button) {
-					return MediaItemListView.focusSearchFirst(focused);
-				} else if ((id == R.id.tool_pg_up) || (id == R.id.tool_pg_down)) {
-					return MediaItemListView.focusSearchFirstVisible(focused);
-				}
+			int id = focused.getId();
+			Context ctx = tb.getContext();
+			if (id == R.id.tool_bar_back_button) {
+				return MediaItemListView.focusSearchFirst(ctx, focused);
+			} else {
+				return MediaItemListView.focusSearchFirstVisible(ctx, focused);
 			}
 		}
 
@@ -109,10 +112,10 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		if (a == null) return;
 		BrowsableItem b = a.getParent();
 
-		if (b instanceof StreamItem) {
+		if ((b == null) || (b == b.getRoot()) || (b instanceof StreamItem)) {
 			tb.findViewById(R.id.tool_view).setVisibility(GONE);
 			tb.findViewById(R.id.tool_sort).setVisibility(GONE);
-			tb.findViewById(R.id.tool_grid).setVisibility(GONE);
+			tb.findViewById(R.id.tool_grid).setVisibility((b instanceof StreamItem) ? GONE : VISIBLE);
 		} else {
 			tb.findViewById(R.id.tool_view).setVisibility(VISIBLE);
 			tb.findViewById(R.id.tool_grid).setVisibility(VISIBLE);
@@ -237,17 +240,23 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			MediaLibFragment.ListAdapter adapter = f.getAdapter();
 			BrowsableItemPrefs prefs = adapter.getParent().getPrefs();
 			int sort = prefs.getSortByPref();
+			int m = f.getSupportedSortOpts();
 			b.setSelectionHandler(ToolBarMediator::sortMenuHandler);
-			b.addItem(R.id.tool_sort_name, R.string.track_name).setChecked(sort == SORT_BY_NAME, true);
-			b.addItem(R.id.tool_sort_file_name, R.string.file_name).setChecked(sort == SORT_BY_FILE_NAME, true);
-			b.addItem(R.id.tool_sort_date, R.string.date).setChecked(sort == SORT_BY_DATE, true);
-			b.addItem(R.id.tool_sort_random, R.string.random).setChecked(sort == SORT_BY_RND, true);
-			b.addItem(R.id.tool_sort_none, R.string.do_not_sort).setChecked(sort == SORT_BY_NONE, true);
+			addSortItem(b, R.id.tool_sort_name, R.string.track_name, SORT_BY_NAME, sort, m);
+			addSortItem(b, R.id.tool_sort_file_name, R.string.file_name, SORT_BY_FILE_NAME, sort, m);
+			addSortItem(b, R.id.tool_sort_date, R.string.date, SORT_BY_DATE, sort, m);
+			addSortItem(b, R.id.tool_sort_random, R.string.random, SORT_BY_RND, sort, m);
+			addSortItem(b, R.id.tool_sort_none, R.string.do_not_sort, SORT_BY_NONE, sort, m);
 
 			if ((sort != SORT_BY_NONE) && (sort != SORT_BY_RND)) {
 				b.addItem(R.id.tool_sort_desc, R.string.descending).setChecked(prefs.getSortDescPref());
 			}
 		});
+	}
+
+	private static void addSortItem(OverlayMenu.Builder b, @IdRes int id, @StringRes int title,
+																	int type, int cur, int m) {
+		if ((m & (1 << type)) != 0) b.addItem(id, title).setChecked(type == cur, true);
 	}
 
 	private static boolean sortMenuHandler(OverlayMenuItem item) {

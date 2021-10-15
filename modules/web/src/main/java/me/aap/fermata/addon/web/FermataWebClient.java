@@ -15,6 +15,7 @@ import androidx.webkit.WebViewFeature;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.Completed;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.log.Log;
@@ -30,25 +31,17 @@ public class FermataWebClient extends WebViewClientCompat {
 		if (loading != null) {
 			loading.accept(true);
 		} else {
-			MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
-			a.setContentLoading(new Promise<>());
+			MainActivityDelegate.getActivityDelegate(view.getContext())
+					.onSuccess(a -> a.setContentLoading(new Promise<>()));
 		}
 		super.onPageStarted(view, url, favicon);
 	}
 
 	@Override
 	public void onPageFinished(WebView view, String url) {
-		MainActivityDelegate a;
-
-		try {
-			a = MainActivityDelegate.get(view.getContext());
-		} catch (Exception ex) {
-			Log.e(ex, "Failed to get ActivityDelegate");
-			return;
-		}
-
 		FermataWebView v = (FermataWebView) view;
-		a.setContentLoading(Completed.completedVoid());
+		FutureSupplier<MainActivityDelegate> f = MainActivityDelegate.getActivityDelegate(v.getContext());
+		f.onSuccess(a -> a.setContentLoading(Completed.completedVoid()));
 
 		if (loading != null) {
 			loading.accept(false);
@@ -58,7 +51,7 @@ public class FermataWebClient extends WebViewClientCompat {
 		super.onPageFinished(view, url);
 		((FermataWebView) view).hideKeyboard();
 		v.pageLoaded(url);
-		a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+		f.onSuccess(a -> a.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED));
 	}
 
 	@Override

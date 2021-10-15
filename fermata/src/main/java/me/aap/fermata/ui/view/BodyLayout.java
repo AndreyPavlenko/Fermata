@@ -110,7 +110,7 @@ public class BodyLayout extends ConstraintLayout implements
 				lp.guidePercent = a.getPrefs().getSplitPercent(getContext());
 				vv.showVideo(true);
 				a.setVideoMode(true, vv);
-				MediaItemListView.focusActive(vv);
+				MediaItemListView.focusActive(getContext(), vv);
 				break;
 		}
 
