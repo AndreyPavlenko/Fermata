@@ -17,6 +17,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.List;
 import java.util.Map;
 
 import me.aap.fermata.addon.AddonManager;
@@ -26,6 +29,7 @@ import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
@@ -294,5 +298,26 @@ public class WebBrowserFragment extends MainActivityFragment
 		}
 
 		return true;
+	}
+
+	@Override
+	public boolean isVoiceSearchSupported() {
+		return true;
+	}
+
+	@Override
+	public void voiceSearch(List<String> words) {
+		if (words.isEmpty()) return;
+
+		try {
+			String u = getSearchUrl() + URLEncoder.encode(words.get(0), "UTF-8");
+			loadUrl(u);
+		} catch (UnsupportedEncodingException ex) {
+			Log.e(ex, "Failed to encode query ", words);
+		}
+	}
+
+	protected String getSearchUrl() {
+		return "https://www.google.ru/search?q=";
 	}
 }

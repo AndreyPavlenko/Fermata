@@ -230,6 +230,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 					MainActivityPrefs.HIDE_BARS,
 					MainActivityPrefs.FULLSCREEN,
 					MainActivityPrefs.SHOW_PG_UP_DOWN,
+					MainActivityPrefs.FB_LONG_PRESS,
 					MainActivityPrefs.NAV_BAR_POS,
 					MainActivityPrefs.NAV_BAR_SIZE,
 					MainActivityPrefs.TOOL_BAR_SIZE,
@@ -457,6 +458,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 					MainActivityPrefs.HIDE_BARS_AA,
 					MainActivityPrefs.FULLSCREEN_AA,
 					MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
+					MainActivityPrefs.FB_LONG_PRESS_AA,
 					MainActivityPrefs.NAV_BAR_POS_AA,
 					MainActivityPrefs.NAV_BAR_SIZE_AA,
 					MainActivityPrefs.TOOL_BAR_SIZE_AA,
@@ -471,6 +473,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			Pref<BooleanSupplier> hideBars,
 			Pref<BooleanSupplier> fullScreen,
 			Pref<BooleanSupplier> pgUpDown,
+			Pref<IntSupplier> fbLongPress,
 			Pref<IntSupplier> nbPos,
 			Pref<DoubleSupplier> nbSize,
 			Pref<DoubleSupplier> tbSize,
@@ -500,6 +503,16 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.pref = pgUpDown;
 			o.title = R.string.show_pg_up_down;
 		});
+		if (!a.isCarActivity()) {
+			ps.addListPref(o -> {
+				o.store = a.getPrefs();
+				o.pref = fbLongPress;
+				o.title = R.string.fb_long_press_action;
+				o.subtitle = R.string.fb_long_press_action_cur;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.fb_long_press_action_menu, R.string.fb_long_press_action_vsearch};
+			});
+		}
 		ps.addListPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = nbPos;

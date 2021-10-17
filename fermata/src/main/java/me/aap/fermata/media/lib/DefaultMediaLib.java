@@ -16,6 +16,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -185,7 +186,18 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public void search(String query, MediaLibResult<List<MediaItem>> result) {
-		// TODO Implement
+		getMetadataRetriever().queryId(query).onCompletion((id, err) -> {
+			if (id != null) {
+				getItem(id).onCompletion((i, err1) -> {
+					if (i == null) result.sendResult(Collections.emptyList(), null);
+					else i.asMediaItem().onCompletion((mi, err2) ->
+							result.sendResult((mi == null) ? Collections.emptyList()
+									: Collections.singletonList(mi), null));
+				});
+			} else {
+				result.sendResult(Collections.emptyList(), null);
+			}
+		});
 	}
 
 	@NonNull

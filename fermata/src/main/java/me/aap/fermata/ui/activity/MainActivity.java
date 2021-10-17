@@ -14,6 +14,7 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.pref.PreferenceStore.Pref.sa;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.media.AudioManager;
@@ -33,8 +34,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
@@ -42,9 +47,12 @@ import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.NaturalOrderComparator;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpConnection;
 import me.aap.utils.net.http.HttpFileDownloader;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.AppActivity;
@@ -129,6 +137,26 @@ public class MainActivity extends SplitCompatActivityBase
 	public void checkUpdates() {
 		if (!BuildConfig.AUTO) return;
 
+		PreferenceStore ps = FermataApplication.get().getPreferenceStore();
+		Pref<Supplier<String[]>> deletePref = sa("DELETE_ON_STARTUP", new String[0]);
+		String[] delete = ps.getStringArrayPref(deletePref);
+
+		if (delete.length != 0) {
+			App.get().getScheduler().schedule(() -> {
+				for (String f : delete) {
+					//noinspection ResultOfMethodCallIgnored
+					new File(f).delete();
+				}
+
+				synchronized (this) {
+					List<String> l = new ArrayList<>(Arrays.asList(ps.getStringArrayPref(deletePref)));
+					l.removeAll(Arrays.asList(delete));
+					if (l.isEmpty()) ps.removePref(deletePref);
+					else ps.applyStringArrayPref(deletePref, l.toArray(new String[0]));
+				}
+			}, 1, MINUTES);
+		}
+
 		String reqUrl = "https://api.github.com/repos/AndreyPavlenko/Fermata/releases/latest";
 		HttpConnection.connect(o -> o.url(reqUrl), (resp, err) -> {
 			if (err != null) {
@@ -159,9 +187,9 @@ public class MainActivity extends SplitCompatActivityBase
 							JSONObject asset = assets.getJSONObject(i);
 							String name = asset.getString("name");
 
-							if (name.endsWith(ext)) res[1] = asset.getString("browser_download_url");
+							if (name.endsWith(ext)) res[2] = asset.getString("browser_download_url");
 							else if (name.contains("-control-"))
-								res[2] = asset.getString("browser_download_url");
+								res[1] = asset.getString("browser_download_url");
 						}
 
 						return (res[1] != null) && (res[2] != null) ? completed(res) : completedNull();
@@ -178,14 +206,16 @@ public class MainActivity extends SplitCompatActivityBase
 				UiUtils.showQuestion(getContext(), getString(R.string.update),
 						getString(R.string.update_question, res[0]),
 						AppCompatResources.getDrawable(getContext(), R.drawable.fermata))
-						.onSuccess(r -> update(res[1]).onSuccess(v -> update(res[2])));
+						.onSuccess(r -> update(res[1], ps, deletePref)
+								.onSuccess(v -> update(res[2], ps, deletePref)));
 			});
 
 			return completedVoid();
 		});
 	}
 
-	private FutureSupplier<Void> update(String uri) {
+	private FutureSupplier<Void> update(String uri, PreferenceStore ps,
+																			Pref<Supplier<String[]>> deletePref) {
 		if (!BuildConfig.AUTO) return completedVoid();
 		try {
 			File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
@@ -200,7 +230,13 @@ public class MainActivity extends SplitCompatActivityBase
 			}
 
 			File f = File.createTempFile("Fermata-", ".apk", dir);
-			f.deleteOnExit();
+
+			synchronized (this) {
+				List<String> l = new ArrayList<>(Arrays.asList(ps.getStringArrayPref(deletePref)));
+				l.add(f.getAbsolutePath());
+				ps.applyStringArrayPref(deletePref, l.toArray(new String[0]));
+			}
+
 			HttpFileDownloader d = createDownloader(getContext(), uri);
 			return d.download(uri, f).then(s -> {
 				Uri u = (SDK_INT >= Build.VERSION_CODES.N)
@@ -215,7 +251,6 @@ public class MainActivity extends SplitCompatActivityBase
 					return failed(ex);
 				}
 
-				App.get().getScheduler().schedule(f::delete, 1, MINUTES);
 				return completedVoid();
 			}).onFailure(err -> {
 				Log.e(err, "Failed to download apk: ", uri);

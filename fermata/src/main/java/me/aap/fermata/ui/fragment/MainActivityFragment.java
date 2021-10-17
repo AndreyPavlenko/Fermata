@@ -2,6 +2,8 @@ package me.aap.fermata.ui.fragment;
 
 import androidx.annotation.CallSuper;
 
+import java.util.List;
+
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -22,8 +24,9 @@ public abstract class MainActivityFragment extends ActivityFragment {
 		return getActivityDelegate().getNavBarMediator();
 	}
 
+	@Override
 	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return FloatingButton.Mediator.BackMenu.instance;
+		return FloatingButtonMediator.instance;
 	}
 
 	@CallSuper
@@ -43,5 +46,12 @@ public abstract class MainActivityFragment extends ActivityFragment {
 	}
 
 	public void discardSelection() {
+	}
+
+	public boolean isVoiceSearchSupported() {
+		return false;
+	}
+
+	public void voiceSearch(List<String> words) {
 	}
 }

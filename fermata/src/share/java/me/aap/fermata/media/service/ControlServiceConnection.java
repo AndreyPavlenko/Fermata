@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Messenger;
 import android.util.Log;
 
@@ -28,12 +29,14 @@ public abstract class ControlServiceConnection extends Handler implements Servic
 	protected static final byte MSG_SEEK = 10;
 	protected static final byte MSG_SKIP_TO_QI = 11;
 	protected static final byte MSG_CUSTOM_ACTION = 12;
+	protected static final byte MSG_PLAY_FROM_SEARCH = 13;
 	protected static final String KEY = "k";
 	protected final Service service;
 	protected final Messenger localMessenger = new Messenger(this);
 	protected Messenger remoteMessenger;
 
 	public ControlServiceConnection(Service service) {
+		super(Looper.getMainLooper());
 		this.service = service;
 	}
 

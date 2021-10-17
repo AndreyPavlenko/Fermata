@@ -464,7 +464,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				onPlayFromMediaId(id, null);
 			} else {
 				Log.i("No media found for query: " + query + ". Playing last item");
-				onPlay();
 			}
 		});
 	}

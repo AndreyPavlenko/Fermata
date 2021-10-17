@@ -1,5 +1,10 @@
 package me.aap.fermata.auto.control;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
+import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
+import static java.util.Objects.requireNonNull;
+
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
@@ -25,10 +30,6 @@ import me.aap.fermata.media.service.ControlServiceConnection;
 import me.aap.fermata.media.service.MediaSessionState;
 import me.aap.fermata.media.service.SharedConstants;
 
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
-import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
-import static java.util.Objects.requireNonNull;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -44,7 +45,7 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 		service.setSessionToken(session.getSessionToken());
 		session.setCallback(new ControlCallback());
 		Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON, null, service, MediaButtonReceiver.class);
-		session.setMediaButtonReceiver(PendingIntent.getBroadcast(service, 0, i, 0));
+		session.setMediaButtonReceiver(PendingIntent.getBroadcast(service, 0, i, FLAG_IMMUTABLE));
 	}
 
 	@Override
@@ -255,6 +256,11 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 		@Override
 		public void onPlayFromMediaId(String mediaId, Bundle extras) {
 			send(MSG_PLAY, mediaId, 0);
+		}
+
+		@Override
+		public void onPlayFromSearch(String query, Bundle extras) {
+			send(MSG_PLAY_FROM_SEARCH, query, 0);
 		}
 
 		@Override

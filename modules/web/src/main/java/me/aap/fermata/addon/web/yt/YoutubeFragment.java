@@ -146,4 +146,9 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	protected boolean isDesktopVersionSupported() {
 		return false;
 	}
+
+	@Override
+	protected String getSearchUrl() {
+		return "https://www.youtube.com/results?search_query=";
+	}
 }

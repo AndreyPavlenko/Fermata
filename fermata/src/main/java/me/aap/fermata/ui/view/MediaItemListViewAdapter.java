@@ -61,6 +61,11 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		return parent;
 	}
 
+	public BrowsableItem getRoot() {
+		BrowsableItem p = getParent();
+		return (p == null) ? null : p.getRoot();
+	}
+
 	public FutureSupplier<?> setParent(BrowsableItem parent) {
 		return setParent(parent, true);
 	}

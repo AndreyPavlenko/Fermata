@@ -1,8 +1,13 @@
 package me.aap.fermata.media.service;
 
+import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
+import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
+import static java.util.Objects.requireNonNull;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -14,10 +19,6 @@ import java.util.Collections;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.log.Log;
-
-import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_INVALID;
-import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_INVALID;
-import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andrey Pavlenko
@@ -91,6 +92,9 @@ class FermataToControlConnection extends ControlServiceConnection {
 			case MSG_CUSTOM_ACTION:
 				b = msg.getData();
 				getService().callback.onCustomAction(requireNonNull(b.getString(KEY)), null);
+				break;
+			case MSG_PLAY_FROM_SEARCH:
+				getService().callback.onPlayFromSearch(msg.getData().getString(KEY), null);
 				break;
 			default:
 				Log.e("Unknown message received: ", msg.what);

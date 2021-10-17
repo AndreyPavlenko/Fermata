@@ -28,6 +28,10 @@
     <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
     <string name="fullscreen_mode">Полноэкранный режим</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
+    <string name="fb_long_press_action">Действие плавающей кнопки, при долгом нажатии</string>
+    <string name="fb_long_press_action_cur">Текущее действие: %1$s</string>
+    <string name="fb_long_press_action_menu">Показать меню</string>
+    <string name="fb_long_press_action_vsearch">Голосовой поиск</string>
     <string name="nav_bar_size">Размер панели навигации</string>
     <string name="tool_bar_size">Размер панели инструментов</string>
     <string name="control_panel_size">Размер панели управления</string>
@@ -260,4 +264,5 @@
     <string name="err_failed_open_url">Не удалось открыть URL: %1$s</string>
     <string name="err_failed_install_module">Не удалось установить модуль: %1$s</string>
     <string name="err_failed_to_download">Не удалось скачать %1$s</string>
+    <string name="err_no_audio_record_perm">Нет разрешения на запись аудио</string>
 </resources>

@@ -41,6 +41,10 @@
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
+    <string name="fb_long_press_action">Floating button long press action</string>
+    <string name="fb_long_press_action_cur">Current action: %1$s</string>
+    <string name="fb_long_press_action_menu">Show menu</string>
+    <string name="fb_long_press_action_vsearch">Voice search</string>
     <string name="fullscreen_mode">Fullscreen mode</string>
     <string name="nav_bar_size">Navigation bar size</string>
     <string name="tool_bar_size">Tool bar size</string>
@@ -279,4 +283,5 @@
     <string name="err_failed_open_url">Failed to open URL: %1$s</string>
     <string name="err_failed_install_module">Failed to install module: %1$s</string>
     <string name="err_failed_to_download">Failed to download %1$s</string>
+    <string name="err_no_audio_record_perm">Audio recording permission is not granted</string>
 </resources>

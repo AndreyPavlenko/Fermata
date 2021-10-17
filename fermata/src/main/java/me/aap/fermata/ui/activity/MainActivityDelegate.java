@@ -2,13 +2,20 @@ package me.aap.fermata.ui.activity;
 
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static me.aap.fermata.BuildConfig.AUTO;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_AA;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_MENU;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_VOICE_SEARCH;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
@@ -21,11 +28,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.res.ColorStateList;
+import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.speech.RecognitionListener;
+import android.speech.SpeechRecognizer;
+import android.text.TextUtils;
+import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,9 +49,14 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.AppCompatImageView;
+import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.textview.MaterialTextView;
+
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -70,6 +89,7 @@ import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.event.ListenerLeakDetector;
 import me.aap.utils.function.Cancellable;
@@ -109,6 +129,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	private boolean recreating;
 	private boolean exitPressed;
 	private int brightness = 255;
+	private SpeechListener speechListener;
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -228,6 +249,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		super.onActivityDestroy();
 		handler.close();
 		getPrefs().removeBroadcastListener(this);
+		if (speechListener != null) speechListener.destroy();
 
 		if (me.aap.utils.BuildConfig.D) {
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
@@ -528,7 +550,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				: completed(goToItem(pi));
 	}
 
-	private boolean goToItem(PlayableItem pi) {
+	public boolean goToItem(PlayableItem pi) {
 		if (pi == null) return false;
 
 		MediaLib.BrowsableItem root = pi.getRoot();
@@ -564,6 +586,14 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 	public OverlayMenu getToolBarMenu() {
 		return findViewById(R.id.tool_menu);
+	}
+
+	public FutureSupplier<List<String>> startSpeechRecognizer(Intent i) {
+		if (speechListener != null) speechListener.destroy();
+		Promise<List<String>> p = new Promise<>();
+		speechListener = new SpeechListener(p);
+		speechListener.start(i);
+		return p;
 	}
 
 	@Override
@@ -666,6 +696,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		body = a.findViewById(R.id.body_layout);
 		controlPanel = a.findViewById(R.id.control_panel);
 		floatingButton = a.findViewById(R.id.floating_button);
+		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		controlPanel.bind(getMediaServiceBinder());
 	}
 
@@ -700,6 +731,8 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			recreate();
 		} else if (MainActivityPrefs.hasNavBarPosPref(this, prefs)) {
 			recreate();
+		} else if (MainActivityPrefs.hasTextIconSizePref(this, prefs)) {
+			if (floatingButton != null) floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		} else if (MainActivityPrefs.hasNavBarSizePref(this, prefs)) {
 			if (navBar != null) navBar.setSize(getPrefs().getNavBarSizePref(this));
 		} else if (MainActivityPrefs.hasToolBarSizePref(this, prefs)) {
@@ -716,6 +749,17 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			}
 		} else if (prefs.contains(BRIGHTNESS)) {
 			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
+		} else if (prefs.contains(FB_LONG_PRESS) || prefs.contains(FB_LONG_PRESS_AA)) {
+			if (getPrefs().getFloatingButtonLongPressPref(this) == FB_LONG_PRESS_VOICE_SEARCH) {
+				getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
+					if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
+					if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
+					try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
+						e.setIntPref(FB_LONG_PRESS, FB_LONG_PRESS_MENU);
+						e.setIntPref(FB_LONG_PRESS_AA, FB_LONG_PRESS_MENU);
+					}
+				});
+			}
 		}
 	}
 
@@ -804,6 +848,106 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		@Override
 		public Collection<ListenerRef<Listener>> getBroadcastEventListeners() {
 			return listeners;
+		}
+	}
+
+	private final class SpeechListener implements RecognitionListener {
+		private final SpeechRecognizer recognizer;
+		private final Promise<List<String>> promise;
+		private final MaterialTextView text;
+		private boolean isPlaying;
+
+		private SpeechListener(Promise<List<String>> promise) {
+			this.promise = promise;
+			recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
+			recognizer.setRecognitionListener(this);
+			text = new MaterialTextView(getContext());
+		}
+
+		void start(Intent i) {
+			MediaSessionCallback cb = getMediaServiceBinder().getMediaSessionCallback();
+			if (cb.isPlaying()) {
+				isPlaying = true;
+				cb.onPause();
+			}
+			recognizer.startListening(i);
+		}
+
+		void destroy() {
+			if (isPlaying) getMediaServiceBinder().getMediaSessionCallback().onPlay();
+			recognizer.destroy();
+			promise.cancel();
+			if (speechListener == this) speechListener = null;
+		}
+
+		@Override
+		public void onReadyForSpeech(Bundle params) {
+			getContextMenu().show(b -> {
+				Context ctx = getContext();
+				DisplayMetrics dm = getResources().getDisplayMetrics();
+				int size = Math.min(dm.heightPixels, dm.widthPixels) / 3;
+				LinearLayoutCompat layout = new LinearLayoutCompat(ctx);
+				layout.setOrientation(LinearLayoutCompat.VERTICAL);
+				AppCompatImageView img = new AppCompatImageView(ctx);
+				TypedArray ta = ctx.getTheme().obtainStyledAttributes(new int[]{R.attr.colorOnSecondary});
+				img.setImageTintList(ColorStateList.valueOf(ta.getColor(0, 0)));
+				ta.recycle();
+				img.setImageResource(R.drawable.record_voice);
+				img.setMinimumWidth(size);
+				img.setMinimumHeight(size);
+				text.setMaxLines(1);
+				text.setGravity(Gravity.CENTER);
+				text.setEllipsize(TextUtils.TruncateAt.MARQUEE);
+				ta = ctx.getTheme().obtainStyledAttributes(new int[]{android.R.attr.textColorSecondary});
+				text.setTextColor(ColorStateList.valueOf(ta.getColor(0, 0)));
+				ta.recycle();
+				text.setLayoutParams(new LinearLayoutCompat.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+				layout.addView(img);
+				layout.addView(text);
+				b.setView(layout);
+				b.setCloseHandlerHandler(m -> destroy());
+			});
+		}
+
+		@Override
+		public void onResults(Bundle b) {
+			List<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+			if ((r != null) && !r.isEmpty()) text.setText(r.get(0));
+			postDelayed(MainActivityDelegate.this::hideActiveMenu, 1000);
+			promise.complete(r);
+		}
+
+		@Override
+		public void onPartialResults(Bundle b) {
+			List<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+			if ((r != null) && !r.isEmpty()) text.setText(r.get(0));
+		}
+
+		@Override
+		public void onError(int error) {
+			hideActiveMenu();
+			promise.completeExceptionally(
+					new IOException("Speech recognition failed with error code " + error));
+		}
+
+		@Override
+		public void onBeginningOfSpeech() {
+		}
+
+		@Override
+		public void onRmsChanged(float rmsdB) {
+		}
+
+		@Override
+		public void onBufferReceived(byte[] buffer) {
+		}
+
+		@Override
+		public void onEndOfSpeech() {
+		}
+
+		@Override
+		public void onEvent(int eventType, Bundle params) {
 		}
 	}
 }

@@ -1,12 +1,15 @@
 package me.aap.fermata.ui.fragment;
 
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
+import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_MASK_NAME_RND;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.getGridViewPrefKey;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.hasGridViewPref;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.hasTextIconSizePref;
+import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 import android.annotation.SuppressLint;
@@ -26,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -48,13 +52,16 @@ import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.fermata.ui.view.MediaItemView;
 import me.aap.fermata.ui.view.MediaItemWrapper;
 import me.aap.utils.app.App;
+import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanConsumer;
+import me.aap.utils.holder.BooleanHolder;
+import me.aap.utils.holder.Holder;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
-import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
 
 /**
@@ -74,11 +81,6 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public ToolBarView.Mediator getToolBarMediator() {
 		return ToolBarMediator.instance;
-	}
-
-	@Override
-	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return FloatingButtonMediator.instance;
 	}
 
 	@Override
@@ -417,6 +419,93 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		if (!store.equals(p.getPrefs())) return;
 		if (prefs.contains(BrowsableItemPrefs.SHOW_TRACK_ICONS)) p.getRoot().updateTitles();
 		if (!Collections.disjoint(reloadOnPrefChange, prefs)) getAdapter().reload();
+	}
+
+	@Override
+	public boolean isVoiceSearchSupported() {
+		return true;
+	}
+
+	@Override
+	public void voiceSearch(List<String> query) {
+		if (query.isEmpty()) return;
+		String q = query.get(0).trim();
+		if (TextUtils.isBlank(q)) return;
+		if (this instanceof FoldersFragment) {
+			getLib().getMetadataRetriever().queryId(q).onSuccess(id -> {
+				if (id == null) return;
+				getLib().getItem(id).main().onSuccess(i -> {
+					if (i instanceof PlayableItem) play((PlayableItem) i);
+				});
+			});
+		} else {
+			Pattern p;
+			List<Pattern> words;
+			String[] split = q.split(" ");
+
+			if (split.length == 1) {
+				p = Pattern.compile("\\b" + Pattern.quote(q) + "\\b", Pattern.CASE_INSENSITIVE);
+				words = Collections.singletonList(p);
+			} else {
+				p = Pattern.compile(Pattern.quote(q), Pattern.CASE_INSENSITIVE);
+				words = new ArrayList<>(split.length);
+				for (String w : split) {
+					words.add(Pattern.compile("\\b" + Pattern.quote(w) + "\\b", Pattern.CASE_INSENSITIVE));
+				}
+			}
+
+			recursiveVoiceSearch(p, words);
+		}
+	}
+
+	private void recursiveVoiceSearch(Pattern p, List<Pattern> words) {
+		BrowsableItem root = getAdapter().getRoot();
+		if (root == null) return;
+		Holder<PlayableItem> h = new Holder<>();
+		BooleanHolder done = new BooleanHolder();
+		recursiveVoiceSearch(root, p, words, h, done, METADATA_KEY_TITLE).main().onSuccess(v1 -> {
+			if (h.value != null) {
+				play(h.value);
+			} else {
+				recursiveVoiceSearch(root, p, words, h, done, METADATA_KEY_ARTIST).main().onSuccess(v2 -> {
+					if (h.value != null) play(h.value);
+				});
+			}
+		});
+	}
+
+	private FutureSupplier<Void> recursiveVoiceSearch(
+			BrowsableItem folder, Pattern p, List<Pattern> words, Holder<PlayableItem> h,
+			BooleanHolder done, String key) {
+		if (done.value) return completedVoid();
+		return folder.getUnsortedChildren().then(list -> Async.forEach(i -> {
+			if (done.value) return completedVoid();
+			if (i instanceof PlayableItem) {
+				PlayableItem pi = (PlayableItem) i;
+				return pi.getMediaData().then(md -> {
+					String t = md.getString(key);
+					if (t == null) return completedVoid();
+					if (p.matcher(t).matches()) {
+						h.value = pi;
+						done.value = true;
+						return null;
+					}
+					for (Pattern w : words) if (!w.matcher(t).find()) return completedVoid();
+					h.value = pi;
+					return completedVoid();
+				});
+			} else if (i instanceof BrowsableItem) {
+				return recursiveVoiceSearch((BrowsableItem) i, p, words, h, done, key);
+			} else {
+				return completedVoid();
+			}
+		}, list));
+	}
+
+	private void play(PlayableItem i) {
+		MainActivityDelegate a = getMainActivity();
+		a.getMediaServiceBinder().playItem(i);
+		a.goToItem(i);
 	}
 
 	public class ListAdapter extends MediaItemListViewAdapter {

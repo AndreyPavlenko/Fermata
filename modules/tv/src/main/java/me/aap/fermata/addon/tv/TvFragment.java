@@ -52,7 +52,7 @@ public class TvFragment extends MediaLibFragment {
 
 	@Override
 	public FloatingButton.Mediator getFloatingButtonMediator() {
-		return FloatingButtonMediator.instance;
+		return TvFloatingButtonMediator.instance;
 	}
 
 	public void navBarItemReselected(int itemId) {
