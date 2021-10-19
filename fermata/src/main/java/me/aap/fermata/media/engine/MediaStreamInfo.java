@@ -55,7 +55,7 @@ public class MediaStreamInfo {
 		} else if (descEmpty) {
 			return lang;
 		} else {
-			return lang + ": " + desc;
+			return desc.endsWith("]") ? desc : desc + " - [" + lang + ']';
 		}
 	}
 }

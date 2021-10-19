@@ -2,6 +2,7 @@ package me.aap.fermata.auto;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
@@ -22,6 +23,7 @@ import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 
@@ -90,6 +92,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				.onSuccess(MainActivityDelegate::onActivityDestroy)
 				.thenRun(() -> ActivityDelegate.setContextToDelegate(null));
 		delegate = (FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration configuration) {
+		Log.i("Configuration changed: ", configuration);
+		super.onConfigurationChanged(configuration);
 	}
 
 	@Override

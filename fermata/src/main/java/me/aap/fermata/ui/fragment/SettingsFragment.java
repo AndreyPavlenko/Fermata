@@ -8,6 +8,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 
+import android.Manifest;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +35,7 @@ import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.DoubleSupplier;
@@ -503,7 +505,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.pref = pgUpDown;
 			o.title = R.string.show_pg_up_down;
 		});
-		if (!a.isCarActivity()) {
+		if (!a.isCarActivity() && App.get().hasManifestPermission(Manifest.permission.RECORD_AUDIO)) {
 			ps.addListPref(o -> {
 				o.store = a.getPrefs();
 				o.pref = fbLongPress;

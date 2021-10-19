@@ -50,5 +50,5 @@ fi
 ./gradlew -p control assembleRelease
 mv ./control/build/outputs/apk/release/fermata-auto-control-*-release.apk "$DEST_DIR"
 
-#build_apk 'arm'
+build_apk 'arm'
 build_apk 'arm64'

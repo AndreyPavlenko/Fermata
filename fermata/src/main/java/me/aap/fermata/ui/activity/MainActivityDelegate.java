@@ -749,14 +749,15 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			}
 		} else if (prefs.contains(BRIGHTNESS)) {
 			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
-		} else if (prefs.contains(FB_LONG_PRESS) || prefs.contains(FB_LONG_PRESS_AA)) {
+		} else if (prefs.contains(FB_LONG_PRESS) || (AUTO && prefs.contains(FB_LONG_PRESS_AA))) {
 			if (getPrefs().getFloatingButtonLongPressPref(this) == FB_LONG_PRESS_VOICE_SEARCH) {
 				getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
 					if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 					if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
+					UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
 					try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
 						e.setIntPref(FB_LONG_PRESS, FB_LONG_PRESS_MENU);
-						e.setIntPref(FB_LONG_PRESS_AA, FB_LONG_PRESS_MENU);
+						if (AUTO) e.setIntPref(FB_LONG_PRESS_AA, FB_LONG_PRESS_MENU);
 					}
 				});
 			}
@@ -926,6 +927,9 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		@Override
 		public void onError(int error) {
 			hideActiveMenu();
+			if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+				UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
+			}
 			promise.completeExceptionally(
 					new IOException("Speech recognition failed with error code " + error));
 		}

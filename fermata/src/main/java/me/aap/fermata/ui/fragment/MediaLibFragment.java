@@ -454,12 +454,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				}
 			}
 
-			recursiveVoiceSearch(p, words);
+			App.get().execute(() -> recursiveVoiceSearch(getAdapter().getRoot(), p, words));
 		}
 	}
 
-	private void recursiveVoiceSearch(Pattern p, List<Pattern> words) {
-		BrowsableItem root = getAdapter().getRoot();
+	private void recursiveVoiceSearch(BrowsableItem root, Pattern p, List<Pattern> words) {
 		if (root == null) return;
 		Holder<PlayableItem> h = new Holder<>();
 		BooleanHolder done = new BooleanHolder();

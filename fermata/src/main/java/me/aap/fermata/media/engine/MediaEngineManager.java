@@ -96,7 +96,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			current.close();
 		}
 
-		return create(getProvider(id), current, i, listener);
+		return create(getProvider(id), null, i, listener);
 	}
 
 	public MediaEngine createAnotherEngine(@NonNull MediaEngine current, Listener listener) {
