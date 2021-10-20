@@ -151,14 +151,14 @@
     <string name="shuffle_disable">Не перемешивать</string>
     <string name="programme_guide">Программа передач</string>
     <string name="favorites_add">Добавить в избранное</string>
-    <string name="favorites_remove">Удалть из избранного</string>
+    <string name="favorites_remove">Удалить из избранного</string>
     <string name="mark_watched">Пометить как просмотренное</string>
     <string name="mark_unwatched">Пометить как не просмотренное</string>
     <string name="preferred_media_engine">Предпочтительный медиа движок</string>
     <string name="by_default">По умолчанию</string>
 
     <string name="playlist_add">Добавить в плейлист</string>
-    <string name="playlist_remove_item">Удалть из плейлиста</string>
+    <string name="playlist_remove_item">Удалить из плейлиста</string>
     <string name="playlist_create">Создать плейлист</string>
     <string name="playlist_remove">Удалить плейлист</string>
     <string name="playlist_name">Название плейлиста</string>

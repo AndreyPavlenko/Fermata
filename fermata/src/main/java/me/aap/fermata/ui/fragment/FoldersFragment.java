@@ -1,5 +1,16 @@
 package me.aap.fermata.ui.fragment;
 
+import static android.content.Context.UI_MODE_SERVICE;
+import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+import static android.content.res.Configuration.UI_MODE_TYPE_NORMAL;
+import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
+import static me.aap.fermata.vfs.FermataVfsManager.M3U_ID;
+import static me.aap.fermata.vfs.FermataVfsManager.SFTP_ID;
+import static me.aap.fermata.vfs.FermataVfsManager.SMB_ID;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
+
+import android.app.UiModeManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -36,14 +47,6 @@ import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.local.LocalFileSystem;
-
-import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
-import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
-import static me.aap.fermata.vfs.FermataVfsManager.M3U_ID;
-import static me.aap.fermata.vfs.FermataVfsManager.SFTP_ID;
-import static me.aap.fermata.vfs.FermataVfsManager.SMB_ID;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 /**
  * @author Andrey Pavlenko
@@ -164,6 +167,8 @@ public class FoldersFragment extends MediaLibFragment {
 	private boolean isContentSupported() {
 		MainActivityDelegate a = getMainActivity();
 		if (a.isCarActivity()) return false;
+		UiModeManager umm = (UiModeManager) a.getContext().getSystemService(UI_MODE_SERVICE);
+		if (umm.getCurrentModeType() != UI_MODE_TYPE_NORMAL) return false;
 		Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 		Context ctx = getContext();
 		return (ctx != null) && (i.resolveActivity(ctx.getPackageManager()) != null);

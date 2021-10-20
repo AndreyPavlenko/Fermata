@@ -22,6 +22,7 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
+import android.Manifest;
 import android.Manifest.permission;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -36,6 +37,7 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -51,6 +53,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.LinearLayoutCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 
@@ -61,6 +64,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -529,6 +533,12 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	@Nullable
+	public MainActivityFragment getActiveMainActivityFragment() {
+		ActivityFragment f = getActiveFragment();
+		return (f instanceof MainActivityFragment) ? (MainActivityFragment) f : null;
+	}
+
+	@Nullable
 	public MediaLibFragment getMediaLibFragment(int id) {
 		for (Fragment f : getSupportFragmentManager().getFragments()) {
 			if (!(f instanceof MediaLibFragment)) continue;
@@ -588,7 +598,31 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		return findViewById(R.id.tool_menu);
 	}
 
-	public FutureSupplier<List<String>> startSpeechRecognizer(Intent i) {
+	public void startVoiceSearch() {
+		MainActivityFragment f = getActiveMainActivityFragment();
+		if ((f == null) || !f.isVoiceSearchSupported()) return;
+		FutureSupplier<int[]> check = isCarActivity()
+				? completed(new int[]{PERMISSION_GRANTED})
+				: getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
+		check.onCompletion((r, err) -> {
+			if ((err == null) && (r[0] == PERMISSION_GRANTED)) {
+				voiceSearch((MainActivityFragment) f);
+				return;
+			}
+			if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
+			UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
+		});
+	}
+
+	private void voiceSearch(MainActivityFragment f) {
+		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+		f.getActivityDelegate().startSpeechRecognizer(i).onSuccess(f::voiceSearch);
+	}
+
+	private FutureSupplier<List<String>> startSpeechRecognizer(Intent i) {
 		if (speechListener != null) speechListener.destroy();
 		Promise<List<String>> p = new Promise<>();
 		speechListener = new SpeechListener(p);
@@ -765,22 +799,16 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent keyEvent, IntObjectFunction<KeyEvent, Boolean> next) {
-		switch (keyCode) {
+	public boolean onKeyDown(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
+		switch (code) {
 			case KeyEvent.KEYCODE_BACK:
 			case KeyEvent.KEYCODE_ESCAPE:
 				onBackPressed();
 				return true;
 			case KeyEvent.KEYCODE_M:
 			case KeyEvent.KEYCODE_MENU:
-				if (keyEvent.isShiftPressed()) {
-					getNavBarMediator().showMenu(this);
-				} else {
-					ControlPanelView cp = getControlPanel();
-					if (cp.isActive()) cp.showMenu();
-					else getNavBarMediator().showMenu(this);
-				}
-				break;
+				event.startTracking();
+				return true;
 			case KeyEvent.KEYCODE_P:
 				getMediaServiceBinder().onPlayPauseButtonClick();
 				if (isVideoMode()) getControlPanel().onVideoSeek();
@@ -797,11 +825,41 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 					Toast.makeText(getContext(), R.string.press_x_again, Toast.LENGTH_SHORT).show();
 					FermataApplication.get().getHandler().postDelayed(() -> exitPressed = false, 2000);
 				}
-
 				return true;
 		}
 
-		return super.onKeyDown(keyCode, keyEvent, next);
+		return super.onKeyDown(code, event, next);
+	}
+
+	@Override
+	public boolean onKeyUp(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
+		if ((event.getFlags() & KeyEvent.FLAG_CANCELED_LONG_PRESS) == 0) {
+			switch (code) {
+				case KeyEvent.KEYCODE_M:
+				case KeyEvent.KEYCODE_MENU:
+					if (event.isShiftPressed()) {
+						getNavBarMediator().showMenu(this);
+					} else {
+						ControlPanelView cp = getControlPanel();
+						if (cp.isActive()) cp.showMenu();
+						else getNavBarMediator().showMenu(this);
+					}
+					return true;
+			}
+		}
+
+		return super.onKeyUp(code, event, next);
+	}
+
+	@Override
+	public boolean onKeyLongPress(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
+		switch (code) {
+			case KeyEvent.KEYCODE_M:
+			case KeyEvent.KEYCODE_MENU:
+				startVoiceSearch();
+				return true;
+		}
+		return super.onKeyLongPress(code, event, next);
 	}
 
 	public HandlerExecutor getHandler() {
@@ -896,13 +954,14 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				img.setImageResource(R.drawable.record_voice);
 				img.setMinimumWidth(size);
 				img.setMinimumHeight(size);
-				text.setMaxLines(1);
+				text.setMaxLines(5);
 				text.setGravity(Gravity.CENTER);
 				text.setEllipsize(TextUtils.TruncateAt.MARQUEE);
 				ta = ctx.getTheme().obtainStyledAttributes(new int[]{android.R.attr.textColorSecondary});
 				text.setTextColor(ColorStateList.valueOf(ta.getColor(0, 0)));
 				ta.recycle();
 				text.setLayoutParams(new LinearLayoutCompat.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+				layout.setLayoutParams(new ConstraintLayout.LayoutParams(size, WRAP_CONTENT));
 				layout.addView(img);
 				layout.addView(text);
 				b.setView(layout);
