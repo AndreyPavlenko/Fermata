@@ -69,7 +69,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 
 		Promise<List<Item>> load = new Promise<>();
 
-		for (; !CHILDREN.compareAndSet(this, null, load); c = CHILDREN.get(this)) {
+		for (; !CHILDREN.compareAndSet(this, c, load); c = CHILDREN.get(this)) {
 			if (c != null) return c;
 		}
 
@@ -313,7 +313,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 		}
 	}
 
-	private int compareByName(Item i1, Item i2, boolean desc) {
+	protected int compareByName(Item i1, Item i2, boolean desc) {
 		if (i1 instanceof BrowsableItem) {
 			return (i2 instanceof BrowsableItem) ? compareNatural(name(i1), name(i2), desc, true) : -1;
 		} else if (i2 instanceof BrowsableItem) {

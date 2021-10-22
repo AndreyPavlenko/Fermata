@@ -6,9 +6,13 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
+import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
+import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_M;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 
-import android.Manifest;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,7 +39,6 @@ import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
-import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.DoubleSupplier;
@@ -232,7 +235,6 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 					MainActivityPrefs.HIDE_BARS,
 					MainActivityPrefs.FULLSCREEN,
 					MainActivityPrefs.SHOW_PG_UP_DOWN,
-					MainActivityPrefs.FB_LONG_PRESS,
 					MainActivityPrefs.NAV_BAR_POS,
 					MainActivityPrefs.NAV_BAR_SIZE,
 					MainActivityPrefs.TOOL_BAR_SIZE,
@@ -435,6 +437,43 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 		});
 		addSubtitlePrefs(sub2, mediaPrefs, isCar);
 
+		if (!a.isCarActivity()) {
+			sub1 = set.subSet(o -> o.title = R.string.voice_control);
+			sub1.addBooleanPref(o -> {
+				o.title = R.string.enable;
+				o.pref = VOICE_CONTROl_ENABLED;
+				o.store = a.getPrefs();
+			});
+			sub1.addBooleanPref(o -> {
+				o.title = R.string.voice_control_fb;
+				o.subtitle = R.string.voice_control_sub_long;
+				o.pref = VOICE_CONTROl_FB;
+				o.store = a.getPrefs();
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
+			});
+			sub1.addBooleanPref(o -> {
+				o.title = R.string.voice_control_menu;
+				o.subtitle = R.string.voice_control_sub_long;
+				o.pref = VOICE_CONTROl_M;
+				o.store = a.getPrefs();
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
+			});
+			sub1.addBooleanPref(o -> {
+				o.title = R.string.voice_control_next;
+				o.subtitle = R.string.voice_control_sub_double;
+				o.pref = NEXT_VOICE_CONTROl;
+				o.store =  a.getPlaybackControlPrefs();
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
+			});
+			sub1.addBooleanPref(o -> {
+				o.title = R.string.voice_control_prev;
+				o.subtitle = R.string.voice_control_sub_double;
+				o.pref = PREV_VOICE_CONTROl;
+				o.store =  a.getPlaybackControlPrefs();
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
+			});
+		}
+
 		addAddons(set);
 
 		sub1 = set.subSet(o -> o.title = R.string.other);
@@ -460,7 +499,6 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 					MainActivityPrefs.HIDE_BARS_AA,
 					MainActivityPrefs.FULLSCREEN_AA,
 					MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
-					MainActivityPrefs.FB_LONG_PRESS_AA,
 					MainActivityPrefs.NAV_BAR_POS_AA,
 					MainActivityPrefs.NAV_BAR_SIZE_AA,
 					MainActivityPrefs.TOOL_BAR_SIZE_AA,
@@ -475,7 +513,6 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			Pref<BooleanSupplier> hideBars,
 			Pref<BooleanSupplier> fullScreen,
 			Pref<BooleanSupplier> pgUpDown,
-			Pref<IntSupplier> fbLongPress,
 			Pref<IntSupplier> nbPos,
 			Pref<DoubleSupplier> nbSize,
 			Pref<DoubleSupplier> tbSize,
@@ -505,16 +542,6 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.pref = pgUpDown;
 			o.title = R.string.show_pg_up_down;
 		});
-		if (!a.isCarActivity() && App.get().hasManifestPermission(Manifest.permission.RECORD_AUDIO)) {
-			ps.addListPref(o -> {
-				o.store = a.getPrefs();
-				o.pref = fbLongPress;
-				o.title = R.string.fb_long_press_action;
-				o.subtitle = R.string.fb_long_press_action_cur;
-				o.formatSubtitle = true;
-				o.values = new int[]{R.string.fb_long_press_action_menu, R.string.fb_long_press_action_vsearch};
-			});
-		}
 		ps.addListPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = nbPos;

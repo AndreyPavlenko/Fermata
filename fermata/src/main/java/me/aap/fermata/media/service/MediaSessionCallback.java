@@ -33,6 +33,10 @@ import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_REWINDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
+import static android.view.KeyEvent.KEYCODE_MEDIA_FAST_FORWARD;
+import static android.view.KeyEvent.KEYCODE_MEDIA_NEXT;
+import static android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS;
+import static android.view.KeyEvent.KEYCODE_MEDIA_REWIND;
 import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_STRENGTH;
@@ -84,6 +88,7 @@ import androidx.media.AudioManagerCompat;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -119,7 +124,7 @@ import me.aap.utils.ui.UiUtils;
  * @author Andrey Pavlenko
  */
 public class MediaSessionCallback extends MediaSessionCompat.Callback implements SharedConstants,
-		MediaEngine.Listener, AudioManager.OnAudioFocusChangeListener,
+		MediaSessionCallbackAssistant, MediaEngine.Listener, AudioManager.OnAudioFocusChangeListener,
 		EventBroadcaster<MediaSessionCallback.Listener>, Closeable {
 	public static final String EXTRA_POS = "me.aap.fermata.extra.pos";
 	private static final long SUPPORTED_ACTIONS = ACTION_PLAY | ACTION_STOP | ACTION_PAUSE | ACTION_PLAY_PAUSE
@@ -145,14 +150,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	private final PlaybackStateCompat.CustomAction customFavoritesRemove;
 	private final BroadcastReceiver onNoisy;
 	private MediaEngine engine;
-	private long keyPressTime;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
 	private boolean tryAnotherEngine;
+	private MediaKeyHandler mediaKeyHandler;
 	@NonNull
 	private PlaybackStateCompat currentState;
 	private MediaMetadataCompat currentMetadata;
-	private Queue<VideoViewWrapper> videoView;
+	private Queue<Prioritized<VideoView>> videoView;
+	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session, MediaLib lib,
@@ -258,12 +264,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (this.videoView == null) {
 			videoView = new PriorityQueue<>(2);
 		} else {
-			for (VideoViewWrapper s : videoView) {
-				if (s.view == view) return;
+			for (Prioritized<VideoView> s : videoView) {
+				if (s.obj == view) return;
 			}
 		}
 
-		videoView.add(new VideoViewWrapper(view, priority));
+		videoView.add(new Prioritized<>(view, priority));
 		MediaEngine eng = getEngine();
 
 		if (eng != null) {
@@ -275,7 +281,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	public void removeVideoView(VideoView view) {
 		MediaEngine eng = getEngine();
 
-		if ((videoView != null) && videoView.remove(new VideoViewWrapper(view, 0))) {
+		if (removeFromQueue(videoView, view)) {
 			if (videoView.isEmpty()) {
 				videoView = null;
 				if (eng != null) eng.setVideoView(null);
@@ -288,56 +294,93 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	@Nullable
 	public VideoView getVideoView() {
 		if (videoView == null) return null;
-		VideoViewWrapper w = videoView.peek();
-		return (w == null) ? null : w.view;
+		Prioritized<VideoView> w = videoView.peek();
+		return (w == null) ? null : w.obj;
+	}
+
+	public void addAssistant(MediaSessionCallbackAssistant a, int priority) {
+		if (assistants == null) assistants = new PriorityQueue<>(2);
+		assistants.add(new Prioritized<>(a, priority));
+	}
+
+	public void removeAssistant(MediaSessionCallbackAssistant a) {
+		removeFromQueue(assistants, a);
+	}
+
+	@NonNull
+	public MediaSessionCallbackAssistant getAssistant() {
+		if (assistants == null) return this;
+		Prioritized<MediaSessionCallbackAssistant> w = assistants.peek();
+		return (w == null) ? this : w.obj;
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<PlayableItem> getPrevPlayable(Item i) {
+		MediaSessionCallbackAssistant a = getAssistant();
+		return (a == this) ? MediaSessionCallbackAssistant.super.getPrevPlayable(i)
+				: a.getPrevPlayable(i);
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<PlayableItem> getNextPlayable(Item i) {
+		MediaSessionCallbackAssistant a = getAssistant();
+		return (a == this) ? MediaSessionCallbackAssistant.super.getNextPlayable(i)
+				: a.getNextPlayable(i);
+	}
+
+	private static <T> boolean removeFromQueue(Queue<Prioritized<T>> q, T t) {
+		if (q == null) return false;
+		for (Iterator<Prioritized<T>> it = q.iterator(); it.hasNext(); ) {
+			if (it.next().obj == t) {
+				it.remove();
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
-		KeyEvent ke = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
+		if ((mediaKeyHandler != null) && (mediaKeyHandler.handle(e))) return true;
 
-		if (ke != null) {
-			if (ke.getAction() == KeyEvent.ACTION_DOWN) {
-				switch (ke.getKeyCode()) {
-					case KeyEvent.KEYCODE_MEDIA_NEXT:
-					case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-					case KeyEvent.KEYCODE_MEDIA_REWIND:
-					case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-						long time = keyPressTime = System.currentTimeMillis();
-						boolean ff = ke.getKeyCode() == KeyEvent.KEYCODE_MEDIA_NEXT;
-						handler.postDelayed(() -> progressiveRwFF(time, ff), 1000);
-						return true;
-				}
-			} else if (ke.getAction() == KeyEvent.ACTION_UP) {
-				int code = ke.getKeyCode();
+		int action = e.getAction();
+		int code = e.getKeyCode();
 
-				switch (code) {
-					case KeyEvent.KEYCODE_MEDIA_NEXT:
-					case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-					case KeyEvent.KEYCODE_MEDIA_REWIND:
-					case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-						long holdTime = System.currentTimeMillis() - keyPressTime;
-						keyPressTime = 0;
-
-						if (holdTime <= 1000) {
-							switch (code) {
-								case KeyEvent.KEYCODE_MEDIA_NEXT:
-									onSkipToNext();
-									break;
-								case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
-									onSkipToPrevious();
-									break;
-								case KeyEvent.KEYCODE_MEDIA_REWIND:
-									onRewind();
-									break;
-								case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-									onFastForward();
-									break;
-							}
+		if (action == KeyEvent.ACTION_DOWN) {
+			switch (e.getKeyCode()) {
+				case KEYCODE_MEDIA_NEXT:
+				case KEYCODE_MEDIA_PREVIOUS:
+				case KEYCODE_MEDIA_REWIND:
+				case KEYCODE_MEDIA_FAST_FORWARD:
+					mediaKeyHandler = new ProgressiveSeekHandler(code);
+					return true;
+			}
+		} else if (action == KeyEvent.ACTION_UP) {
+			switch (code) {
+				case KEYCODE_MEDIA_NEXT:
+				case KEYCODE_MEDIA_PREVIOUS:
+					if (getAssistant() != this) {
+						PlaybackControlPrefs prefs = getPlaybackControlPrefs();
+						if ((code == KEYCODE_MEDIA_NEXT) && (prefs.getNextVoiceControlPref()) ||
+								(code == KEYCODE_MEDIA_PREVIOUS) && (prefs.getPrevVoiceControlPref())) {
+							mediaKeyHandler = new VoiceSearchHandler(code);
+							return true;
 						}
+					}
 
-						return true;
-				}
+					if (code == KEYCODE_MEDIA_NEXT) onSkipToNext();
+					else onSkipToPrevious();
+					return true;
+				case KEYCODE_MEDIA_REWIND:
+					onRewind();
+					return true;
+				case KEYCODE_MEDIA_FAST_FORWARD:
+					onFastForward();
+					return true;
 			}
 		}
 
@@ -386,7 +429,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	@SuppressLint("SwitchIntDef")
-	private FutureSupplier<Void> play() {
+	public FutureSupplier<Void> play() {
 		PlaybackStateCompat state = getPlaybackState();
 
 		switch (state.getState()) {
@@ -564,7 +607,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		MediaEngine eng = getEngine();
 		if ((eng == null) || ((i = eng.getSource()) == null)) return completedVoid();
 
-		return (next ? i.getNextPlayable() : i.getPrevPlayable()).then(this::prepareItem).then(pi -> {
+		return (next ? getNextPlayable(i) : getPrevPlayable(i)).then(this::prepareItem).then(pi -> {
 			if (pi != null) skipTo(next, pi);
 			return completedVoid();
 		});
@@ -594,14 +637,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		rewindFastForward(ff, pp.getRwFfTimePref(), pp.getRwFfTimeUnitPref(), multiply);
 	}
 
-	public void rewindFastForward(boolean ff, int time, int timeUnit, int multiply) {
+	public boolean rewindFastForward(boolean ff, int time, int timeUnit, int multiply) {
 		playerTask.cancel();
 		PlayableItem i;
 		MediaEngine eng = getEngine();
-		if ((eng == null) || ((i = eng.getSource()) == null)) return;
+		if ((eng == null) || ((i = eng.getSource()) == null)) return false;
 
 		playerTask = eng.getDuration().and(eng.getPosition()).main().onSuccess(h ->
 				rewindFastForward(eng, i, h.value2, h.value1, ff, time, timeUnit, multiply));
+		return true;
 	}
 
 	private void rewindFastForward(MediaEngine eng, PlayableItem i, long pos, long dur,
@@ -626,13 +670,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		eng.setPosition(pos);
 		setPlaybackState(b.setState(state.getState(), pos, state.getPlaybackSpeed()).build());
-	}
-
-	private void progressiveRwFF(long time, boolean ff) {
-		if (keyPressTime != time) return;
-		long holdTime = System.currentTimeMillis() - keyPressTime;
-		onRwFf(ff, (int) (holdTime / 1000));
-		handler.postDelayed(() -> progressiveRwFF(time, ff), 1000);
 	}
 
 	@Override
@@ -953,7 +990,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				return completedVoid();
 			}
 
-			return i.getNextPlayable().then(this::prepareItem).then(next -> {
+			return getNextPlayable(i).then(this::prepareItem).then(next -> {
 				if (next != null) {
 					skipTo(true, next);
 				} else {
@@ -1328,29 +1365,29 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state);
 	}
 
-	private static final class VideoViewWrapper implements Comparable<VideoViewWrapper> {
-		final VideoView view;
+	private static final class Prioritized<T> implements Comparable<Prioritized<T>> {
+		final T obj;
 		final int priority;
 
-		VideoViewWrapper(VideoView view, int priority) {
-			this.view = view;
+		Prioritized(T obj, int priority) {
+			this.obj = obj;
 			this.priority = priority;
 		}
 
 		@Override
-		public int compareTo(VideoViewWrapper o) {
+		public int compareTo(Prioritized<T> o) {
 			return Integer.compare(priority, o.priority);
 		}
 
 		@SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
 		@Override
 		public boolean equals(Object obj) {
-			return view == ((VideoViewWrapper) obj).view;
+			return this.obj == ((Prioritized<?>) obj).obj;
 		}
 
 		@Override
 		public int hashCode() {
-			return view.hashCode();
+			return obj.hashCode();
 		}
 	}
 
@@ -1381,6 +1418,76 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		@Override
 		public void run() {
 			if (playbackTimer == this) onStop();
+		}
+	}
+
+	private interface MediaKeyHandler {
+		boolean handle(KeyEvent e);
+	}
+
+	private final class ProgressiveSeekHandler implements MediaKeyHandler, Runnable {
+		private final long time = System.currentTimeMillis();
+		private final boolean ff;
+
+		ProgressiveSeekHandler(int code) {
+			ff = (code == KEYCODE_MEDIA_NEXT) || (code == KEYCODE_MEDIA_FAST_FORWARD);
+			handler.postDelayed(this, 1000);
+		}
+
+		@Override
+		public void run() {
+			if (mediaKeyHandler != this) return;
+			long holdTime = System.currentTimeMillis() - time;
+			onRwFf(ff, (int) (holdTime / 1000));
+			handler.postDelayed(this, 1000);
+		}
+
+		@Override
+		public boolean handle(KeyEvent e) {
+			if (e.getAction() == KeyEvent.ACTION_UP) {
+				if (mediaKeyHandler != this) return false;
+				mediaKeyHandler = null;
+				return (System.currentTimeMillis() - time) >= 1000;
+			}
+
+			mediaKeyHandler = null;
+			return false;
+		}
+	}
+
+	private final class VoiceSearchHandler implements MediaKeyHandler, Runnable {
+		private final long time = System.currentTimeMillis();
+		private final int code;
+
+		VoiceSearchHandler(int code) {
+			this.code = code;
+			handler.postDelayed(this, 500);
+		}
+
+		@Override
+		public void run() {
+			if (mediaKeyHandler != this) return;
+			mediaKeyHandler = null;
+			if (code == KEYCODE_MEDIA_NEXT) onSkipToNext();
+			else onSkipToPrevious();
+		}
+
+		@Override
+		public boolean handle(KeyEvent e) {
+			if ((e.getKeyCode() == code) && (System.currentTimeMillis() - time) <= 500) {
+				int a = e.getAction();
+
+				if (a == KeyEvent.ACTION_DOWN) {
+					return true;
+				} else if (a == KeyEvent.ACTION_UP) {
+					mediaKeyHandler = null;
+					getAssistant().startVoiceSearch();
+					return true;
+				}
+			}
+
+			mediaKeyHandler = null;
+			return false;
 		}
 	}
 }

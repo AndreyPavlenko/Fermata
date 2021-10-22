@@ -26,13 +26,10 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int THEME_LIGHT = 1;
 	int THEME_DAY_NIGHT = 2;
 	int THEME_BLACK = 3;
-	int FB_LONG_PRESS_MENU = 0;
-	int FB_LONG_PRESS_VOICE_SEARCH = 1;
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
-	Pref<IntSupplier> FB_LONG_PRESS = Pref.i("FB_LONG_PRESS", FB_LONG_PRESS_MENU);
 	Pref<IntSupplier> NAV_BAR_POS = Pref.i("NAV_BAR_POS", NavBarView.POSITION_BOTTOM);
 	Pref<DoubleSupplier> NAV_BAR_SIZE = Pref.f("NAV_BAR_SIZE", 1f);
 	Pref<DoubleSupplier> TOOL_BAR_SIZE = Pref.f("TOOL_BAR_SIZE", 1f);
@@ -46,12 +43,14 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> LANDSCAPE_VIDEO = Pref.b("LANDSCAPE_VIDEO", false);
 	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
 	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
+	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", false);
+	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
+	Pref<BooleanSupplier> VOICE_CONTROl_M = Pref.b("VOICE_CONTROl_M", false);
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
-	Pref<IntSupplier> FB_LONG_PRESS_AA = AUTO ? Pref.i("FB_LONG_PRESS_AA", FB_LONG_PRESS_MENU) : null;
 	Pref<IntSupplier> NAV_BAR_POS_AA = AUTO ? Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_BOTTOM) : null;
 	Pref<DoubleSupplier> NAV_BAR_SIZE_AA = AUTO ? Pref.f("NAV_BAR_SIZE_AA", 1f) : null;
 	Pref<DoubleSupplier> TOOL_BAR_SIZE_AA = AUTO ? Pref.f("TOOL_BAR_SIZE_AA", 1f) : null;
@@ -124,11 +123,6 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	default boolean getShowPgUpDownPref(MainActivityDelegate a) {
 		if (AUTO && a.isCarActivity()) return getBooleanPref(SHOW_PG_UP_DOWN_AA);
 		return getBooleanPref(SHOW_PG_UP_DOWN);
-	}
-
-	default int getFloatingButtonLongPressPref(MainActivityDelegate a) {
-		if (AUTO && a.isCarActivity()) return getIntPref(FB_LONG_PRESS_AA);
-		return getIntPref(FB_LONG_PRESS);
 	}
 
 	static boolean hasNavBarPosPref(MainActivityDelegate a, List<Pref<?>> prefs) {
@@ -208,5 +202,17 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default int getBrightnessPref() {
 		return getIntPref(BRIGHTNESS);
+	}
+
+	default boolean getVoiceControlEnabledPref() {
+		return getBooleanPref(VOICE_CONTROl_ENABLED);
+	}
+
+	default boolean getVoiceControlFBPref() {
+		return getBooleanPref(VOICE_CONTROl_FB);
+	}
+
+	default boolean getVoiceControlMenuPref() {
+		return getBooleanPref(VOICE_CONTROl_M);
 	}
 }

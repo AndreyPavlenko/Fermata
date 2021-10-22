@@ -41,10 +41,6 @@
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
-    <string name="fb_long_press_action">Floating button long press action</string>
-    <string name="fb_long_press_action_cur">Current action: %1$s</string>
-    <string name="fb_long_press_action_menu">Show menu</string>
-    <string name="fb_long_press_action_vsearch">Voice search</string>
     <string name="fullscreen_mode">Fullscreen mode</string>
     <string name="nav_bar_size">Navigation bar size</string>
     <string name="tool_bar_size">Tool bar size</string>
@@ -81,6 +77,15 @@
     <string name="preferred_media_scanner">Preferred media scanner</string>
     <string name="preferred_media_scanner_default">Default</string>
     <string name="preferred_media_scanner_system">System</string>
+
+    <string name="voice_search">Voice search</string>
+    <string name="voice_control">Voice control</string>
+    <string name="voice_control_fb">Floating button</string>
+    <string name="voice_control_menu">\'Menu\' or \'M\' button</string>
+    <string name="voice_control_next">\'Skip to next\' media button</string>
+    <string name="voice_control_prev">\'Skip to previous\' media button</string>
+    <string name="voice_control_sub_long">Activate voice control on long press</string>
+    <string name="voice_control_sub_double">Activate voice control on double click</string>
 
     <string name="module_installation">Module installation: %1$s</string>
     <string name="install_pending">Installation pending: %1$s</string>

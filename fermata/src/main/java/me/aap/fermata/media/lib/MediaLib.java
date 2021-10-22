@@ -106,6 +106,12 @@ public interface MediaLib {
 	@NonNull
 	FutureSupplier<PlayableItem> getLastPlayedItem();
 
+	@Nullable
+	Item getCachedItem(CharSequence id);
+
+	@Nullable
+	Item getOrCreateCachedItem(CharSequence id, Function<String, ? extends Item> create);
+
 	long getLastPlayedPosition(PlayableItem i);
 
 	void setLastPlayed(PlayableItem i, long position);

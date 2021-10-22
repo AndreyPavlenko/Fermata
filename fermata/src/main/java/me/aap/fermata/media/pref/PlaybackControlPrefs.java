@@ -27,6 +27,8 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 	Pref<IntSupplier> VIDEO_CONTROL_TOUCH_DELAY = Pref.i("VIDEO_CONTROL_TOUCH_DELAY", 5);
 	Pref<IntSupplier> VIDEO_CONTROL_SEEK_DELAY = Pref.i("VIDEO_CONTROL_SEEK_DELAY", 3);
 	Pref<BooleanSupplier> VIDEO_AA_SHOW_STATUS = Pref.b("VIDEO_AA_SHOW_STATUS", false);
+	Pref<BooleanSupplier> PREV_VOICE_CONTROl = Pref.b("PREV_VOICE_CONTROl", false);
+	Pref<BooleanSupplier> NEXT_VOICE_CONTROl = Pref.b("NEXT_VOICE_CONTROl", false);
 
 	default int getRwFfTimePref() {
 		return getIntPref(RW_FF_TIME);
@@ -70,6 +72,14 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 
 	default boolean getVideoAaShowStatusPref() {
 		return getBooleanPref(VIDEO_AA_SHOW_STATUS);
+	}
+
+	default boolean getPrevVoiceControlPref() {
+		return getBooleanPref(PREV_VOICE_CONTROl);
+	}
+
+	default boolean getNextVoiceControlPref() {
+		return getBooleanPref(NEXT_VOICE_CONTROl);
 	}
 
 	static long getTimeMillis(long dur, int time, int unit) {

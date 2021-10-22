@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -37,6 +38,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.function.Function;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
@@ -143,6 +145,27 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			}
 		} catch (Throwable ex) {
 			return failed(ex);
+		}
+	}
+
+	@Nullable
+	@Override
+	public Item getCachedItem(CharSequence id) {
+		synchronized (cacheLock()) {
+			return getFromCache(id.toString());
+		}
+	}
+
+	@Nullable
+	@Override
+	public Item getOrCreateCachedItem(CharSequence id, Function<String, ? extends Item> create) {
+		synchronized (cacheLock()) {
+			String iid = id.toString();
+			Item i = getFromCache(iid);
+			if (i != null) return i;
+			i = create.apply(iid);
+			itemCache.put(iid, new WeakRef<>(id, i, itemRefQueue));
+			return i;
 		}
 	}
 

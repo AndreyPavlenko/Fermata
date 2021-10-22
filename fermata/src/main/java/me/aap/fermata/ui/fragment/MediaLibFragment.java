@@ -1,15 +1,14 @@
 package me.aap.fermata.ui.fragment;
 
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.media.pref.BrowsableItemPrefs.SORT_MASK_NAME_RND;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.getGridViewPrefKey;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.hasGridViewPref;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.hasTextIconSizePref;
-import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 import android.annotation.SuppressLint;
@@ -27,9 +26,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -40,6 +39,7 @@ import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
+import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -55,11 +55,9 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanConsumer;
-import me.aap.utils.holder.BooleanHolder;
-import me.aap.utils.holder.Holder;
+import me.aap.utils.function.Function;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
-import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ToolBarView;
@@ -426,85 +424,68 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return true;
 	}
 
-	@Override
-	public void voiceSearch(List<String> query) {
-		if (query.isEmpty()) return;
-		String q = query.get(0).trim();
-		if (TextUtils.isBlank(q)) return;
-		if (this instanceof FoldersFragment) {
-			getLib().getMetadataRetriever().queryId(q).onSuccess(id -> {
-				if (id == null) return;
-				getLib().getItem(id).main().onSuccess(i -> {
-					if (i instanceof PlayableItem) play((PlayableItem) i);
-				});
-			});
-		} else {
-			Pattern p;
-			List<Pattern> words;
-			String[] split = q.split(" ");
-
-			if (split.length == 1) {
-				p = Pattern.compile("\\b" + Pattern.quote(q) + "\\b", Pattern.CASE_INSENSITIVE);
-				words = Collections.singletonList(p);
-			} else {
-				p = Pattern.compile(Pattern.quote(q), Pattern.CASE_INSENSITIVE);
-				words = new ArrayList<>(split.length);
-				for (String w : split) {
-					words.add(Pattern.compile("\\b" + Pattern.quote(w) + "\\b", Pattern.CASE_INSENSITIVE));
-				}
-			}
-
-			App.get().execute(() -> recursiveVoiceSearch(getAdapter().getRoot(), p, words));
-		}
+	public FutureSupplier<BrowsableItem> findFolder(String name) {
+		return findFolder(getAdapter().getRoot(), name);
 	}
 
-	private void recursiveVoiceSearch(BrowsableItem root, Pattern p, List<Pattern> words) {
-		if (root == null) return;
-		Holder<PlayableItem> h = new Holder<>();
-		BooleanHolder done = new BooleanHolder();
-		recursiveVoiceSearch(root, p, words, h, done, METADATA_KEY_TITLE).main().onSuccess(v1 -> {
-			if (h.value != null) {
-				play(h.value);
-			} else {
-				recursiveVoiceSearch(root, p, words, h, done, METADATA_KEY_ARTIST).main().onSuccess(v2 -> {
-					if (h.value != null) play(h.value);
-				});
+	private FutureSupplier<BrowsableItem> findFolder(BrowsableItem folder, String name) {
+		return folder.getUnsortedChildren().then(list -> {
+			List<BrowsableItem> folders = new ArrayList<>();
+
+			for (Item i : list) {
+				if (!(i instanceof BrowsableItem) || (i instanceof StreamItem)) continue;
+				if (name.equalsIgnoreCase(i.getName())) return completed((BrowsableItem) i);
+				else folders.add((BrowsableItem) i);
 			}
+
+			if (folders.isEmpty()) return completedNull();
+			Iterator<BrowsableItem> it = folders.iterator();
+			return Async.iterate(() -> it.hasNext() ? findFolder(it.next(), name) : null);
 		});
 	}
 
-	private FutureSupplier<Void> recursiveVoiceSearch(
-			BrowsableItem folder, Pattern p, List<Pattern> words, Holder<PlayableItem> h,
-			BooleanHolder done, String key) {
-		if (done.value) return completedVoid();
-		return folder.getUnsortedChildren().then(list -> Async.forEach(i -> {
-			if (done.value) return completedVoid();
-			if (i instanceof PlayableItem) {
-				PlayableItem pi = (PlayableItem) i;
-				return pi.getMediaData().then(md -> {
-					String t = md.getString(key);
-					if (t == null) return completedVoid();
-					if (p.matcher(t).matches()) {
-						h.value = pi;
-						done.value = true;
-						return null;
-					}
-					for (Pattern w : words) if (!w.matcher(t).find()) return completedVoid();
-					h.value = pi;
-					return completedVoid();
-				});
-			} else if (i instanceof BrowsableItem) {
-				return recursiveVoiceSearch((BrowsableItem) i, p, words, h, done, key);
-			} else {
-				return completedVoid();
-			}
-		}, list));
+	public void openFolder(BrowsableItem folder) {
+		getAdapter().setParent(folder, true, true);
 	}
 
-	private void play(PlayableItem i) {
+	public void play() {
+		playFolder(getAdapter().getParent());
+	}
+
+	public void playFolder(BrowsableItem folder) {
+		openFolder(folder);
 		MainActivityDelegate a = getMainActivity();
-		a.getMediaServiceBinder().playItem(i);
-		a.goToItem(i);
+		folder.getLastPlayedItem()
+				.then(last -> (last == null) ? folder.getFirstPlayable() : completed(last))
+				.main(a.getHandler())
+				.onSuccess(p -> {
+					if (p == null) return;
+					a.getMediaServiceBinder().playItem(p);
+					a.goToItem(p);
+				});
+	}
+
+	@Override
+	public void voiceSearch(@NonNull String query, boolean play) {
+		BrowsableItem parent = getAdapter().getParent();
+		if (parent == null) return;
+		MainActivityDelegate a = getMainActivity();
+		FermataServiceUiBinder b = a.getMediaServiceBinder();
+		Function<List<PlayableItem>, BrowsableItem> ps = items -> {
+			PlayableItem cur = b.getCurrentItem();
+			return ((cur == null) || !items.contains(cur)) ? parent : cur.getParent();
+		};
+
+		SearchFolder.search(query, ps).main(a.getHandler()).onSuccess(f -> {
+			if (f == null) return;
+			List<PlayableItem> items = f.getItemsFound();
+			if (items.isEmpty()) return;
+			PlayableItem first = items.get(0);
+			if (play) b.playItem(first);
+			if (items.size() == 1) a.goToItem(first);
+			else getAdapter().setParent(f);
+			if (!play) a.getHandler().post(() -> getListView().focusTo(first));
+		});
 	}
 
 	public class ListAdapter extends MediaItemListViewAdapter {

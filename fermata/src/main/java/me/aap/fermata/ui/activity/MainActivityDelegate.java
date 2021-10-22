@@ -10,12 +10,13 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static me.aap.fermata.BuildConfig.AUTO;
+import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
+import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_AA;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_MENU;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_VOICE_SEARCH;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_M;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
@@ -39,6 +40,7 @@ import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -74,12 +76,15 @@ import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
+import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.Playlist;
+import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
+import me.aap.fermata.media.service.MediaSessionCallbackAssistant;
 import me.aap.fermata.ui.fragment.AudioEffectsFragment;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.FoldersFragment;
@@ -117,7 +122,8 @@ import me.aap.utils.ui.view.ToolBarView;
 /**
  * @author Andrey Pavlenko
  */
-public class MainActivityDelegate extends ActivityDelegate implements PreferenceStore.Listener {
+public class MainActivityDelegate extends ActivityDelegate implements
+		MediaSessionCallbackAssistant, PreferenceStore.Listener {
 	private final HandlerExecutor handler = new HandlerExecutor(App.get().getHandler().getLooper());
 	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private final FermataServiceUiBinder mediaServiceBinder;
@@ -134,6 +140,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	private boolean exitPressed;
 	private int brightness = 255;
 	private SpeechListener speechListener;
+	private VoiceSearchHandler voiceSearchHandler;
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -171,6 +178,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		Context ctx = a.getContext();
 		b.getMediaSessionCallback().getSession().setSessionActivity(
 				PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), FLAG_IMMUTABLE));
+		b.getMediaSessionCallback().addAssistant(this, isCarActivity() ? 0 : 1);
 		if (b.getCurrentItem() == null) b.getMediaSessionCallback().onPrepare();
 		init();
 
@@ -252,6 +260,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public void onActivityDestroy() {
 		super.onActivityDestroy();
 		handler.close();
+		getMediaServiceBinder().getMediaSessionCallback().removeAssistant(this);
 		getPrefs().removeBroadcastListener(this);
 		if (speechListener != null) speechListener.destroy();
 
@@ -563,7 +572,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	public boolean goToItem(PlayableItem pi) {
 		if (pi == null) return false;
 
-		MediaLib.BrowsableItem root = pi.getRoot();
+		BrowsableItem root = pi.getRoot();
 
 		if (root instanceof MediaLib.Folders) {
 			showFragment(R.id.folders_fragment);
@@ -599,14 +608,12 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 	}
 
 	public void startVoiceSearch() {
-		MainActivityFragment f = getActiveMainActivityFragment();
-		if ((f == null) || !f.isVoiceSearchSupported()) return;
 		FutureSupplier<int[]> check = isCarActivity()
 				? completed(new int[]{PERMISSION_GRANTED})
 				: getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
 		check.onCompletion((r, err) -> {
 			if ((err == null) && (r[0] == PERMISSION_GRANTED)) {
-				voiceSearch((MainActivityFragment) f);
+				voiceSearch();
 				return;
 			}
 			if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
@@ -614,12 +621,14 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		});
 	}
 
-	private void voiceSearch(MainActivityFragment f) {
+	private void voiceSearch() {
+		VoiceSearchHandler h = voiceSearchHandler;
+		if (h == null) h = voiceSearchHandler = new VoiceSearchHandler(this);
 		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		f.getActivityDelegate().startSpeechRecognizer(i).onSuccess(f::voiceSearch);
+		startSpeechRecognizer(i).onSuccess(h::handle);
 	}
 
 	private FutureSupplier<List<String>> startSpeechRecognizer(Intent i) {
@@ -628,6 +637,26 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		speechListener = new SpeechListener(p);
 		speechListener.start(i);
 		return p;
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<PlayableItem> getPrevPlayable(Item i) {
+		MediaLibFragment f = getActiveMediaLibFragment();
+		if (f == null) return MediaSessionCallbackAssistant.super.getPrevPlayable(i);
+		BrowsableItem p = f.getAdapter().getParent();
+		return (p instanceof SearchFolder) ? ((SearchFolder) p).getPrevPlayable(i)
+				: MediaSessionCallbackAssistant.super.getPrevPlayable(i);
+	}
+
+	@NonNull
+	@Override
+	public FutureSupplier<PlayableItem> getNextPlayable(Item i) {
+		MediaLibFragment f = getActiveMediaLibFragment();
+		if (f == null) return MediaSessionCallbackAssistant.super.getNextPlayable(i);
+		BrowsableItem p = f.getAdapter().getParent();
+		return (p instanceof SearchFolder) ? ((SearchFolder) p).getNextPlayable(i)
+				: MediaSessionCallbackAssistant.super.getNextPlayable(i);
 	}
 
 	@Override
@@ -783,18 +812,32 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			}
 		} else if (prefs.contains(BRIGHTNESS)) {
 			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
-		} else if (prefs.contains(FB_LONG_PRESS) || (AUTO && prefs.contains(FB_LONG_PRESS_AA))) {
-			if (getPrefs().getFloatingButtonLongPressPref(this) == FB_LONG_PRESS_VOICE_SEARCH) {
-				getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
-					if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
-					if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
-					UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
-					try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
-						e.setIntPref(FB_LONG_PRESS, FB_LONG_PRESS_MENU);
-						if (AUTO) e.setIntPref(FB_LONG_PRESS_AA, FB_LONG_PRESS_MENU);
-					}
-				});
+		} else if (prefs.contains(VOICE_CONTROl_ENABLED)) {
+			if (!getPrefs().getVoiceControlEnabledPref()) {
+				try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
+					e.setBooleanPref(VOICE_CONTROl_FB, false);
+					e.setBooleanPref(VOICE_CONTROl_M, false);
+				}
+				try (PreferenceStore.Edit e = getPlaybackControlPrefs().editPreferenceStore()) {
+					e.setBooleanPref(NEXT_VOICE_CONTROl, false);
+					e.setBooleanPref(PREV_VOICE_CONTROl, false);
+				}
+				return;
 			}
+			getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
+				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
+				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
+				UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
+				try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
+					e.setBooleanPref(VOICE_CONTROl_ENABLED, false);
+					e.setBooleanPref(VOICE_CONTROl_FB, false);
+					e.setBooleanPref(VOICE_CONTROl_M, false);
+				}
+				try (PreferenceStore.Edit e = getPlaybackControlPrefs().editPreferenceStore()) {
+					e.setBooleanPref(NEXT_VOICE_CONTROl, false);
+					e.setBooleanPref(PREV_VOICE_CONTROl, false);
+				}
+			});
 		}
 	}
 
@@ -807,7 +850,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 				return true;
 			case KeyEvent.KEYCODE_M:
 			case KeyEvent.KEYCODE_MENU:
-				event.startTracking();
+				if (getPrefs().getVoiceControlMenuPref()) event.startTracking();
 				return true;
 			case KeyEvent.KEYCODE_P:
 				getMediaServiceBinder().onPlayPauseButtonClick();
@@ -856,7 +899,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		switch (code) {
 			case KeyEvent.KEYCODE_M:
 			case KeyEvent.KEYCODE_MENU:
-				startVoiceSearch();
+				if (getPrefs().getVoiceControlMenuPref()) startVoiceSearch();
 				return true;
 		}
 		return super.onKeyLongPress(code, event, next);
@@ -879,6 +922,8 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 			// Rename old prefs
 			Pref<IntSupplier> oldTheme = Pref.i("THEME", THEME_DARK);
 			Pref<DoubleSupplier> oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);
+			Pref<IntSupplier> fbLongPress = Pref.i("FB_LONG_PRESS", 0);
+			Pref<IntSupplier> fbLongPressAA = Pref.i("FB_LONG_PRESS_AA", 0);
 			int theme = getIntPref(oldTheme);
 			float scale = getFloatPref(oldScale);
 
@@ -894,6 +939,13 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 						if (AUTO) e.setFloatPref(TEXT_ICON_SIZE_AA, scale);
 						e.removePref(oldScale);
 					}
+				}
+			}
+
+			if ((getIntPref(fbLongPress) == 1) || (getIntPref(fbLongPressAA) == 1)) {
+				try (PreferenceStore.Edit e = editPreferenceStore()) {
+					e.setBooleanPref(VOICE_CONTROl_ENABLED, true);
+					e.setBooleanPref(VOICE_CONTROl_FB, true);
 				}
 			}
 		}
@@ -914,7 +966,7 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		private final SpeechRecognizer recognizer;
 		private final Promise<List<String>> promise;
 		private final MaterialTextView text;
-		private boolean isPlaying;
+		private PlaybackStateCompat playbackState;
 
 		private SpeechListener(Promise<List<String>> promise) {
 			this.promise = promise;
@@ -924,16 +976,25 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 		}
 
 		void start(Intent i) {
-			MediaSessionCallback cb = getMediaServiceBinder().getMediaSessionCallback();
+			MediaSessionCallback cb = getMediaSessionCallback();
 			if (cb.isPlaying()) {
-				isPlaying = true;
 				cb.onPause();
+				playbackState = cb.getPlaybackState();
+			} else {
+				playbackState = null;
 			}
 			recognizer.startListening(i);
 		}
 
 		void destroy() {
-			if (isPlaying) getMediaServiceBinder().getMediaSessionCallback().onPlay();
+			MediaSessionCallback cb = getMediaSessionCallback();
+			PlaybackStateCompat state = cb.getPlaybackState();
+			if ((playbackState != null) && (state.getState() == PlaybackStateCompat.STATE_PAUSED)) {
+				if ((state == playbackState) || (state.getPosition() != playbackState.getPosition())) {
+					cb.onPlay();
+				}
+			}
+			playbackState = null;
 			recognizer.destroy();
 			promise.cancel();
 			if (speechListener == this) speechListener = null;
@@ -985,12 +1046,13 @@ public class MainActivityDelegate extends ActivityDelegate implements Preference
 
 		@Override
 		public void onError(int error) {
+			String msg = "Speech recognition failed with error code " + error;
+			Log.e(msg);
+			promise.completeExceptionally(new IOException(msg));
 			hideActiveMenu();
 			if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
 				UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
 			}
-			promise.completeExceptionally(
-					new IOException("Speech recognition failed with error code " + error));
 		}
 
 		@Override

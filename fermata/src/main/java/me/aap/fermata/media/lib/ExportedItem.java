@@ -241,7 +241,7 @@ public class ExportedItem extends PlayableItemBase {
 		}
 	}
 
-	PlayableItemBase getOrig() {
+	public PlayableItemBase getOrig() {
 		return orig;
 	}
 

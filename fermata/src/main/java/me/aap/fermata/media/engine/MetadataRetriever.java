@@ -2,11 +2,12 @@ package me.aap.fermata.media.engine;
 
 import static android.os.Build.VERSION.SDK_INT;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.security.SecurityUtils.SHA1_DIGEST_LEN;
 
@@ -27,8 +28,10 @@ import androidx.annotation.Nullable;
 
 import java.io.Closeable;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
@@ -336,23 +339,36 @@ public class MetadataRetriever implements Closeable {
 	}
 
 	public FutureSupplier<String> queryId(String pattern) {
-		String[] p = {'%' + pattern + '%'};
-		return (db != null) ? queue.enqueue(() -> {
-			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_TITLE + " LIKE ?  LIMIT 1",
-					p, null, null, null)) {
-				if (c.moveToFirst()) return c.getString(0);
-			}
-			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_ARTIST + " LIKE ?  LIMIT 1",
-					p, null, null, null)) {
-				if (c.moveToFirst()) return c.getString(0);
-			}
-			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_ALBUM + " LIKE ?  LIMIT 1",
-					p, null, null, null)) {
-				if (c.moveToFirst()) return c.getString(0);
-			}
+		return queryIds(pattern, 1).map(ids -> ids.isEmpty() ? null : ids.get(0));
+	}
 
-			return null;
-		}) : completedNull();
+	public FutureSupplier<List<String>> queryIds(String pattern, int max) {
+		return (db != null) ? queue.enqueue(() -> {
+			List<String> ids = new ArrayList<>(max);
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_TITLE + " = ? OR " +
+							COL_ARTIST + " = ? OR " + COL_ALBUM + " = ? LIMIT " + max,
+					new String[]{pattern, pattern, pattern}, null, null, null)) {
+				while (c.moveToNext()) ids.add(c.getString(0));
+			}
+			if (!ids.isEmpty()) return ids;
+
+			String[] p = {'%' + pattern + '%'};
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_TITLE + " LIKE ?  LIMIT " + max,
+					p, null, null, null)) {
+				while (c.moveToNext()) ids.add(c.getString(0));
+			}
+			if (!ids.isEmpty()) return ids;
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_ARTIST + " LIKE ?  LIMIT + " + max,
+					p, null, null, null)) {
+				while (c.moveToNext()) ids.add(c.getString(0));
+			}
+			if (!ids.isEmpty()) return ids;
+			try (Cursor c = db.query(TABLE, new String[]{COL_ID}, COL_ALBUM + " LIKE ?  LIMIT " + max,
+					p, null, null, null)) {
+				while (c.moveToNext()) ids.add(c.getString(0));
+			}
+			return ids.isEmpty() ? emptyList() : ids;
+		}) : completedEmptyList();
 	}
 
 	public FutureSupplier<Void> clearMetadata(String idPattern) {

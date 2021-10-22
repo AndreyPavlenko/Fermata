@@ -50,17 +50,18 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 
 	private void configure(Configuration cfg) {
 		Context ctx = getContext();
-		MainActivityDelegate a = getActivity();
-		MainActivityPrefs prefs = a.getPrefs();
-		grid = a.isGridView();
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
+			MainActivityPrefs prefs = a.getPrefs();
+			grid = a.isGridView();
 
-		if (grid) {
-			float scale = prefs.getTextIconSizePref(a);
-			int span = (int) Math.max(cfg.screenWidthDp / (128 * scale), 2);
-			setLayoutManager(new GridLayoutManager(ctx, span));
-		} else {
-			setLayoutManager(new LinearLayoutManager(ctx));
-		}
+			if (grid) {
+				float scale = prefs.getTextIconSizePref(a);
+				int span = (int) Math.max(cfg.screenWidthDp / (128 * scale), 2);
+				setLayoutManager(new GridLayoutManager(ctx, span));
+			} else {
+				setLayoutManager(new LinearLayoutManager(ctx));
+			}
+		});
 	}
 
 	@NonNull

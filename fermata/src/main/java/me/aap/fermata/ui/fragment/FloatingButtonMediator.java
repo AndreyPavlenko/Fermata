@@ -3,7 +3,6 @@ package me.aap.fermata.ui.fragment;
 import static android.view.View.FOCUS_LEFT;
 import static android.view.View.FOCUS_RIGHT;
 import static android.view.View.FOCUS_UP;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.FB_LONG_PRESS_VOICE_SEARCH;
 import static me.aap.utils.ui.UiUtils.isVisible;
 
 import android.content.Context;
@@ -50,7 +49,7 @@ public class FloatingButtonMediator implements BackMenu {
 	@Override
 	public boolean onLongClick(View v) {
 		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
-		if ((a.getPrefs().getFloatingButtonLongPressPref(a) == FB_LONG_PRESS_VOICE_SEARCH)) {
+		if (a.getPrefs().getVoiceControlFBPref()) {
 			a.startVoiceSearch();
 			return true;
 		}

@@ -1,5 +1,7 @@
 package me.aap.fermata.addon;
 
+import static java.util.Collections.singletonList;
+
 import android.app.Activity;
 
 import androidx.annotation.IdRes;
@@ -24,8 +26,6 @@ import me.aap.utils.module.DynamicModuleInstaller;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.activity.ActivityBase;
 import me.aap.utils.ui.fragment.ActivityFragment;
-
-import static java.util.Collections.singletonList;
 
 /**
  * @author Andrey Pavlenko
@@ -66,6 +66,13 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	public Collection<FermataAddon> getAddons() {
 		return addons.values();
+	}
+
+	public boolean hasAddon(@IdRes int id) {
+		for (FermataAddon a : getAddons()) {
+			if (a.getAddonId() == id) return true;
+		}
+		return false;
 	}
 
 	@Nullable

@@ -306,14 +306,12 @@ public class WebBrowserFragment extends MainActivityFragment
 	}
 
 	@Override
-	public void voiceSearch(List<String> words) {
-		if (words.isEmpty()) return;
-
+	public void voiceSearch(@NonNull String query, boolean play) {
 		try {
-			String u = getSearchUrl() + URLEncoder.encode(words.get(0), "UTF-8");
+			String u = getSearchUrl() + URLEncoder.encode(query, "UTF-8");
 			loadUrl(u);
 		} catch (UnsupportedEncodingException ex) {
-			Log.e(ex, "Failed to encode query ", words);
+			Log.e(ex, "Failed to encode query ", query);
 		}
 	}
 

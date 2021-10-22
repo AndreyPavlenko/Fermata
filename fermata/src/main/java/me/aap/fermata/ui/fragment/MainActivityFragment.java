@@ -1,8 +1,7 @@
 package me.aap.fermata.ui.fragment;
 
 import androidx.annotation.CallSuper;
-
-import java.util.List;
+import androidx.annotation.NonNull;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -52,6 +51,6 @@ public abstract class MainActivityFragment extends ActivityFragment {
 		return false;
 	}
 
-	public void voiceSearch(List<String> words) {
+	public void voiceSearch(@NonNull String query, boolean play) {
 	}
 }
