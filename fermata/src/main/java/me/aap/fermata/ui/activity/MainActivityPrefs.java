@@ -46,6 +46,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", false);
 	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
 	Pref<BooleanSupplier> VOICE_CONTROl_M = Pref.b("VOICE_CONTROl_M", false);
+	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;

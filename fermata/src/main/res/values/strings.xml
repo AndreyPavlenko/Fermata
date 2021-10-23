@@ -86,6 +86,9 @@
     <string name="voice_control_prev">\'Skip to previous\' media button</string>
     <string name="voice_control_sub_long">Activate voice control on long press</string>
     <string name="voice_control_sub_double">Activate voice control on double click</string>
+    <string name="voice_control_subst">Word substitution</string>
+    <string name="voice_control_subst_sub">Replace a word with an another word or a phrase</string>
+    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
 
     <string name="module_installation">Module installation: %1$s</string>
     <string name="install_pending">Installation pending: %1$s</string>

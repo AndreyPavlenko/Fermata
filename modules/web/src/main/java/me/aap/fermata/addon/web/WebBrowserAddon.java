@@ -147,6 +147,10 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 		return DESKTOP_VERSION;
 	}
 
+	public Pref<Supplier<String[]>> getBookmarksPref() {
+		return BOOKMARKS;
+	}
+
 	public boolean isDesktopVersion() {
 		return getPreferenceStore().getBooleanPref(getDesktopVersionPref());
 	}
@@ -156,7 +160,7 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 	}
 
 	Map<String, String> getBookmarks() {
-		String[] p = getPreferenceStore().getStringArrayPref(BOOKMARKS);
+		String[] p = getPreferenceStore().getStringArrayPref(getBookmarksPref());
 		if (p.length == 0) return Collections.emptyMap();
 
 		Map<String, String> m = new LinkedHashMap<>(p.length);
@@ -195,7 +199,7 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 			p[i++] = e.getValue();
 		}
 
-		getPreferenceStore().applyStringArrayPref(BOOKMARKS, p);
+		getPreferenceStore().applyStringArrayPref(getBookmarksPref(), p);
 	}
 
 	String getLastUrl() {

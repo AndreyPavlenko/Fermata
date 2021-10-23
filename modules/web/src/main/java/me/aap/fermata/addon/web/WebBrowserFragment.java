@@ -19,13 +19,13 @@ import androidx.core.content.res.ResourcesCompat;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.List;
 import java.util.Map;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.Supplier;
@@ -301,17 +301,28 @@ public class WebBrowserFragment extends MainActivityFragment
 	}
 
 	@Override
-	public boolean isVoiceSearchSupported() {
+	public boolean isVoiceCommandsSupported() {
 		return true;
 	}
 
 	@Override
-	public void voiceSearch(@NonNull String query, boolean play) {
+	public void voiceCommand(VoiceCommand cmd) {
+		String q = cmd.getQuery();
+
+		if (cmd.isOpen()) {
+			for (Map.Entry<String, String> e : getAddon().getBookmarks().entrySet()) {
+				if (q.equalsIgnoreCase(e.getValue())) {
+					loadUrl(e.getKey());
+					return;
+				}
+			}
+		}
+
 		try {
-			String u = getSearchUrl() + URLEncoder.encode(query, "UTF-8");
+			String u = getSearchUrl() + URLEncoder.encode(q, "UTF-8");
 			loadUrl(u);
 		} catch (UnsupportedEncodingException ex) {
-			Log.e(ex, "Failed to encode query ", query);
+			Log.e(ex, "Failed to encode query ", q);
 		}
 	}
 

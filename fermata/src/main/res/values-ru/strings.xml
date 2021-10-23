@@ -72,6 +72,9 @@
     <string name="voice_control_next">Медиа кнопка \'Вперед\'</string>
     <string name="voice_control_prev">Медиа кнопка \'Назад\'</string>
     <string name="voice_control_sub_double">Активировать голосовое управление, при двойном нажатии</string>
+    <string name="voice_control_subst">Замена слов</string>
+    <string name="voice_control_subst_sub">Заменять слово другим словом или фразой</string>
+    <string name="voice_control_subst_hint" translatable="false">включить: играть\nвыключить: пауза\nскучно: найти в браузере ближайши бар</string>
 
     <string name="module_installation">Установка модуля: %1$s</string>
     <string name="install_pending">Ожидание инсталляции: %1$s</string>

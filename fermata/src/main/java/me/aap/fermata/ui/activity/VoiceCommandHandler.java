@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.activity;
 
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.TIME_UNIT_SECOND;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 
 import android.content.res.Resources;
@@ -8,7 +9,13 @@ import android.content.res.Resources;
 import androidx.annotation.IdRes;
 import androidx.annotation.StringRes;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,11 +26,12 @@ import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.PatternCompat;
+import me.aap.utils.text.SharedTextBuilder;
 
 /**
  * @author Andrey Pavlenko
  */
-class VoiceSearchHandler {
+class VoiceCommandHandler {
 	private static final String ACTION = "A";
 	private static final String LOCATION = "L";
 	private static final String QUERY = "Q";
@@ -42,7 +50,6 @@ class VoiceSearchHandler {
 	private final Pattern lTV;
 	private final Pattern lYoutube;
 	private final Pattern lBrowser;
-	private final Pattern uSecond;
 	private final Pattern uMinute;
 	private final Pattern uHour;
 	private final Pattern cCurTrack;
@@ -50,8 +57,9 @@ class VoiceSearchHandler {
 	private final PatternCompat cRW;
 	private final PatternCompat cFindPlayOpen;
 	private final String[] nums;
+	private Map<String, String> subst = Collections.emptyMap();
 
-	VoiceSearchHandler(MainActivityDelegate activity) {
+	VoiceCommandHandler(MainActivityDelegate activity) {
 		this.activity = activity;
 		Resources res = activity.getContext().getResources();
 		aFind = compile(res, R.string.vcmd_action_find);
@@ -66,7 +74,6 @@ class VoiceSearchHandler {
 		lTV = compile(res, R.string.vcmd_location_tv);
 		lYoutube = compile(res, R.string.vcmd_location_youtube);
 		lBrowser = compile(res, R.string.vcmd_location_browser);
-		uSecond = compile(res, R.string.vcmd_time_unit_second);
 		uMinute = compile(res, R.string.vcmd_time_unit_minute);
 		uHour = compile(res, R.string.vcmd_time_unit_hour);
 		cCurTrack = compile(res, R.string.vcmd_cur_track);
@@ -74,6 +81,7 @@ class VoiceSearchHandler {
 		cRW = PatternCompat.compile(res.getString(R.string.vcmd_rw));
 		cFindPlayOpen = PatternCompat.compile(res.getString(R.string.vcmd_find_play_open));
 		nums = res.getString(R.string.vcmd_nums).split(" ");
+		updateWordSubst();
 	}
 
 	public boolean handle(List<String> cmd) {
@@ -81,7 +89,7 @@ class VoiceSearchHandler {
 	}
 
 	public boolean handle(String cmd) {
-		cmd = cmd.trim().toLowerCase();
+		cmd = subst(cmd);
 
 		if (aPlay.matcher(cmd).matches()) {
 			activity.getMediaSessionCallback().play().thenRun(activity::goToCurrent);
@@ -125,14 +133,16 @@ class VoiceSearchHandler {
 		if ((m = cFindPlayOpen.matcher(cmd)).matches()) {
 			String q = cFindPlayOpen.group(m, QUERY);
 			if ((q == null) || (q.trim().isEmpty())) return false;
-			boolean play = !matches(aFind, cFindPlayOpen.group(m, ACTION))
-					&& !matches(aOpen, cFindPlayOpen.group(m, ACTION));
+			int action = matches(aFind, cFindPlayOpen.group(m, ACTION)) ? VoiceCommand.ACTION_FIND :
+					matches(aOpen, cFindPlayOpen.group(m, ACTION)) ? VoiceCommand.ACTION_OPEN :
+							VoiceCommand.ACTION_PLAY;
+			VoiceCommand vcmd = new VoiceCommand(q, action);
 			String location = cFindPlayOpen.group(m, LOCATION);
 
 			if (location == null) {
 				MainActivityFragment f = activity.getActiveMainActivityFragment();
-				if ((f == null) || !f.isVoiceSearchSupported()) return false;
-				f.voiceSearch(q, play);
+				if ((f == null) || !f.isVoiceCommandsSupported()) return false;
+				f.voiceCommand(vcmd);
 				return true;
 			}
 
@@ -152,34 +162,34 @@ class VoiceSearchHandler {
 
 			if (fid == ID_NULL) return false;
 			activity.showFragment(fid);
-			searchInFragment(fid, q, play, 0);
+			searchInFragment(fid, vcmd, 0);
 			return true;
 		}
 
 		return false;
 	}
 
-	private void searchInFragment(@IdRes int id, String q, boolean play, int attempt) {
+	private void searchInFragment(@IdRes int id, VoiceCommand cmd, int attempt) {
 		if (attempt == 100) {
 			Log.e("Failed to perform search in fragment ", id);
 			return;
 		}
 		MainActivityFragment f = activity.getActiveMainActivityFragment();
 		if ((f == null) || (f.getFragmentId() != id)) {
-			activity.getHandler().post(() -> searchInFragment(id, q, play, attempt + 1));
+			activity.getHandler().post(() -> searchInFragment(id, cmd, attempt + 1));
 		} else if ((f.getFragmentId() == R.id.folders_fragment)
 				|| (f.getFragmentId() == R.id.playlists_fragment)) {
 			MediaLibFragment mf = (MediaLibFragment) f;
-			mf.findFolder(q).onSuccess(folder -> {
+			mf.findFolder(cmd.getQuery()).onSuccess(folder -> {
 				if (folder == null) {
-					f.voiceSearch(q, play);
+					f.voiceCommand(cmd);
 				} else {
-					if (play) mf.playFolder(folder);
+					if (cmd.isPlay()) mf.playFolder(folder);
 					else mf.openFolder(folder);
 				}
 			});
 		} else {
-			f.voiceSearch(q, play);
+			f.voiceCommand(cmd);
 		}
 	}
 
@@ -189,8 +199,55 @@ class VoiceSearchHandler {
 			return;
 		}
 		MainActivityFragment f = activity.getActiveMainActivityFragment();
-		if (f.getFragmentId() == R.id.favorites_fragment) ((FavoritesFragment) f).play();
+		if (f instanceof FavoritesFragment) ((FavoritesFragment) f).play();
 		else activity.getHandler().post(() -> playFavorites(attempt + 1));
+	}
+
+	public void updateWordSubst() {
+		String pref = activity.getPrefs().getStringPref(VOICE_CONTROL_SUBST);
+		Map<String, String> subst = new HashMap<>();
+		try (BufferedReader r = new BufferedReader(new StringReader(pref))) {
+			for (String l = r.readLine(); l != null; l = r.readLine()) {
+				int idx = l.indexOf(':');
+				if (idx < 0) continue;
+				subst.put(l.substring(0, idx).trim().toLowerCase(),
+						l.substring(idx + 1).trim().toLowerCase());
+			}
+		} catch (IOException ignore) {
+		}
+		this.subst = subst.isEmpty() ? Collections.emptyMap() : subst;
+	}
+
+	private String subst(String cmd) {
+		Map<String, String> subst = this.subst;
+		int start = -1;
+
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			for (int i = 0, n = cmd.codePointCount(0, cmd.length()); i < n; i++) {
+				int c = cmd.codePointAt(i);
+
+				if (Character.isWhitespace(c)) {
+					if (start == -1) continue;
+					if (!subst.isEmpty()) {
+						String r = subst.get(b.substring(start, b.length()));
+						if (r != null) b.replace(start, b.length(), r);
+					}
+					start = -1;
+				} else {
+					if (start == -1) {
+						if (b.length() != 0) b.append(' ');
+						start = b.length();
+					}
+					b.appendCodePoint(Character.toLowerCase(c));
+				}
+			}
+			if ((start != -1) && !subst.isEmpty()) {
+				String r = subst.get(b.substring(start, b.length()));
+				if (r != null) b.replace(start, b.length(), r);
+			}
+
+			return b.toString();
+		}
 	}
 
 	private static boolean matches(Pattern p, String s) {

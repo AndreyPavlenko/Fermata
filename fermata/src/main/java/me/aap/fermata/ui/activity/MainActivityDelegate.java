@@ -14,6 +14,7 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_M;
@@ -47,6 +48,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.LayoutRes;
@@ -140,7 +142,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	private boolean exitPressed;
 	private int brightness = 255;
 	private SpeechListener speechListener;
-	private VoiceSearchHandler voiceSearchHandler;
+	private VoiceCommandHandler voiceCommandHandler;
 
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
@@ -608,12 +610,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	public void startVoiceSearch() {
+		View focus = getCurrentFocus();
 		FutureSupplier<int[]> check = isCarActivity()
 				? completed(new int[]{PERMISSION_GRANTED})
 				: getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
 		check.onCompletion((r, err) -> {
 			if ((err == null) && (r[0] == PERMISSION_GRANTED)) {
-				voiceSearch();
+				voiceSearch(focus);
 				return;
 			}
 			if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
@@ -621,14 +624,21 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		});
 	}
 
-	private void voiceSearch() {
-		VoiceSearchHandler h = voiceSearchHandler;
-		if (h == null) h = voiceSearchHandler = new VoiceSearchHandler(this);
+	private void voiceSearch(View focus) {
 		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		startSpeechRecognizer(i).onSuccess(h::handle);
+		startSpeechRecognizer(i).onSuccess(q -> {
+			if (focus instanceof EditText) {
+				((EditText) focus).setText(q.get(0));
+				focus.requestFocus();
+			} else {
+				VoiceCommandHandler h = voiceCommandHandler;
+				if (h == null) h = voiceCommandHandler = new VoiceCommandHandler(this);
+				h.handle(q);
+			}
+		});
 	}
 
 	private FutureSupplier<List<String>> startSpeechRecognizer(Intent i) {
@@ -657,6 +667,18 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		BrowsableItem p = f.getAdapter().getParent();
 		return (p instanceof SearchFolder) ? ((SearchFolder) p).getNextPlayable(i)
 				: MediaSessionCallbackAssistant.super.getNextPlayable(i);
+	}
+
+	@Override
+	public EditText createEditText(Context ctx) {
+		EditText t = getAppActivity().createEditText(ctx);
+		if (isCarActivity() && getPrefs().getVoiceControlEnabledPref()) {
+			t.setOnLongClickListener(v -> {
+				startVoiceSearch();
+				return true;
+			});
+		}
+		return t;
 	}
 
 	@Override
@@ -838,6 +860,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					e.setBooleanPref(PREV_VOICE_CONTROl, false);
 				}
 			});
+		} else if (prefs.contains(VOICE_CONTROL_SUBST)) {
+			if (voiceCommandHandler != null) voiceCommandHandler.updateWordSubst();
 		}
 	}
 
@@ -849,6 +873,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				onBackPressed();
 				return true;
 			case KeyEvent.KEYCODE_M:
+				if (getCurrentFocus() instanceof EditText) return super.onKeyDown(code, event, next);
 			case KeyEvent.KEYCODE_MENU:
 				if (getPrefs().getVoiceControlMenuPref()) event.startTracking();
 				return true;
@@ -879,6 +904,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if ((event.getFlags() & KeyEvent.FLAG_CANCELED_LONG_PRESS) == 0) {
 			switch (code) {
 				case KeyEvent.KEYCODE_M:
+					if (getCurrentFocus() instanceof EditText) return super.onKeyUp(code, event, next);
 				case KeyEvent.KEYCODE_MENU:
 					if (event.isShiftPressed()) {
 						getNavBarMediator().showMenu(this);

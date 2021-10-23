@@ -45,6 +45,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.MediaItemListView;
 import me.aap.fermata.ui.view.MediaItemListViewAdapter;
@@ -56,6 +57,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.Function;
+import me.aap.utils.holder.Holder;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -420,27 +422,30 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	@Override
-	public boolean isVoiceSearchSupported() {
+	public boolean isVoiceCommandsSupported() {
 		return true;
 	}
 
 	public FutureSupplier<BrowsableItem> findFolder(String name) {
-		return findFolder(getAdapter().getRoot(), name);
+		Holder<BrowsableItem> found = new Holder<>();
+		return findFolder(getAdapter().getRoot(), name, found);
 	}
 
-	private FutureSupplier<BrowsableItem> findFolder(BrowsableItem folder, String name) {
+	private FutureSupplier<BrowsableItem> findFolder(BrowsableItem folder, String name,
+																									 Holder<BrowsableItem> found) {
+		if (found.value != null) return completed(found.value);
 		return folder.getUnsortedChildren().then(list -> {
 			List<BrowsableItem> folders = new ArrayList<>();
 
 			for (Item i : list) {
 				if (!(i instanceof BrowsableItem) || (i instanceof StreamItem)) continue;
-				if (name.equalsIgnoreCase(i.getName())) return completed((BrowsableItem) i);
+				if (name.equalsIgnoreCase(i.getName())) return completed(found.value = (BrowsableItem) i);
 				else folders.add((BrowsableItem) i);
 			}
 
 			if (folders.isEmpty()) return completedNull();
 			Iterator<BrowsableItem> it = folders.iterator();
-			return Async.iterate(() -> it.hasNext() ? findFolder(it.next(), name) : null);
+			return Async.iterate(() -> it.hasNext() ? findFolder(it.next(), name, found) : null);
 		});
 	}
 
@@ -466,7 +471,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	@Override
-	public void voiceSearch(@NonNull String query, boolean play) {
+	public void voiceCommand(VoiceCommand cmd) {
 		BrowsableItem parent = getAdapter().getParent();
 		if (parent == null) return;
 		MainActivityDelegate a = getMainActivity();
@@ -476,7 +481,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			return ((cur == null) || !items.contains(cur)) ? parent : cur.getParent();
 		};
 
-		SearchFolder.search(query, ps).main(a.getHandler()).onSuccess(f -> {
+		boolean play = cmd.isPlay();
+		SearchFolder.search(cmd.getQuery(), ps).main(a.getHandler()).onSuccess(f -> {
 			if (f == null) return;
 			List<PlayableItem> items = f.getItemsFound();
 			if (items.isEmpty()) return;
