@@ -21,6 +21,10 @@ import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.engine.SubtitleStreamInfo;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
@@ -44,6 +48,10 @@ class VoiceCommandHandler {
 	private final Pattern aStop;
 	private final Pattern aPlay;
 	private final Pattern aPlayFavorites;
+	private final Pattern aSubOn;
+	private final Pattern aSubOff;
+	private final Pattern aSubChange;
+	private final Pattern aAudioChange;
 	private final Pattern lFolders;
 	private final Pattern lFavorites;
 	private final Pattern lPlaylists;
@@ -68,6 +76,10 @@ class VoiceCommandHandler {
 		aStop = compile(res, R.string.vcmd_action_stop);
 		aPlay = compile(res, R.string.vcmd_action_play);
 		aPlayFavorites = compile(res, R.string.vcmd_action_play_favorites);
+		aSubOn = compile(res, R.string.vcmd_action_sub_on);
+		aSubOff = compile(res, R.string.vcmd_action_sub_off);
+		aSubChange = compile(res, R.string.vcmd_action_sub_change);
+		aAudioChange = compile(res, R.string.vcmd_action_audio_change);
 		lFolders = compile(res, R.string.vcmd_location_folders);
 		lFavorites = compile(res, R.string.vcmd_location_favorites);
 		lPlaylists = compile(res, R.string.vcmd_location_playlists);
@@ -111,6 +123,33 @@ class VoiceCommandHandler {
 		if (cCurTrack.matcher(cmd).matches()) {
 			activity.goToCurrent();
 			return true;
+		}
+
+		MediaSessionCallback cb = activity.getMediaSessionCallback();
+		MediaEngineManager mgr = cb.getEngineManager();
+		MediaEngine eng;
+
+		if (mgr.isVlcPlayerSupported() && ((eng = cb.getEngine()) != null)) {
+			if (aSubOn.matcher(cmd).matches()) {
+				if (eng.getCurrentSubtitleStreamInfo() != null) return true;
+				List<SubtitleStreamInfo> sub = eng.getSubtitleStreamInfo();
+				if (!sub.isEmpty()) eng.setCurrentSubtitleStream(sub.get(0));
+				return true;
+			}
+			if (aSubOff.matcher(cmd).matches()) {
+				eng.setCurrentSubtitleStream(null);
+				return true;
+			}
+			if (aSubChange.matcher(cmd).matches()) {
+				eng.setCurrentSubtitleStream(next(eng.getSubtitleStreamInfo(),
+						eng.getCurrentSubtitleStreamInfo()));
+				return true;
+			}
+			if (aAudioChange.matcher(cmd).matches()) {
+				eng.setCurrentAudioStream(next(eng.getAudioStreamInfo(),
+						eng.getCurrentAudioStreamInfo()));
+				return true;
+			}
 		}
 
 		Matcher m;
@@ -272,5 +311,10 @@ class VoiceCommandHandler {
 			if (nums[i].equals(n) || nums[i].contains(v1) || nums[i].contains(v2)) return i;
 		}
 		return -1;
+	}
+
+	private static <T> T next(List<T> l, T t) {
+		int idx = l.indexOf(t);
+		return (idx < 0) ? t : l.get((++idx == l.size()) ? 0 : idx);
 	}
 }

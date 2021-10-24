@@ -439,7 +439,6 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 		addSubtitlePrefs(sub2, mediaPrefs, isCar);
 
 		if (!a.isCarActivity()) {
-			ChangeableCondition vcEnabled = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			sub1 = set.subSet(o -> o.title = R.string.voice_control);
 			sub1.addBooleanPref(o -> {
 				o.title = R.string.enable;
@@ -451,28 +450,28 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 				o.subtitle = R.string.voice_control_sub_long;
 				o.pref = VOICE_CONTROl_FB;
 				o.store = a.getPrefs();
-				o.visibility = vcEnabled;
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 			sub1.addBooleanPref(o -> {
 				o.title = R.string.voice_control_menu;
 				o.subtitle = R.string.voice_control_sub_long;
 				o.pref = VOICE_CONTROl_M;
 				o.store = a.getPrefs();
-				o.visibility = vcEnabled;
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 			sub1.addBooleanPref(o -> {
 				o.title = R.string.voice_control_next;
 				o.subtitle = R.string.voice_control_sub_double;
 				o.pref = NEXT_VOICE_CONTROl;
 				o.store = a.getPlaybackControlPrefs();
-				o.visibility = vcEnabled;
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 			sub1.addBooleanPref(o -> {
 				o.title = R.string.voice_control_prev;
 				o.subtitle = R.string.voice_control_sub_double;
 				o.pref = PREV_VOICE_CONTROl;
 				o.store = a.getPlaybackControlPrefs();
-				o.visibility = vcEnabled;
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 			sub1.addStringPref(o -> {
 				o.title = R.string.voice_control_subst;
@@ -481,7 +480,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 				o.pref = VOICE_CONTROL_SUBST;
 				o.store = a.getPrefs();
 				o.maxLines = 10;
-				o.visibility = vcEnabled;
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 		}
 
