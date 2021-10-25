@@ -218,18 +218,23 @@ public class MainActivity extends SplitCompatActivityBase
 																			Pref<Supplier<String[]>> deletePref) {
 		if (!BuildConfig.AUTO) return completedVoid();
 		try {
+			File tmp;
 			File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 
-			if (dir == null) {
+			if ((tmp = createTempFile(dir)) == null) {
 				App app = App.get();
 				File cache = app.getExternalCacheDir();
 				if (cache == null) cache = app.getCacheDir();
 				dir = new File(cache, "updates");
 				//noinspection ResultOfMethodCallIgnored
 				dir.mkdirs();
+				if ((tmp = createTempFile(dir)) == null) {
+					App.get().run(() -> showAlert(this, "Update failed - unable to create a temporary file"));
+					return completedVoid();
+				}
 			}
 
-			File f = File.createTempFile("Fermata-", ".apk", dir);
+			File f = tmp;
 
 			synchronized (this) {
 				List<String> l = new ArrayList<>(Arrays.asList(ps.getStringArrayPref(deletePref)));
@@ -260,6 +265,16 @@ public class MainActivity extends SplitCompatActivityBase
 			Log.e(ex, "Update failed");
 			App.get().run(() -> showAlert(this, "Update failed: " + ex.getLocalizedMessage()));
 			return failed(ex);
+		}
+	}
+
+	private static File createTempFile(File dir) {
+		try {
+			if (dir == null) return null;
+			return File.createTempFile("Fermata-", ".apk", dir);
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to create a temporary file in the directory ", dir);
+			return null;
 		}
 	}
 }

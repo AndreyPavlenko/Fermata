@@ -216,7 +216,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 		App.get().getHandler().post(() -> {
 			String n = getString(name);
-			Log.e(ex, "Failed to load add folder: ", name);
+			Log.e(ex, "Failed to add folder: ", name);
 
 			if (ex instanceof InstallException) {
 				UiUtils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));

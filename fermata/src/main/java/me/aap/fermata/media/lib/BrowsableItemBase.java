@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import me.aap.fermata.R;
@@ -285,7 +284,7 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	}
 
 	private void shuffle(List<?> l) {
-		Random rnd = ThreadLocalRandom.current();
+		Random rnd = new Random();
 
 		for (int i = 0, s = l.size(); i < s; i++) {
 			int next = rnd.nextInt(s - i);
