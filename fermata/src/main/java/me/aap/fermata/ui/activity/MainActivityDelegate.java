@@ -327,7 +327,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			FermataActivity a = getAppActivity();
 
 			if (a.isInputActive()) {
-				a.stopInput(null);
+				a.stopInput();
 				return true;
 			}
 		}
@@ -625,14 +625,12 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	private void voiceSearch(View focus) {
-		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		startSpeechRecognizer(i).onSuccess(q -> {
+		startSpeechRecognizer().onSuccess(q -> {
 			if (focus instanceof EditText) {
 				((EditText) focus).setText(q.get(0));
 				focus.requestFocus();
+			} else if (getAppActivity().isInputActive()) {
+				getAppActivity().setTextInput(q.get(0));
 			} else {
 				VoiceCommandHandler h = voiceCommandHandler;
 				if (h == null) h = voiceCommandHandler = new VoiceCommandHandler(this);
@@ -641,9 +639,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		});
 	}
 
-	private FutureSupplier<List<String>> startSpeechRecognizer(Intent i) {
+	public FutureSupplier<List<String>> startSpeechRecognizer() {
 		if (speechListener != null) speechListener.destroy();
 		Promise<List<String>> p = new Promise<>();
+		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
 		speechListener = new SpeechListener(p);
 		speechListener.start(i);
 		return p;
@@ -674,7 +676,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		EditText t = getAppActivity().createEditText(ctx);
 		if (isCarActivity() && getPrefs().getVoiceControlEnabledPref()) {
 			t.setOnLongClickListener(v -> {
-				startVoiceSearch();
+				startSpeechRecognizer().onSuccess(q -> t.setText(q.get(0)));
 				return true;
 			});
 		}

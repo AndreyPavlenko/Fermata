@@ -1,5 +1,9 @@
 package me.aap.fermata.auto;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.ui.UiUtils.showAlert;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -11,7 +15,6 @@ import android.view.Window;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.apps.auto.sdk.CarActivity;
@@ -26,10 +29,6 @@ import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.failed;
-import static me.aap.utils.ui.UiUtils.showAlert;
 
 /**
  * @author Andrey Pavlenko
@@ -154,12 +153,18 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		editText.addTextChangedListener(w);
 		textWatcher = w;
 		a().startInput(editText);
+		getActivityDelegate().onSuccess(a -> {
+			if (!a.getPrefs().getVoiceControlEnabledPref()) return;
+			a.startSpeechRecognizer().onSuccess(q -> {
+				editText.setText(q.get(0));
+				stopInput();
+			});
+		});
 		return editText;
 	}
 
-	public void stopInput(@Nullable TextWatcher w) {
+	public void stopInput() {
 		if (editText != null) {
-			if (w != null) editText.removeTextChangedListener(w);
 			if (textWatcher != null) editText.removeTextChangedListener(textWatcher);
 			editText.setOnEditorActionListener(null);
 		}
@@ -177,6 +182,14 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			if (!a().isInputActive()) a().startInput(et);
 		});
 		return et;
+	}
+
+	@Override
+	public boolean setTextInput(String text) {
+		if ((editText == null) || !isInputActive()) return false;
+		editText.setText(text);
+		stopInput();
+		return true;
 	}
 
 	@Override

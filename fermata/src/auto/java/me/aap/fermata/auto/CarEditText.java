@@ -50,7 +50,7 @@ public class CarEditText extends CarRestrictedEditText implements CarEditable {
 							KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE | KeyEvent.FLAG_EDITOR_ACTION);
 					keyListener.onKey(this, KeyEvent.KEYCODE_ENTER, e);
 					FermataActivity a = MainActivityDelegate.get(getContext()).getAppActivity();
-					if (a instanceof MainCarActivity) ((MainCarActivity) a).stopInput(null);
+					if (a instanceof MainCarActivity) a.stopInput();
 					return;
 			}
 		}

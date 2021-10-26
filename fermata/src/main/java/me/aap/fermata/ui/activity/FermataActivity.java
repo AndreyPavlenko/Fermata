@@ -22,10 +22,14 @@ public interface FermataActivity extends AppActivity {
 		return null;
 	}
 
-	default void stopInput(TextWatcher w) {
+	default void stopInput() {
 	}
 
 	default boolean isInputActive() {
+		return false;
+	}
+
+	default boolean setTextInput(String text) {
 		return false;
 	}
 }

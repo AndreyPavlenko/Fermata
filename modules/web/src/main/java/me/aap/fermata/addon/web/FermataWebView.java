@@ -33,6 +33,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
@@ -57,12 +58,12 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 	public FermataWebView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		isCar = BuildConfig.AUTO && MainActivityDelegate.get(getContext()).isCarActivity();
+		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivity();
 	}
 
 	public FermataWebView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		isCar = BuildConfig.AUTO && MainActivityDelegate.get(getContext()).isCarActivity();
+		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivity();
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
@@ -86,7 +87,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
 
 		addon.getPreferenceStore().addBroadcastListener(this);
-		MainActivityDelegate.get(getContext()).addBroadcastListener(this);
+		getActivity().onSuccess(a -> a.addBroadcastListener(this));
 
 		setDesktopMode(addon, false);
 		setForceDark(addon, false);
@@ -177,20 +178,21 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 	protected void pageLoaded(String uri) {
 		getAddon().setLastUrl(uri);
-		MainActivityDelegate a = MainActivityDelegate.get(getContext());
-		ActivityFragment f = a.getActiveFragment();
-		if (f == null) return;
+		getActivity().onSuccess(a -> {
+			ActivityFragment f = a.getActiveFragment();
+			if (f == null) return;
 
-		ToolBarView.Mediator m = f.getToolBarMediator();
+			ToolBarView.Mediator m = f.getToolBarMediator();
 
-		if (m instanceof WebToolBarMediator) {
-			WebToolBarMediator wm = (WebToolBarMediator) m;
-			ToolBarView tb = a.getToolBar();
-			wm.setAddress(tb, uri);
-			wm.setButtonsVisibility(tb, canGoBack(), canGoForward());
-		}
+			if (m instanceof WebToolBarMediator) {
+				WebToolBarMediator wm = (WebToolBarMediator) m;
+				ToolBarView tb = a.getToolBar();
+				wm.setAddress(tb, uri);
+				wm.setButtonsVisibility(tb, canGoBack(), canGoForward());
+			}
 
-		CookieManager.getInstance().flush();
+			CookieManager.getInstance().flush();
+		});
 	}
 
 	protected boolean requestFullScreen() {
@@ -259,31 +261,29 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	public void showKeyboard(String text) {
 		if (!BuildConfig.AUTO) return;
 
-		Context ctx = getContext();
-		FermataActivity a = MainActivityDelegate.get(ctx).getAppActivity();
-		EditText et = a.startInput(this);
-		if (et == null) return;
+		getActivity().onSuccess(a -> {
+			EditText et = a.getAppActivity().startInput(this);
+			if (et == null) return;
 
-		if (text != null) {
-			et.setText(text);
-			et.setSelection(et.getText().length());
-		}
+			if (text != null) {
+				et.setText(text);
+				et.setSelection(et.getText().length());
+			}
 
-		et.setOnEditorActionListener(this);
+			et.setOnEditorActionListener(this);
+		});
 	}
 
 	public void hideKeyboard() {
 		if (!BuildConfig.AUTO) return;
-
-		FermataActivity a = MainActivityDelegate.get(getContext()).getAppActivity();
-		a.stopInput(this);
+		getActivity().onSuccess(a -> a.getAppActivity().stopInput());
 	}
 
 	private boolean isKeyboardActive() {
 		if (!BuildConfig.AUTO) return false;
 
-		FermataActivity a = MainActivityDelegate.get(getContext()).getAppActivity();
-		return a.isInputActive();
+		FermataActivity a = getActivity().map(MainActivityDelegate::getAppActivity).peek();
+		return (a != null) && a.isInputActive();
 	}
 
 	@Override
@@ -315,15 +315,19 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if ((chrome != null) && chrome.isFullScreen()) {
 			chrome.onTouchEvent(this, ev);
 		} else if (BuildConfig.AUTO) {
-			FermataActivity a = MainActivityDelegate.get(getContext()).getAppActivity();
+			FermataActivity a = getActivity().map(MainActivityDelegate::getAppActivity).peek();
 
-			if (a.isInputActive()) {
-				a.stopInput(this);
+			if ((a != null) && a.isInputActive()) {
+				a.stopInput();
 				return true;
 			}
 		}
 
 		return super.onInterceptTouchEvent(ev);
+	}
+
+	private FutureSupplier<MainActivityDelegate> getActivity() {
+		return MainActivityDelegate.getActivityDelegate(getContext());
 	}
 
 	static final class UserAgent {

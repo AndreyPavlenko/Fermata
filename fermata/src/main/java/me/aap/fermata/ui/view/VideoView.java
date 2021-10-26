@@ -48,6 +48,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
 
@@ -68,9 +69,10 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	public VideoView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		init(context);
-		MainActivityDelegate a = getActivity();
-		a.addBroadcastListener(this);
-		a.getLib().getPrefs().addBroadcastListener(this);
+		getActivity().onSuccess(a -> {
+			a.addBroadcastListener(this);
+			a.getLib().getPrefs().addBroadcastListener(this);
+		});
 	}
 
 	protected void init(Context context) {
@@ -124,7 +126,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	public void showVideo(boolean hideTitle) {
 		if (surfaceCreated) {
-			MainActivityDelegate a = getActivity();
+			MainActivityDelegate a = getActivity().peek();
+			if (a == null) return;
 			MediaSessionCallback cb = a.getMediaSessionCallback();
 			MediaEngine eng = cb.getEngine();
 			if (eng == null) return;
@@ -216,7 +219,9 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		FermataApplication.get().getHandler().post(() -> {
 			if (!surfaceCreated) return;
 
-			MediaEngine eng = getActivity().getMediaServiceBinder().getCurrentEngine();
+			MainActivityDelegate a = getActivity().peek();
+			if (a == null) return;
+			MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
 			if (eng == null) return;
 
 			PlayableItem i = eng.getSource();
@@ -236,7 +241,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	@Override
 	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 		surfaceCreated = false;
-		getActivity().getMediaSessionCallback().removeVideoView(this);
+		getActivity().onSuccess(a->a.getMediaSessionCallback().removeVideoView(this));
 	}
 
 	@Override
@@ -246,7 +251,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(@NonNull MotionEvent e) {
-		return getActivity().interceptTouchEvent(e, this::onTouch);
+		MainActivityDelegate a = getActivity().peek();
+		return (a == null) ? false : a.interceptTouchEvent(e, this::onTouch);
 	}
 
 	@Override
@@ -258,10 +264,11 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		switch (keyCode) {
 			case KEYCODE_ENTER:
 			case KEYCODE_DPAD_CENTER:
-				return getActivity().getControlPanel().onTouch(this);
+				if ((a = getActivity().peek()) == null) break;
+				return a.getControlPanel().onTouch(this);
 			case KEYCODE_DPAD_LEFT:
 			case KEYCODE_DPAD_RIGHT:
-				a = getActivity();
+				if ((a = getActivity().peek()) == null) break;
 				p = a.getControlPanel();
 
 				if (!p.isVideoSeekMode() && !a.getBody().isVideoMode()) {
@@ -279,13 +286,13 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 				a.getControlPanel().onVideoSeek();
 				return true;
 			case KEYCODE_DPAD_UP:
-				a = getActivity();
+				if ((a = getActivity().peek()) == null) break;
 				b = a.getMediaServiceBinder();
 				b.onRwFfButtonLongClick(true);
 				a.getControlPanel().onVideoSeek();
 				return true;
 			case KEYCODE_DPAD_DOWN:
-				a = getActivity();
+				if ((a = getActivity().peek()) == null) break;
 				p = a.getControlPanel();
 
 				if (!p.isVideoSeekMode() && isVisible(p)) {
@@ -308,14 +315,18 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	private boolean onTouch(@NonNull MotionEvent e) {
-		getActivity().getControlPanel().onVideoViewTouch(this, e);
+		MainActivityDelegate a = getActivity().peek();
+		if (a == null) return false;
+		a.getControlPanel().onVideoViewTouch(this, e);
 		return true;
 	}
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		if (surfaceCreated && !Collections.disjoint(prefChange, prefs)) {
-			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
+			MainActivityDelegate a = getActivity().peek();
+			if (a == null) return;
+			MediaEngine eng = a.getMediaSessionCallback().getEngine();
 			if (eng == null) return;
 			PlayableItem i = eng.getSource();
 			if ((i == null) || !i.isVideo()) return;
@@ -340,8 +351,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 
 	@Override
 	public View focusSearch(View focused, int direction) {
-		MainActivityDelegate a = getActivity();
-		if (!a.getBody().isBothMode()) return focused;
+		MainActivityDelegate a = getActivity().peek();
+		if ((a == null) || !a.getBody().isBothMode()) return focused;
 
 		if (direction == FOCUS_LEFT) {
 			return MediaItemListView.focusSearchActive(getContext(), focused);
@@ -353,7 +364,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		return focused;
 	}
 
-	private MainActivityDelegate getActivity() {
-		return MainActivityDelegate.get(getContext());
+	private FutureSupplier<MainActivityDelegate> getActivity() {
+		return MainActivityDelegate.getActivityDelegate(getContext());
 	}
 }

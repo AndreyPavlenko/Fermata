@@ -101,22 +101,23 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		MediaItemListView v = getListView();
-		MainActivityDelegate a = getMainActivity();
-		PreferenceStore ap = a.getPrefs();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		adapter = createAdapter(b);
-		ItemTouchHelper h = new ItemTouchHelper(adapter.getItemTouchCallback());
-		adapter.setListView(v);
-		v.setAdapter(adapter);
-		h.attachToRecyclerView(v);
-		ap.addBroadcastListener(v);
-		ap.addBroadcastListener(this);
-		a.addBroadcastListener(this);
-		a.getToolBar().addBroadcastListener(this);
-		b.getLib().getPrefs().addBroadcastListener(this);
-		b.addBroadcastListener(this);
-		Log.d("MediaLibFragment view created: ", this);
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
+			MediaItemListView v = getListView();
+			PreferenceStore ap = a.getPrefs();
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			adapter = createAdapter(b);
+			ItemTouchHelper h = new ItemTouchHelper(adapter.getItemTouchCallback());
+			adapter.setListView(v);
+			v.setAdapter(adapter);
+			h.attachToRecyclerView(v);
+			ap.addBroadcastListener(v);
+			ap.addBroadcastListener(this);
+			a.addBroadcastListener(this);
+			a.getToolBar().addBroadcastListener(this);
+			b.getLib().getPrefs().addBroadcastListener(this);
+			b.addBroadcastListener(this);
+			Log.d("MediaLibFragment view created: ", this);
+		});
 	}
 
 	@Override
@@ -144,6 +145,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	@NonNull
 	public MainActivityDelegate getMainActivity() {
 		return MainActivityDelegate.get(getContext());
+	}
+
+	@NonNull
+	public FutureSupplier<MainActivityDelegate> getMainActivityDelegate() {
+		return MainActivityDelegate.getActivityDelegate(getContext());
 	}
 
 	@NonNull
@@ -606,7 +612,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			super.setChildren(children);
 			if (noScroll) return;
 			BrowsableItem p = getParent();
-			PlayableItem current = getMainActivity().getCurrentPlayable();
+			PlayableItem current = getMainActivityDelegate()
+					.mapIfNotNull(MainActivityDelegate::getCurrentPlayable).peek();
 
 			if ((current != null) && current.getParent().equals(p)) {
 				scrollPosition = indexOf(getList(), current);
