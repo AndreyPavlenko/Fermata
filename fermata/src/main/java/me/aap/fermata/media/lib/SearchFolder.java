@@ -57,23 +57,26 @@ public class SearchFolder extends BrowsableItemBase {
 		Collections.sort(itemsFound, (i1, i2) -> {
 			MediaDescriptionCompat d1 = i1.getMediaDescription().peek();
 			MediaDescriptionCompat d2 = i2.getMediaDescription().peek();
-			String n1 = (d1 == null) ? i1.getName() : d1.getTitle().toString();
-			String n2 = (d2 == null) ? i2.getName() : d2.getTitle().toString();
+			CharSequence t1 = (d1 == null) ? null : d1.getTitle();
+			CharSequence t2 = (d2 == null) ? null : d2.getTitle();
+			String n1 = (t1 == null) ? i1.getName() : t1.toString();
+			String n2 = (t2 == null) ? i2.getName() : t2.toString();
 			return compareNatural(n1, n2, true);
 		});
 	}
 
 	private static SearchFolder create(String id, BrowsableItem parent, List<Item> items,
 																		 Function<List<PlayableItem>, BrowsableItem> parentSupplier) {
-		return new SearchFolder(id, parent, items) {
-			@Override
-			public BrowsableItem getParent() {
-				if (parentSupplier == null) return parent;
-				List<PlayableItem> items = getItemsFound();
-				BrowsableItem p = parentSupplier.apply((items == null) ? emptyList() : items);
-				return (p == null) ? parent : p;
-			}
-		};
+		return (SearchFolder) parent.getLib()
+				.getOrCreateCachedItem(id, fid -> new SearchFolder(id, parent, items) {
+					@Override
+					public BrowsableItem getParent() {
+						if (parentSupplier == null) return parent;
+						List<PlayableItem> items = getItemsFound();
+						BrowsableItem p = parentSupplier.apply((items == null) ? emptyList() : items);
+						return (p == null) ? parent : p;
+					}
+				});
 	}
 
 	public static FutureSupplier<SearchFolder> search(
@@ -226,13 +229,13 @@ public class SearchFolder extends BrowsableItemBase {
 
 	@NonNull
 	public FutureSupplier<PlayableItem> getPrevPlayable(Item i) {
-		int idx = itemsFound.indexOf(i);
+		int idx = (i instanceof PlayableItem) ? itemsFound.indexOf(i) : -1;
 		return (idx > 0) ? completed(itemsFound.get(idx - 1)) : i.getPrevPlayable();
 	}
 
 	@NonNull
 	public FutureSupplier<PlayableItem> getNextPlayable(Item i) {
-		int idx = itemsFound.indexOf(i);
+		int idx = (i instanceof PlayableItem) ? itemsFound.indexOf(i) : -1;
 		return (idx < (itemsFound.size() - 1)) ? completed(itemsFound.get(idx + 1)) : i.getNextPlayable();
 	}
 

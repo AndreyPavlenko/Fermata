@@ -411,6 +411,7 @@ public interface MediaLib {
 		@Override
 		StreamItemPrefs getPrefs();
 
+		@Override
 		default boolean isStream() {
 			return true;
 		}

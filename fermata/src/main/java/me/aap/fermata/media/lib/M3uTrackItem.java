@@ -1,5 +1,10 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.fermata.util.Utils.isVideoMimeType;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.io.FileUtils.getFileExtension;
+import static me.aap.utils.io.FileUtils.getMimeTypeFromExtension;
+
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
@@ -13,15 +18,14 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.fermata.util.Utils.isVideoMimeType;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.io.FileUtils.getFileExtension;
-import static me.aap.utils.io.FileUtils.getMimeTypeFromExtension;
-
 /**
  * @author Andrey Pavlenko
  */
 public class M3uTrackItem extends PlayableItemBase {
+	static final byte TYPE_UNKNOWN = 0;
+	static final byte TYPE_AUDIO = 1;
+	static final byte TYPE_VIDEO = 2;
+	static final byte TYPE_STREAM = 4;
 	public static final String SCHEME = "m3ut";
 	private final String name;
 	private final String album;
@@ -31,22 +35,21 @@ public class M3uTrackItem extends PlayableItemBase {
 	private final String logo;
 	private final String tvgId;
 	private final String tvgName;
-	private final boolean isVideo;
 	private final long duration;
+	private final byte type;
 
 	protected M3uTrackItem(String id, BrowsableItem parent, int trackNumber, VirtualResource file,
 												 String name, String album, String artist, String genre, String logo,
 												 String tvgId, String tvgName, long duration, byte type) {
 		super(id, parent, file);
+		String ext = getFileExtension(file.getRid().getPath());
 
-		if (type == 1) {
-			isVideo = false;
-		} else if (type == 2) {
-			isVideo = true;
-		} else {
-			String ext = getFileExtension(file.getRid().getPath());
-			if (ext == null) isVideo = true;
-			else isVideo = ext.startsWith("m3u") || isVideoMimeType(getMimeTypeFromExtension(ext));
+		if (type == TYPE_UNKNOWN) {
+			if ((ext == null) || ext.startsWith("m3u")) type = TYPE_VIDEO | TYPE_STREAM;
+			else if (isVideoMimeType(getMimeTypeFromExtension(ext))) type = TYPE_VIDEO;
+			else type = TYPE_AUDIO;
+		} else if ((ext == null) || ext.startsWith("m3u")) {
+			type |= TYPE_STREAM;
 		}
 
 		this.name = (name != null) && !name.isEmpty() ? name : file.getName();
@@ -58,6 +61,7 @@ public class M3uTrackItem extends PlayableItemBase {
 		this.tvgName = tvgName;
 		this.trackNumber = trackNumber;
 		this.duration = duration;
+		this.type = type;
 	}
 
 	@NonNull
@@ -107,7 +111,12 @@ public class M3uTrackItem extends PlayableItemBase {
 
 	@Override
 	public boolean isVideo() {
-		return isVideo;
+		return (type & TYPE_VIDEO) != 0;
+	}
+
+	@Override
+	public boolean isStream() {
+		return (type & TYPE_STREAM) != 0;
 	}
 
 	protected String getLogo() {

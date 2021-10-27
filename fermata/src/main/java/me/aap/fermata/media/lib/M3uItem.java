@@ -2,7 +2,6 @@ package me.aap.fermata.media.lib;
 
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.text.TextUtils.indexOf;
 import static me.aap.utils.text.TextUtils.indexOfChar;
 
 import android.net.Uri;
@@ -78,7 +77,7 @@ public class M3uItem extends BrowsableItemBase {
 		String catchup = null;
 		String catchupDays = null;
 		String catchupSource = null;
-		byte m3uType = isVideo(m3uFile) ? (byte) 2 : 0; // 0 - unknown, 1 - audio, 2 - video
+		byte m3uType = isVideo(m3uFile) ? M3uTrackItem.TYPE_VIDEO : M3uTrackItem.TYPE_UNKNOWN;
 
 		String name = null;
 		String group = null;
@@ -92,7 +91,7 @@ public class M3uItem extends BrowsableItemBase {
 		String trackCatchupDays = null;
 		String trackCatchupSource = null;
 		long duration = 0;
-		byte type = 0;
+		byte type = M3uTrackItem.TYPE_UNKNOWN;
 		boolean first = true;
 
 		try (BufferedReader r = new BufferedReader(createReader(m3uFile))) {
@@ -104,17 +103,17 @@ public class M3uItem extends BrowsableItemBase {
 					continue;
 				} else if (l.startsWith("#EXTM3U")) {
 					for (int off = 7, len = l.length(); off < len; ) {
-						int i = indexOf(l, '=', off, len);
+						int i = l.indexOf('=', off);
 						if (i == -1) continue read;
 						String key = l.substring(off, i).trim();
 
 						if ((++i != len) && (l.charAt(i) == '"')) {
 							off = i + 1;
-							i = indexOf(l, '\"', off, len);
+							i = l.indexOf('=', off);
 							if (i == -1) i = len;
 						} else {
 							off = i;
-							i = indexOf(l, ' ', off, len);
+							i = indexOfChar(l, " \t", off, len);
 							if (i == -1) i = len;
 						}
 
@@ -147,31 +146,32 @@ public class M3uItem extends BrowsableItemBase {
 				} else if (l.startsWith("#EXTINF:")) {
 					first = false;
 					int len = l.length();
-					int i = indexOfChar(l, " ,", 8, len);
+					int i = indexOfChar(l, " \t,", 8, len);
 					if (i == -1) continue;
 
 					duration = TextUtils.toLong(l, 8, i, 0);
 
+					if (l.charAt(i) == ',') {
+						name = l.substring(i + 1);
+						continue read;
+					}
+
 					for (; ; ) {
-						if (l.charAt(i) == ',') {
+						int start = i + 1;
+						i = indexOfChar(l, "=,", start, len);
+						if (i == -1) continue read;
+						if (l.charAt(i) != '=') {
 							name = l.substring(i + 1);
 							continue read;
 						}
 
-						int start = i + 1;
-						i = indexOfChar(l, "=,", start, len);
-						if (i == -1) continue read;
-						if (l.charAt(i) != '=') continue;
-
 						String key = l.substring(start, i).trim();
-						i = indexOfChar(l, "\",", i + 1, len);
+						i = l.indexOf('\"', i + 1);
 						if (i == -1) continue read;
-						if (l.charAt(i) != '\"') continue;
 
 						start = i + 1;
-						i = indexOfChar(l, "\",", start, len);
+						i = l.indexOf('\"', start);
 						if (i == -1) continue read;
-						if (l.charAt(i) != '\"') continue;
 
 						switch (key) {
 							case "logo":
@@ -223,8 +223,8 @@ public class M3uItem extends BrowsableItemBase {
 					continue;
 				} else if (l.startsWith("#EXT-X-MEDIA:")) {
 					byte t = 0;
-					if (l.contains("TYPE=AUDIO")) t = 1;
-					else if (l.contains("TYPE=VIDEO")) t = 2;
+					if (l.contains("TYPE=AUDIO")) t = M3uTrackItem.TYPE_AUDIO;
+					else if (l.contains("TYPE=VIDEO")) t = M3uTrackItem.TYPE_VIDEO;
 
 					if (t != 0) {
 						if (first) m3uType = t;
@@ -483,7 +483,7 @@ public class M3uItem extends BrowsableItemBase {
 	protected Reader createReader(VirtualFile f) throws IOException {
 		InputStream in = f.getInputStream().asInputStream();
 		String enc = null;
-		String cs = enc;
+		String cs = null;
 
 		if (f instanceof M3uFile) {
 			M3uFile m3u = (M3uFile) f;
