@@ -267,6 +267,8 @@
     <string name="change_brightness">Change brightness while playing video</string>
     <string name="video_brightness">Video brightness</string>
     <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>
+    <string name="watched_threshold">Watched threshold</string>
+    <string name="watched_threshold_sub">Marked video as watched, if more than this number of percentages has been watched</string>
 
     <string name="other">Other</string>
     <string name="check_updates">Check for updates on startup</string>

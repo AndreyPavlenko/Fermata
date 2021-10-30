@@ -50,6 +50,7 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<IntSupplier> AUDIO_DELAY = Pref.i("AUDIO_DELAY", 0);
 	Pref<Supplier<String>> AUDIO_LANG = Pref.s("AUDIO_LANG", "");
 	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
+	Pref<IntSupplier> WATCHED_THRESHOLD = Pref.i("WATCHED_THRESHOLD", 95);
 
 	default int getAudioEnginePref() {
 		return getIntPref(AUDIO_ENGINE);
@@ -111,6 +112,10 @@ public interface MediaPrefs extends PreferenceStore {
 
 	default String getAudioKeyPref() {
 		return getStringPref(AUDIO_KEY);
+	}
+
+	default int getWatchedThresholdPref() {
+		return getIntPref(WATCHED_THRESHOLD);
 	}
 
 	static String getUserPresetName(String preset) {

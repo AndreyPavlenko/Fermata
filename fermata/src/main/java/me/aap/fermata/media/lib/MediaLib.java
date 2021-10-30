@@ -446,16 +446,16 @@ public interface MediaLib {
 		@NonNull
 		@Override
 		default FutureSupplier<Long> getDuration() {
-			return getMediaDescription().map(md -> {
+			return getMediaDescription().then(md -> {
 				Bundle b = md.getExtras();
 				if (b != null) {
 					long start = b.getLong(STREAM_START_TIME, 0);
 					if (start != 0) {
 						long end = b.getLong(STREAM_END_TIME, 0);
-						if (end > start) return end - start;
+						if (end > start) return completed(end - start);
 					}
 				}
-				return 0L;
+				return PlayableItem.super.getDuration();
 			});
 		}
 

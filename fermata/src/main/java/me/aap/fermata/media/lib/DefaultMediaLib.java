@@ -251,7 +251,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			String id;
 			BrowsableItemPrefs p;
 
-			if ((i instanceof StreamItem) || (dur <= 0)) {
+			if (i.isStream() || (dur <= 0)) {
 				id = i.getId();
 				p = i.getParent().getPrefs();
 				setLastPlayedItemPref(id);
@@ -280,10 +280,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			}
 
 			if (i.isVideo()) {
-				if (position > (dur * 0.95f)) {
-					i.getPrefs().setWatchedPref(true);
-				} else {
-					i.getPrefs().setPositionPref(position);
+				PlayableItemPrefs prefs = i.getPrefs();
+				float th = prefs.getWatchedThresholdPref() / 100F;
+				if (th > 0) {
+					if (position > (dur * th)) prefs.setWatchedPref(true);
+					else prefs.setPositionPref(position);
 				}
 			}
 

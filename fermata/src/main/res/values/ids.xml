@@ -98,6 +98,7 @@
     <item name="repeat_folder" type="id" />
 
     <item name="playback_settings" type="id" />
+    <item name="watched_threshold" type="id" />
     <item name="play_next" type="id" />
 
     <item name="bookmarks" type="id" />

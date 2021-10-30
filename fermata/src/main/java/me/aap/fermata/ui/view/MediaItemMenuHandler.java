@@ -192,8 +192,11 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			}
 
 			b.addItem(R.id.playback_settings, R.drawable.playback_settings, R.string.playback_settings)
-					.setSubmenu(sb -> sb.addItem(R.id.play_next, R.string.play_next_on_completion)
-							.setChecked(bi.getPrefs().getPlayNextPref()).setHandler(this));
+					.setSubmenu(sb -> {
+						sb.addItem(R.id.watched_threshold, R.string.watched_threshold).setHandler(this);
+						sb.addItem(R.id.play_next, R.string.play_next_on_completion)
+								.setChecked(bi.getPrefs().getPlayNextPref()).setHandler(this);
+					});
 
 			addMediaEngineMenu(a, b);
 			return completedVoid();
@@ -265,6 +268,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			} else {
 				b.addItem(R.id.mark_watched, R.string.mark_watched);
 			}
+			b.addItem(R.id.watched_threshold, R.string.watched_threshold);
 		}
 
 		b.addItem(R.id.video_scaling, R.string.video_scaling).setSubmenu(this::buildVideoScalingMenu);
@@ -476,6 +480,20 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 					Context ctx = getContext();
 					UiUtils.showAlert(ctx, ctx.getString(R.string.delete_file_failed, res.getName()));
 				});
+			});
+		} else if (id == R.id.watched_threshold) {
+			i.getMenu().show(b -> {
+				PreferenceSet prefSet = new PreferenceSet();
+				prefSet.addIntPref(o -> {
+					o.store = item.getPrefs();
+					o.pref = MediaPrefs.WATCHED_THRESHOLD;
+					o.title = R.string.watched_threshold;
+					o.subtitle = R.string.watched_threshold_sub;
+					o.seekMin = 0;
+					o.seekMax = 100;
+					o.seekScale = 5;
+				});
+				prefSet.addToMenu(b, true);
 			});
 		}
 

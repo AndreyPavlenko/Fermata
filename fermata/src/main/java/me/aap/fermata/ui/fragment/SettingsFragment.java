@@ -36,6 +36,7 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
+import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -437,6 +438,16 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.visibility = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
 		});
 		addSubtitlePrefs(sub2, mediaPrefs, isCar);
+
+		sub1.addIntPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = MediaPrefs.WATCHED_THRESHOLD;
+			o.title = R.string.watched_threshold;
+			o.subtitle = R.string.watched_threshold_sub;
+			o.seekMin = 0;
+			o.seekMax = 100;
+			o.seekScale = 5;
+		});
 
 		if (!a.isCarActivity()) {
 			sub1 = set.subSet(o -> o.title = R.string.voice_control);

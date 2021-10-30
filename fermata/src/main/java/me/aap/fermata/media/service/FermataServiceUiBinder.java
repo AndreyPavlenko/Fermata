@@ -372,7 +372,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 									if (dur > 0) {
 										updateDuration = false;
 										int max = (int) (dur / 1000);
+										long last = getLib().getLastPlayedPosition(src);
 										src.setDuration(dur);
+										if (last > 0) eng.setPosition(last);
 										progressBar.setMax(max);
 										if (progressTotal != null) progressTotal.setText(timeToString(max));
 										fireBroadcastEvent(l -> l.onDurationChanged(src));
@@ -430,7 +432,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 			if ((eng != null) && ((i = eng.getSource()) != null)) {
 				FutureSupplier<Long> getPos = eng.getPosition().main();
-				duration = (i instanceof StreamItem) ? eng.getDuration() : i.getDuration();
+				duration = i.isStream() ? eng.getDuration() : i.getDuration();
 				duration.main().onCompletion((dur, fail) -> {
 					if (fail != null) {
 						Log.d(fail);

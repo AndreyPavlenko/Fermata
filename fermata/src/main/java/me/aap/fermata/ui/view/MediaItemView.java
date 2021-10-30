@@ -52,7 +52,6 @@ import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.EpgItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
-import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
@@ -359,7 +358,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 				d.setTint(hintColor);
 			}
 		} else {
-			if (!(item instanceof PlayableItem) || (item instanceof StreamItem)) return;
+			if (!(item instanceof PlayableItem) || ((PlayableItem) item).isStream()) return;
 			PlayableItem p = (PlayableItem) item;
 			if (!p.isVideo()) return;
 

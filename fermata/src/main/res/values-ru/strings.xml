@@ -248,6 +248,8 @@
     <string name="change_brightness">Менять яркость, при проигрывании видео</string>
     <string name="video_brightness">Яркость видео</string>
     <string name="change_brightness_sub">Яркость, так же, можно изменять скроллом двумя пальцами</string>
+    <string name="watched_threshold">Граница просмотренного</string>
+    <string name="watched_threshold_sub">Помечать видео, как просмотренное, если процент просмотреного больше указанного</string>
 
     <string name="other">Другое</string>
     <string name="check_updates">Проверять наличие обновлений при старте</string>
