@@ -1,10 +1,21 @@
 package me.aap.fermata.ui.view;
 
+import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
+import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_BINAURAL;
+import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_TRANSAURAL;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
+import static me.aap.utils.function.CheckedRunnable.runWithRetry;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
+import android.media.audiofx.LoudnessEnhancer;
 import android.media.audiofx.Virtualizer;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -41,16 +52,6 @@ import me.aap.utils.pref.PreferenceView;
 import me.aap.utils.pref.PreferenceView.BooleanOpts;
 import me.aap.utils.pref.PreferenceView.ListOpts;
 import me.aap.utils.ui.UiUtils;
-
-import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
-import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_BINAURAL;
-import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_TRANSAURAL;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static java.util.Objects.requireNonNull;
-import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
-import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
-import static me.aap.utils.function.CheckedRunnable.runWithRetry;
 
 /**
  * @author Andrey Pavlenko
@@ -89,6 +90,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 		Equalizer eq = effects.getEqualizer();
 		Virtualizer virt = effects.getVirtualizer();
 		BassBoost bass = effects.getBassBoost();
+		LoudnessEnhancer le = effects.getLoudnessEnhancer();
 
 		// Equalizer
 		if (eq != null) {
@@ -157,6 +159,15 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			configureSeek(findViewById(R.id.bass_seek), bass::getRoundedStrength, bass::setStrength);
 		} else {
 			hide(R.id.bass, R.id.bass_title, R.id.bass_switch);
+		}
+
+		// LoudnessEnhancer
+		if (le != null) {
+			configureSwitch(findViewById(R.id.vol_boost_switch), () -> le);
+			configureSeek(findViewById(R.id.vol_boost_seek), () -> (int) (le.getTargetGain() / 10),
+					g -> le.setTargetGain(g * 10));
+		} else {
+			hide(R.id.vol_boost, R.id.vol_boost_title, R.id.vol_boost_switch);
 		}
 
 		// Apply to
@@ -229,6 +240,7 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			Equalizer eq = requireNonNull(effects.getEqualizer());
 			Virtualizer virt = requireNonNull(effects.getVirtualizer());
 			BassBoost bass = requireNonNull(effects.getBassBoost());
+			LoudnessEnhancer le = requireNonNull(effects.getLoudnessEnhancer());
 			boolean enabled = false;
 
 			if (eq.getEnabled()) {
@@ -272,6 +284,15 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 				e.removePref(MediaPrefs.BASS_STRENGTH);
 			}
 
+			if (le.getEnabled()) {
+				enabled = true;
+				e.setBooleanPref(MediaPrefs.VOL_BOOST_ENABLED, true);
+				e.setIntPref(MediaPrefs.VOL_BOOST_STRENGTH, (int) (le.getTargetGain() / 10));
+			} else {
+				e.removePref(MediaPrefs.VOL_BOOST_ENABLED);
+				e.removePref(MediaPrefs.VOL_BOOST_STRENGTH);
+			}
+
 			if (enabled) e.setBooleanPref(AE_ENABLED, true);
 			else e.removePref(AE_ENABLED);
 		}
@@ -288,6 +309,8 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 			e.removePref(MediaPrefs.VIRT_STRENGTH);
 			e.removePref(MediaPrefs.BASS_ENABLED);
 			e.removePref(MediaPrefs.BASS_STRENGTH);
+			e.removePref(MediaPrefs.VOL_BOOST_ENABLED);
+			e.removePref(MediaPrefs.VOL_BOOST_STRENGTH);
 		}
 	}
 

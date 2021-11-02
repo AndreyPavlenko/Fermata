@@ -104,6 +104,7 @@
     <string name="binaural">Binaural</string>
     <string name="transaural">Transaural</string>
     <string name="bass_boost">Bass boost</string>
+    <string name="vol_boost">Volume boost</string>
     <string name="strength">Strength</string>
     <string name="apply_to">Apply to</string>
 

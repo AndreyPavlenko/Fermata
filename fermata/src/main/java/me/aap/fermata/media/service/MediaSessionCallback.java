@@ -44,6 +44,8 @@ import static me.aap.fermata.media.pref.MediaPrefs.EQ_BANDS;
 import static me.aap.fermata.media.pref.MediaPrefs.EQ_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.EQ_PRESET;
 import static me.aap.fermata.media.pref.MediaPrefs.EQ_USER_PRESETS;
+import static me.aap.fermata.media.pref.MediaPrefs.VOL_BOOST_ENABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.VOL_BOOST_STRENGTH;
 import static me.aap.fermata.media.pref.MediaPrefs.VIRT_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.VIRT_MODE;
 import static me.aap.fermata.media.pref.MediaPrefs.VIRT_STRENGTH;
@@ -66,6 +68,7 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
+import android.media.audiofx.LoudnessEnhancer;
 import android.media.audiofx.Virtualizer;
 import android.media.session.PlaybackState;
 import android.net.Uri;
@@ -1229,6 +1232,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		Equalizer eq = ae.getEqualizer();
 		Virtualizer virt = ae.getVirtualizer();
 		BassBoost bass = ae.getBassBoost();
+		LoudnessEnhancer le = ae.getLoudnessEnhancer();
 
 		for (PreferenceStore s : stores) {
 			if (!s.getBooleanPref(AE_ENABLED)) continue;
@@ -1297,12 +1301,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 				}
 			}
 
+			if (le != null) {
+				if (s.getBooleanPref(VOL_BOOST_ENABLED)) {
+					try {
+						le.setEnabled(true);
+						le.setTargetGain(s.getIntPref(VOL_BOOST_STRENGTH) * 10);
+					} catch (Exception ex) {
+						Log.e(ex, "Failed to configure LoudnessEnhancer");
+					}
+				} else {
+					le.setEnabled(false);
+				}
+			}
+
 			return;
 		}
 
 		if (eq != null) eq.setEnabled(false);
 		if (virt != null) virt.setEnabled(false);
 		if (bass != null) bass.setEnabled(false);
+		if (le != null) le.setEnabled(false);
 	}
 
 	private FutureSupplier<PlayableItem> prepareItem(PlayableItem i) {

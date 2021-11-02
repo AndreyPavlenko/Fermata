@@ -90,6 +90,7 @@
     <string name="binaural">Бинауральный</string>
     <string name="transaural">Трансауральный</string>
     <string name="bass_boost">Усиление басов</string>
+    <string name="vol_boost">Усиление громкости</string>
     <string name="strength">Уровень</string>
     <string name="apply_to">Применить к</string>
 

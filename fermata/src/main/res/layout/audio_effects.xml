@@ -281,6 +281,82 @@
     </me.aap.utils.ui.view.OutlinedConstraintLayout>
     <!-- ======================================================== -->
 
+    <!-- ====================== Volume  ====================== -->
+    <me.aap.utils.ui.view.OutlinedConstraintLayout
+        android:id="@+id/vol_boost"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="6dp"
+        android:orientation="vertical"
+        app:backgroundColor="?attr/colorSecondary"
+        app:boxStrokeColor="?attr/colorOnSecondary"
+        app:cornerRadius="?attr/cornerRadius"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bass"
+        app:numLabels="2">
+
+        <me.aap.utils.ui.view.ScalableTextView
+            android:id="@+id/vol_boost_title"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/vol_boost"
+            android:textAppearance="?attr/textAppearanceListItem"
+            app:layout_constraintBottom_toTopOf="@id/bass"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/vol_boost_switch"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:focusable="true"
+            android:nextFocusDown="@id/vol_boost_seek"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            app:layout_constraintBottom_toBottomOf="@id/vol_boost_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/vol_boost_title" />
+
+        <me.aap.utils.ui.view.ScalableTextView
+            android:id="@+id/vol_boost_seek_title"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:lines="1"
+            android:text="@string/strength"
+            android:textAppearance="?attr/textAppearanceListItem"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/vol_boost_seek"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/vol_boost_title" />
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:id="@+id/vol_boost_seek"
+            style="?attr/appEqualizerStyle"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/focusable_shape_transparent"
+            android:nextFocusUp="@id/vol_boost_switch"
+            app:layout_constraintBottom_toBottomOf="@id/vol_boost_seek_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintStart_toEndOf="@id/vol_boost_seek_title"
+            app:layout_constraintTop_toTopOf="@id/vol_boost_seek_title" />
+    </me.aap.utils.ui.view.OutlinedConstraintLayout>
+    <!-- ======================================================== -->
+
     <!-- ====================== Apply to  ====================== -->
     <me.aap.utils.ui.view.OutlinedLinearLayout
         android:id="@+id/apply_to"
@@ -293,7 +369,7 @@
         app:cornerRadius="?attr/cornerRadius"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/bass">
+        app:layout_constraintTop_toBottomOf="@id/vol_boost">
 
         <me.aap.utils.ui.view.ScalableTextView
             android:id="@+id/apply_to_title"
