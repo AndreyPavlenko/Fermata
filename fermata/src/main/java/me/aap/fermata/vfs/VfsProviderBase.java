@@ -1,5 +1,11 @@
 package me.aap.fermata.vfs;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static me.aap.utils.async.Completed.cancelled;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,12 +27,6 @@ import me.aap.utils.vfs.VfsException;
 import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
-
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static me.aap.utils.async.Completed.cancelled;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 /**
  * @author Andrey Pavlenko
@@ -121,7 +121,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 		else return getTitle(a);
 	}
 
-	protected boolean onBackPressed(MainActivityDelegate a, PreferenceViewAdapter adapter) {
+	protected boolean onBackPressed(PreferenceViewAdapter adapter) {
 		PreferenceSet p = adapter.getPreferenceSet();
 		if (p.getParent() != null) {
 			adapter.setPreferenceSet(p.getParent());
@@ -132,6 +132,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 
 	protected FutureSupplier<Boolean> requestPrefs(
 			MainActivityDelegate a, PreferenceSet prefs, PreferenceStore ps) {
+		Promise<Boolean> promise = new Promise<>();
 		GenericDialogFragment f = a.showFragment(me.aap.utils.R.id.generic_dialog_fragment);
 		PreferenceViewAdapter adapter = new PreferenceViewAdapter(prefs) {
 			@Override
@@ -151,14 +152,16 @@ public abstract class VfsProviderBase implements VfsProvider {
 			g.addView(v);
 		});
 		f.setDialogValidator(() -> validate(ps));
-		f.setBackHandler(() -> onBackPressed(a, adapter));
+		f.setBackHandler(() -> {
+			promise.cancel();
+			return (a.getActiveFragment() != f) || onBackPressed(adapter);
+		});
 
 		ps.addBroadcastListener(prefsListener = (s, p) ->
 				f.getToolBarMediator().onActivityEvent(a.getToolBar(), a, FRAGMENT_CONTENT_CHANGED));
 
-		Promise<Boolean> p = new Promise<>();
-		f.setDialogConsumer(p::complete);
-		return p;
+		f.setDialogConsumer(promise::complete);
+		return promise;
 	}
 
 	protected boolean validate(PreferenceStore ps) {

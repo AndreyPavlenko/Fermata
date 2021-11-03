@@ -1,5 +1,8 @@
 package me.aap.fermata.vfs.sftp;
 
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
+
 import android.content.Context;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -17,9 +20,6 @@ import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.sftp.SftpFileSystem;
-
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.completedVoid;
 
 /**
  * @author Andrey Pavlenko
@@ -88,14 +88,15 @@ public class Provider extends VfsProviderBase {
 			o.stringHint = "secret";
 		});
 
-		return requestPrefs(a, prefs, ps).then(ok -> !ok ? completedNull() : ((SftpFileSystem) fs).addRoot(
-				ps.getStringPref(USER),
-				ps.getStringPref(HOST),
-				ps.getIntPref(PORT),
-				ps.getStringPref(PATH),
-				ps.getStringPref(PASSWD),
-				ps.getStringPref(KEY),
-				ps.getStringPref(KEY_PASSWD)));
+		return requestPrefs(a, prefs, ps).thenRun(ps::removeBroadcastListeners)
+				.then(ok -> !ok ? completedNull() : ((SftpFileSystem) fs).addRoot(
+						ps.getStringPref(USER),
+						ps.getStringPref(HOST),
+						ps.getIntPref(PORT),
+						ps.getStringPref(PATH),
+						ps.getStringPref(PASSWD),
+						ps.getStringPref(KEY),
+						ps.getStringPref(KEY_PASSWD)));
 	}
 
 	@Override

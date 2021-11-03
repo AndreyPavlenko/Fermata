@@ -1,7 +1,6 @@
 package me.aap.fermata.ui.fragment;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.VoiceCommand;

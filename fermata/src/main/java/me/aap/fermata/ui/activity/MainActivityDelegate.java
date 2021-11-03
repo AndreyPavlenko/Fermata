@@ -138,7 +138,6 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	private FutureSupplier<?> contentLoading;
 	private boolean barsHidden;
 	private boolean videoMode;
-	private boolean recreating;
 	private boolean exitPressed;
 	private int brightness = 255;
 	private SpeechListener speechListener;
@@ -239,18 +238,15 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	@Override
 	protected void onActivitySaveInstanceState(@NonNull Bundle outState) {
 		super.onActivitySaveInstanceState(outState);
-		if (recreating) {
+		if (isRecreating()) {
 			outState.putInt("navId", getActiveNavItemId());
 			outState.putInt("fragmentId", getActiveFragmentId());
 		}
 	}
 
 	public void recreate() {
-		App.get().getHandler().post(() -> {
-			Log.d("Recreating");
-			recreating = true;
-			getAppActivity().recreate();
-		});
+		if (AUTO && isCarActivity()) showAlert(getContext(), R.string.please_restart_app);
+		else getHandler().post(super::recreate);
 	}
 
 	@Override
@@ -620,7 +616,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				return;
 			}
 			if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
-			UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
+			showAlert(getContext(), R.string.err_no_audio_record_perm);
 		});
 	}
 
@@ -851,7 +847,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
 				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
-				UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
+				showAlert(getContext(), R.string.err_no_audio_record_perm);
 				try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
 					e.setBooleanPref(VOICE_CONTROl_ENABLED, false);
 					e.setBooleanPref(VOICE_CONTROl_FB, false);
@@ -1079,7 +1075,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			promise.completeExceptionally(new IOException(msg));
 			hideActiveMenu();
 			if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-				UiUtils.showAlert(getContext(), R.string.err_no_audio_record_perm);
+				showAlert(getContext(), R.string.err_no_audio_record_perm);
 			}
 		}
 

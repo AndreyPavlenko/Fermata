@@ -20,14 +20,12 @@ import androidx.fragment.app.FragmentManager;
 import com.google.android.apps.auto.sdk.CarActivity;
 import com.google.android.apps.auto.sdk.CarUiController;
 
-import me.aap.fermata.R;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.fermata.ui.activity.FermataActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
-import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 
 /**
@@ -124,9 +122,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	public void setRequestedOrientation(int requestedOrientation) {
 	}
 
-
 	public void recreate() {
-		UiUtils.showAlert(getContext(), R.string.please_restart_app);
 	}
 
 	public void finish() {
