@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_mobile" translatable="false">Fermata</string>
+    <string name="app_name_auto" translatable="false">Fermata Auto</string>
+    <string name="media_service_name" translatable="false">Fermata</string>
+    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
+    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
+    <string name="engine_vlc_name" translatable="false">VLC</string>
+
+    <string name="module_name_gdrive" translatable="false">Google Drive</string>
+    <string name="module_name_sftp" translatable="false">SFTP</string>
+    <string name="module_name_smb" translatable="false">SMB</string>
+    <string name="module_name_web" translatable="false">Web</string>
+    <string name="module_name_tv" translatable="false">TV</string>
+
+    <string name="addons">Addons</string>
+    <string name="addon_name_tv">TV</string>
+    <string name="addon_name_web_browser">Web browser</string>
+    <string name="addon_name_youtube" translatable="false">YouTube</string>
+
+    <string name="interface_prefs">Interfaccia</string>
+    <string name="interface_prefs_aa">Android Auto</string>
+    <string name="playback_settings">Impostazioni riproduzione</string>
+    <string name="playback_control">Controlli riproduzione</string>
+    <string name="engine_prefs">Motore multimediale</string>
+
+    <string name="theme">Tema App</string>
+    <string name="theme_sub">Tema impostato: %1$s</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="theme_day_night">Giorno/Notte</string>
+    <string name="theme_black">Nero</string>
+
+    <string name="nav_bar_pos">Posizione barra navigazione</string>
+    <string name="nav_bar_pos_sub">Posizione impostata: %1$s</string>
+    <string name="nav_bar_pos_bottom">In basso</string>
+    <string name="nav_bar_pos_left">Sinistra</string>
+    <string name="nav_bar_pos_right">Destra</string>
+
+    <string name="show_track_icons">Mostra icone traccia</string>
+    <string name="hide_bars">Nascondi barre</string>
+    <string name="hide_bars_sub">Nascondi barre superiore ed inferiore con pannello di controllo</string>
+    <string name="show_pg_up_down">Mostra pulsanti pagina su/giù</string>
+    <string name="fullscreen_mode">Modalità schermo intero</string>
+    <string name="nav_bar_size">Dimensione barra navigazione</string>
+    <string name="tool_bar_size">Dimensione barra strumenti</string>
+    <string name="control_panel_size">Dimensione pannello di controllo</string>
+    <string name="text_icon_size">Dimensione testo ed icone</string>
+
+    <string name="play_next_on_completion">Riproduci successivo al termine</string>
+
+    <string name="rw_ff_click">RW/FF - clic</string>
+    <string name="rw_ff_long_click">RW/FF - clic lungo</string>
+    <string name="prev_next_long_click">Prev/Next - clic lungo</string>
+    <string name="play_pause_stop">Stop su Play/Pausa clic lungo</string>
+
+    <string name="time">Tempo</string>
+    <string name="time_unit">Unità di tempo</string>
+    <string name="time_unit_sub">Valore impostato: %1$s</string>
+    <string name="time_unit_second">Secondi</string>
+    <string name="time_unit_minute">Minuti</string>
+    <string name="time_unit_percent">Percentuale</string>
+
+    <string name="video_control">Controlli video</string>
+    <string name="video_control_start_delay">Mostra all\'avvio</string>
+    <string name="video_control_touch_delay">Mostra al tocco</string>
+    <string name="video_control_seek_delay">Mostra in ricerca</string>
+    <string name="video_aa_show_status">Mostra barra di stato in Android Auto</string>
+
+    <string name="enable_exoplayer">Abilita ExoPlayer</string>
+    <string name="enable_vlcplayer">Abilita VLC</string>
+    <string name="preferred_audio_engine">Motore audio preferito</string>
+    <string name="preferred_video_engine">Motore video preferito</string>
+    <string name="engine_installed">Motore multimediale installato: %1$s</string>
+    <string name="engine_uninstalled">Motore multimediale disinstallato: %1$s</string>
+
+    <string name="preferred_media_scanner">Scanner multimediale preferito</string>
+    <string name="preferred_media_scanner_default">Predefinito</string>
+    <string name="preferred_media_scanner_system">Di sistema</string>
+
+    <string name="voice_search">Ricerca vocale</string>
+    <string name="voice_control">Controllo vocale</string>
+    <string name="voice_control_fb">Pulsante fluttuante</string>
+    <string name="voice_control_menu">Pulsante \'Menu\' o \'M\'</string>
+    <string name="voice_control_next">Pulsante multimediale \'Vai al successivo\'</string>
+    <string name="voice_control_prev">Pulsante multimediale \'Vai al precedente\'</string>
+    <string name="voice_control_sub_long">Attiva il controllo vocale con clic lungo</string>
+    <string name="voice_control_sub_double">Attiva il controllo vocale con doppio clic</string>
+    <string name="voice_control_subst">Sostituzione comandi</string>
+    <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
+    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
+
+    <string name="module_installation">Installazione modulo: %1$s</string>
+    <string name="install_pending">Installazione in attesa: %1$s</string>
+    <string name="downloading">Scaricamento %1$s</string>
+    <string name="installing">Installazione %1$s</string>
+
+    <string name="speed">Velocità</string>
+    <string name="audio_effects">Effetti audio</string>
+    <string name="equalier">Equalizzatore</string>
+    <string name="preset_name">Nome preset</string>
+    <string name="virtualizer">Virtualizzatore</string>
+    <string name="auto">Auto</string>
+    <string name="binaural">Binaurale</string>
+    <string name="transaural">Transaurale</string>
+    <string name="bass_boost">Potenziamento bassi</string>
+    <string name="strength">Forza</string>
+    <string name="apply_to">Applica a</string>
+
+    <string name="video">Video</string>
+    <string name="video_settings">Impostazionni video</string>
+    <string name="video_scaling">Ridimensionamento video</string>
+    <string name="video_scaling_best">Adatta</string>
+    <string name="video_scaling_fill">Riempi schermo</string>
+    <string name="video_scaling_orig">Dimensione originale</string>
+    <string name="video_scaling_4" translatable="false">4x3</string>
+    <string name="video_scaling_16" translatable="false">16x9</string>
+
+    <string name="audio">Audio</string>
+    <string name="audio_delay">Ritardo audio</string>
+    <string name="preferred_audio_lang">Lingue preferite per il flusso audio</string>
+    <string name="preferred_audio_key">Preferisci il flusso audio con parole chiave</string>
+    <string name="select_audio_stream">Seleziona il flusso audio</string>
+
+    <string name="subtitles">Sottotitoli</string>
+    <string name="subtitle_delay">Ritardo sottotitoli</string>
+    <string name="display_subtitles">Mostra sottotitoli</string>
+    <string name="preferred_sub_lang">Lingue preferite per i sottotitoli</string>
+    <string name="preferred_sub_key">Preferisci i sottotitoli con parole chiave</string>
+    <string name="select_subtitles">Seleziona sottotitoli</string>
+
+    <string name="string_format" translatable="false">%1$s</string>
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">Traccia attuale</string>
+    <string name="current_folder">Cartella attuale</string>
+
+    <string name="folders">Cartelle</string>
+    <string name="favorites">Preferiti</string>
+    <string name="playlists">Playlist</string>
+    <string name="search">Cerca</string>
+    <string name="filter">Filtra</string>
+    <string name="settings">Impostazioni</string>
+    <string name="menu">Menù</string>
+    <string name="exit">Esci</string>
+    <string name="cancel">Annulla</string>
+    <string name="got_to_current">Traccia attuale</string>
+
+    <string name="view">Visualizza</string>
+    <string name="title">Titolo</string>
+    <string name="subtitle">Sottotitolo</string>
+    <string name="seq_num">Numero sequenza</string>
+    <string name="track_name">Nome</string>
+    <string name="file_name">Nome file</string>
+    <string name="date">Data</string>
+    <string name="random">Casuale</string>
+    <string name="descending">Discendente</string>
+    <string name="album">Album</string>
+    <string name="artist">Artista</string>
+    <string name="duration">Durata</string>
+
+    <string name="sort_by">Ordina per</string>
+    <string name="do_not_sort">Non ordinare</string>
+
+    <string name="play">Riproduci</string>
+    <string name="pause">Pausa</string>
+    <string name="stop">Stop</string>
+    <string name="prev">Precedente</string>
+    <string name="next">Successivo</string>
+    <string name="rewind">Riavvolgi</string>
+    <string name="fast_forward">Avanti veloce</string>
+    <string name="repeat">Ripeti</string>
+    <string name="repeat_disable">Non ripetere</string>
+    <string name="shuffle">Casuale</string>
+    <string name="shuffle_disable">Non casuale</string>
+    <string name="programme_guide">Guida programmi</string>
+    <string name="favorites_add">Aggiungi ai preferiti</string>
+    <string name="favorites_remove">Rimuovi dai preferiti</string>
+    <string name="mark_watched">Contrassegna come visto</string>
+    <string name="mark_unwatched">Contrassegna come non visto</string>
+    <string name="preferred_media_engine">Motore multimediale preferito</string>
+    <string name="by_default">Predefinito</string>
+
+    <string name="playlist_add">Aggiungi a playlist</string>
+    <string name="playlist_remove_item">Rimuovi dalla playlist</string>
+    <string name="playlist_create">Crea playlist</string>
+    <string name="playlist_remove">Rimuovi playlist</string>
+    <string name="playlist_name">Nome playlist</string>
+
+    <string name="bookmarks">Segnalibri</string>
+    <string name="create_bookmark">Crea segnalibro</string>
+    <string name="remove_bookmark">Rimuovi segnalibro</string>
+    <string name="remove_all_bookmarks">Rimuovi tutti i segnalibri</string>
+    <string name="bookmark_name">Nome</string>
+    <string name="bookmark_time">Orario</string>
+
+    <string name="folder_subtitle">File: %1$d. Cartelle: %2$d.</string>
+    <string name="browsable_subtitle">Tracce: %1$d.</string>
+    <string name="add_folder">Aggiungi cartella</string>
+    <string name="remove_folder">Rimuovi cartella</string>
+    <string name="select">Seleziona</string>
+    <string name="select_all">Seleziona tutti</string>
+    <string name="unselect_all">Deseleziona tutti</string>
+    <string name="refresh">Aggiorna</string>
+    <string name="rescan">Scansiona di nuovo</string>
+    <string name="edit">Modifica</string>
+    <string name="delete">Elimina</string>
+    <string name="delete_file_title">Elimina file</string>
+    <string name="delete_file_question">Vuoi davvero eliminare il file?</string>
+    <string name="delete_file_failed">Impossibile eliminare il file %1$s</string>
+    <string name="loading">Caricamento…</string>
+    <string name="press_back_again">Premi di nuovo il pulsante Indietro per uscire</string>
+    <string name="press_x_again">Premi di nuovo il pulsante X per uscire</string>
+    <string name="please_restart_app">Riavvia l\'app</string>
+    <string name="use_phone_to_grant_perm">Utilizza il telefono per concedere le autorizzazioni richieste</string>
+
+    <string name="vfs_content">Contenuto</string>
+    <string name="vfs_file_system">File system</string>
+    <string name="vfs_gdrive">Google drive</string>
+    <string name="vfs_sftp" translatable="false">SFTP</string>
+    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
+    <string name="m3u_playlist" translatable="false">M3U playlist</string>
+    <string name="m3u_playlist_name">Nome</string>
+    <string name="m3u_playlist_location">Posizione</string>
+    <string name="m3u_playlist_location_hint">URL file o http(s)</string>
+    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
+    <string name="m3u_playlist_video">Playlist video</string>
+
+    <string name="eq_manual">Manuale</string>
+    <string name="eq_normal">Normale</string>
+    <string name="eq_classical">Classica</string>
+    <string name="eq_dance">Dance</string>
+    <string name="eq_flat">Flat</string>
+    <string name="eq_folk">Folk</string>
+    <string name="eq_heavy_metal">Heavy Metal</string>
+    <string name="eq_hip_hop">Hip Hop</string>
+    <string name="eq_jazz">Jazz</string>
+    <string name="eq_pop">Pop</string>
+    <string name="eq_rock">Rock</string>
+
+    <string name="host">Host</string>
+    <string name="port">Porta</string>
+    <string name="path">Percorso</string>
+    <string name="share_name">Condividi nome</string>
+    <string name="domain">Dominio</string>
+    <string name="username">Utente</string>
+    <string name="password">Password</string>
+    <string name="private_key">Chiave privata</string>
+    <string name="private_key_pass">Password chiave privata</string>
+
+    <string name="donate">Caffè per lo sviluppatore</string>
+    <string name="donate_text">Se ti piace l\'app, valuta di offrirmi un caffè</string>
+    <string name="use_phone_for_donation">Utilizza il telefono per acquistare un caffè</string>
+
+    <string name="timer">Timer</string>
+    <string name="hours">Ore</string>
+    <string name="minutes">Minuti</string>
+
+    <string name="enable">Abilita</string>
+    <string name="move_left">Vai a sinistra</string>
+    <string name="move_right">Vai a destra</string>
+    <string name="move_up">Vai sopra</string>
+    <string name="move_down">Vai sotto</string>
+
+    <string name="play_video_landscape">Riproduci video in modalità orizzontale</string>
+    <string name="change_brightness">Cambia luminosità durante riproduzione video</string>
+    <string name="video_brightness">Luminosità video</string>
+    <string name="change_brightness_sub">La luminosità può essere modificata anche facendo scorrere due dita</string>
+    <string name="watched_threshold">Soglia visto</string>
+    <string name="watched_threshold_sub">Video contrassegnato come visto, se è stata superata questa percentuale</string>
+
+    <string name="other">Altro</string>
+    <string name="check_updates">Controlla aggiornamenti all\'avvio</string>
+    <string name="update">Aggiorna</string>
+    <string name="update_question">Nuova versione %1$s disponibile.\nVuoi aggiornare l\'app?</string>
+
+    <string name="about">Info</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player è un riproduttore audio e video gratuito,
+		open source con un\'interfaccia semplice ed intuitiva.</p>
+        <p><b>Autore:</b> Andrey Pavlenko</p>
+        <p><b>Versione:</b> %1$s (%2$d)</p>
+        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
+
+    <string name="err_failed_to_play">Impossibile riprodurre %s</string>
+    <string name="err_failed_to_play_cause">Impossibile riprodurre %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">File non supportato: %s</string>
+    <string name="err_playlist_exists">La playlist esiste già: %1$s</string>
+    <string name="err_invalid_playlist_name">Nome playlist non valido: %1$s</string>
+    <string name="err_failed_add_folder">Impossibile aggiungere cartella: %1$s</string>
+    <string name="err_failed_open_url">Impossibile aprire URL: %1$s</string>
+    <string name="err_failed_install_module">Impossibile installare modulo: %1$s</string>
+    <string name="err_failed_to_download">Impossibile scaricare %1$s</string>
+    <string name="err_no_audio_record_perm">Autorizzazione registrazione audio non concessa</string>
+</resources>
