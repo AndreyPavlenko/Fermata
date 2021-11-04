@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE resources [
+    <!ENTITY action_find "trova">
+    <!ENTITY action_open "apri">
+    <!ENTITY action_pause "pausa">
+    <!ENTITY action_stop "stop">
+    <!ENTITY action_play "riproduci">
+    <!ENTITY location_folders "cartelle?">
+    <!ENTITY location_favorites "preferiti?">
+    <!ENTITY location_playlists "playlist?">
+    <!ENTITY location_tv "tv">
+    <!ENTITY location_youtube "youtube">
+    <!ENTITY location_browser "browser">
+    <!ENTITY time_unit_second "secondi?">
+    <!ENTITY time_unit_minute "minuti?">
+    <!ENTITY time_unit_hour "ore?">
+    ]>
+
+<resources>
+    <string name="vcmd_action_find">&action_find;</string>
+    <string name="vcmd_action_open">&action_open;</string>
+    <string name="vcmd_action_pause">&action_pause;</string>
+    <string name="vcmd_action_stop">&action_stop;</string>
+    <string name="vcmd_action_play">(&action_play;)|avvia</string>
+    <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
+    <string name="vcmd_action_sub_on">(((turn|switch) on)|show) subtitles?</string>
+    <string name="vcmd_action_sub_off">(((turn|switch) off)|hide) subtitles?</string>
+    <string name="vcmd_action_sub_change">change subtitles?</string>
+    <string name="vcmd_action_audio_change">change audio[ -]?stream</string>
+    <string name="vcmd_location_folders">&location_folders;</string>
+    <string name="vcmd_location_favorites">&location_favorites;</string>
+    <string name="vcmd_location_playlists">&location_playlists;</string>
+    <string name="vcmd_location_tv">&location_tv;</string>
+    <string name="vcmd_location_youtube">&location_youtube;</string>
+    <string name="vcmd_location_browser">&location_browser;</string>
+    <string name="vcmd_time_unit_second">&time_unit_second;</string>
+    <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
+    <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
+    <string name="vcmd_nums">zero one two three four five six seven eight nine</string>
+
+    <string name="vcmd_cur_track">(show )?current track</string>
+    <string name="vcmd_ff">(skip|fast)[- ]forward (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(skip back)|rewind (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((in )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
+</resources>
