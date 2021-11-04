@@ -26,8 +26,8 @@
     <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
     <string name="vcmd_action_sub_on">(((turn|switch) on)|show) subtitles?</string>
     <string name="vcmd_action_sub_off">(((turn|switch) off)|hide) subtitles?</string>
-    <string name="vcmd_action_sub_change">change subtitles?</string>
-    <string name="vcmd_action_audio_change">change audio[ -]?stream</string>
+    <string name="vcmd_action_sub_change">cambia sottotitoli?</string>
+    <string name="vcmd_action_audio_change">cambia audio[ -]?stream</string>
     <string name="vcmd_location_folders">&location_folders;</string>
     <string name="vcmd_location_favorites">&location_favorites;</string>
     <string name="vcmd_location_playlists">&location_playlists;</string>
@@ -37,7 +37,7 @@
     <string name="vcmd_time_unit_second">&time_unit_second;</string>
     <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
     <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
-    <string name="vcmd_nums">zero one two three four five six seven eight nine</string>
+    <string name="vcmd_nums">zero uno due tre quattro cinque sei sette otto nove</string>
 
     <string name="vcmd_cur_track">(show )?current track</string>
     <string name="vcmd_ff">(skip|fast)[- ]forward (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
