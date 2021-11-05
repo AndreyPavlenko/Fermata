@@ -81,7 +81,7 @@
     <string name="voice_search">Ricerca vocale</string>
     <string name="voice_control">Controllo vocale</string>
     <string name="voice_control_fb">Pulsante fluttuante</string>
-    <string name="voice_control_menu">Pulsante \'Menu\' o \'M\'</string>
+    <string name="voice_control_menu">Pulsante \'Menù\' o \'M\'</string>
     <string name="voice_control_next">Pulsante multimediale \'Vai al successivo\'</string>
     <string name="voice_control_prev">Pulsante multimediale \'Vai al precedente\'</string>
     <string name="voice_control_sub_long">Attiva il controllo vocale con clic lungo</string>
@@ -109,18 +109,18 @@
 
     <string name="video">Video</string>
     <string name="video_settings">Impostazionni video</string>
-    <string name="video_scaling">Ridimensionamento video</string>
+    <string name="video_scaling">Ridimensiona video</string>
     <string name="video_scaling_best">Adatta</string>
-    <string name="video_scaling_fill">Riempi schermo</string>
-    <string name="video_scaling_orig">Dimensione originale</string>
+    <string name="video_scaling_fill">Riempi</string>
+    <string name="video_scaling_orig">Originale</string>
     <string name="video_scaling_4" translatable="false">4x3</string>
     <string name="video_scaling_16" translatable="false">16x9</string>
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Ritardo audio</string>
-    <string name="preferred_audio_lang">Lingue preferite per il flusso audio</string>
+    <string name="preferred_audio_lang">Lingue preferite per l\'audio</string>
     <string name="preferred_audio_key">Preferisci il flusso audio con parole chiave</string>
-    <string name="select_audio_stream">Seleziona il flusso audio</string>
+    <string name="select_audio_stream">Seleziona lingua audio</string>
 
     <string name="subtitles">Sottotitoli</string>
     <string name="subtitle_delay">Ritardo sottotitoli</string>
@@ -210,10 +210,10 @@
     <string name="delete_file_question">Vuoi davvero eliminare il file?</string>
     <string name="delete_file_failed">Impossibile eliminare il file %1$s</string>
     <string name="loading">Caricamento…</string>
-    <string name="press_back_again">Premi di nuovo il pulsante Indietro per uscire</string>
-    <string name="press_x_again">Premi di nuovo il pulsante X per uscire</string>
+    <string name="press_back_again">Premi di nuovo Indietro per uscire</string>
+    <string name="press_x_again">Premi di nuovo X per uscire</string>
     <string name="please_restart_app">Riavvia l\'app</string>
-    <string name="use_phone_to_grant_perm">Utilizza il telefono per concedere le autorizzazioni richieste</string>
+    <string name="use_phone_to_grant_perm">Concedi le autorizzazioni richieste dal telefono</string>
 
     <string name="vfs_content">Contenuto</string>
     <string name="vfs_file_system">File system</string>
@@ -251,7 +251,7 @@
 
     <string name="donate">Caffè per lo sviluppatore</string>
     <string name="donate_text">Se ti piace l\'app, valuta di offrirmi un caffè</string>
-    <string name="use_phone_for_donation">Utilizza il telefono per acquistare un caffè</string>
+    <string name="use_phone_for_donation">Acquista un caffè dal telefono</string>
 
     <string name="timer">Timer</string>
     <string name="hours">Ore</string>
@@ -268,12 +268,12 @@
     <string name="video_brightness">Luminosità video</string>
     <string name="change_brightness_sub">La luminosità può essere modificata anche facendo scorrere due dita</string>
     <string name="watched_threshold">Soglia visto</string>
-    <string name="watched_threshold_sub">Video contrassegnato come visto, se è stata superata questa percentuale</string>
+    <string name="watched_threshold_sub">Contrassegna video come visto, se è stata superata questa percentuale</string>
 
     <string name="other">Altro</string>
     <string name="check_updates">Controlla aggiornamenti all\'avvio</string>
     <string name="update">Aggiorna</string>
-    <string name="update_question">Nuova versione %1$s disponibile.\nVuoi aggiornare l\'app?</string>
+    <string name="update_question">Nuova versione disponibile: %1$s.\nVuoi aggiornare l\'app?</string>
 
     <string name="about">Info</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
