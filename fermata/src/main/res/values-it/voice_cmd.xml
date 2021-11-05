@@ -24,10 +24,10 @@
     <string name="vcmd_action_stop">&action_stop;</string>
     <string name="vcmd_action_play">(&action_play;)|avvia</string>
     <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
-    <string name="vcmd_action_sub_on">(((turn|switch) on)|show) subtitles?</string>
-    <string name="vcmd_action_sub_off">(((turn|switch) off)|hide) subtitles?</string>
+    <string name="vcmd_action_sub_on">((abilita|attiva)|mostra) sottotitoli?</string>
+    <string name="vcmd_action_sub_off">((disabilita|disattiva)|nascondi) sottotitoli?</string>
     <string name="vcmd_action_sub_change">cambia sottotitoli?</string>
-    <string name="vcmd_action_audio_change">cambia audio[ -]?stream</string>
+    <string name="vcmd_action_audio_change">cambia lingua audio[ -]?</string>
     <string name="vcmd_location_folders">&location_folders;</string>
     <string name="vcmd_location_favorites">&location_favorites;</string>
     <string name="vcmd_location_playlists">&location_playlists;</string>
@@ -39,8 +39,8 @@
     <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
     <string name="vcmd_nums">zero uno due tre quattro cinque sei sette otto nove</string>
 
-    <string name="vcmd_cur_track">(show )?current track</string>
-    <string name="vcmd_ff">(skip|fast)[- ]forward (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
-    <string name="vcmd_rw">(skip back)|rewind (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_cur_track">(vai a )?traccia corrente</string>
+    <string name="vcmd_ff">salta[- ]avanti (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(salta indietro)|indietro (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
     <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((in )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
 </resources>
