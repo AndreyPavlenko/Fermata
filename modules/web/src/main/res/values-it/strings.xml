@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="force_dark">Forza modalità scura, se supportata</string>
+    <string name="user_agent" translatable="false">User-Agent</string>
+    <string name="user_agent_desktop">User-Agent - versione desktop</string>
+    <string name="desktop_version">Versione desktop</string>
+    <string name="full_screen">Schermo intero</string>
+    <string name="full_screen_exit">Esci da schermo intero</string>
+    <string name="url" translatable="false">URL</string>
+    <string name="video_scaling_fill_proportional">Estendi</string>
+    <string name="video_quality">Qualità video</string>
+    <string name="open_on_start">Apri all\'avvio</string>
+    <string name="try_to_skip_ad">Prova a saltare gli annunci</string>
+</resources>
