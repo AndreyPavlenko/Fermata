@@ -74,7 +74,7 @@
     <string name="engine_installed">Motore multimediale installato: %1$s</string>
     <string name="engine_uninstalled">Motore multimediale disinstallato: %1$s</string>
 
-    <string name="preferred_media_scanner">Scanner multimediale preferito</string>
+    <string name="preferred_media_scanner">Scanner multimediale</string>
     <string name="preferred_media_scanner_default">Predefinito</string>
     <string name="preferred_media_scanner_system">Di sistema</string>
 
@@ -82,10 +82,10 @@
     <string name="voice_control">Controllo vocale</string>
     <string name="voice_control_fb">Pulsante fluttuante</string>
     <string name="voice_control_menu">Pulsante \'Menù\' o \'M\'</string>
-    <string name="voice_control_next">Pulsante multimediale \'Vai al successivo\'</string>
-    <string name="voice_control_prev">Pulsante multimediale \'Vai al precedente\'</string>
-    <string name="voice_control_sub_long">Attiva il controllo vocale con clic lungo</string>
-    <string name="voice_control_sub_double">Attiva il controllo vocale con doppio clic</string>
+    <string name="voice_control_next">Pulsante multimediale \'Successivo\'</string>
+    <string name="voice_control_prev">Pulsante multimediale \'Precedente\'</string>
+    <string name="voice_control_sub_long">Attiva controllo vocale con clic lungo</string>
+    <string name="voice_control_sub_double">Attiva controllo vocale con doppio clic</string>
     <string name="voice_control_subst">Sostituzione comandi</string>
     <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
     <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
@@ -108,10 +108,10 @@
     <string name="apply_to">Applica a</string>
 
     <string name="video">Video</string>
-    <string name="video_settings">Impostazionni video</string>
+    <string name="video_settings">Impostazioni video</string>
     <string name="video_scaling">Ridimensiona video</string>
     <string name="video_scaling_best">Adatta</string>
-    <string name="video_scaling_fill">Riempi</string>
+    <string name="video_scaling_fill">Ritaglia</string>
     <string name="video_scaling_orig">Originale</string>
     <string name="video_scaling_4" translatable="false">4x3</string>
     <string name="video_scaling_16" translatable="false">16x9</string>
@@ -179,7 +179,7 @@
     <string name="favorites_remove">Rimuovi dai preferiti</string>
     <string name="mark_watched">Contrassegna come visto</string>
     <string name="mark_unwatched">Contrassegna come non visto</string>
-    <string name="preferred_media_engine">Motore multimediale preferito</string>
+    <string name="preferred_media_engine">Motore multimediale</string>
     <string name="by_default">Predefinito</string>
 
     <string name="playlist_add">Aggiungi a playlist</string>
