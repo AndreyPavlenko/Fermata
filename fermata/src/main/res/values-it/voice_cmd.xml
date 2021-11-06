@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!DOCTYPE resources [
-    <!ENTITY action_find "trova">
+    <!ENTITY action_find "trova|cerca">
     <!ENTITY action_open "apri">
     <!ENTITY action_pause "pausa">
     <!ENTITY action_stop "stop">
-    <!ENTITY action_play "riproduci">
-    <!ENTITY location_folders "cartelle?">
+    <!ENTITY action_play "riproduci|vai a">
+    <!ENTITY location_folders "cartell(a|e)?">
     <!ENTITY location_favorites "preferiti?">
     <!ENTITY location_playlists "playlist?">
     <!ENTITY location_tv "tv">
     <!ENTITY location_youtube "youtube">
     <!ENTITY location_browser "browser">
-    <!ENTITY time_unit_second "secondi?">
-    <!ENTITY time_unit_minute "minuti?">
-    <!ENTITY time_unit_hour "ore?">
+    <!ENTITY time_unit_second "second(o|i)?">
+    <!ENTITY time_unit_minute "minut(o|i)?">
+    <!ENTITY time_unit_hour "or(a|e)?">
     ]>
 
 <resources>
@@ -24,10 +24,10 @@
     <string name="vcmd_action_stop">&action_stop;</string>
     <string name="vcmd_action_play">(&action_play;)|avvia</string>
     <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
-    <string name="vcmd_action_sub_on">((abilita|attiva)|mostra) sottotitoli?</string>
-    <string name="vcmd_action_sub_off">((disabilita|disattiva)|nascondi) sottotitoli?</string>
+    <string name="vcmd_action_sub_on">((abilita|attiva)|mostra|visualizza) sottotitoli?</string>
+    <string name="vcmd_action_sub_off">((disabilita|disattiva)|nascondi|togli) sottotitoli?</string>
     <string name="vcmd_action_sub_change">cambia sottotitoli?</string>
-    <string name="vcmd_action_audio_change">cambia lingua audio[ -]?</string>
+    <string name="vcmd_action_audio_change">cambia lingua (audio)[ -]?</string>
     <string name="vcmd_location_folders">&location_folders;</string>
     <string name="vcmd_location_favorites">&location_favorites;</string>
     <string name="vcmd_location_playlists">&location_playlists;</string>
