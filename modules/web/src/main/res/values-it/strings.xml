@@ -2,7 +2,7 @@
 <resources>
     <string name="force_dark">Forza modalità scura, se supportata</string>
     <string name="user_agent" translatable="false">User-Agent</string>
-    <string name="user_agent_desktop">User-Agent - versione desktop</string>
+    <string name="user_agent_desktop">User-Agent - Versione desktop</string>
     <string name="desktop_version">Versione desktop</string>
     <string name="full_screen">Schermo intero</string>
     <string name="full_screen_exit">Esci da schermo intero</string>
