@@ -4,22 +4,15 @@
     <string name="sub_gr">Gruppi: %1$d</string>
     <string name="sub_ch_gr">Canali: %1$d. Gruppi: %2$d.</string>
     <string name="add_tv_source">Aggiungi sorgente M3U IPTV</string>
-    <string name="epg" translatable="false">EPG</string>
-    <string name="epg_url" translatable="false">XMLTV URL</string>
     <string name="epg_time_shift">Time shift EPG (ore)</string>
     <string name="logo">Logo canali</string>
     <string name="logo_location">Posizione</string>
-    <string name="logo_location_hint">Cartella o http(s) base URL</string>
+    <string name="logo_location_hint">Cartella o http(s)</string>
     <string name="logo_prefer_epg">Preferisci logo da EPG</string>
-    <string name="catchup" translatable="false">Catchup</string>
     <string name="catchup_query">Formato richiesta</string>
     <string name="catchup_type">Tipo catchup</string>
     <string name="catchup_type_cur">Tipo catchup corrente: %1$s</string>
     <string name="catchup_type_auto">Auto</string>
-    <string name="catchup_type_append" translatable="false">Append</string>
-    <string name="catchup_type_default" translatable="false">Default</string>
-    <string name="catchup_type_shift" translatable="false">Shift</string>
-    <string name="catchup_type_flussonic" translatable="false">Flussonic</string>
     <string name="catchup_days">Numero di giorni</string>
     <string name="connection_settings">Impostazioni connessione</string>
 
