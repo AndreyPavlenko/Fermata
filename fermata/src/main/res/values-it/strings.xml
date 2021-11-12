@@ -1,22 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile" translatable="false">Fermata</string>
-    <string name="app_name_auto" translatable="false">Fermata Auto</string>
-    <string name="media_service_name" translatable="false">Fermata</string>
-    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
-    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
-    <string name="engine_vlc_name" translatable="false">VLC</string>
-
-    <string name="module_name_gdrive" translatable="false">Google Drive</string>
-    <string name="module_name_sftp" translatable="false">SFTP</string>
-    <string name="module_name_smb" translatable="false">SMB</string>
-    <string name="module_name_web" translatable="false">Web</string>
-    <string name="module_name_tv" translatable="false">TV</string>
-
-    <string name="addons">Addons</string>
+    <string name="addons">Addon</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web browser</string>
-    <string name="addon_name_youtube" translatable="false">YouTube</string>
 
     <string name="interface_prefs">Interfaccia</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -88,7 +74,6 @@
     <string name="voice_control_sub_double">Attiva controllo vocale con doppio clic</string>
     <string name="voice_control_subst">Sostituzione comandi</string>
     <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
-    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
 
     <string name="module_installation">Installazione modulo: %1$s</string>
     <string name="install_pending">Installazione in attesa: %1$s</string>
@@ -113,8 +98,6 @@
     <string name="video_scaling_best">Adatta</string>
     <string name="video_scaling_fill">Ritaglia</string>
     <string name="video_scaling_orig">Originale</string>
-    <string name="video_scaling_4" translatable="false">4x3</string>
-    <string name="video_scaling_16" translatable="false">16x9</string>
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Ritardo audio</string>
@@ -129,7 +112,6 @@
     <string name="preferred_sub_key">Preferisci i sottotitoli con parole chiave</string>
     <string name="select_subtitles">Seleziona sottotitoli</string>
 
-    <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -218,13 +200,9 @@
     <string name="vfs_content">Contenuto</string>
     <string name="vfs_file_system">File system</string>
     <string name="vfs_gdrive">Google drive</string>
-    <string name="vfs_sftp" translatable="false">SFTP</string>
-    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">M3U playlist</string>
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Posizione</string>
     <string name="m3u_playlist_location_hint">URL file o http(s)</string>
-    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_video">Playlist video</string>
 
     <string name="eq_manual">Manuale</string>
@@ -249,7 +227,7 @@
     <string name="private_key">Chiave privata</string>
     <string name="private_key_pass">Password chiave privata</string>
 
-    <string name="donate">Caffè per lo sviluppatore</string>
+    <string name="donate">Caffè per il dev</string>
     <string name="donate_text">Se ti piace l\'app, valuta di offrirmi un caffè</string>
     <string name="use_phone_for_donation">Acquista un caffè dal telefono</string>
 
@@ -281,7 +259,7 @@
 		open source con un\'interfaccia semplice ed intuitiva.</p>
         <p><b>Autore:</b> Andrey Pavlenko</p>
         <p><b>Versione:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        <p><b>Sito web:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Impossibile riprodurre %s</string>
