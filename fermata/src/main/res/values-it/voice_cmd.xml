@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!--These characters are used in regular expressions:
+() - capturing group
+| - OR
+? - zero or one
+For example:
+"(show )?current track" - this means that the word show is optional, i.e. both phrases "show current track" and "current track" match the regular expression.
+"(((turn|switch) on)|show) subtitles?" - the following phrases match:
+turn on subtitles
+switch on subtitles
+show subtitles
+Character ? means, that the letter 's' is optional, i.e. "show subtitle" also matches.
+
+(?<A>\b(&action_find;)|(&action_play;)|(&action_open;)\b)? ?((in )?(?<L>\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\b))? ?(?<Q>.+)
+
+This expression consists of 3 named groups: A - action, L - location, Q - query. A and L are optional (due to the '?' character), Q - any string, matching ".+", where '.' - any character, '+' - one or multiple. I.e. ".+" matches any non-empty string.
+
+A can be one of: find|play|open.
+L - one of: folders|favorites|playlists|tv|youtube|browser-->
+
 <!DOCTYPE resources [
     <!ENTITY action_find "trova|cerca">
     <!ENTITY action_open "apri">
@@ -7,8 +26,8 @@
     <!ENTITY action_stop "stop">
     <!ENTITY action_play "riproduci|vai a">
     <!ENTITY location_folders "cartell(a|e)?">
-    <!ENTITY location_favorites "preferiti?">
-    <!ENTITY location_playlists "playlist?">
+    <!ENTITY location_favorites "preferit(o|i)">
+    <!ENTITY location_playlists "playlist">
     <!ENTITY location_tv "tv">
     <!ENTITY location_youtube "youtube">
     <!ENTITY location_browser "browser">
@@ -24,10 +43,10 @@
     <string name="vcmd_action_stop">&action_stop;</string>
     <string name="vcmd_action_play">(&action_play;)|avvia</string>
     <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
-    <string name="vcmd_action_sub_on">((abilita|attiva)|mostra|visualizza) sottotitoli?</string>
-    <string name="vcmd_action_sub_off">((disabilita|disattiva)|nascondi|togli) sottotitoli?</string>
-    <string name="vcmd_action_sub_change">cambia sottotitoli?</string>
-    <string name="vcmd_action_audio_change">cambia lingua (audio)[ -]?</string>
+    <string name="vcmd_action_sub_on">((abilita|attiva)|mostra|visualizza) sottotitol(o|i)</string>
+    <string name="vcmd_action_sub_off">((disabilita|disattiva)|nascondi|togli) sottotitol(o|i)</string>
+    <string name="vcmd_action_sub_change">cambia sottotitol(o|i)</string>
+    <string name="vcmd_action_audio_change">cambia (lingua)? (audio)[ -]?</string>
     <string name="vcmd_location_folders">&location_folders;</string>
     <string name="vcmd_location_favorites">&location_favorites;</string>
     <string name="vcmd_location_playlists">&location_playlists;</string>
@@ -40,7 +59,7 @@
     <string name="vcmd_nums">zero uno due tre quattro cinque sei sette otto nove</string>
 
     <string name="vcmd_cur_track">(vai a )?traccia corrente</string>
-    <string name="vcmd_ff">(salta|vai)[- ]avanti (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
-    <string name="vcmd_rw">(salta indietro|vai indietro)|indietro (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_ff">(salta|vai)?[- ]avanti (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(salta|vai)? ?indietro (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
     <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((in )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
 </resources>
