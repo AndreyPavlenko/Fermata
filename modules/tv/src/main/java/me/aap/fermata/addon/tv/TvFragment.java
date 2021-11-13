@@ -110,7 +110,7 @@ public class TvFragment extends MediaLibFragment {
 					UiUtils.showAlert(getContext(), err.getLocalizedMessage());
 				}
 				getMainActivity().showFragment(getFragmentId());
-				if (ok) i.refresh().thenRun(this::refresh);
+				if ((ok != null) && ok) i.refresh().thenRun(this::refresh);
 			});
 		} else if (id == me.aap.fermata.R.id.delete) {
 			TvRootItem root = getRootItem();
