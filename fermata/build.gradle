@@ -55,7 +55,7 @@ android {
 
         auto {
             dimension "version"
-            applicationIdSuffix '.auto'
+            applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
             resValue "string", "app_name", "@string/app_name_auto"
             buildConfigField "boolean", 'AUTO', 'true'
 

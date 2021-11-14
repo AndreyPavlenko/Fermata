@@ -82,7 +82,7 @@ subprojects {
                 }
                 auto {
                     dimension "version"
-                    applicationIdSuffix '.auto'
+                    applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
                 }
             }
         }

@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 
+APP_ID_SFX='.dear.google.please.dont.block'
 DIR="$(cd "$(dirname "$0")"; pwd -P)"
 DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
@@ -29,7 +30,7 @@ build_apk() {
         abi='armeabi-v7a'
     fi
 
-    ./gradlew clean fermata:bundleRelease -PABI=$abi
+    ./gradlew clean fermata:bundleRelease -PABI=$abi -PAPP_ID_SFX=$APP_ID_SFX
     bundletool_universal ./fermata/build/outputs/bundle/autoRelease/fermata-*-release.aab -universal-$sfx -release
     mv ./fermata/build/outputs/bundle/autoRelease/fermata-*.apk "$DEST_DIR"
 }
@@ -47,7 +48,7 @@ if [ "$1" = '-i' ] || [ "$1" = '-bi' ]; then
     return 0
 fi
 
-./gradlew -p control assembleRelease
+./gradlew -p control assembleRelease -PAPP_ID_SFX=$APP_ID_SFX
 mv ./control/build/outputs/apk/release/fermata-auto-control-*-release.apk "$DEST_DIR"
 
 build_apk 'arm'

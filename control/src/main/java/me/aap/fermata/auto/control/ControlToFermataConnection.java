@@ -160,7 +160,7 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 
 	public void connect() {
 		Intent i = new Intent(ACTION_CONTROL_SERVICE);
-		String pkg = BuildConfig.DEBUG ? "me.aap.fermata.auto.debug" : "me.aap.fermata.auto";
+		String pkg = service.getPackageName().replace(".control", "");
 		i.setComponent(new ComponentName(pkg, "me.aap.fermata.media.service.FermataMediaService"));
 		service.bindService(i, this, Context.BIND_AUTO_CREATE);
 	}

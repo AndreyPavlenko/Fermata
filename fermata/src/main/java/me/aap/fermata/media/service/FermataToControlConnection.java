@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNull;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -24,7 +23,6 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 class FermataToControlConnection extends ControlServiceConnection {
-	static final String PKG_ID = "me.aap.fermata.auto.control";
 
 	FermataToControlConnection(FermataMediaService service) {
 		super(service);
@@ -32,6 +30,10 @@ class FermataToControlConnection extends ControlServiceConnection {
 
 	public FermataMediaService getService() {
 		return (FermataMediaService) service;
+	}
+
+	public static String getPkgId(Context ctx) {
+		return ctx.getPackageName().replace("me.aap.fermata.auto", "me.aap.fermata.auto.control");
 	}
 
 	@Override
@@ -125,7 +127,8 @@ class FermataToControlConnection extends ControlServiceConnection {
 	public void connect() {
 		try {
 			Intent i = new Intent(ACTION_CONTROL_SERVICE);
-			i.setComponent(new ComponentName(PKG_ID, "me.aap.fermata.auto.control.FermataMediaServiceControl"));
+			String pkg = getPkgId(service);
+			i.setComponent(new ComponentName(pkg, "me.aap.fermata.auto.control.FermataMediaServiceControl"));
 			getService().bindService(i, this, Context.BIND_AUTO_CREATE);
 		} catch (Exception ex) {
 			Log.d(ex, "Failed to connect to remote service");

@@ -156,7 +156,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 	}
 
 	private IBinder connectToControl() {
-		if (!isPackageInstalled(this, FermataToControlConnection.PKG_ID)) return null;
+		String pkg = FermataToControlConnection.getPkgId(this);
+		if (!isPackageInstalled(this, pkg)) return null;
 
 		if (controlConnection == null) {
 			controlConnection = new FermataToControlConnection(this);

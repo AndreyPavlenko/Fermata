@@ -1,6 +1,7 @@
 android {
     defaultConfig {
         applicationId "me.aap.fermata.auto.control"
+        applicationIdSuffix project.getProperties().getOrDefault('APP_ID_SFX', '').toString()
         versionCode VERSION_CODE
         versionName VERSION_NAME
         setProperty("archivesBaseName", "fermata-auto-control-$versionName")
@@ -40,5 +41,5 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.media:media:1.1.0'
+    implementation 'androidx.media:media:1.4.3'
 }
