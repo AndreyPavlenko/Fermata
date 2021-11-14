@@ -545,7 +545,8 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.title = R.string.theme;
 			o.subtitle = R.string.theme_sub;
 			o.formatSubtitle = true;
-			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night, R.string.theme_black};
+			o.values = new int[]{R.string.theme_dark, R.string.theme_light, R.string.theme_day_night,
+					R.string.theme_black, R.string.theme_star_wars};
 		});
 		ps.addBooleanPref(o -> {
 			o.store = a.getPrefs();

@@ -26,6 +26,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int THEME_LIGHT = 1;
 	int THEME_DAY_NIGHT = 2;
 	int THEME_BLACK = 3;
+	int THEME_STAR_WARS = 4;
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);

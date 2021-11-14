@@ -314,6 +314,9 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			case MainActivityPrefs.THEME_BLACK:
 				a.setTheme(R.style.AppTheme_Black);
 				break;
+			case MainActivityPrefs.THEME_STAR_WARS:
+				a.setTheme(R.style.AppTheme_BlackStarWars);
+				break;
 		}
 	}
 
