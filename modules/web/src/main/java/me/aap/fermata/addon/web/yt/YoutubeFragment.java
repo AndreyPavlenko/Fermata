@@ -1,6 +1,5 @@
 package me.aap.fermata.addon.web.yt;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,17 +46,17 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		YoutubeAddon addon = AddonManager.get().getAddon(YoutubeAddon.class);
 		if (addon == null) return;
 
-		Context ctx = view.getContext();
-		MainActivityDelegate a = MainActivityDelegate.get(ctx);
-		YoutubeWebView webView = a.findViewById(R.id.ytWebView);
-		VideoView videoView = a.findViewById(R.id.ytVideoView);
-		YoutubeWebClient webClient = new YoutubeWebClient();
-		YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
-		webView.init(addon, webClient, chromeClient);
-		registerListeners(a);
-		String url = loadUrl;
-		loadUrl = DEFAULT_URL;
-		webView.loadUrl(url);
+		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(a -> {
+			YoutubeWebView webView = a.findViewById(R.id.ytWebView);
+			VideoView videoView = a.findViewById(R.id.ytVideoView);
+			YoutubeWebClient webClient = new YoutubeWebClient();
+			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
+			webView.init(addon, webClient, chromeClient);
+			registerListeners(a);
+			String url = loadUrl;
+			loadUrl = DEFAULT_URL;
+			webView.loadUrl(url);
+		});
 	}
 
 

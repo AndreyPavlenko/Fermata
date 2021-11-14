@@ -88,24 +88,25 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
 		super.onViewCreated(view, state);
 		adapter = createAdapter();
-		MainActivityDelegate a = getActivityDelegate();
-		a.addBroadcastListener(this);
-		a.getPrefs().addBroadcastListener(this);
+		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(a -> {
+			a.addBroadcastListener(this);
+			a.getPrefs().addBroadcastListener(this);
 
-		RecyclerView listView = view.findViewById(R.id.prefs_list_view);
-		listView.setHasFixedSize(true);
-		listView.setLayoutManager(new LinearLayoutManager(getContext()));
-		listView.setAdapter(adapter);
+			RecyclerView listView = view.findViewById(R.id.prefs_list_view);
+			listView.setHasFixedSize(true);
+			listView.setLayoutManager(new LinearLayoutManager(getContext()));
+			listView.setAdapter(adapter);
 
-		if (state != null) {
-			PreferenceSet p = adapter.getPreferenceSet().find(state.getInt("id", ID_NULL));
-			if (p != null) adapter.setPreferenceSet(p);
-		}
+			if (state != null) {
+				PreferenceSet p = adapter.getPreferenceSet().find(state.getInt("id", ID_NULL));
+				if (p != null) adapter.setPreferenceSet(p);
+			}
+		});
 	}
 
 	@Override
 	public void onDestroyView() {
-		cleanUp(getActivityDelegate());
+		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(this::cleanUp);
 		super.onDestroyView();
 	}
 
