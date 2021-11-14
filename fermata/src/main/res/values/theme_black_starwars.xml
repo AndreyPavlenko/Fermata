@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+<!--TEST THEME "Black Star Wars" from Vladi69-->
+
+    <style name="AppTheme.BlackStarWars">
+
+        <item name="android:colorBackground">#000000</item>
+
+        <!-- Status bar-->
+        <item name="colorPrimaryDark">#000000</item>
+
+        <!-- Tool/Nav bars -->
+        <item name="colorPrimary">#000000</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:textColorPrimary">?attr/colorOnPrimary</item>
+
+        <!-- List/Media items -->
+        <item name="colorSecondary">#000000</item>
+        <item name="colorOnSecondary">#6A6A6A</item>
+        <item name="android:textColorSecondary">#FFFFFF</item>
+        <item name="boxStrokeColor">#6A6A6A</item>
+
+        <!-- Active media item -->
+        <item name="alpha">0.7</item>
+        <item name="colorSecondaryVariant">#6A6A6A</item>
+        <item name="android:textColorTertiary">#FFFFFF</item>
+
+        <!-- Popup menu -->
+        <item name="colorSurface">#000000</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorPrimarySurface">#000000</item>
+        <item name="colorOnPrimarySurface">#FFFFFF</item>
+
+        <item name="colorAccent">#FF2837</item>
+        <item name="rippleColor">#6A6A6A</item>
+
+        <item name="android:textColorHint">#6A6A6A</item>
+
+        <item name="colorControlNormal">#FFFFFF</item>
+        <item name="colorControlActivated">?attr/colorOnSecondary</item>
+
+    </style>
+
+</resources>
