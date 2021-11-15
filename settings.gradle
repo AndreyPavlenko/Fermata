@@ -2,6 +2,7 @@ rootProject.name = 'Fermata Music Player'
 gradle.ext.modules = []
 gradle.ext.addonInfo = new StringBuilder(512)
 gradle.ext.localProps = new Properties()
+gradle.ext.enableGoogleServices = file('fermata/google-services.json').isFile()
 def localPropsFile = file('local.properties')
 if (localPropsFile.isFile()) gradle.ext.localProps.load(localPropsFile.newDataInputStream())
 def exoRoot = file('depends/ExoPlayer')
@@ -20,6 +21,7 @@ project(':utils').projectDir = new File('depends/utils')
 new File('modules').eachDir {
     def name = ':' + it.name
     if ((':exoplayer' == name) && !exoRoot.isDirectory()) return
+    if ((':gdrive' == name) && !gradle.ext.enableGoogleServices) return
     gradle.ext.modules.add(name)
     include name
     project(name).projectDir = it
