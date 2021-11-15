@@ -26,7 +26,7 @@
         <item name="android:textColorTertiary">#FFFFFF</item>
 
         <!-- Popup menu -->
-        <item name="colorSurface">#000000</item>
+        <item name="colorSurface">#242424</item>
         <item name="colorOnSurface">#FFFFFF</item>
         <item name="colorPrimarySurface">#000000</item>
         <item name="colorOnPrimarySurface">#FFFFFF</item>
