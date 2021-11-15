@@ -18,7 +18,7 @@
         <item name="colorSecondary">#000000</item>
         <item name="colorOnSecondary">#6A6A6A</item>
         <item name="android:textColorSecondary">#FFFFFF</item>
-        <item name="boxStrokeColor">#6A6A6A</item>
+        <item name="boxStrokeColor">#FFFFFF</item>
 
         <!-- Active media item -->
         <item name="alpha">0.7</item>
@@ -26,7 +26,7 @@
         <item name="android:textColorTertiary">#FFFFFF</item>
 
         <!-- Popup menu -->
-        <item name="colorSurface">#000000</item>
+        <item name="colorSurface">#242424</item>
         <item name="colorOnSurface">#FFFFFF</item>
         <item name="colorPrimarySurface">#000000</item>
         <item name="colorOnPrimarySurface">#FFFFFF</item>
