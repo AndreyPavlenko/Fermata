@@ -139,11 +139,13 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 		}
 
 		IMedia media = source.getMedia();
+		long off = source.getItem().getOffset();
 		this.source = source.prepare();
 		playing = false;
 		pendingPosition = -1;
 		player.setMedia(media);
 		source.release();
+		if (off > 0) player.setTime(off);
 		listener.onEnginePrepared(this);
 	}
 

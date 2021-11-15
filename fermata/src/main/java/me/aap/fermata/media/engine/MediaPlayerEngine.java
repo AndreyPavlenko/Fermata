@@ -1,5 +1,8 @@
 package me.aap.fermata.media.engine;
 
+import static android.content.ContentResolver.SCHEME_CONTENT;
+import static me.aap.utils.async.Completed.completed;
+
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
@@ -15,9 +18,6 @@ import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
-
-import static android.content.ContentResolver.SCHEME_CONTENT;
-import static me.aap.utils.async.Completed.completed;
 
 /**
  * @author Andrey Pavlenko
@@ -178,6 +178,9 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void onPrepared(MediaPlayer mp) {
+		if (source == null) return;
+		long off = source.getOffset();
+		if (off > 0) player.seekTo((int) off);
 		listener.onEnginePrepared(this);
 	}
 

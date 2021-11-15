@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
@@ -191,6 +190,8 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 			}
 			if (preparing) {
 				preparing = false;
+				long off = source.getOffset();
+				if (off > 0) player.seekTo(off);
 				listener.onEnginePrepared(this);
 			}
 		} else if (playbackState == Player.STATE_ENDED) {
