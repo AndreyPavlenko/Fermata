@@ -109,7 +109,7 @@ public class M3uItem extends BrowsableItemBase {
 
 						if ((++i != len) && (l.charAt(i) == '"')) {
 							off = i + 1;
-							i = l.indexOf('=', off);
+							i = l.indexOf('"', off);
 							if (i == -1) i = len;
 						} else {
 							off = i;
@@ -153,7 +153,7 @@ public class M3uItem extends BrowsableItemBase {
 
 					if (l.charAt(i) == ',') {
 						name = l.substring(i + 1);
-						continue read;
+						continue;
 					}
 
 					for (; ; ) {
