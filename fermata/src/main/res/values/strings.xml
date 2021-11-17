@@ -276,6 +276,15 @@
     <string name="check_updates">Check for updates on startup</string>
     <string name="update">Update</string>
     <string name="update_question">New version %1$s is available.\nWould you like to update the app?</string>
+    <string name="export_prefs">Export preferences to file</string>
+    <string name="export_prefs_sub">Export settings, folders, playlists etc. to file</string>
+    <string name="export_prefs_ok">Preferences have been saved in file %1$s.</string>
+    <string name="export_prefs_failed">Failed to export preferences: %1$s</string>
+    <string name="import_prefs">Import preferences from file</string>
+    <string name="import_prefs_sub">Import, previously exported, preferences from file</string>
+    <string name="import_prefs_ok">Preferences have been successfully imported.\nPlease, restart the application.</string>
+    <string name="import_prefs_failed">Failed to import preferences: %1$s</string>
+    <string name="prefs_not_found">No preferences found</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

@@ -1,8 +1,7 @@
 package me.aap.fermata.ui.fragment;
 
-import static android.content.Context.UI_MODE_SERVICE;
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
-import static android.content.res.Configuration.UI_MODE_TYPE_NORMAL;
+import static me.aap.fermata.util.Utils.isSafSupported;
 import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
 import static me.aap.fermata.vfs.FermataVfsManager.M3U_ID;
 import static me.aap.fermata.vfs.FermataVfsManager.SFTP_ID;
@@ -10,9 +9,7 @@ import static me.aap.fermata.vfs.FermataVfsManager.SMB_ID;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
-import android.app.UiModeManager;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
@@ -130,7 +127,7 @@ public class FoldersFragment extends MediaLibFragment {
 			b.setTitle(R.string.add_folder);
 			b.setSelectionHandler(this::addFolder);
 			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
-			if (isContentSupported()) b.addItem(R.id.vfs_content, R.string.vfs_content);
+			if (isSafSupported(a)) b.addItem(R.id.vfs_content, R.string.vfs_content);
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
 			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
@@ -162,16 +159,6 @@ public class FoldersFragment extends MediaLibFragment {
 		}
 
 		return false;
-	}
-
-	private boolean isContentSupported() {
-		MainActivityDelegate a = getMainActivity();
-		if (a.isCarActivity()) return false;
-		UiModeManager umm = (UiModeManager) a.getContext().getSystemService(UI_MODE_SERVICE);
-		if (umm.getCurrentModeType() != UI_MODE_TYPE_NORMAL) return false;
-		Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		Context ctx = getContext();
-		return (ctx != null) && (i.resolveActivity(ctx.getPackageManager()) != null);
 	}
 
 	private void addFolderIntent() {

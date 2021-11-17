@@ -257,6 +257,15 @@
     <string name="check_updates">Проверять наличие обновлений при старте</string>
     <string name="update">Обновление</string>
     <string name="update_question">Доступна новая версия %1$s.\nХотите обновить приложение?</string>
+    <string name="export_prefs">Экспортировать настройки в файл</string>
+    <string name="export_prefs_sub">Экспортировать настройки, папки, плейлисты и т.д. в файл</string>
+    <string name="export_prefs_ok">Настройки сохранены в файле %1$s.</string>
+    <string name="export_prefs_failed">Не удалось экспортировать настройки: %1$s</string>
+    <string name="import_prefs">Импортировать настройки из файла</string>
+    <string name="import_prefs_sub">Импортировать, ранее экспортированные, настройки из файла</string>
+    <string name="import_prefs_ok">Настройки успешно импортированы.\nПожалуйста, перезапустите приложение.</string>
+    <string name="import_prefs_failed">Не удалось импортировать настройки: %1$s</string>
+    <string name="prefs_not_found">Настройки не найдены</string>
 
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

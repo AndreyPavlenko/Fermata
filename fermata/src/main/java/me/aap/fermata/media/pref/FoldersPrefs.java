@@ -2,7 +2,6 @@ package me.aap.fermata.media.pref;
 
 import androidx.annotation.NonNull;
 
-import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Supplier;
 
 import me.aap.utils.pref.PreferenceStore;
