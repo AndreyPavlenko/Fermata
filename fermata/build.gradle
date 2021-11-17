@@ -51,6 +51,7 @@ android {
             dimension "version"
             resValue "string", "app_name", "@string/app_name_mobile"
             buildConfigField "boolean", 'AUTO', 'false'
+            buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
         }
 
         auto {
@@ -58,6 +59,7 @@ android {
             applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
             resValue "string", "app_name", "@string/app_name_auto"
             buildConfigField "boolean", 'AUTO', 'true'
+            buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
 
             dependencies {
                 implementation fileTree(dir: 'lib/auto', include: ['*.aar'])

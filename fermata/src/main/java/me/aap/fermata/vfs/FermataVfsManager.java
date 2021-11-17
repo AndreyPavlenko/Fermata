@@ -1,5 +1,6 @@
 package me.aap.fermata.vfs;
 
+import static me.aap.fermata.BuildConfig.ENABLE_GS;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.failed;
@@ -51,7 +52,7 @@ public class FermataVfsManager extends VfsManager {
 		super(filesystems());
 
 		PreferenceStore ps = FermataApplication.get().getPreferenceStore();
-		initProvider(ps, ENABLE_GDRIVE, GDRIVE_ID);
+		if (ENABLE_GS) initProvider(ps, ENABLE_GDRIVE, GDRIVE_ID);
 		initProvider(ps, ENABLE_SFTP, SFTP_ID);
 		initProvider(ps, ENABLE_SMB, SMB_ID);
 	}
@@ -59,7 +60,9 @@ public class FermataVfsManager extends VfsManager {
 	public FutureSupplier<VfsProvider> getProvider(String scheme) {
 		switch (scheme) {
 			case GDRIVE_ID:
-				return getProvider(scheme, ENABLE_GDRIVE, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
+				return ENABLE_GS
+						? getProvider(scheme, ENABLE_GDRIVE, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive)
+						: completedNull();
 			case SFTP_ID:
 				return getProvider(scheme, ENABLE_SFTP, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
 			case SMB_ID:
@@ -86,7 +89,8 @@ public class FermataVfsManager extends VfsManager {
 		p.add(GenericFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(ContentFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
 		p.add(M3uFileSystem.Provider.getInstance().createFileSystem(ps).getOrThrow());
-		addFileSystem(p, ps, ENABLE_GDRIVE, app, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
+		if (ENABLE_GS)
+			addFileSystem(p, ps, ENABLE_GDRIVE, app, GDRIVE_CLASS, GDRIVE_ID, R.string.vfs_gdrive);
 		addFileSystem(p, ps, ENABLE_SFTP, app, SFTP_CLASS, SFTP_ID, R.string.vfs_sftp);
 		addFileSystem(p, ps, ENABLE_SMB, app, SMB_CLASS, SMB_ID, R.string.vfs_smb);
 		return p;

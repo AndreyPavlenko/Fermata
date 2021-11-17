@@ -2,7 +2,8 @@ rootProject.name = 'Fermata Music Player'
 gradle.ext.modules = []
 gradle.ext.addonInfo = new StringBuilder(512)
 gradle.ext.localProps = new Properties()
-gradle.ext.enableGoogleServices = file('fermata/google-services.json').isFile()
+gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
+        && file('fermata/google-services.json').isFile()
 def localPropsFile = file('local.properties')
 if (localPropsFile.isFile()) gradle.ext.localProps.load(localPropsFile.newDataInputStream())
 def exoRoot = file('depends/ExoPlayer')

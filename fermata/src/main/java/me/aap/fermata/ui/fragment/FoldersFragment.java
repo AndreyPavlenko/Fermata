@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.fragment;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+import static me.aap.fermata.BuildConfig.ENABLE_GS;
 import static me.aap.fermata.util.Utils.isSafSupported;
 import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
 import static me.aap.fermata.vfs.FermataVfsManager.M3U_ID;
@@ -130,7 +131,7 @@ public class FoldersFragment extends MediaLibFragment {
 			if (isSafSupported(a)) b.addItem(R.id.vfs_content, R.string.vfs_content);
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
-			b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
+			if (ENABLE_GS) b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
 			b.addItem(R.id.m3u_playlist, R.string.m3u_playlist);
 		});
 	}
@@ -144,7 +145,7 @@ public class FoldersFragment extends MediaLibFragment {
 		} else if (itemId == R.id.vfs_content) {
 			addFolderIntent();
 			return true;
-		} else if (itemId == R.id.vfs_gdrive) {
+		} else if (ENABLE_GS && (itemId == R.id.vfs_gdrive)) {
 			addFolderVfs(GDRIVE_ID, R.string.vfs_gdrive);
 			return true;
 		} else if (itemId == R.id.vfs_sftp) {

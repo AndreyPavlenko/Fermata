@@ -5,6 +5,7 @@ APP_ID_SFX='.dear.google.please.dont.block'
 DIR="$(cd "$(dirname "$0")"; pwd -P)"
 DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
+export NO_GS=true
 
 bundletool_universal() {
     local AAB="$1"
