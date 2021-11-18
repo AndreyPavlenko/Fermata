@@ -41,7 +41,7 @@ L - one of: folders|favorites|playlists|tv|youtube|browser-->
     <string name="vcmd_action_open">&action_open;</string>
     <string name="vcmd_action_pause">&action_pause;</string>
     <string name="vcmd_action_stop">&action_stop;</string>
-    <string name="vcmd_action_play">(&action_play;)</string>
+    <string name="vcmd_action_play">(&action_play;)|avvia</string>
     <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
     <string name="vcmd_action_sub_on">(abilita|attiva|mostra|visualizza) sottotitol(o|i)</string>
     <string name="vcmd_action_sub_off">(disabilita|disattiva|nascondi|togli) sottotitol(o|i)</string>
