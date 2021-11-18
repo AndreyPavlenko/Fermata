@@ -272,4 +272,13 @@
     <string name="err_failed_install_module">Impossibile installare modulo: %1$s</string>
     <string name="err_failed_to_download">Impossibile scaricare %1$s</string>
     <string name="err_no_audio_record_perm">Autorizzazione registrazione audio non concessa</string>
+    <string name="export_prefs">Esporta le preferenze su file</string>
+    <string name="export_prefs_sub">Esporta impostazioni, cartelle, playlist etc. su file</string>
+    <string name="export_prefs_ok">Preferenze salvate nel file %1$s.</string>
+    <string name="export_prefs_failed">Errore durante l\'esportazione delle preferenze: %1$s.</string>
+    <string name="import_prefs">Importa preferenza da file</string>
+    <string name="import_prefs_sub">Importa preferenze da file precedentemente esportato</string>
+    <string name="import_prefs_ok">Preferenze importate con successo.[…]</string>
+    <string name="import_prefs_failed">Importazione preferenze fallito: %1$s</string>
+    <string name="prefs_not_found">Nessuna preferenza trovata</string>
 </resources>
