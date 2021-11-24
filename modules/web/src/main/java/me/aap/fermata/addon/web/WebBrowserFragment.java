@@ -110,7 +110,7 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	public void loadUrl(String url) {
 		if (Uri.parse(url).getScheme() == null) {
-			url = "http://" + url;
+			url = getSearchUrl() + url;
 		}
 
 		FermataWebView v = getWebView();
@@ -327,6 +327,6 @@ public class WebBrowserFragment extends MainActivityFragment
 	}
 
 	protected String getSearchUrl() {
-		return "https://www.google.ru/search?q=";
+		return "https://www.google.com/search?q=";
 	}
 }
