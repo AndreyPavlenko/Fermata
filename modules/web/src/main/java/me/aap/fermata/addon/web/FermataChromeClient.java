@@ -227,7 +227,7 @@ public class FermataChromeClient extends WebChromeClient {
 			if (st == touchStamp) fb.setVisibility(GONE);
 		}, 3000);
 
-		return true;
+		return false;
 	}
 
 	@Override

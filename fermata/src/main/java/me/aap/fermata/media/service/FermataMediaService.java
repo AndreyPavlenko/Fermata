@@ -241,7 +241,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 				.setDeleteIntent(pi(INTENT_STOP))
 				.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 				.setStyle(notifStyle)
-				.setSmallIcon(R.drawable.ic_notification)
+				.setSmallIcon(R.drawable.notification)
 				.setColor(notifColor)
 				.setPriority(NotificationCompat.PRIORITY_HIGH)
 				.setShowWhen(false)

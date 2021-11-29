@@ -205,7 +205,7 @@ public class MainActivity extends SplitCompatActivityBase
 				if (res == null) return;
 				UiUtils.showQuestion(getContext(), getString(R.string.update),
 						getString(R.string.update_question, res[0]),
-						AppCompatResources.getDrawable(getContext(), R.drawable.fermata))
+						AppCompatResources.getDrawable(getContext(), R.drawable.notification))
 						.onSuccess(r -> update(res[1], ps, deletePref)
 								.onSuccess(v -> update(res[2], ps, deletePref)));
 			});

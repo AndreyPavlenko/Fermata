@@ -45,25 +45,24 @@
     <application
         android:name="me.aap.fermata.FermataApplication"
         android:allowBackup="true"
-        android:banner="@mipmap/banner"
+        android:banner="@drawable/banner"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_descriptor"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/launcher"
         android:label="@string/app_name"
         android:launchMode="singleTop"
         android:requestLegacyExternalStorage="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Dark"
         android:usesCleartextTraffic="true"
-        tools:targetApi="R">
+        tools:targetApi="S">
 
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
         <meta-data
             android:name="com.google.android.gms.car.notification.SmallIcon"
-            android:resource="@drawable/ic_notification" />
+            android:resource="@drawable/launcher" />
         <meta-data
             android:name="com.google.android.gms.car.application.theme"
             android:resource="@style/AppTheme.Dark" />
@@ -71,6 +70,7 @@
         <activity
             android:name="me.aap.fermata.ui.activity.MainActivity"
             android:configChanges="colorMode|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:exported="true"
             android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -102,7 +102,9 @@
             </intent-filter>
         </service>
 
-        <receiver android:name="androidx.media.session.MediaButtonReceiver">
+        <receiver
+            android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>

@@ -81,6 +81,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		s.setAllowFileAccess(true);
 		s.setLoadWithOverviewMode(true);
 		s.setJavaScriptEnabled(true);
+		s.setMediaPlaybackRequiresUserGesture(false);
 		s.setJavaScriptCanOpenWindowsAutomatically(true);
 
 		addJavascriptInterface(createJsInterface(), FermataJsInterface.NAME);

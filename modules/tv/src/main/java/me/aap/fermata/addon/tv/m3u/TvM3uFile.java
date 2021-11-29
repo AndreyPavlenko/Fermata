@@ -156,7 +156,7 @@ public class TvM3uFile extends M3uFile {
 		HttpFileDownloader d = new HttpFileDownloader();
 		Context ctx = App.get();
 		HttpDownloadStatusListener l = new HttpDownloadStatusListener(ctx);
-		l.setSmallIcon(me.aap.fermata.R.drawable.ic_notification);
+		l.setSmallIcon(me.aap.fermata.R.drawable.notification);
 		l.setTitle(ctx.getResources().getString(me.aap.fermata.R.string.downloading, url));
 		l.setFailureTitle(s -> ctx.getResources().getString(me.aap.fermata.R.string.err_failed_to_download, url));
 		d.setStatusListener(l);

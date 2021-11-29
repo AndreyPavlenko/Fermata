@@ -77,7 +77,7 @@ public class FermataVfsManager extends VfsManager {
 	private static FutureSupplier<MainActivity> getActivity(Context ctx, @StringRes int moduleName) {
 		String name = ctx.getString(moduleName);
 		String title = ctx.getString(R.string.module_installation, name);
-		return ActivityBase.create(ctx, CHANNEL_ID, title, R.drawable.ic_notification,
+		return ActivityBase.create(ctx, CHANNEL_ID, title, R.drawable.notification,
 				title, null, MainActivity.class);
 	}
 
@@ -152,7 +152,7 @@ public class FermataVfsManager extends VfsManager {
 			String name = a.getString(moduleName);
 			String title = a.getString(R.string.module_installation, name);
 			DynamicModuleInstaller i = new DynamicModuleInstaller(a);
-			i.setSmallIcon(R.drawable.ic_notification);
+			i.setSmallIcon(R.drawable.notification);
 			i.setTitle(a.getString(R.string.install_pending, name));
 			i.setNotificationChannel(CHANNEL_ID, title);
 			i.setPendingMessage(a.getString(R.string.install_pending, name));

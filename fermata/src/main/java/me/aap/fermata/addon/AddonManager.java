@@ -173,7 +173,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	private static DynamicModuleInstaller createInstaller(Activity a, AddonInfo ai) {
 		DynamicModuleInstaller i = new DynamicModuleInstaller(a);
 		String name = a.getString(ai.addonName);
-		i.setSmallIcon(R.drawable.ic_notification);
+		i.setSmallIcon(R.drawable.notification);
 		i.setTitle(a.getString(R.string.module_installation, name));
 		i.setNotificationChannel(CHANNEL_ID, a.getString(R.string.installing, name));
 		i.setPendingMessage(a.getString(R.string.install_pending, name));

@@ -45,7 +45,7 @@ public class Utils {
 	public static HttpFileDownloader createDownloader(Context ctx, String url) {
 		HttpFileDownloader d = new HttpFileDownloader();
 		HttpDownloadStatusListener l = new HttpDownloadStatusListener(ctx);
-		l.setSmallIcon(R.drawable.ic_notification);
+		l.setSmallIcon(R.drawable.notification);
 		l.setTitle(ctx.getResources().getString(R.string.downloading, url));
 		l.setFailureTitle(s -> ctx.getResources().getString(R.string.err_failed_to_download, url));
 		d.setStatusListener(l);

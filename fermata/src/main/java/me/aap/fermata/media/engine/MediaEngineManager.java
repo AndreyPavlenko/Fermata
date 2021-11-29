@@ -234,11 +234,11 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		String title = ctx.getString(R.string.module_installation, name);
 		String installing = ctx.getString(R.string.installing, name);
 		FutureSupplier<MainActivity> getActivity = ActivityBase.create(ctx, channelId,
-				title, R.drawable.ic_notification, title, null, MainActivity.class);
+				title, R.drawable.notification, title, null, MainActivity.class);
 
 		return getActivity.then(a -> {
 			DynamicModuleInstaller i = new DynamicModuleInstaller(a);
-			i.setSmallIcon(R.drawable.ic_notification);
+			i.setSmallIcon(R.drawable.notification);
 			i.setTitle(title);
 			i.setNotificationChannel(channelId, installing);
 			i.setPendingMessage(ctx.getString(R.string.install_pending, name));
