@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
@@ -190,7 +189,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		BrowsableItem newParent = oldParent.getParent();
 		if (newParent == null) return false;
 		a.setParent(newParent);
-		FermataApplication.get().getHandler().post(() -> revealItem(oldParent));
+		ad.getHandler().post(() -> revealItem(oldParent));
 		return true;
 	}
 
@@ -347,11 +346,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	private void scrollToPosition() {
-		FermataApplication.get().getHandler().post(() -> {
+		getMainActivityDelegate().onSuccess(a -> a.getHandler().post(() -> {
 			int pos = scrollPosition;
 			if (pos == -1) return;
 			getListView().smoothScrollToPosition(pos);
-		});
+		}));
 	}
 
 	private static final Set<PreferenceStore.Pref<?>> reloadOnPrefChange = new HashSet<>(Arrays.asList(
@@ -586,11 +585,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 						EpgItem e = (EpgItem) w.getItem();
 						if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
 							scrollPosition = pos;
-							FermataApplication.get().getHandler().post(() -> {
+							getMainActivityDelegate().onSuccess(a -> a.getHandler().post(() -> {
 								if (getParent() != i) return;
 								getListView().smoothScrollToPosition(scrollPosition);
 								getListView().focusTo(e);
-							});
+							}));
 							break;
 						}
 					}

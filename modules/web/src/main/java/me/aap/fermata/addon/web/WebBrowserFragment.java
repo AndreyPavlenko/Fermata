@@ -69,12 +69,12 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataChromeClient chromeClient = new FermataChromeClient(webView, fullScreenView);
 		webView.init(addon, webClient, chromeClient);
 		webView.loadUrl(addon.getLastUrl());
-		registerListeners(MainActivityDelegate.get(ctx));
+		MainActivityDelegate.getActivityDelegate(ctx).onSuccess(this::registerListeners);
 	}
 
 	@Override
 	public void onDestroyView() {
-		unregisterListeners(MainActivityDelegate.get(requireContext()));
+		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(this::unregisterListeners);
 		super.onDestroyView();
 	}
 
@@ -116,10 +116,13 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebView v = getWebView();
 
 		if (v != null) {
-			if (!(this instanceof YoutubeFragment) && isYoutubeUri(Uri.parse(url))) {
-				MainActivityDelegate a = MainActivityDelegate.get(getContext());
-				YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
-				f.loadUrl(url);
+			if (!(this instanceof YoutubeFragment) && isYoutubeUri(Uri.parse(url)) &&
+					AddonManager.get().hasAddon(me.aap.fermata.R.id.youtube_fragment)) {
+				String u = url;
+				MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(a -> {
+					YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
+					f.loadUrl(u);
+				});
 			} else {
 				v.loadUrl(url);
 			}
@@ -310,10 +313,13 @@ public class WebBrowserFragment extends MainActivityFragment
 		String q = cmd.getQuery();
 
 		if (cmd.isOpen()) {
-			for (Map.Entry<String, String> e : getAddon().getBookmarks().entrySet()) {
-				if (q.equalsIgnoreCase(e.getValue())) {
-					loadUrl(e.getKey());
-					return;
+			WebBrowserAddon a = getAddon();
+			if (a != null) {
+				for (Map.Entry<String, String> e : a.getBookmarks().entrySet()) {
+					if (q.equalsIgnoreCase(e.getValue())) {
+						loadUrl(e.getKey());
+						return;
+					}
 				}
 			}
 		}
