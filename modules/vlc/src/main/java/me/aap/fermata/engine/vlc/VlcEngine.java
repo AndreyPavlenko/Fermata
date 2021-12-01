@@ -48,6 +48,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.io.IoUtils;
+import me.aap.utils.log.Log;
 import me.aap.utils.text.TextUtils;
 
 /**
@@ -378,6 +379,29 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 				startPlaying();
 				break;
 			case MediaPlayer.Event.EndReached:
+				PlayableItem s = getSource();
+				boolean stream = false;
+
+				if (s != null) {
+					if (s.isStream()) {
+						stream = true;
+					} else {
+						String scheme = s.getLocation().getScheme();
+						if ((scheme != null) && scheme.startsWith("http")) stream = true;
+					}
+				}
+
+				if (stream) {
+					float pos = player.getTime();
+					float dur = player.getLength() * 0.9F;
+					if ((dur > 0) && (pos < dur)) {
+						// Failed to read the stream?
+						Log.d("Position=", pos, " < duration=", dur);
+						listener.onEngineError(this, new MediaEngineException("Failed to read stream " + s));
+						break;
+					}
+				}
+
 				listener.onEngineEnded(this);
 				break;
 			case MediaPlayer.Event.EncounteredError:

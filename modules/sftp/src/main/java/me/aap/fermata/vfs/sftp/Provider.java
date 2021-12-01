@@ -14,6 +14,7 @@ import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.activity.AppActivity;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.vfs.VirtualFileSystem;
@@ -90,13 +91,13 @@ public class Provider extends VfsProviderBase {
 
 		return requestPrefs(a, prefs, ps).thenRun(ps::removeBroadcastListeners)
 				.then(ok -> !ok ? completedNull() : ((SftpFileSystem) fs).addRoot(
-						ps.getStringPref(USER),
-						ps.getStringPref(HOST),
+						ps.getStringPref(USER).trim(),
+						ps.getStringPref(HOST).trim(),
 						ps.getIntPref(PORT),
-						ps.getStringPref(PATH),
-						ps.getStringPref(PASSWD),
-						ps.getStringPref(KEY),
-						ps.getStringPref(KEY_PASSWD)));
+						TextUtils.trim(ps.getStringPref(PATH)),
+						TextUtils.trim(ps.getStringPref(PASSWD)),
+						TextUtils.trim(ps.getStringPref(KEY)),
+						TextUtils.trim(ps.getStringPref(KEY_PASSWD))));
 	}
 
 	@Override
