@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web;
 
 import static android.os.Build.VERSION;
 import static android.os.Build.VERSION_CODES;
+import static android.view.MotionEvent.ACTION_UP;
 import static androidx.webkit.WebViewFeature.FORCE_DARK;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
@@ -203,7 +204,9 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (isCar()) checkTextInput();
+		if (isCar()) {
+			if (event.getAction() == ACTION_UP) checkTextInput();
+		}
 		return super.onTouchEvent(event);
 	}
 

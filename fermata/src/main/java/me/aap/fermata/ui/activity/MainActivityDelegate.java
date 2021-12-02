@@ -23,6 +23,7 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
+import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
 
 import android.Manifest;
@@ -640,13 +641,17 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	public FutureSupplier<List<String>> startSpeechRecognizer() {
+		return startSpeechRecognizer(false);
+	}
+
+	public FutureSupplier<List<String>> startSpeechRecognizer(boolean textInput) {
 		if (speechListener != null) speechListener.destroy();
 		Promise<List<String>> p = new Promise<>();
 		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		speechListener = new SpeechListener(p);
+		speechListener = new SpeechListener(p, textInput);
 		speechListener.start(i);
 		return p;
 	}
@@ -993,13 +998,15 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	private final class SpeechListener implements RecognitionListener {
-		private final SpeechRecognizer recognizer;
 		private final Promise<List<String>> promise;
+		private final boolean textInput;
+		private final SpeechRecognizer recognizer;
 		private final MaterialTextView text;
 		private PlaybackStateCompat playbackState;
 
-		private SpeechListener(Promise<List<String>> promise) {
+		private SpeechListener(Promise<List<String>> promise, boolean textInput) {
 			this.promise = promise;
+			this.textInput = textInput;
 			recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
 			recognizer.setRecognitionListener(this);
 			text = new MaterialTextView(getContext());
@@ -1040,11 +1047,12 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				layout.setOrientation(LinearLayoutCompat.VERTICAL);
 				AppCompatImageView img = new AppCompatImageView(ctx);
 				TypedArray ta = ctx.getTheme().obtainStyledAttributes(new int[]{R.attr.colorOnSecondary});
-				img.setImageTintList(ColorStateList.valueOf(ta.getColor(0, 0)));
+				int imgColor = ta.getColor(0, 0);
 				ta.recycle();
-				img.setImageResource(R.drawable.record_voice);
 				img.setMinimumWidth(size);
 				img.setMinimumHeight(size);
+				img.setImageResource(R.drawable.record_voice);
+				img.setImageTintList(ColorStateList.valueOf(imgColor));
 				text.setMaxLines(5);
 				text.setGravity(Gravity.CENTER);
 				text.setEllipsize(TextUtils.TruncateAt.MARQUEE);
@@ -1053,10 +1061,24 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				ta.recycle();
 				text.setLayoutParams(new LinearLayoutCompat.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 				layout.setLayoutParams(new ConstraintLayout.LayoutParams(size, WRAP_CONTENT));
-				layout.addView(img);
-				layout.addView(text);
 				b.setView(layout);
 				b.setCloseHandlerHandler(m -> destroy());
+				layout.addView(img);
+				layout.addView(text);
+
+				if (textInput) {
+					int kbSize = size / 5;
+					int margin = toIntPx(getContext(), 1);
+					LinearLayoutCompat.LayoutParams lp = new LinearLayoutCompat.LayoutParams(kbSize, kbSize);
+					AppCompatImageView kb = new AppCompatImageView(ctx);
+					lp.gravity = Gravity.CENTER;
+					lp.setMargins(0, margin, 0, margin);
+					kb.setLayoutParams(lp);
+					kb.setImageResource(R.drawable.keyboard);
+					kb.setImageTintList(ColorStateList.valueOf(imgColor));
+					layout.setOnClickListener(v -> b.getMenu().hide());
+					layout.addView(kb);
+				}
 			});
 		}
 
@@ -1080,6 +1102,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			Log.e(msg);
 			promise.completeExceptionally(new IOException(msg));
 			hideActiveMenu();
+
 			if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
 				showAlert(getContext(), R.string.err_no_audio_record_perm);
 			}

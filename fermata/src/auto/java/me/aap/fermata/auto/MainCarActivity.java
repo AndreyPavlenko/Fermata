@@ -13,6 +13,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
+import android.widget.TextView.OnEditorActionListener;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
@@ -143,18 +144,31 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		return c();
 	}
 
+	@Override
 	public EditText startInput(TextWatcher w) {
 		if (editText == null) editText = new CarEditText(this);
 		if (textWatcher != null) editText.removeTextChangedListener(textWatcher);
 		editText.addTextChangedListener(w);
 		textWatcher = w;
-		a().startInput(editText);
 		getActivityDelegate().onSuccess(a -> {
-			if (!a.getPrefs().getVoiceControlEnabledPref()) return;
-			a.startSpeechRecognizer().onSuccess(q -> {
-				editText.setText(q.get(0));
-				stopInput();
-			});
+			if (a.getPrefs().getVoiceControlEnabledPref()) {
+				a.startSpeechRecognizer(true).onCompletion((q, err) -> {
+					stopInput();
+					if ((q != null) && !q.isEmpty()) {
+						editText.setText(q.get(0));
+						w.afterTextChanged(editText.getText());
+					} else {
+						textWatcher = w;
+						editText.removeTextChangedListener(w);
+						editText.addTextChangedListener(w);
+						if (w instanceof OnEditorActionListener)
+							editText.setOnEditorActionListener((OnEditorActionListener) w);
+						a().startInput(editText);
+					}
+				});
+			} else {
+				a().startInput(editText);
+			}
 		});
 		return editText;
 	}

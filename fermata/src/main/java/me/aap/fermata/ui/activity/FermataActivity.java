@@ -1,6 +1,5 @@
 package me.aap.fermata.ui.activity;
 
-import android.content.pm.ActivityInfo;
 import android.text.TextWatcher;
 import android.widget.EditText;
 
