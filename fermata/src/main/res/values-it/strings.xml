@@ -276,7 +276,7 @@
     <string name="export_prefs_sub">Esporta impostazioni, cartelle, playlist, etc. su file</string>
     <string name="export_prefs_ok">Preferenze salvate nel file %1$s</string>
     <string name="export_prefs_failed">Errore durante il backup delle preferenze: %1$s</string>
-    <string name="import_prefs">Importa preferenza da backup</string>
+    <string name="import_prefs">Importa preferenze da backup</string>
     <string name="import_prefs_sub">Importa preferenze da file precedentemente esportato</string>
     <string name="import_prefs_ok">Backup importato con successo.[…]</string>
     <string name="import_prefs_failed">Importazione backup non riuscita: %1$s</string>
