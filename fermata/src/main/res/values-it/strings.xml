@@ -242,6 +242,7 @@
     <string name="move_down">Vai sotto</string>
 
     <string name="play_video_landscape">Riproduci video in modalità orizzontale</string>
+    <string name="show_clock">Mostra orologio</string>
     <string name="change_brightness">Cambia luminosità durante riproduzione video</string>
     <string name="video_brightness">Luminosità video</string>
     <string name="change_brightness_sub">La luminosità può essere modificata anche facendo scorrere due dita</string>
@@ -252,6 +253,15 @@
     <string name="check_updates">Controlla aggiornamenti all\'avvio</string>
     <string name="update">Aggiorna</string>
     <string name="update_question">Nuova versione disponibile: %1$s.\nVuoi aggiornare l\'app?</string>
+    <string name="export_prefs">Backup preferenze</string>
+    <string name="export_prefs_sub">Esporta impostazioni, cartelle, playlist, etc. su file</string>
+    <string name="export_prefs_ok">Preferenze salvate nel file %1$s</string>
+    <string name="export_prefs_failed">Errore durante il backup delle preferenze: %1$s</string>
+    <string name="import_prefs">Importa preferenze da backup</string>
+    <string name="import_prefs_sub">Importa preferenze da file precedentemente esportato</string>
+    <string name="import_prefs_ok">Backup importato con successo.[…]</string>
+    <string name="import_prefs_failed">Importazione backup non riuscita: %1$s</string>
+    <string name="prefs_not_found">Nessun backup trovato</string>
 
     <string name="about">Info</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
@@ -272,13 +282,4 @@
     <string name="err_failed_install_module">Impossibile installare modulo: %1$s</string>
     <string name="err_failed_to_download">Impossibile scaricare %1$s</string>
     <string name="err_no_audio_record_perm">Autorizzazione registrazione audio non concessa</string>
-    <string name="export_prefs">Backup preferenze</string>
-    <string name="export_prefs_sub">Esporta impostazioni, cartelle, playlist, etc. su file</string>
-    <string name="export_prefs_ok">Preferenze salvate nel file %1$s</string>
-    <string name="export_prefs_failed">Errore durante il backup delle preferenze: %1$s</string>
-    <string name="import_prefs">Importa preferenze da backup</string>
-    <string name="import_prefs_sub">Importa preferenze da file precedentemente esportato</string>
-    <string name="import_prefs_ok">Backup importato con successo.[…]</string>
-    <string name="import_prefs_failed">Importazione backup non riuscita: %1$s</string>
-    <string name="prefs_not_found">Nessun backup trovato</string>
 </resources>
