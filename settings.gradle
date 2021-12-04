@@ -5,8 +5,16 @@ gradle.ext.localProps = new Properties()
 gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
         && file('fermata/google-services.json').isFile()
 def localPropsFile = file('local.properties')
-if (localPropsFile.isFile()) gradle.ext.localProps.load(localPropsFile.newDataInputStream())
 def exoRoot = file('depends/ExoPlayer')
+
+if (localPropsFile.isFile()) {
+    gradle.ext.localProps.load(localPropsFile.newDataInputStream())
+} else {
+    gradle.ext.localProps.setProperty('storeFile', file('res/test.ks').absolutePath)
+    gradle.ext.localProps.setProperty('keyAlias', 'test')
+    gradle.ext.localProps.setProperty('keyPassword', 'fermata')
+    gradle.ext.localProps.setProperty('storePassword', 'fermata')
+}
 
 if (exoRoot.isDirectory()) {
     gradle.ext.exoplayerRoot = exoRoot

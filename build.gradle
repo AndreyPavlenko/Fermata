@@ -5,7 +5,7 @@ ext {
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 31
     SDK_COMPILE_VERSION = 31
-    BUILD_TOOLS_VERSION = "29.0.2"
+    BUILD_TOOLS_VERSION = "30.0.2"
     ABI_FILTERS = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']
     localProps = gradle.ext.localProps
 
