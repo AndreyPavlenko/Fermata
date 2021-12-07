@@ -11,6 +11,12 @@
         android:name="android.permission.READ_PHONE_STATE"
         tools:node="remove" />
 
+    <queries>
+        <intent>
+            <action android:name="me.aap.fermata.action.CarMediaService" />
+        </intent>
+    </queries>
+
     <application
         android:name="android.app.Application"
         android:icon="@drawable/control"

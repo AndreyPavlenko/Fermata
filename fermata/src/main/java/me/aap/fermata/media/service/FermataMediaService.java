@@ -149,7 +149,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 				notifColor = intent.getIntExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
 				return new ServiceBinder();
 			case ACTION_CONTROL_SERVICE:
-				return connectToControl();
+				if (BuildConfig.AUTO) return connectToControl();
 		}
 
 		return super.onBind(intent);

@@ -15,8 +15,6 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 import static me.aap.utils.ui.UiUtils.isVisible;
-import static me.aap.utils.ui.UiUtils.toIntPx;
-import static me.aap.utils.ui.UiUtils.toPx;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -35,13 +33,8 @@ import android.widget.TextClock;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.core.view.ViewCompat;
 
 import com.google.android.material.circularreveal.CircularRevealFrameLayout;
-import com.google.android.material.shape.CornerFamily;
-import com.google.android.material.shape.MaterialShapeDrawable;
-import com.google.android.material.shape.ShapeAppearanceModel;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
@@ -120,25 +114,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	protected void addClockView(Context context) {
-		TextClock clock = new TextClock(context);
-		int pad = toIntPx(context, 5);
-		int margin = toIntPx(context, 10);
-		float density = getResources().getDisplayMetrics().density;
-		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-		lp.gravity = Gravity.END | Gravity.TOP;
-		lp.setMargins(0, margin, margin, 0);
-		clock.setPadding(pad, pad, pad, pad);
-		clock.setLayoutParams(lp);
-		clock.setTextColor(Color.WHITE);
-		clock.setTextSize(12 * density);
-
-		ShapeAppearanceModel m = new ShapeAppearanceModel().toBuilder()
-				.setAllCorners(CornerFamily.ROUNDED, toPx(context, 20)).build();
-		MaterialShapeDrawable bg = new MaterialShapeDrawable(m);
-		bg.setAlpha(20);
-		bg.setFillColor(ContextCompat.getColorStateList(context, android.R.color.black));
-		ViewCompat.setBackground(clock, bg);
-		addView(clock);
+		inflate(context, R.layout.clock_view, this);
 	}
 
 	public SurfaceView getVideoSurface() {

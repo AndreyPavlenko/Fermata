@@ -7,6 +7,7 @@ import static java.util.Objects.requireNonNull;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -33,6 +34,18 @@ class FermataToControlConnection extends ControlServiceConnection {
 	}
 
 	public static String getPkgId(Context ctx) {
+		Intent i = new Intent(ControlServiceConnection.ACTION_CONTROL_SERVICE);
+		String thisPkg = ctx.getPackageName();
+
+		for (ResolveInfo ri : ctx.getPackageManager().queryIntentServices(i, 0)) {
+			if ((ri.serviceInfo == null) || thisPkg.equals(ri.serviceInfo.packageName)) continue;
+			if ("me.aap.fermata".equals(ri.serviceInfo.packageName)) continue;
+			String pkg = ri.serviceInfo.packageName;
+			Log.i("Fermata Control application found: ", pkg);
+			return pkg;
+		}
+
+		Log.w("Fermata Control application not found!");
 		return ctx.getPackageName().replace("me.aap.fermata.auto", "me.aap.fermata.auto.control");
 	}
 

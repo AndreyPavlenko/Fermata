@@ -9,6 +9,7 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -159,8 +160,22 @@ class ControlToFermataConnection extends ControlServiceConnection implements Sha
 	}
 
 	public void connect() {
-		Intent i = new Intent(ACTION_CONTROL_SERVICE);
-		String pkg = service.getPackageName().replace(".control", "");
+		Intent i = new Intent("me.aap.fermata.action.CarMediaService");
+		String pkg = null;
+
+		for (ResolveInfo ri : service.getPackageManager().queryIntentServices(i, 0)) {
+			if ((ri.serviceInfo == null) || "me.aap.fermata".equals(ri.serviceInfo.packageName)) continue;
+			pkg = ri.serviceInfo.packageName;
+			Log.i("Fermata Auto application found: ", pkg);
+			break;
+		}
+
+		if (pkg == null) {
+			pkg = service.getPackageName().replace(".control", "");
+			Log.w(getClass().getName(), "Fermata Auto application not found!");
+		}
+
+		i = new Intent(ACTION_CONTROL_SERVICE);
 		i.setComponent(new ComponentName(pkg, "me.aap.fermata.media.service.FermataMediaService"));
 		service.bindService(i, this, Context.BIND_AUTO_CREATE);
 	}

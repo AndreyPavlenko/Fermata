@@ -546,11 +546,13 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 				};
 			});
 		}
-		sub1.addBooleanPref(o -> {
-			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.CHECK_UPDATES;
-			o.title = R.string.check_updates;
-		});
+		if (BuildConfig.AUTO) {
+			sub1.addBooleanPref(o -> {
+				o.store = a.getPrefs();
+				o.pref = MainActivityPrefs.CHECK_UPDATES;
+				o.title = R.string.check_updates;
+			});
+		}
 
 		return new PreferenceViewAdapter(set) {
 			@Override

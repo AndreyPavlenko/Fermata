@@ -8,7 +8,23 @@
         android:name="android.hardware.type.automotive"
         android:required="true" />
 
+    <queries>
+        <intent>
+            <action android:name="me.aap.fermata.action.ControlService" />
+        </intent>
+    </queries>
+
     <application>
+
+        <service
+            android:name="me.aap.fermata.media.service.FermataMediaService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="me.aap.fermata.action.CarMediaService" />
+                <action android:name="me.aap.fermata.action.ControlService" />
+            </intent-filter>
+        </service>
 
         <service
             android:name="me.aap.fermata.auto.CarService"
