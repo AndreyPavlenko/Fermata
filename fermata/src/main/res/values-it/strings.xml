@@ -242,7 +242,11 @@
     <string name="move_down">Vai sotto</string>
 
     <string name="play_video_landscape">Riproduci video in modalità orizzontale</string>
-    <string name="show_clock">Mostra orologio</string>
+    <string name="clock_pos">Posizione dell\'orologio</string>
+    <string name="clock_pos_none">Nessuno</string>
+    <string name="clock_pos_left">Sinistra</string>
+    <string name="clock_pos_right">Destra</string>
+    <string name="clock_pos_center">Centro</string>
     <string name="change_brightness">Cambia luminosità durante riproduzione video</string>
     <string name="video_brightness">Luminosità video</string>
     <string name="change_brightness_sub">La luminosità può essere modificata anche facendo scorrere due dita</string>

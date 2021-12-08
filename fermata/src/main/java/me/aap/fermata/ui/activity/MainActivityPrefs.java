@@ -27,6 +27,10 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int THEME_DAY_NIGHT = 2;
 	int THEME_BLACK = 3;
 	int THEME_STAR_WARS = 4;
+	int CLOCK_POS_NONE = 0;
+	int CLOCK_POS_LEFT = 1;
+	int CLOCK_POS_RIGHT = 2;
+	int CLOCK_POS_CENTER = 3;
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -48,7 +52,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
 	Pref<BooleanSupplier> VOICE_CONTROl_M = Pref.b("VOICE_CONTROl_M", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
-	Pref<BooleanSupplier> SHOW_CLOCK = Pref.b("SHOW_CLOCK", false);
+	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
@@ -219,7 +223,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 		return getBooleanPref(VOICE_CONTROl_M);
 	}
 
-	default boolean getShowClockPref() {
-		return getBooleanPref(SHOW_CLOCK);
+	default int getClockPosPref() {
+		return getIntPref(CLOCK_POS);
 	}
 }

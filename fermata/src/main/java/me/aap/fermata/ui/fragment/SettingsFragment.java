@@ -427,10 +427,14 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.values = new int[]{R.string.video_scaling_best, R.string.video_scaling_fill,
 					R.string.video_scaling_orig, R.string.video_scaling_4, R.string.video_scaling_16};
 		});
-		sub1.addBooleanPref(o -> {
+		sub1.addListPref(o -> {
 			o.store = a.getPrefs();
-			o.pref = MainActivityPrefs.SHOW_CLOCK;
-			o.title = R.string.show_clock;
+			o.pref = MainActivityPrefs.CLOCK_POS;
+			o.title = R.string.clock_pos;
+			o.subtitle = R.string.string_format;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.clock_pos_none, R.string.clock_pos_left,
+					R.string.clock_pos_right, R.string.clock_pos_center};
 		});
 		sub1.addBooleanPref(o -> {
 			o.store = a.getPrefs();

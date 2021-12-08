@@ -266,7 +266,11 @@
     <string name="move_down">Move down</string>
 
     <string name="play_video_landscape">Playing video in landscape mode</string>
-    <string name="show_clock">Show clock</string>
+    <string name="clock_pos">Clock position</string>
+    <string name="clock_pos_none">None</string>
+    <string name="clock_pos_left">Left</string>
+    <string name="clock_pos_right">Right</string>
+    <string name="clock_pos_center">Center</string>
     <string name="change_brightness">Change brightness while playing video</string>
     <string name="video_brightness">Video brightness</string>
     <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>

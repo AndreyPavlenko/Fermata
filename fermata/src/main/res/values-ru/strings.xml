@@ -247,7 +247,11 @@
     <string name="move_down">Сдвинуть вниз</string>
 
     <string name="play_video_landscape">Воспроизводить видео в альбомной ориентации</string>
-    <string name="show_clock">Показывать часы</string>
+    <string name="clock_pos">Расположение часов</string>
+    <string name="clock_pos_none">Нет</string>
+    <string name="clock_pos_left">Слева</string>
+    <string name="clock_pos_right">Справа</string>
+    <string name="clock_pos_center">Посередине</string>
     <string name="change_brightness">Менять яркость, при проигрывании видео</string>
     <string name="video_brightness">Яркость видео</string>
     <string name="change_brightness_sub">Яркость, так же, можно изменять скроллом двумя пальцами</string>

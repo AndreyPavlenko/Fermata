@@ -14,7 +14,7 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.SHOW_CLOCK;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -105,6 +105,7 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.event.ListenerLeakDetector;
+import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.Function;
@@ -869,8 +870,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			});
 		} else if (prefs.contains(VOICE_CONTROL_SUBST)) {
 			if (voiceCommandHandler != null) voiceCommandHandler.updateWordSubst();
-		} else if (prefs.contains(SHOW_CLOCK)) {
-			getBody().getVideoView().showClock(getPrefs().getShowClockPref());
+		} else if (prefs.contains(CLOCK_POS)) {
+			getBody().getVideoView().setClockPos(getPrefs().getClockPosPref());
 		}
 	}
 
@@ -959,6 +960,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			Pref<DoubleSupplier> oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);
 			Pref<IntSupplier> fbLongPress = Pref.i("FB_LONG_PRESS", 0);
 			Pref<IntSupplier> fbLongPressAA = Pref.i("FB_LONG_PRESS_AA", 0);
+			Pref<BooleanSupplier> showClock = Pref.b("SHOW_CLOCK", false);
 			int theme = getIntPref(oldTheme);
 			float scale = getFloatPref(oldScale);
 
@@ -981,6 +983,13 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				try (PreferenceStore.Edit e = editPreferenceStore()) {
 					e.setBooleanPref(VOICE_CONTROl_ENABLED, true);
 					e.setBooleanPref(VOICE_CONTROl_FB, true);
+				}
+			}
+
+			if (getBooleanPref(showClock)) {
+				try (PreferenceStore.Edit e = editPreferenceStore()) {
+					e.removePref(showClock);
+					e.setIntPref(CLOCK_POS, CLOCK_POS_RIGHT);
 				}
 			}
 		}

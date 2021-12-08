@@ -15,6 +15,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 import static me.aap.utils.ui.UiUtils.isVisible;
+import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -23,6 +24,7 @@ import android.graphics.PixelFormat;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -50,6 +52,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
@@ -74,7 +77,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		getActivity().onSuccess(a -> {
 			a.addBroadcastListener(this);
 			a.getLib().getPrefs().addBroadcastListener(this);
-			showClock(a.getPrefs().getShowClockPref());
+			setClockPos(a.getPrefs().getClockPosPref());
 		});
 	}
 
@@ -113,10 +116,6 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 		addView(d);
 	}
 
-	protected void addClockView(Context context) {
-		inflate(context, R.layout.clock_view, this);
-	}
-
 	public SurfaceView getVideoSurface() {
 		return (SurfaceView) getChildAt(0);
 	}
@@ -127,12 +126,41 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 
-	public void showClock(boolean show) {
+	public void setClockPos(int pos) {
 		int idx = getChildCount() - 1;
-		boolean visible = (getChildAt(idx) instanceof TextClock);
-		if (show == visible) return;
-		if (show) addClockView(getContext());
-		else removeViewAt(idx);
+		int gravity = Gravity.TOP;
+
+		switch (pos) {
+			case MainActivityPrefs.CLOCK_POS_NONE:
+				if (getChildAt(idx) instanceof TextClock) removeViewAt(idx);
+				return;
+			case MainActivityPrefs.CLOCK_POS_LEFT:
+				gravity |= Gravity.START;
+				break;
+			case MainActivityPrefs.CLOCK_POS_RIGHT:
+				gravity |= Gravity.END;
+				break;
+			case MainActivityPrefs.CLOCK_POS_CENTER:
+				gravity |= Gravity.CENTER;
+				break;
+		}
+
+		View clock = getChildAt(idx);
+		FrameLayout.LayoutParams lp;
+
+		if (clock instanceof TextClock) {
+			lp = (FrameLayout.LayoutParams) clock.getLayoutParams();
+		} else {
+			Context ctx = getContext();
+			int m = toIntPx(ctx, 10);
+			clock = LayoutInflater.from(ctx).inflate(R.layout.clock_view, this, false);
+			lp = new FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+			lp.setMargins(m, m, m, m);
+			addView(clock);
+		}
+
+		lp.gravity = gravity;
+		clock.setLayoutParams(lp);
 	}
 
 	@Nullable
