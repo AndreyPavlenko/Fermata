@@ -189,7 +189,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		BrowsableItem newParent = oldParent.getParent();
 		if (newParent == null) return false;
 		a.setParent(newParent);
-		ad.getHandler().post(() -> revealItem(oldParent));
+		ad.post(() -> revealItem(oldParent));
 		return true;
 	}
 
@@ -346,7 +346,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	private void scrollToPosition() {
-		getMainActivityDelegate().onSuccess(a -> a.getHandler().post(() -> {
+		getMainActivityDelegate().onSuccess(a -> a.post(() -> {
 			int pos = scrollPosition;
 			if (pos == -1) return;
 			getListView().smoothScrollToPosition(pos);
@@ -495,7 +495,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			if (play) b.playItem(first);
 			if (items.size() == 1) a.goToItem(first);
 			else getAdapter().setParent(f);
-			if (!play) a.getHandler().post(() -> getListView().focusTo(first));
+			if (!play) a.post(() -> getListView().focusTo(first));
 		});
 	}
 
@@ -585,7 +585,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 						EpgItem e = (EpgItem) w.getItem();
 						if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
 							scrollPosition = pos;
-							getMainActivityDelegate().onSuccess(a -> a.getHandler().post(() -> {
+							getMainActivityDelegate().onSuccess(a -> a.post(() -> {
 								if (getParent() != i) return;
 								getListView().smoothScrollToPosition(scrollPosition);
 								getListView().focusTo(e);

@@ -945,6 +945,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return handler;
 	}
 
+	public Cancellable post(Runnable task) {
+		return getHandler().submit(task);
+	}
+
 	public Cancellable postDelayed(Runnable task, long delay) {
 		return getHandler().schedule(task, delay);
 	}

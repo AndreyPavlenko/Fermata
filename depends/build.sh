@@ -28,7 +28,9 @@ if [ -d "$FFMPEG_DIR" ]; then
     git clean -xfd && git checkout master && git reset --hard && git pull
 else
     git clone 'git://source.ffmpeg.org/ffmpeg' "$FFMPEG_DIR"
+    cd "$FFMPEG_DIR"
 fi
+
 # Temporary workaround for 'Unknown option "--disable-avresample"'
 git checkout n4.4
 
@@ -38,6 +40,7 @@ if [ -d "$EXO_DIR" ]; then
     git clean -xfd && git reset --hard && git pull
 else
     git clone 'https://github.com/google/ExoPlayer.git' "$EXO_DIR"
+    cd "$EXO_DIR"
 fi
 
 git checkout release-v2
@@ -48,7 +51,6 @@ sed -i "s/appTargetSdkVersion .*/appTargetSdkVersion = $SDK_TARGET_VERSION/" "$E
 sed -i "s/compileSdkVersion .*/compileSdkVersion = $SDK_COMPILE_VERSION/" "$EXO_DIR/constants.gradle"
 sed -i "s/androidxMediaVersion .*/androidxMediaVersion = $ANDROIDX_MEDIA_VERSION/" "$EXO_DIR/constants.gradle"
 sed -i "s/androidxAppCompatVersion .*/androidxAppCompatVersion = $ANDROIDX_APPCOMPAT_VERSION/" "$EXO_DIR/constants.gradle"
-sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/gvr/build.gradle"
 sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/leanback/build.gradle"
 
 # Build ExoPlayer FFmpeg extension

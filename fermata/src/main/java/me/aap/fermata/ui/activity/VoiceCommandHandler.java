@@ -215,7 +215,7 @@ class VoiceCommandHandler {
 		}
 		MainActivityFragment f = activity.getActiveMainActivityFragment();
 		if ((f == null) || (f.getFragmentId() != id)) {
-			activity.getHandler().post(() -> searchInFragment(id, cmd, attempt + 1));
+			activity.post(() -> searchInFragment(id, cmd, attempt + 1));
 		} else if ((f.getFragmentId() == R.id.folders_fragment)
 				|| (f.getFragmentId() == R.id.playlists_fragment)) {
 			MediaLibFragment mf = (MediaLibFragment) f;
@@ -239,7 +239,7 @@ class VoiceCommandHandler {
 		}
 		MainActivityFragment f = activity.getActiveMainActivityFragment();
 		if (f instanceof FavoritesFragment) ((FavoritesFragment) f).play();
-		else activity.getHandler().post(() -> playFavorites(attempt + 1));
+		else activity.post(() -> playFavorites(attempt + 1));
 	}
 
 	public void updateWordSubst() {
