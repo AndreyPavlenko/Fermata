@@ -222,23 +222,23 @@ public class FoldersFragment extends MediaLibFragment {
 		Uri uri = data.getData();
 		if (uri == null) return;
 
-		MainActivityDelegate a = getMainActivity();
-		a.getContext().getContentResolver()
-				.takePersistableUriPermission(uri, FLAG_GRANT_READ_URI_PERMISSION);
-		Folders folders = getLib().getFolders();
-		folders.addItem(uri).main().thenRun(() -> getAdapter().setParent(folders));
+		getMainActivityDelegate().onSuccess(a -> {
+			a.getContext().getContentResolver()
+					.takePersistableUriPermission(uri, FLAG_GRANT_READ_URI_PERMISSION);
+			Folders folders = getLib().getFolders();
+			folders.addItem(uri).main().thenRun(() -> getAdapter().setParent(folders));
+		});
 	}
 
 	private void addFolderResult(VirtualResource r) {
-		MainActivityDelegate a = getMainActivity();
-
-		if (r != null) {
-			Folders folders = a.getLib().getFolders();
-			folders.addItem(r.getRid().toAndroidUri()).main()
-					.thenRun(() -> getAdapter().setParent(folders));
-		}
-
-		a.showFragment(getFragmentId());
+		getMainActivityDelegate().onSuccess(a -> {
+			if (r != null) {
+				Folders folders = a.getLib().getFolders();
+				folders.addItem(r.getRid().toAndroidUri()).main()
+						.thenRun(() -> getAdapter().setParent(folders));
+			}
+			a.showFragment(getFragmentId());
+		});
 	}
 
 	@Override

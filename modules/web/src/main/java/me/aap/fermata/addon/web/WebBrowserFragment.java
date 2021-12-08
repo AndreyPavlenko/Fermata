@@ -54,6 +54,7 @@ public class WebBrowserFragment extends MainActivityFragment
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		dynCtx(requireContext());
 		return inflater.inflate(R.layout.browser, container, false);
 	}
 

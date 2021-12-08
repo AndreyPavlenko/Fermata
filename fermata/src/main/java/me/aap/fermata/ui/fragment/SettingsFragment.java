@@ -90,9 +90,11 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 
 	@Override
 	public CharSequence getTitle() {
-		PreferenceSet set = adapter.getPreferenceSet();
-		if (set.getParent() != null) return getResources().getString(set.get().title);
-		else return getResources().getString(R.string.settings);
+		if (adapter != null) {
+			PreferenceSet set = adapter.getPreferenceSet();
+			if (set.getParent() != null) return getResources().getString(set.get().title);
+		}
+		return getResources().getString(R.string.settings);
 	}
 
 	@Nullable
@@ -110,8 +112,8 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
 		super.onViewCreated(view, state);
-		adapter = createAdapter();
 		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(a -> {
+			adapter = createAdapter(a);
 			a.addBroadcastListener(this);
 			a.getPrefs().addBroadcastListener(this);
 
@@ -149,20 +151,20 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
-		if (adapter == null) return;
-		MainActivityDelegate a = getMainActivity();
-		if (MainActivityPrefs.hasTextIconSizePref(a, prefs)) {
-			adapter.setSize(a.getTextIconSize());
-		}
+		MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(a -> {
+			if (adapter == null) return;
+			if (MainActivityPrefs.hasTextIconSizePref(a, prefs)) adapter.setSize(a.getTextIconSize());
+		});
 	}
 
 	@Override
 	public boolean isRootPage() {
-		return adapter.getPreferenceSet().getParent() == null;
+		return (adapter == null) || (adapter.getPreferenceSet().getParent() == null);
 	}
 
 	@Override
 	public boolean onBackPressed() {
+		if (adapter == null) return false;
 		PreferenceSet p = adapter.getPreferenceSet().getParent();
 		if (p == null) return false;
 		adapter.setPreferenceSet(p);
@@ -233,13 +235,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 		}
 	}
 
-	@NonNull
-	private MainActivityDelegate getMainActivity() {
-		return MainActivityDelegate.get(getContext());
-	}
-
-	private PreferenceViewAdapter createAdapter() {
-		MainActivityDelegate a = getMainActivity();
+	private PreferenceViewAdapter createAdapter(MainActivityDelegate a) {
 		MediaLibPrefs mediaPrefs = a.getMediaServiceBinder().getLib().getPrefs();
 		int[] timeUnits = new int[]{R.string.time_unit_second, R.string.time_unit_minute,
 				R.string.time_unit_percent};
@@ -532,7 +528,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			sub1.addButton(o -> {
 				o.title = R.string.export_prefs;
 				o.subtitle = R.string.export_prefs_sub;
-				o.onClick = this::exportPrefs;
+				o.onClick = () -> exportPrefs(a);
 			});
 			sub1.addButton(o -> {
 				o.title = R.string.import_prefs;
@@ -542,7 +538,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 						reqPerm.value = false;
 						if (FilePickerFragment.requestManageAllFilesPerm(a.getContext())) return;
 					}
-					importPrefs();
+					importPrefs(a);
 				};
 			});
 		}
@@ -668,8 +664,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 		}
 	}
 
-	private void exportPrefs() {
-		MainActivityDelegate a = getMainActivity();
+	private void exportPrefs(MainActivityDelegate a) {
 		a.startActivityForResult(() -> new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
 				.onCompletion((d, err) -> {
 					Context ctx = a.getContext();
@@ -729,8 +724,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 				});
 	}
 
-	private void importPrefs() {
-		MainActivityDelegate a = getMainActivity();
+	private void importPrefs(MainActivityDelegate a) {
 		a.startActivityForResult(() -> new Intent(Intent.ACTION_OPEN_DOCUMENT)
 				.setType("application/zip"))
 				.onCompletion((d, err) -> {
