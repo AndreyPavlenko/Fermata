@@ -47,6 +47,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	@Override
+	protected void attachBaseContext(Context base) {
+		MainActivityDelegate.attachBaseContext(base);
+		super.attachBaseContext(base);
+	}
+
+	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		MainActivityDelegate.setTheme(this);
 		super.onCreate(savedInstanceState);

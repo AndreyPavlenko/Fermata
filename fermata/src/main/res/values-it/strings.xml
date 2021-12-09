@@ -24,6 +24,7 @@
     <string name="nav_bar_pos_right">Destra</string>
 
     <string name="show_track_icons">Mostra icone traccia</string>
+    <string name="lang">Lingua</string>
     <string name="hide_bars">Nascondi barre</string>
     <string name="hide_bars_sub">Nascondi barre superiore ed inferiore con pannello di controllo</string>
     <string name="show_pg_up_down">Mostra pulsanti pagina su/giù</string>

@@ -39,6 +39,10 @@
     <string name="nav_bar_pos_right">Right</string>
 
     <string name="show_track_icons">Show track icons</string>
+    <string name="lang">Language</string>
+    <string name="lang_en" translatable="false">English</string>
+    <string name="lang_it" translatable="false">Italiano</string>
+    <string name="lang_ru" translatable="false">Русский</string>
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>

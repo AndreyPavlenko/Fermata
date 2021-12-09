@@ -17,6 +17,7 @@ import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.pref.PreferenceStore.Pref.sa;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -75,6 +76,12 @@ public class MainActivity extends SplitCompatActivityBase
 			service = c;
 			return new MainActivityDelegate(a, service.createBinder());
 		}).onFailure(err -> showAlert(getContext(), String.valueOf(err)));
+	}
+
+	@Override
+	protected void attachBaseContext(Context base) {
+		MainActivityDelegate.attachBaseContext(base);
+		super.attachBaseContext(base);
 	}
 
 	@Override

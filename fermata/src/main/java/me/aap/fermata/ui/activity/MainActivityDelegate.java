@@ -15,6 +15,7 @@ import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -34,6 +35,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.net.Uri;
 import android.os.Build.VERSION;
@@ -160,6 +163,18 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	@SuppressWarnings("unchecked")
 	public static FutureSupplier<MainActivityDelegate> getActivityDelegate(Context ctx) {
 		return (FutureSupplier<MainActivityDelegate>) ActivityDelegate.getActivityDelegate(ctx);
+	}
+
+	public static void attachBaseContext(Context ctx) {
+		MainActivityPrefs prefs = Prefs.instance;
+		if (!prefs.hasPref(LOCALE)) return;
+
+		Resources res = ctx.getResources();
+		Configuration cfg = res.getConfiguration();
+		Locale loc = prefs.getLocalePref();
+		cfg.setLocale(loc);
+		Locale.setDefault(loc);
+		res.updateConfiguration(cfg, res.getDisplayMetrics());
 	}
 
 	@Override
@@ -872,6 +887,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			if (voiceCommandHandler != null) voiceCommandHandler.updateWordSubst();
 		} else if (prefs.contains(CLOCK_POS)) {
 			getBody().getVideoView().setClockPos(getPrefs().getClockPosPref());
+		} else if (prefs.contains(LOCALE)) {
+			recreate();
 		}
 	}
 

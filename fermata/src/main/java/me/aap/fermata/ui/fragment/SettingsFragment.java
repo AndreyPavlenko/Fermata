@@ -11,6 +11,9 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_RU;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -268,6 +271,16 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.store = mediaPrefs;
 			o.pref = BrowsableItemPrefs.SHOW_TRACK_ICONS;
 			o.title = R.string.show_track_icons;
+		});
+		sub1.addListPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.LOCALE;
+			o.title = R.string.lang;
+			o.subtitle = R.string.string_format;
+			o.values = new int[]{R.string.lang_en, R.string.lang_it, R.string.lang_ru};
+			o.valuesMap = new int[]{LOCALE_EN, LOCALE_IT, LOCALE_RU};
+			o.formatSubtitle = true;
+			o.removeDefault = false;
 		});
 
 		sub1 = set.subSet(o -> o.title = R.string.playback_settings);

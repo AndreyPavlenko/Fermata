@@ -25,6 +25,7 @@
     <string name="nav_bar_pos_right">Справа</string>
 
     <string name="show_track_icons">Показывать иконки треков</string>
+    <string name="lang">Язык</string>
     <string name="hide_bars">Скрывать панели</string>
     <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
     <string name="fullscreen_mode">Полноэкранный режим</string>

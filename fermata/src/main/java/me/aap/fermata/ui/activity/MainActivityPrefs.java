@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import androidx.annotation.Nullable;
 
 import java.util.List;
+import java.util.Locale;
 
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
@@ -31,6 +32,9 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int CLOCK_POS_LEFT = 1;
 	int CLOCK_POS_RIGHT = 2;
 	int CLOCK_POS_CENTER = 3;
+	int LOCALE_EN = 0;
+	int LOCALE_RU = 1;
+	int LOCALE_IT = 2;
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -53,6 +57,16 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> VOICE_CONTROl_M = Pref.b("VOICE_CONTROl_M", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
+	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", () -> {
+		switch (Locale.getDefault().getLanguage()) {
+			case "ru":
+				return LOCALE_RU;
+			case "it":
+				return LOCALE_IT;
+			default:
+				return LOCALE_EN;
+		}
+	});
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
@@ -225,5 +239,16 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default int getClockPosPref() {
 		return getIntPref(CLOCK_POS);
+	}
+
+	default Locale getLocalePref() {
+		switch (getIntPref(LOCALE)) {
+			case LOCALE_RU:
+				return new Locale("ru");
+			case LOCALE_IT:
+				return new Locale("it");
+			default:
+				return Locale.ENGLISH;
+		}
 	}
 }
