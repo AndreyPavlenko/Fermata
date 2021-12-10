@@ -38,6 +38,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.function.Function;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
@@ -59,6 +60,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	private final MetadataRetriever metadataRetriever;
 	private final Map<String, WeakRef<Item>> itemCache = new HashMap<>();
 	private final ReferenceQueue<Item> itemRefQueue = new ReferenceQueue<>();
+	@Nullable
+	private final AtvInterface atvInterface;
 
 	public DefaultMediaLib(Context ctx) {
 		this.ctx = ctx;
@@ -68,6 +71,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		folders = new DefaultFolders(this);
 		favorites = new DefaultFavorites(this);
 		playlists = new DefaultPlaylists(this);
+		atvInterface = AtvInterface.create(this);
 		addBroadcastListener(this);
 	}
 
@@ -329,6 +333,10 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	@Override
 	public MetadataRetriever getMetadataRetriever() {
 		return metadataRetriever;
+	}
+
+	public void getAtvInterface(Consumer<AtvInterface> c) {
+		if (atvInterface != null) c.accept(atvInterface);
 	}
 
 	@Override

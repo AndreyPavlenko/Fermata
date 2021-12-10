@@ -6,4 +6,13 @@
     <exclude
         domain="sharedpref"
         path="uri_to_path.xml" />
+    <exclude
+        domain="sharedpref"
+        path="atv.xml" />
+    <exclude
+        domain="sharedpref"
+        path="image-cache.xml" />
+    <exclude
+        domain="sharedpref"
+        path="WebViewChromiumPrefs.xml" />
 </full-backup-content>

@@ -1,5 +1,9 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.failed;
+
 import android.content.Context;
 
 import androidx.annotation.NonNull;
@@ -21,10 +25,6 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.holder.Holder;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
-
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
-import static me.aap.utils.async.Completed.failed;
 
 /**
  * @author Andrey Pavlenko
@@ -179,5 +179,16 @@ class DefaultPlaylists extends ItemContainer<Playlist> implements Playlists, Pla
 	@Override
 	public boolean getTitleSeqNumPref() {
 		return false;
+	}
+
+	@Override
+	protected void itemAdded(Playlist i) {
+		getLib().getAtvInterface(a -> a.addChannel(i));
+	}
+
+	@Override
+	protected void itemRemoved(Playlist i) {
+		super.itemRemoved(i);
+		getLib().getAtvInterface(a -> a.removeChannel(i));
 	}
 }

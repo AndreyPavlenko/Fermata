@@ -117,6 +117,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 		session.setMediaButtonReceiver(PendingIntent.getBroadcast(ctx, 0, mediaButtonIntent, FLAG_IMMUTABLE));
 		notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
 		App.get().getScheduler().schedule(lib::cleanUpPrefs, 1, TimeUnit.HOURS);
+		Log.d("FermataMediaService created");
 	}
 
 	@Override
@@ -129,6 +130,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 		controlConnection = null;
 		callback.close();
 		session.release();
+		Log.d("FermataMediaService destroyed");
 	}
 
 	@Override

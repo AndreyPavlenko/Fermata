@@ -73,7 +73,6 @@ public class FermataContentProvider extends ContentProvider {
 				Log.e(ex, "Failed to download image ", uri);
 			}
 		} else if (imgUri.startsWith("content:/")) {
-
 			return FermataApplication.get().getBitmapCache().openResourceImage(Uri.parse(imgUri));
 		}
 

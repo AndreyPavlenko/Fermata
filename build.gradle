@@ -1,7 +1,7 @@
 ext {
     def abi = project.properties['ABI']
-    VERSION_CODE = 180
-    VERSION_NAME = "1.8.9"
+    VERSION_CODE = 181
+    VERSION_NAME = "1.8.10"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 31
     SDK_COMPILE_VERSION = 31
@@ -27,7 +27,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.3'
+        classpath 'com.android.tools.build:gradle:7.0.4'
         classpath 'com.google.gms:google-services:4.3.10'
     }
 }

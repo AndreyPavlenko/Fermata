@@ -1,9 +1,7 @@
 package me.aap.fermata.util;
 
-import static android.content.Context.UI_MODE_SERVICE;
-import static android.content.res.Configuration.UI_MODE_TYPE_NORMAL;
+import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 
-import android.app.UiModeManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -61,8 +59,7 @@ public class Utils {
 	public static boolean isSafSupported(MainActivityDelegate a) {
 		if (a.isCarActivity()) return false;
 		Context ctx = a.getContext();
-		UiModeManager umm = (UiModeManager) a.getContext().getSystemService(UI_MODE_SERVICE);
-		if (umm.getCurrentModeType() != UI_MODE_TYPE_NORMAL) return false;
+		if (ctx.getPackageManager().hasSystemFeature(FEATURE_LEANBACK)) return false;
 		Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 		return i.resolveActivity(ctx.getPackageManager()) != null;
 	}

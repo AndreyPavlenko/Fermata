@@ -46,6 +46,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.Consumer;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.Predicate;
 import me.aap.utils.holder.IntHolder;
@@ -85,6 +86,8 @@ public interface MediaLib {
 
 	@NonNull
 	MetadataRetriever getMetadataRetriever();
+
+	void getAtvInterface(Consumer<AtvInterface> c);
 
 	default BitmapCache getBitmapCache() {
 		return getMetadataRetriever().getBitmapCache();

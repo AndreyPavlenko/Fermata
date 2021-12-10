@@ -164,6 +164,12 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		return (p == null) || (p.getParent() == null);
 	}
 
+	public void openItem(BrowsableItem folder) {
+		if (isHidden()) return;
+		ListAdapter a = getAdapter();
+		if (!folder.equals(a.getParent())) a.setParent(folder);
+	}
+
 	public void revealItem(Item i) {
 		if (isHidden()) return;
 		ListAdapter a = getAdapter();

@@ -284,7 +284,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 				String[] urls = new String[]{
 						"https://paypal.me/AndrewPavlenko",
 						"https://pay.cloudtips.ru/p/a03a73da",
-						"https://money.yandex.ru/to/410014661137336"
+						"https://yoomoney.ru/to/410014661137336"
 				};
 
 				a.createDialogBuilder()

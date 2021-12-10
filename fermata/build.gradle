@@ -89,4 +89,5 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:${ANDROIDX_CONSTRAINTLAYOUT_VERSION}"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:${ANDROIDX_SWIPEREFRESHLAYOUT_VERSION}"
     implementation "com.google.android.play:core:${ANDROID_PLAY_CORE_VERSION}"
+    implementation 'androidx.tvprovider:tvprovider:1.0.0'
 }

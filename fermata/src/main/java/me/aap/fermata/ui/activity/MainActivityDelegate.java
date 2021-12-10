@@ -4,11 +4,13 @@ import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
+import static android.util.Base64.URL_SAFE;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static me.aap.fermata.BuildConfig.AUTO;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
@@ -48,6 +50,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -132,6 +135,10 @@ import me.aap.utils.ui.view.ToolBarView;
  */
 public class MainActivityDelegate extends ActivityDelegate implements
 		MediaSessionCallbackAssistant, PreferenceStore.Listener {
+	public static final String INTENT_ACTION_OPEN = "open";
+	public static final String INTENT_ACTION_PLAY = "play";
+	public static final String INTENT_ACTION_UPDATE = "update";
+	private static final String INTENT_SCHEME = "fermata";
 	private final HandlerExecutor handler = new HandlerExecutor(App.get().getHandler().getLooper());
 	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private final FermataServiceUiBinder mediaServiceBinder;
@@ -177,6 +184,23 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		res.updateConfiguration(cfg, res.getDisplayMetrics());
 	}
 
+	public static Uri toIntentUri(String action, String itemId) {
+		String id = Base64.encodeToString(itemId.getBytes(US_ASCII), URL_SAFE);
+		return new Uri.Builder().scheme(INTENT_SCHEME).authority(action).path(id).build();
+	}
+
+	@Nullable
+	public static String intentUriToId(Uri u) {
+		if ((u == null) || !INTENT_SCHEME.equals(u.getScheme())) return null;
+		String id = u.getPath();
+		return (id == null) ? null : new String(Base64.decode(id.substring(1), URL_SAFE), US_ASCII);
+	}
+
+	@Nullable
+	public static String intentUriToAction(Uri u) {
+		return (u != null) && INTENT_SCHEME.equals(u.getScheme()) ? u.getHost() : null;
+	}
+
 	@Override
 	public void onActivityCreate(@Nullable Bundle state) {
 		super.onActivityCreate(state);
@@ -215,30 +239,71 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				return;
 			}
 
-			String showAddon = getPrefs().getShowAddonOnStartPref();
+			Intent intent = getIntent();
 
-			if (showAddon != null) {
-				FermataAddon addon = AddonManager.get().getAddon(showAddon);
-
-				if (addon != null) {
-					showFragment(addon.getFragmentId());
-					checkUpdates();
-					return;
-				}
-			}
-
-			FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
-				if ((fail1 != null) && !isCancellation(fail1)) {
-					Log.e(fail1, "Last played track not found");
-				}
-				checkUpdates();
-			});
-
-			if (!f.isDone() || f.isFailed() || !Boolean.TRUE.equals(f.peek())) {
-				showFragment(R.id.folders_fragment);
-				setContentLoading(f);
+			if (intent != null) {
+				handleIntent(intent).onCompletion((r, err) -> {
+					if (err != null) Log.e(err, "Failed to handle intent ", intent);
+					if ((r == null) || !r) defaultIntent();
+				});
+			} else {
+				defaultIntent();
 			}
 		});
+	}
+
+	@Override
+	protected void onActivityNewIntent(Intent intent) {
+		super.onActivityNewIntent(intent);
+		handleIntent(intent);
+	}
+
+	private FutureSupplier<Boolean> handleIntent(Intent intent) {
+		Uri u = intent.getData();
+		if (u == null) return completed(false);
+		String action = u.getHost();
+		if (action == null) return completed(false);
+		String id = u.getPath();
+		if (id == null) return completed(false);
+		id = new String(Base64.decode(id.substring(1), URL_SAFE), US_ASCII);
+
+		if (INTENT_ACTION_OPEN.equals(action)) {
+			goToItem(id).map(i -> i != null);
+		} else if (INTENT_ACTION_PLAY.equals(action)) {
+			goToItem(id).map(i -> {
+				if (!(i instanceof PlayableItem)) return false;
+				getMediaServiceBinder().playItem((PlayableItem) i);
+				return true;
+			});
+		}
+
+		return completed(false);
+	}
+
+	private void defaultIntent() {
+		String showAddon = getPrefs().getShowAddonOnStartPref();
+
+		if (showAddon != null) {
+			FermataAddon addon = AddonManager.get().getAddon(showAddon);
+
+			if (addon != null) {
+				showFragment(addon.getFragmentId());
+				checkUpdates();
+				return;
+			}
+		}
+
+		FutureSupplier<Boolean> f = goToCurrent().onCompletion((ok, fail1) -> {
+			if ((fail1 != null) && !isCancellation(fail1)) {
+				Log.e(fail1, "Last played track not found");
+			}
+			checkUpdates();
+		});
+
+		if (!f.isDone() || f.isFailed() || !Boolean.TRUE.equals(f.peek())) {
+			showFragment(R.id.folders_fragment);
+			setContentLoading(f);
+		}
 	}
 
 	private void checkUpdates() {
@@ -588,26 +653,35 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				: completed(goToItem(pi));
 	}
 
-	public boolean goToItem(PlayableItem pi) {
-		if (pi == null) return false;
+	public FutureSupplier<Item> goToItem(String id) {
+		return getLib().getItem(id).main(getHandler()).map(i -> goToItem(i) ? i : null);
+	}
 
-		BrowsableItem root = pi.getRoot();
+	public boolean goToItem(Item i) {
+		if (i == null) return false;
 
-		if (root instanceof MediaLib.Folders) {
+		BrowsableItem folder;
+		if (i instanceof PlayableItem) folder = i.getParent();
+		else if (i instanceof BrowsableItem) folder = (BrowsableItem) i;
+		else return false;
+
+		if (folder instanceof MediaLib.Folders) {
 			showFragment(R.id.folders_fragment);
-		} else if (root instanceof MediaLib.Favorites) {
+		} else if (folder instanceof MediaLib.Favorites) {
 			showFragment(R.id.favorites_fragment);
-		} else if (root instanceof MediaLib.Playlists) {
+		} else if (folder instanceof MediaLib.Playlists) {
 			showFragment(R.id.playlists_fragment);
 		} else {
-			MediaLibAddon a = AddonManager.get().getMediaLibAddon(root);
+			MediaLibAddon a = AddonManager.get().getMediaLibAddon(folder);
 			if (a != null) showFragment(a.getAddonId());
-			else Log.d("Unsupported item: ", pi);
+			else Log.d("Unsupported item: ", i);
 		}
 
 		FermataApplication.get().getHandler().post(() -> {
 			ActivityFragment f = getActiveFragment();
-			if (f instanceof MediaLibFragment) ((MediaLibFragment) f).revealItem(pi);
+			if (!(f instanceof MediaLibFragment)) return;
+			if (i instanceof PlayableItem) ((MediaLibFragment) f).revealItem(i);
+			else ((MediaLibFragment) f).openItem(folder);
 		});
 
 		return true;

@@ -69,6 +69,7 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 			List<C> newChildren = new ArrayList<>(children.size() + 1);
 			newChildren.addAll(children);
 			newChildren.add(i);
+			itemAdded(i);
 			setNewChildren(newChildren);
 			saveChildren(newChildren);
 			return null;
@@ -85,6 +86,7 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 				i = toChildItem(i);
 				if (list.contains(i)) continue;
 				newChildren.add(i);
+				itemAdded(i);
 				added = true;
 			}
 
@@ -135,6 +137,9 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 			CollectionUtils.forEach(removed, this::itemRemoved);
 			return null;
 		});
+	}
+
+	protected void itemAdded(C i) {
 	}
 
 	@CallSuper

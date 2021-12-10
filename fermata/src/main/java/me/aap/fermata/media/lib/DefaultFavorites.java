@@ -1,5 +1,8 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.collection.CollectionUtils.mapToArray;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -19,9 +22,6 @@ import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
 
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.collection.CollectionUtils.mapToArray;
-
 
 /**
  * @author Andrey Pavlenko
@@ -39,9 +39,15 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 		favoritesPrefStore = SharedPreferenceStore.create(prefs, getLib().getPrefs());
 	}
 
+	@NonNull
+	@Override
+	public String getName() {
+		return getLib().getContext().getString(R.string.favorites);
+	}
+
 	@Override
 	protected FutureSupplier<String> buildTitle() {
-		return completed(getLib().getContext().getString(R.string.favorites));
+		return completed(getName());
 	}
 
 	@Override
@@ -108,5 +114,16 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 	@Override
 	protected void saveChildren(List<PlayableItem> children) {
 		setFavoritesPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
+	}
+
+	@Override
+	protected void itemAdded(PlayableItem i) {
+		getLib().getAtvInterface(a -> a.addProgram(i));
+	}
+
+	@Override
+	protected void itemRemoved(PlayableItem i) {
+		super.itemRemoved(i);
+		getLib().getAtvInterface(a -> a.removeProgram(i));
 	}
 }

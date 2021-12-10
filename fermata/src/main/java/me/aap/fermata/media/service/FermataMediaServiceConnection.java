@@ -1,5 +1,10 @@
 package me.aap.fermata.media.service;
 
+import static me.aap.fermata.media.service.FermataMediaService.ACTION_CAR_MEDIA_SERVICE;
+import static me.aap.fermata.media.service.FermataMediaService.ACTION_MEDIA_SERVICE;
+import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
+import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_NOTIF_COLOR;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -8,18 +13,13 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.activity.AppActivity;
-
-import static me.aap.fermata.media.service.FermataMediaService.ACTION_CAR_MEDIA_SERVICE;
-import static me.aap.fermata.media.service.FermataMediaService.ACTION_MEDIA_SERVICE;
-import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
-import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_NOTIF_COLOR;
 
 /**
  * @author Andrey Pavlenko
@@ -28,10 +28,14 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 	private Promise<FermataMediaServiceConnection> promise;
 	private FermataMediaService.ServiceBinder binder;
 
-	public static FutureSupplier<FermataMediaServiceConnection> connect(@NonNull AppActivity a, boolean isAuto) {
-		TypedArray typedArray = a.getTheme().obtainStyledAttributes(new int[]{android.R.attr.statusBarColor});
-		int notifColor = typedArray.getColor(0, Color.parseColor(DEFAULT_NOTIF_COLOR));
-		typedArray.recycle();
+	public static FutureSupplier<FermataMediaServiceConnection> connect(@Nullable AppActivity a, boolean isAuto) {
+		int notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
+
+		if (a != null) {
+			TypedArray typedArray = a.getTheme().obtainStyledAttributes(new int[]{android.R.attr.statusBarColor});
+			notifColor = typedArray.getColor(0, notifColor);
+			typedArray.recycle();
+		}
 
 		Context ctx = FermataApplication.get();
 		FermataMediaServiceConnection con = new FermataMediaServiceConnection();

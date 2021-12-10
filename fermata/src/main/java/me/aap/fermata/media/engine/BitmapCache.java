@@ -18,6 +18,7 @@ import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -55,6 +56,7 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.CheckedSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.log.Log;
@@ -248,13 +250,33 @@ public class BitmapCache {
 			path = b.toString();
 		}
 
-		File dst = new File(imageCache, path);
+		File dst = toImageFile(uri);
 		ImagePrefs ip = new ImagePrefs(prefs, path);
 		HttpFileDownloader d = new HttpFileDownloader();
 		d.setReturnExistingOnFail(true);
 		return d.download(uri, dst, ip).onFailure(ex -> {
 			Log.d(ex, "Failed to download image: ", uri);
 			invalidBitmapUris.put(uri, uri);
+		});
+	}
+
+	public synchronized FutureSupplier<Uri> addImage(String uri, CheckedSupplier<Bitmap, Exception> s) {
+		File f = toImageFile(uri);
+		if (f.isFile()) return completed(Uri.fromFile(f));
+
+		return queue.enqueue(() -> {
+			synchronized (BitmapCache.this) {
+				if (!f.isFile()) {
+					try (OutputStream out = new FileOutputStream(f)) {
+						CompressFormat fmt = (f.getName().endsWith(".png"))
+								? CompressFormat.PNG : CompressFormat.JPEG;
+						s.get().compress(fmt, 100, out);
+					} catch (Exception ex) {
+						Log.e(ex, "Failed to save image: ", f);
+					}
+				}
+				return Uri.fromFile(f);
+			}
 		});
 	}
 
@@ -336,7 +358,7 @@ public class BitmapCache {
 
 		try {
 			MemOutputStream mos = new MemOutputStream(bm.getByteCount());
-			if (!bm.compress(Bitmap.CompressFormat.JPEG, 100, mos)) return null;
+			if (!bm.compress(CompressFormat.JPEG, 100, mos)) return null;
 
 			byte[] content = mos.trimBuffer();
 			MessageDigest md = MessageDigest.getInstance("sha-1");
@@ -369,7 +391,7 @@ public class BitmapCache {
 			p.mkdirs();
 
 		try (OutputStream out = new FileOutputStream(f)) {
-			bm.compress(Bitmap.CompressFormat.JPEG, 100, out);
+			bm.compress(CompressFormat.JPEG, 100, out);
 		} catch (Exception ex) {
 			Log.e(ex, "Failed to save icon: ", f);
 		}
@@ -391,6 +413,20 @@ public class BitmapCache {
 			tb.setCharAt(len - 2, tb.charAt(len));
 			return tb.toString();
 		}
+	}
+
+	private File toImageFile(String uri) {
+		String path;
+		try (SharedTextBuilder b = SharedTextBuilder.get()) {
+			b.append(imageCache);
+			int idx = b.length();
+			b.append("/X/");
+			appendHexString(b, sha1(uri));
+			b.setCharAt(idx + 1, b.charAt(idx + 3));
+			b.append('.').append(getFileExtension(uri, "img"));
+			path = b.toString();
+		}
+		return new File(path);
 	}
 
 	private void clearRefs() {

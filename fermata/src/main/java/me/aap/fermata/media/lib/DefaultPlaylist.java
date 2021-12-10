@@ -120,4 +120,15 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	protected void saveChildren(List<PlayableItem> children) {
 		setPlaylistItemsPref(mapToArray(children, PlayableItem::getOrigId, String[]::new));
 	}
+
+	@Override
+	protected void itemAdded(PlayableItem i) {
+		getLib().getAtvInterface(a -> a.addProgram(i));
+	}
+
+	@Override
+	protected void itemRemoved(PlayableItem i) {
+		super.itemRemoved(i);
+		getLib().getAtvInterface(a -> a.removeProgram(i));
+	}
 }

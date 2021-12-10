@@ -37,6 +37,7 @@ public class ExportedItem extends PlayableItemBase {
 	private ExportedItem(PlayableItemBase orig, String exportId, BrowsableItem parent) {
 		super(exportId, parent, parent.getResource());
 		this.orig = orig;
+		setMeta(orig.getMediaData());
 	}
 
 	public static ExportedItem create(PlayableItemBase orig, String exportId, BrowsableItem parent) {
