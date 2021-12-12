@@ -8,6 +8,7 @@ import android.view.animation.AnimationUtils;
 import androidx.annotation.NonNull;
 
 import java.util.Collections;
+import java.util.concurrent.CancellationException;
 
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
@@ -105,7 +106,7 @@ public class TvFragment extends MediaLibFragment {
 		if (id == me.aap.fermata.R.id.edit) {
 			TvM3uItem i = item.getData();
 			new TvM3uFileSystemProvider().edit(getMainActivity(), i.getResource()).onCompletion((ok, err) -> {
-				if (err != null) {
+				if ((err != null) && !(err instanceof CancellationException)) {
 					Log.e(err, "Failed to edit TV source ", i);
 					UiUtils.showAlert(getContext(), err.getLocalizedMessage());
 				}

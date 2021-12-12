@@ -58,13 +58,13 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			e.setStringPref(NAME, f.getName());
 			e.setStringPref(URL, f.getUrl());
 			e.setStringPref(EPG_URL, f.getEpgUrl());
-			e.setStringPref(LOGO_URL, f.getLogoUrl());
 			e.setBooleanPref(LOGO_PREFER_EPG, f.isPreferEpgLogo());
 			e.setFloatPref(EPG_SHIFT, f.getEpgShift());
-			e.setStringPref(CATCHUP_QUERY, f.getCatchupQuery());
 			e.setIntPref(CATCHUP_TYPE, f.getCatchupType());
 			e.setIntPref(CATCHUP_DAYS, f.getCatchupDays());
-			e.setIntPref(CATCHUP_DAYS, f.getCatchupDays());
+			e.setStringPref(CATCHUP_QUERY, f.getCatchupQuery());
+			e.setStringPref(LOGO_URL, f.getLogoUrl());
+			e.setStringPref(AGENT, f.getUserAgent());
 		}
 
 		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).map(ok -> {
