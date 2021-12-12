@@ -244,7 +244,7 @@
 
     <string name="play_video_landscape">Riproduci video in modalità orizzontale</string>
     <string name="clock_pos">Posizione dell\'orologio</string>
-    <string name="clock_pos_none">Nessuno</string>
+    <string name="clock_pos_none">Nascondi</string>
     <string name="clock_pos_left">Sinistra</string>
     <string name="clock_pos_right">Destra</string>
     <string name="clock_pos_center">Centro</string>
