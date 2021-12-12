@@ -2,7 +2,7 @@ if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-servic
 
 android {
     defaultConfig {
-        applicationId "me.aap.fermata"
+        applicationId project.getProperties().getOrDefault('APP_ID', 'me.aap.fermata')
         versionCode VERSION_CODE
         versionName VERSION_NAME
         setProperty("archivesBaseName", "fermata-$versionName")
