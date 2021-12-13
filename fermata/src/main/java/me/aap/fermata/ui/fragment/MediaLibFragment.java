@@ -13,6 +13,7 @@ import static me.aap.utils.collection.CollectionUtils.filterMap;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -125,6 +126,12 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		cleanUp(getMainActivity());
 		super.onDestroyView();
 		Log.d("MediaLibFragment view destroyed: ", this);
+	}
+
+	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		scrollToPosition();
 	}
 
 	private void cleanUp(MainActivityDelegate a) {

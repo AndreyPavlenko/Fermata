@@ -11,12 +11,12 @@ import androidx.annotation.NonNull;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -38,7 +38,7 @@ import me.aap.utils.async.FutureSupplier;
 public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	private final Context ctx;
 	private final Listener listener;
-	private final SimpleExoPlayer player;
+	private final ExoPlayer player;
 	private final AudioEffects audioEffects;
 	private final DataSource.Factory dsFactory;
 	private ProgressiveMediaSource.Factory progressive;
@@ -51,7 +51,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		this.ctx = ctx;
 		this.listener = listener;
-		player = new SimpleExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
+		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
 				.setExtensionRendererMode(EXTENSION_RENDERER_MODE_PREFER)).build();
 		player.addListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());

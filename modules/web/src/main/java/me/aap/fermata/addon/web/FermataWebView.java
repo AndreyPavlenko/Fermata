@@ -10,6 +10,7 @@ import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.text.Editable;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -118,6 +119,13 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if (handleActivityDestroyEvent(a, e)) {
 			getAddon().getPreferenceStore().removeBroadcastListener(this);
 		}
+	}
+
+	@Override
+	protected void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		FermataChromeClient c = getWebChromeClient();
+		if ((c != null) && c.isFullScreen()) getActivity().onSuccess(a -> c.setFullScreen(a, true));
 	}
 
 	private void setDesktopMode(WebBrowserAddon a, boolean reload) {

@@ -172,7 +172,12 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	@NonNull
 	@Override
 	public FutureSupplier<Iterator<PlayableItem>> getShuffleIterator() {
-		if ((shuffle == null) || (shuffle.isDone() && !shuffle.get(null).hasNext())) {
+		if ((shuffle == null) || shuffle.isDone()) {
+			if (shuffle != null) {
+				Iterator<PlayableItem> cur = shuffle.peek();
+				if ((cur != null) && cur.hasNext()) return shuffle;
+			}
+
 			shuffle = getPlayableChildren(false, false, Integer.MAX_VALUE).map(list -> {
 				List<PlayableItem> l = new ArrayList<>(list);
 				shuffle(l);
