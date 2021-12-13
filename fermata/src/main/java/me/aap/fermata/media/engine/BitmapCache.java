@@ -213,6 +213,7 @@ public class BitmapCache {
 		}
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private FutureSupplier<Bitmap> loadHttpBitmap(String uri, String cacheUri, int size) {
 		return downloadImage(uri).then(s -> {
 			if (s == null) return completedNull();
@@ -220,8 +221,10 @@ public class BitmapCache {
 				Bitmap bm = BitmapFactory.decodeStream(is);
 
 				if (bm == null) {
+					File f = s.getLocalFile();
+					if (f != null) f.delete();
 					invalidBitmapUris.put(uri, uri);
-					return failed(new IOException("Failed to decode image"));
+					return failed(new IOException("Failed to decode image: " + uri));
 				} else {
 					if (size != 0) bm = resizedBitmap(bm, size);
 					if (cacheUri != null) bm = cacheBitmap(cacheUri, bm);
