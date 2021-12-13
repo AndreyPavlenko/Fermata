@@ -19,8 +19,27 @@ SDK_COMPILE_VERSION="$(grep 'SDK_COMPILE_VERSION = ' $DEPENDS_DIR/../build.gradl
 ANDROIDX_MEDIA_VERSION="$(grep 'ANDROIDX_MEDIA_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
 ANDROIDX_APPCOMPAT_VERSION="$(grep 'ANDROIDX_APPCOMPAT_VERSION = ' $DEPENDS_DIR/../build.gradle | cut -d= -f2)"
 
-: ${HOST_PLATFORM:='linux-x86_64'}
 : ${ABI:='armeabi-v7a arm64-v8a x86 x86_64'}
+
+if [ -z "$HOST_PLATFORM" ]; then
+    case "$OSTYPE" in
+      linux*)
+        HOST_PLATFORM='linux-x86_64'
+        ;;
+      darwin*)
+        HOST_PLATFORM='darwin-x86_x64'
+        ;;
+      win*|cygwin|msys)
+        HOST_PLATFORM='windows-x86_x64'
+        ;;
+      *)
+        echo 'Failed to detect host platform!'
+        echo 'Please, set the HOST_PLATFORM environment variable to one of the following: linux-x86_64, darwin-x86_x64, windows-x86_x64'
+        ;;
+    esac
+
+    echo "Host platform: $HOST_PLATFORM"
+fi
 
 # Clone or update FFmpeg
 if [ -d "$FFMPEG_DIR" ]; then
@@ -54,7 +73,7 @@ sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions
 FFMPEG_DECODERS=(vorbis alac mp3 aac ac3 eac3 mlp truehd)
 
 cd "$EXO_EXT_DIR/ffmpeg/src/main/jni"
-ln -s "$FFMPEG_DIR" ffmpeg
+[ -e ffmpeg ] || ln -s "$FFMPEG_DIR" ffmpeg
 sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-nm|${TOOLCHAIN_PREFIX}/llvm-nm|g' build_ffmpeg.sh
 sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-ar|${TOOLCHAIN_PREFIX}/llvm-ar|g' build_ffmpeg.sh
 sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-ranlib|${TOOLCHAIN_PREFIX}/llvm-ranlib|g' build_ffmpeg.sh
