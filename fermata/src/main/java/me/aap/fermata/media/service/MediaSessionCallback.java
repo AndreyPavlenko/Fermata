@@ -1029,7 +1029,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 
 		Log.w(ex, msg);
 
-		if (tryAnotherEngine) {
+		if (tryAnotherEngine && (engine.getSource() != null)) {
 			this.engine = getEngineManager().createAnotherEngine(engine, this);
 
 			if (this.engine != null) {

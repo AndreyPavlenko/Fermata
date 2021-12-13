@@ -241,7 +241,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 			Intent intent = getIntent();
 
-			if (intent != null) {
+			if ((intent != null) && !Intent.ACTION_MAIN.equals(intent.getAction())) {
 				handleIntent(intent).onCompletion((r, err) -> {
 					if (err != null) Log.e(err, "Failed to handle intent ", intent);
 					if ((r == null) || !r) defaultIntent();
@@ -297,6 +297,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			if ((fail1 != null) && !isCancellation(fail1)) {
 				Log.e(fail1, "Last played track not found");
 			}
+			if ((ok == null) || !ok) showFragment(R.id.folders_fragment);
 			checkUpdates();
 		});
 
@@ -659,29 +660,29 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public boolean goToItem(Item i) {
 		if (i == null) return false;
+		BrowsableItem root = i.getRoot();
 
-		BrowsableItem folder;
-		if (i instanceof PlayableItem) folder = i.getParent();
-		else if (i instanceof BrowsableItem) folder = (BrowsableItem) i;
-		else return false;
-
-		if (folder instanceof MediaLib.Folders) {
+		if (root instanceof MediaLib.Folders) {
 			showFragment(R.id.folders_fragment);
-		} else if (folder instanceof MediaLib.Favorites) {
+		} else if (root instanceof MediaLib.Favorites) {
 			showFragment(R.id.favorites_fragment);
-		} else if (folder instanceof MediaLib.Playlists) {
+		} else if (root instanceof MediaLib.Playlists) {
 			showFragment(R.id.playlists_fragment);
 		} else {
-			MediaLibAddon a = AddonManager.get().getMediaLibAddon(folder);
-			if (a != null) showFragment(a.getAddonId());
-			else Log.d("Unsupported item: ", i);
+			MediaLibAddon a = AddonManager.get().getMediaLibAddon(root);
+			if (a != null) {
+				showFragment(a.getAddonId());
+			} else {
+				Log.d("Unsupported item: ", i);
+				return false;
+			}
 		}
 
 		FermataApplication.get().getHandler().post(() -> {
 			ActivityFragment f = getActiveFragment();
 			if (!(f instanceof MediaLibFragment)) return;
 			if (i instanceof PlayableItem) ((MediaLibFragment) f).revealItem(i);
-			else ((MediaLibFragment) f).openItem(folder);
+			else if (i instanceof BrowsableItem) ((MediaLibFragment) f).openItem((BrowsableItem) i);
 		});
 
 		return true;
