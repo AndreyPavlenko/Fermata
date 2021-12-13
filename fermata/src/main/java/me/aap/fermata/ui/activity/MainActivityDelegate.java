@@ -85,6 +85,7 @@ import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.DefaultMediaLib;
+import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -668,6 +669,11 @@ public class MainActivityDelegate extends ActivityDelegate implements
 			showFragment(R.id.favorites_fragment);
 		} else if (root instanceof MediaLib.Playlists) {
 			showFragment(R.id.playlists_fragment);
+		} else if (root instanceof ExtRoot) {
+			if ("youtube".equals(root.getId())) {
+				showFragment(R.id.youtube_fragment);
+				return true;
+			}
 		} else {
 			MediaLibAddon a = AddonManager.get().getMediaLibAddon(root);
 			if (a != null) {

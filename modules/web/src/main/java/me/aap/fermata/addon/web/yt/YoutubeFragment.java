@@ -15,10 +15,16 @@ import me.aap.fermata.addon.web.FermataWebView;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.addon.web.WebBrowserFragment;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.function.LongSupplier;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.ui.view.ToolBarView;
 
 /**
@@ -28,7 +34,8 @@ import me.aap.utils.ui.view.ToolBarView;
 @SuppressWarnings("unused")
 public class YoutubeFragment extends WebBrowserFragment implements FermataServiceUiBinder.Listener {
 	private static final String DEFAULT_URL = "http://m.youtube.com";
-	private String loadUrl = DEFAULT_URL;
+	private static final Pref<LongSupplier> RESUME_POS = Pref.l("YT_RESUME_POS", 0L);
+	private boolean playOnResume;
 
 	@Override
 	public int getFragmentId() {
@@ -42,9 +49,20 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 	}
 
 	@Override
-	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+	public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
 		YoutubeAddon addon = AddonManager.get().getAddon(YoutubeAddon.class);
 		if (addon == null) return;
+
+		String url;
+		boolean pause;
+
+		if (state != null) {
+			url = state.getString("url", DEFAULT_URL);
+			pause = state.getBoolean("pause", false);
+		} else {
+			url = DEFAULT_URL;
+			pause = false;
+		}
 
 		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(a -> {
 			YoutubeWebView webView = a.findViewById(R.id.ytWebView);
@@ -53,12 +71,42 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
-			String url = loadUrl;
-			loadUrl = DEFAULT_URL;
-			webView.loadUrl(url);
+			webView.loadUrl(DEFAULT_URL);
+			if (!DEFAULT_URL.equals(url)) a.post(() -> webView.loadUrl(url));
+			a.postDelayed(() -> {
+				PreferenceStore ps = addon.getPreferenceStore();
+				long pos = ps.getLongPref(RESUME_POS);
+				ps.removePref(RESUME_POS);
+				MediaSessionCallback cb = a.getMediaSessionCallback();
+				if (cb.getEngine() instanceof YoutubeMediaEngine) {
+					if (pos > 0L) cb.onSeekTo(pos);
+					if (pause) cb.onPause();
+				}
+			}, 3000L);
 		});
 	}
 
+	@Override
+	public void onSaveInstanceState(@NonNull Bundle state) {
+		super.onSaveInstanceState(state);
+		String url = getUrl();
+		if (url != null) state.putString("url", url);
+		WebBrowserAddon addon = getAddon();
+		if (addon == null) return;
+		MainActivityDelegate a = MainActivityDelegate.getActivityDelegate(getContext()).peek();
+		if (a == null) return;
+
+		SharedPreferenceStore ps = addon.getPreferenceStore();
+		MediaSessionCallback cb = a.getMediaSessionCallback();
+		MediaEngine eng = cb.getEngine();
+
+		if (eng instanceof YoutubeMediaEngine) {
+			state.putBoolean("pause", !cb.isPlaying());
+			eng.getPosition().onSuccess(pos -> ps.applyLongPref(RESUME_POS, pos));
+		} else {
+			ps.removePref(RESUME_POS);
+		}
+	}
 
 	@Override
 	public void onDestroyView() {
@@ -79,22 +127,34 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 
 	@Override
 	public void onPause() {
-		MainActivityDelegate a = MainActivityDelegate.get(getContext());
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			if (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem()) && b.isPlaying()) {
+				b.getMediaSessionCallback().onPause();
+				playOnResume = true;
+			} else {
+				playOnResume = false;
+			}
+		});
+		super.onPause();
+	}
 
-		if (!a.isCarActivity()) {
+	@Override
+	public void onResume() {
+		super.onResume();
+		if (!playOnResume) return;
+		playOnResume = false;
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			if (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem())) {
-				b.getMediaSessionCallback().onStop();
+				b.getMediaSessionCallback().onPlay();
 			}
-		}
-
-		super.onPause();
+		});
 	}
 
 	public void loadUrl(String url) {
 		FermataWebView v = getWebView();
 		if (v != null) v.loadUrl(url);
-		else loadUrl = url;
 	}
 
 	@Override

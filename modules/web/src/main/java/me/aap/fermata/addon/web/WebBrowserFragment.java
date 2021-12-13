@@ -133,6 +133,7 @@ public class WebBrowserFragment extends MainActivityFragment
 		}
 	}
 
+	@Nullable
 	public String getUrl() {
 		WebView v = getWebView();
 		return (v == null) ? null : v.getUrl();
