@@ -35,6 +35,7 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	int LOCALE_EN = 0;
 	int LOCALE_RU = 1;
 	int LOCALE_IT = 2;
+	int LOCALE_TR = 3;
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -63,6 +64,8 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 				return LOCALE_RU;
 			case "it":
 				return LOCALE_IT;
+			case "tr":
+				return LOCALE_TR;
 			default:
 				return LOCALE_EN;
 		}
@@ -246,7 +249,9 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 			case LOCALE_RU:
 				return new Locale("ru");
 			case LOCALE_IT:
-				return new Locale("it");
+				return Locale.ITALIAN;
+			case LOCALE_TR:
+				return new Locale("tr");
 			default:
 				return Locale.ENGLISH;
 		}
