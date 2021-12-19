@@ -39,6 +39,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private FutureSupplier<MainActivityDelegate> delegate = (FutureSupplier<MainActivityDelegate>) NO_DELEGATE;
 	private CarEditText editText;
 	private TextWatcher textWatcher;
+	public static Boolean keyboardButtonPressed = false;
 
 	@NonNull
 	@Override
@@ -163,13 +164,16 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 					if ((q != null) && !q.isEmpty()) {
 						editText.setText(q.get(0));
 						w.afterTextChanged(editText.getText());
-					} else {
+					} else if (keyboardButtonPressed) {
 						textWatcher = w;
 						editText.removeTextChangedListener(w);
 						editText.addTextChangedListener(w);
 						if (w instanceof OnEditorActionListener)
 							editText.setOnEditorActionListener((OnEditorActionListener) w);
 						a().startInput(editText);
+						setKeyboardButtonPressed(false);
+					} else {
+						stopInput();
 					}
 				});
 			} else {
@@ -177,6 +181,10 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			}
 		});
 		return editText;
+	}
+
+	public static void setKeyboardButtonPressed(Boolean value) {
+		keyboardButtonPressed = value;
 	}
 
 	public void stopInput() {
