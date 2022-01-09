@@ -21,13 +21,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.lib.ItemBase;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
@@ -141,14 +141,39 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@CallSuper
 	@Override
 	protected boolean onItemMove(int fromPosition, int toPosition) {
-		MediaItemListView listView = getListView();
-		View c = listView.getChildAt(fromPosition);
-		if (c == null) return false;
-		MediaItemViewHolder h = (MediaItemViewHolder) listView.getChildViewHolder(c);
-		h.getItemView().hideMenu();
-		CollectionUtils.move(list, fromPosition, toPosition);
-		getParent().updateTitles().main().thenRun(this::refresh);
+		activity.getContextMenu().hide();
+		move(list, fromPosition, toPosition);
 		return true;
+	}
+
+	private void move(List<MediaItemWrapper> list, int fromPosition, int toPosition) {
+		if (fromPosition < toPosition) {
+			for (int i = fromPosition; i < toPosition; i++) {
+				swap(list, i, i + 1);
+			}
+		} else {
+			for (int i = fromPosition; i > toPosition; i--) {
+				swap(list, i, i - 1);
+			}
+		}
+	}
+
+	private void swap(List<MediaItemWrapper> list, int fromPosition, int toPosition) {
+		updatePos(list.get(fromPosition), fromPosition, toPosition);
+		updatePos(list.get(toPosition), toPosition, fromPosition);
+		Collections.swap(list, fromPosition, toPosition);
+	}
+
+	private void updatePos(MediaItemWrapper w, int from, int to) {
+		Item i = w.getItem();
+		if (i instanceof ItemBase) {
+			ItemBase ib = (ItemBase) i;
+			if (ib.getSeqNum() == from + 1) ib.setSeqNum(to + 1);
+		}
+		i.updateTitles().main().onSuccess(t -> activity.post(() -> {
+			MediaItemView v = w.getView();
+			if (v != null) v.refresh();
+		}));
 	}
 
 	@NonNull

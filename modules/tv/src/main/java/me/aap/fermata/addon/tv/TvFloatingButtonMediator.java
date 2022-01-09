@@ -32,5 +32,4 @@ class TvFloatingButtonMediator extends FloatingButtonMediator {
 			if (f instanceof TvFragment) ((TvFragment) f).addSource();
 		}
 	}
-
 }

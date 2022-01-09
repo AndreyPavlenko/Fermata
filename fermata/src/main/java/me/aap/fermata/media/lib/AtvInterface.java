@@ -173,7 +173,7 @@ public class AtvInterface implements Item.ChangeListener {
 			PreviewProgram.Builder b = new PreviewProgram.Builder();
 			b.setChannelId(p.cid)
 					.setType(TvContractCompat.PreviewPrograms.TYPE_CLIP)
-					.setTitle(ifNull(d.getTitle(), p.item::getName).toString())
+					.setTitle(getTitle(p, d))
 					.setDescription(ifNull(d.getSubtitle(), "").toString())
 					.setIntentUri(toIntentUri(INTENT_ACTION_PLAY, id));
 			if (p.item.isStream()) b.setLive(true);
@@ -223,6 +223,14 @@ public class AtvInterface implements Item.ChangeListener {
 				return b.build();
 			});
 		});
+	}
+
+	private String getTitle(Prog p, MediaDescriptionCompat d) {
+		CharSequence t = d.getTitle();
+		if (t == null) return p.item.getName();
+		String title = t.toString();
+		int idx = title.indexOf(". ");
+		return (idx < 0) ? title : title.substring(idx + 2);
 	}
 
 	private void scheduleUpdate(long time, String id) {

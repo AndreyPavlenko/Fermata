@@ -237,7 +237,11 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		return getId();
 	}
 
-	void setSeqNum(int seqNum) {
+	public int getSeqNum() {
+		return seqNum;
+	}
+
+	public void setSeqNum(int seqNum) {
 		this.seqNum = seqNum;
 	}
 
