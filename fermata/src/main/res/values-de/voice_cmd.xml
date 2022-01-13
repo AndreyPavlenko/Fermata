@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE resources [
+    <!ENTITY action_find "Suche">
+    <!ENTITY action_open "Öffne">
+    <!ENTITY action_pause "Pause">
+    <!ENTITY action_stop "Stop">
+    <!ENTITY action_play "Spiele">
+    <!ENTITY location_folders "Ordner?">
+    <!ENTITY location_favorites "Favoriten?">
+    <!ENTITY location_playlists "Wiedergabelisten?">
+    <!ENTITY location_tv "tv">
+    <!ENTITY location_youtube "youtube">
+    <!ENTITY location_browser "browser">
+    <!ENTITY time_unit_second "Sekunden?">
+    <!ENTITY time_unit_minute "Minuten?">
+    <!ENTITY time_unit_hour "Stunden?">
+    ]>
+
+<resources>
+    <string name="vcmd_action_find">&action_find;</string>
+    <string name="vcmd_action_open">&action_open;</string>
+    <string name="vcmd_action_pause">&action_pause;</string>
+    <string name="vcmd_action_stop">&action_stop;</string>
+    <string name="vcmd_action_play">(&action_play;)|Abspielen</string>
+    <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
+    <string name="vcmd_action_sub_on">schalte Untertitel ein?</string>
+    <string name="vcmd_action_sub_off">schalte Untertitel aus?</string>
+    <string name="vcmd_action_sub_change">Ändere Untertitel?</string>
+    <string name="vcmd_action_audio_change">Ändere Audio[ -]?stream</string>
+    <string name="vcmd_location_folders">&location_folders;</string>
+    <string name="vcmd_location_favorites">&location_favorites;</string>
+    <string name="vcmd_location_playlists">&location_playlists;</string>
+    <string name="vcmd_location_tv">&location_tv;</string>
+    <string name="vcmd_location_youtube">&location_youtube;</string>
+    <string name="vcmd_location_browser">&location_browser;</string>
+    <string name="vcmd_time_unit_second">&time_unit_second;</string>
+    <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
+    <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
+    <string name="vcmd_nums">null eins zwei drei vier fünf sechs sieben acht neun</string>
+
+    <string name="vcmd_cur_track">(Zeige )?aktuellen Titel</string>
+    <string name="vcmd_ff">(überspringe|springe)[- ]vorwärts (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(überspringe)|springe[- ]rückwärs (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((in )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
+</resources>

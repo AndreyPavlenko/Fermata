@@ -15,6 +15,7 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_RU;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_TR;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_DE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -278,8 +279,8 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.pref = MainActivityPrefs.LOCALE;
 			o.title = R.string.lang;
 			o.subtitle = R.string.string_format;
-			o.values = new int[]{R.string.lang_en, R.string.lang_it, R.string.lang_ru, R.string.lang_tr};
-			o.valuesMap = new int[]{LOCALE_EN, LOCALE_IT, LOCALE_RU, LOCALE_TR};
+			o.values = new int[]{R.string.lang_en, R.string.lang_it, R.string.lang_ru, R.string.lang_tr,R.string.lang_de};
+			o.valuesMap = new int[]{LOCALE_EN, LOCALE_IT, LOCALE_RU, LOCALE_TR, LOCALE_DE};
 			o.formatSubtitle = true;
 			o.removeDefault = false;
 		});
