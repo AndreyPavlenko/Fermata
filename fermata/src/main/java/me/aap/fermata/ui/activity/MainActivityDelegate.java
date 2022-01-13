@@ -44,6 +44,7 @@ import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.OperationCanceledException;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -83,7 +84,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
-import me.aap.fermata.auto.MainCarActivity;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
@@ -1194,8 +1194,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					kb.setImageResource(R.drawable.keyboard);
 					kb.setImageTintList(ColorStateList.valueOf(imgColor));
 					layout.setOnClickListener(v -> {
-						MainCarActivity.setKeyboardButtonPressed(true);
-						b.getMenu().hide();
+						promise.completeExceptionally(new OperationCanceledException());
+						hideActiveMenu();
 					});
 					layout.addView(kb);
 				}
