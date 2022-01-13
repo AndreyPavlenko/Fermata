@@ -40,11 +40,6 @@
 
     <string name="show_track_icons">Titelsymbol anzeigen</string>
     <string name="lang">Sprachen</string>
-    <string name="lang_en" translatable="false">Englisch</string>
-    <string name="lang_it" translatable="false">Italienisch</string>
-    <string name="lang_ru" translatable="false">Russisch</string>
-    <string name="lang_tr" translatable="false">Türkisch</string>
-	<string name="lang_de" translatable="false">Deutsch</string>
     <string name="hide_bars">Navigationsbalken ausblenden</string>
     <string name="hide_bars_sub">Den oberen und unteren Navigationsbalken ausblenden, wenn das Bedienfeld erscheint</string>
     <string name="show_pg_up_down">Seite nach oben/unten anzeigen</string>
@@ -281,7 +276,7 @@
     <string name="video_brightness">Video-Helligkeit</string>
     <string name="change_brightness_sub">Die Helligkeit kann auch mit einem Zwei-Finger-Scroller geändert werden.</string>
     <string name="watched_threshold">Beobachteter Schwellenwert</string>
-    <string name="watched_threshold_sub">Video wird als "angesehen" markiert, wenn mehr als als angegebene Prozentzahl angesehen wurde</string>
+    <string name="watched_threshold_sub">Video wird als "angesehen" markiert, wenn mehr als angegebene Prozentzahl angesehen wurde</string>
 
     <string name="other">Sonstiges</string>
     <string name="check_updates">Beim Start auf Updates prüfen</string>

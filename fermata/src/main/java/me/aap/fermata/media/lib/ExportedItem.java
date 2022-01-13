@@ -79,7 +79,7 @@ public class ExportedItem extends PlayableItemBase {
 		for (Iterator<ListenerWrapper> it = listeners.iterator(); it.hasNext(); ) {
 			ListenerWrapper w = it.next();
 
-			if (w.listener == l) {
+			if (w.getListener() == l) {
 				it.remove();
 				orig.removeChangeListener(w);
 				return true;
@@ -285,11 +285,15 @@ public class ExportedItem extends PlayableItemBase {
 		}
 	}
 
-	private final class ListenerWrapper implements Item.ChangeListener {
-		final Item.ChangeListener listener;
+	public final class ListenerWrapper implements Item.ChangeListener {
+		private final Item.ChangeListener listener;
 
 		public ListenerWrapper(Item.ChangeListener listener) {
 			this.listener = listener;
+		}
+
+		public ChangeListener getListener() {
+			return listener;
 		}
 
 		@Override
