@@ -190,11 +190,11 @@
     <string name="preferred_media_engine">Bevorzugte Medien-Engine</string>
     <string name="by_default">Standard</string>
 
-    <string name="playlist_add">zur Wiedergabeliste hinzufügen</string>
-    <string name="playlist_remove_item">von Wiedergabeliste entfernen</string>
-    <string name="playlist_create">Wiedergabeliste erstellen</string>
-    <string name="playlist_remove">Wiedergabeliste löschen</string>
-    <string name="playlist_name">Wiedergabeliste - Name</string>
+    <string name="playlist_add">zur Playlist hinzufügen</string>
+    <string name="playlist_remove_item">von Playlist entfernen</string>
+    <string name="playlist_create">Playlist erstellen</string>
+    <string name="playlist_remove">Playlist löschen</string>
+    <string name="playlist_name">Playlist - Name</string>
 
     <string name="bookmarks">Lesezeichen</string>
     <string name="create_bookmark">Lesezeichen erstellen</string>
@@ -228,12 +228,12 @@
     <string name="vfs_gdrive">Google Drive</string>
     <string name="vfs_sftp" translatable="false">SFTP</string>
     <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">M3U Wiedergabeliste</string>
+    <string name="m3u_playlist" translatable="false">M3U Playliste</string>
     <string name="m3u_playlist_name">Name</string>
     <string name="m3u_playlist_location">Speicherort</string>
     <string name="m3u_playlist_location_hint">Datei oder Http(s) URL</string>
     <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
-    <string name="m3u_playlist_video">Video Wiedergabeliste</string>
+    <string name="m3u_playlist_video">Video Playliste</string>
 
     <string name="eq_manual">Anleitung</string>
     <string name="eq_normal">Normal</string>
@@ -288,7 +288,7 @@
     <string name="update">Update</string>
     <string name="update_question">Eine neue Version %1$s ist verfügbar.\nWollen Sie die App aktualisieren?</string>
     <string name="export_prefs">Einstellungen als Datei exportieren (Sicherung)</string>
-    <string name="export_prefs_sub">Exportieren von Einstellungen, Ordnern, Wiedergabelisten usw. in eine Sicherungsdatei</string>
+    <string name="export_prefs_sub">Exportieren von Einstellungen, Ordnern, Playlisten usw. in eine Sicherungsdatei</string>
     <string name="export_prefs_ok">Die Einstellungen wurden in einer Datei %1$s gesichert</string>
     <string name="export_prefs_failed">Export der Einstellungen fehlgeschlagen: %1$s</string>
     <string name="import_prefs">Einstellungen aus Datei importieren</string>
@@ -309,8 +309,8 @@
     <string name="err_failed_to_play">Abspielen fehlgeschlagen %s</string>
     <string name="err_failed_to_play_cause">konnte nicht abgespielt werden %1$s: %2$s</string>
     <string name="err_unsupported_source_type">Nicht unterstützter Quellentyp: %s</string>
-    <string name="err_playlist_exists">Wiedergabeliste existiert bereits: %1$s</string>
-    <string name="err_invalid_playlist_name">Ungültiger Wiedergabelistenname: %1$s</string>
+    <string name="err_playlist_exists">Playlist existiert bereits: %1$s</string>
+    <string name="err_invalid_playlist_name">Ungültiger Playlist-Name: %1$s</string>
     <string name="err_failed_add_folder">Ordner hinzufügen fehlgeschlagen: %1$s</string>
     <string name="err_failed_open_url">URL konnte nicht geöffnet werden: %1$s</string>
     <string name="err_failed_install_module">Modul konnte nicht installiert werden: %1$s</string>
