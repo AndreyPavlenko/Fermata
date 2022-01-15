@@ -242,6 +242,7 @@
     <string name="move_up">Vai sopra</string>
     <string name="move_down">Vai sotto</string>
 
+    <string name="sys_bars_on_video_touch">Mostra barre di sistema al tocco</string>
     <string name="play_video_landscape">Riproduci video in modalità orizzontale</string>
     <string name="clock_pos">Posizione dell\'orologio</string>
     <string name="clock_pos_none">Nascondi</string>
