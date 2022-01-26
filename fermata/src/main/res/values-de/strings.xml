@@ -52,7 +52,7 @@
     <string name="nav_bar_size">Navigationsleiste - Größe</string>
     <string name="tool_bar_size">Werkzeugleiste - Größe</string>
     <string name="control_panel_size">Bedienfeld - Größe</string>
-    <string name="text_icon_size">Text und Icons - Größe</string>
+    <string name="text_icon_size">Text & Icons - Größe</string>
 
     <string name="play_next_on_completion">nach Beendigung weiter spielen</string>
 
@@ -228,12 +228,12 @@
     <string name="vfs_gdrive">Google Drive</string>
     <string name="vfs_sftp" translatable="false">SFTP</string>
     <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">M3U Playliste</string>
+    <string name="m3u_playlist" translatable="false">m3u Playlist</string>
     <string name="m3u_playlist_name">Name</string>
     <string name="m3u_playlist_location">Speicherort</string>
     <string name="m3u_playlist_location_hint">Datei oder Http(s) URL</string>
     <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
-    <string name="m3u_playlist_video">Video Playliste</string>
+    <string name="m3u_playlist_video">Video Playlist?</string>
 
     <string name="eq_manual">Anleitung</string>
     <string name="eq_normal">Normal</string>
@@ -265,7 +265,7 @@
     <string name="hours">Stunden</string>
     <string name="minutes">Minuten</string>
 
-    <string name="enable">Aktivierung</string>
+    <string name="enable">aktivieren?</string>
     <string name="move_left">nach links verschieben</string>
     <string name="move_right">nach rechts verschieben</string>
     <string name="move_up">nach oben verschieben</string>

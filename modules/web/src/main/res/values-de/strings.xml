@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="force_dark">Darkmode erzwingen (wenn unterstützt)</string>
+    <string name="user_agent" translatable="false">User-Agent</string>
+    <string name="user_agent_desktop">User-Agent - Desktop Version</string>
+    <string name="desktop_version">Desktop-Version</string>
+    <string name="full_screen">Vollbild</string>
+    <string name="full_screen_exit">Vollbild beenden</string>
+    <string name="url" translatable="false">URL</string>
+    <string name="video_scaling_fill_proportional">Proportionales Füllen</string>
+    <string name="video_quality">Video Qualität</string>
+    <string name="open_on_start">Beim Start öffnen</string>
+    <string name="try_to_skip_ad">Versuchen, Werbung zu überspringen</string>
+</resources>
