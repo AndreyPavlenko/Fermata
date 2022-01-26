@@ -180,6 +180,7 @@ public class TvM3uItem extends M3uItem implements TvItem {
 
 	@Override
 	protected void setTvgUrl(String url) {
+		if (url == null) return;
 		tvgUrl = url = url.trim();
 		TvM3uFile f = getResource();
 		if (f.getEpgUrl() == null) f.setEpgUrl(url);

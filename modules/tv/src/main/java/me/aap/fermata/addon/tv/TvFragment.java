@@ -1,5 +1,6 @@
 package me.aap.fermata.addon.tv;
 
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.view.animation.Animation;
@@ -118,6 +119,20 @@ public class TvFragment extends MediaLibFragment {
 			root.removeItem(item.getData()).onSuccess(v -> getAdapter().setParent(root));
 		}
 		return true;
+	}
+
+	@Override
+	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
+		super.contributeToNavBarMenu(builder);
+		if (isRootItem()) return;
+		TvAdapter a = getAdapter();
+
+		if (a.getListView().isSelectionActive() && a.hasSelectable() && a.hasSelected()) {
+			OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
+			b.addItem(me.aap.fermata.R.id.favorites_add, me.aap.fermata.R.drawable.favorite,
+					me.aap.fermata.R.string.favorites_add);
+			getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
+		}
 	}
 
 	@Override

@@ -119,7 +119,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		} else {
 			tb.findViewById(R.id.tool_view).setVisibility(VISIBLE);
 			tb.findViewById(R.id.tool_grid).setVisibility(VISIBLE);
-			tb.findViewById(R.id.tool_sort).setVisibility((b != null) && b.sortChildrenEnabled() ? VISIBLE : GONE);
+			tb.findViewById(R.id.tool_sort).setVisibility(b.sortChildrenEnabled() ? VISIBLE : GONE);
 		}
 	}
 

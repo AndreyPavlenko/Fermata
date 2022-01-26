@@ -259,7 +259,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			fb.setVisibility(VISIBLE);
 			if (info != null) info.setVisibility(VISIBLE);
 			super.setVisibility(VISIBLE);
-			hideTimer = new HideTimer(delay, false, info, fb);
+			hideTimer = new HideTimer(a, delay, false, info, fb);
 			a.postDelayed(hideTimer, delay);
 		}
 
@@ -288,7 +288,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		MainActivityDelegate a = getActivity();
 		if (hideTimer != null) {
 			int delay = getTouchDelay();
-			hideTimer = new HideTimer(delay, false, hideTimer.views);
+			hideTimer = new HideTimer(a, delay, false, hideTimer.views);
 			a.postDelayed(hideTimer, delay);
 		}
 		return a.interceptTouchEvent(e, me -> {
@@ -402,13 +402,15 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		if (getVisibility() == VISIBLE) {
 			super.setVisibility(GONE);
 			fb.setVisibility(GONE);
+			if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(true);
 			if (info != null) info.setVisibility(GONE);
 		} else {
 			super.setVisibility(VISIBLE);
 			fb.setVisibility(VISIBLE);
+			if (a.getPrefs().getSysBarsOnVideoTouchPref()) a.setFullScreen(false);
 			if (info != null) info.setVisibility(VISIBLE);
 			clearFocus();
-			hideTimer = new HideTimer(delay, false, info, fb);
+			hideTimer = new HideTimer(a, delay, false, info, fb);
 			a.postDelayed(hideTimer, delay);
 		}
 
@@ -437,7 +439,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		fb.setVisibility(VISIBLE);
 		if (info != null) info.setVisibility(VISIBLE);
 		clearFocus();
-		hideTimer = new HideTimer(delay, true, info, fb);
+		hideTimer = new HideTimer(a, delay, true, info, fb);
 		a.postDelayed(hideTimer, delay);
 		checkPlaybackTimer(a);
 	}
@@ -936,11 +938,13 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	}
 
 	private final class HideTimer implements Runnable {
+		final MainActivityDelegate activity;
 		final int delay;
 		final boolean seekMode;
 		final View[] views;
 
-		HideTimer(int delay, boolean seekMode, View... views) {
+		HideTimer(MainActivityDelegate activity, int delay, boolean seekMode, View... views) {
+			this.activity = activity;
 			this.delay = delay;
 			this.seekMode = seekMode;
 			this.views = views;
@@ -951,17 +955,16 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			if ((hideTimer != this) || ((mask & MASK_VIDEO_MODE) == 0)) return;
 
 			if (ControlPanelView.this.hasFocus()) {
-				hideTimer = new HideTimer(delay, seekMode, views);
-				getActivity().postDelayed(hideTimer, delay);
+				hideTimer = new HideTimer(activity, delay, seekMode, views);
+				activity.postDelayed(hideTimer, delay);
 				return;
 			}
 
-			if ((hideTimer == this) && ((mask & MASK_VIDEO_MODE) != 0)) {
-				ControlPanelView.super.setVisibility(GONE);
+			if (activity.getPrefs().getSysBarsOnVideoTouchPref()) activity.setFullScreen(true);
+			ControlPanelView.super.setVisibility(GONE);
 
-				for (View v : views) {
-					if (v != null) v.setVisibility(GONE);
-				}
+			for (View v : views) {
+				if (v != null) v.setVisibility(GONE);
 			}
 		}
 	}

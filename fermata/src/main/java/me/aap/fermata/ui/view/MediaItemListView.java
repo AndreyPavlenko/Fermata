@@ -100,7 +100,7 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	public void refreshState() {
 		for (int childCount = getChildCount(), i = 0; i < childCount; ++i) {
 			MediaItemViewHolder h = (MediaItemViewHolder) getChildViewHolder(getChildAt(i));
-			h.getItemView().refreshState();
+			h.getItemView().refresh();
 		}
 	}
 

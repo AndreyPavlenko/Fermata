@@ -11,11 +11,11 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
 import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_DE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_RU;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_TR;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_DE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -279,8 +279,8 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.pref = MainActivityPrefs.LOCALE;
 			o.title = R.string.lang;
 			o.subtitle = R.string.string_format;
-			o.values = new int[]{R.string.lang_en, R.string.lang_it, R.string.lang_ru, R.string.lang_tr,R.string.lang_de};
-			o.valuesMap = new int[]{LOCALE_EN, LOCALE_IT, LOCALE_RU, LOCALE_TR, LOCALE_DE};
+			o.values = new int[]{R.string.lang_en, R.string.lang_de, R.string.lang_it, R.string.lang_ru, R.string.lang_tr};
+			o.valuesMap = new int[]{LOCALE_EN, LOCALE_DE, LOCALE_IT, LOCALE_RU, LOCALE_TR};
 			o.formatSubtitle = true;
 			o.removeDefault = false;
 		});
@@ -450,6 +450,11 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			o.formatSubtitle = true;
 			o.values = new int[]{R.string.clock_pos_none, R.string.clock_pos_left,
 					R.string.clock_pos_right, R.string.clock_pos_center};
+		});
+		sub1.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.SYS_BARS_ON_VIDEO_TOUCH;
+			o.title = R.string.sys_bars_on_video_touch;
 		});
 		sub1.addBooleanPref(o -> {
 			o.store = a.getPrefs();

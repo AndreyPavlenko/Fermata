@@ -341,7 +341,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
 		super.onVisibilityChanged(changedView, visibility);
 		Item item = getItem();
-		if ((visibility == VISIBLE) && (item != null)) refreshState();
+		if ((visibility == VISIBLE) && (item != null)) refresh();
 	}
 
 	@Override
@@ -395,13 +395,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	public void refresh() {
 		MediaItemWrapper w = getItemWrapper();
 		if (w == null) return;
-		rebind(w, w);
-		refreshState(w.getItem());
-	}
-
-	public void refreshState() {
-		MediaItemWrapper w = getItemWrapper();
-		if (w == null) return;
 		Item item = w.getItem();
 		if ((item instanceof PlayableItem) && ((PlayableItem) item).isVideo()) {
 			rebind(w, null);
@@ -439,7 +432,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 						ActivityFragment f = a.getActiveFragment();
 						if (f instanceof MediaLibFragment) {
 							MediaItemView focus = ((MediaLibFragment) f).getListView().focusTo(next);
-							if (focus != null) focus.refreshState();
+							if (focus != null) focus.refresh();
 						}
 					}
 				}, updateDelay);
@@ -528,11 +521,6 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		}
 
 		lv.scrollToPosition(idx, false);
-	}
-
-	void hideMenu() {
-		OverlayMenu menu = getMainActivity().findViewById(R.id.context_menu);
-		menu.hide();
 	}
 
 	private MainActivityDelegate getMainActivity() {

@@ -271,6 +271,7 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
 
+    <string name="sys_bars_on_video_touch">Show system bars on video touch</string>
     <string name="play_video_landscape">Playing video in landscape mode</string>
     <string name="clock_pos">Clock position</string>
     <string name="clock_pos_none">None</string>

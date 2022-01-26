@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.OperationCanceledException;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
@@ -160,16 +161,18 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			if (a.getPrefs().getVoiceControlEnabledPref()) {
 				a.startSpeechRecognizer(true).onCompletion((q, err) -> {
 					stopInput();
-					if ((q != null) && !q.isEmpty()) {
-						editText.setText(q.get(0));
-						w.afterTextChanged(editText.getText());
-					} else {
+					if (err instanceof OperationCanceledException) {
 						textWatcher = w;
 						editText.removeTextChangedListener(w);
 						editText.addTextChangedListener(w);
 						if (w instanceof OnEditorActionListener)
 							editText.setOnEditorActionListener((OnEditorActionListener) w);
 						a().startInput(editText);
+					} else if ((q != null) && !q.isEmpty()) {
+						editText.setText(q.get(0));
+						w.afterTextChanged(editText.getText());
+					} else {
+						stopInput();
 					}
 				});
 			} else {

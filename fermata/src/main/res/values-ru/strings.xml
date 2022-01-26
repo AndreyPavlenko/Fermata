@@ -247,6 +247,7 @@
     <string name="move_up">Сдвинуть вверх</string>
     <string name="move_down">Сдвинуть вниз</string>
 
+    <string name="sys_bars_on_video_touch">Показывать системные панели, при касании видео</string>
     <string name="play_video_landscape">Воспроизводить видео в альбомной ориентации</string>
     <string name="clock_pos">Расположение часов</string>
     <string name="clock_pos_none">Нет</string>

@@ -44,6 +44,7 @@ import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.OperationCanceledException;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -84,7 +85,9 @@ import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
+import me.aap.fermata.media.lib.ExportedItem;
 import me.aap.fermata.media.lib.ExtRoot;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -349,7 +352,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 		if (me.aap.utils.BuildConfig.D) {
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
+				if (l instanceof ExportedItem.ListenerWrapper)
+					l = ((ExportedItem.ListenerWrapper) l).getListener();
 				if (l instanceof FermataAddon) return false;
+				if (l instanceof AtvInterface) return false;
 				if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
 				if ((l instanceof MediaEngineManager) && (b instanceof DefaultMediaLib)) return false;
 				return (!(l instanceof AddonManager)) || (b != FermataApplication.get().getPreferenceStore());
@@ -1187,7 +1193,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					kb.setLayoutParams(lp);
 					kb.setImageResource(R.drawable.keyboard);
 					kb.setImageTintList(ColorStateList.valueOf(imgColor));
-					layout.setOnClickListener(v -> b.getMenu().hide());
+					layout.setOnClickListener(v -> {
+						promise.completeExceptionally(new OperationCanceledException());
+						hideActiveMenu();
+					});
 					layout.addView(kb);
 				}
 			});

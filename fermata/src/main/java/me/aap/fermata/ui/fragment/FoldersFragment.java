@@ -77,7 +77,7 @@ public class FoldersFragment extends MediaLibFragment {
 
 			if (a.getListView().isSelectionActive() && a.hasSelectable() && a.hasSelected()) {
 				OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
-				builder.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
 				getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
 			}
 		}

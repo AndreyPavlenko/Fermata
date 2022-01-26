@@ -512,7 +512,7 @@ public class M3uItem extends BrowsableItemBase {
 	}
 
 	private static String trim(String s) {
-		return (s = s.trim()).isEmpty() ? null : s;
+		return (s == null) || (s = s.trim()).isEmpty() ? null : s;
 	}
 
 	protected static final class Data {
