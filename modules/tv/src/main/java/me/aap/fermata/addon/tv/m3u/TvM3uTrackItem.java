@@ -98,12 +98,14 @@ public class TvM3uTrackItem extends M3uTrackItem implements StreamItem, StreamIt
 		start = end + 1;
 		end = id.indexOf(':', start);
 		int tid = Integer.parseInt(id.substring(start, end));
+		start = id.indexOf(':', end + 1);
+		String uri = (start > 0) ? id.substring(start + 1) : null;
 		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(TvM3uItem.SCHEME).append(id, end, id.length());
+		tb.append(TvM3uItem.SCHEME).append(id, end, (start > 0) ? start : id.length());
 		FutureSupplier<? extends Item> f = root.getItem(TvM3uItem.SCHEME, tb.releaseString());
 		return (f == null) ? completedNull() : f.then(i -> {
 			TvM3uItem m3u = (TvM3uItem) i;
-			return (m3u != null) ? m3u.getTrack(gid, tid) : completedNull();
+			return (m3u != null) ? m3u.getTrack(gid, tid, uri) : completedNull();
 		});
 	}
 

@@ -11,6 +11,8 @@ import static me.aap.utils.async.Completed.completed;
 import android.content.Context;
 import android.content.res.Resources;
 
+import androidx.annotation.Nullable;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.tv.R;
 import me.aap.fermata.addon.tv.TvItem;
@@ -95,7 +97,7 @@ public class TvM3uItem extends M3uItem implements TvItem {
 	@Override
 	protected M3uGroupItem createGroup(String idPath, String name, int groupId) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(TvM3uGroupItem.SCHEME).append(':').append(groupId).append(idPath);
+		tb.append(TvM3uGroupItem.SCHEME).append(':').append(groupId).append(idPath).append(':').append(name);
 		return new TvM3uGroupItem(tb.releaseString(), this, name, groupId);
 	}
 
@@ -107,7 +109,7 @@ public class TvM3uItem extends M3uItem implements TvItem {
 																		 String catchup, String catchupDays, String catchupSource) {
 		SharedTextBuilder tb = SharedTextBuilder.get();
 		tb.append(TvM3uTrackItem.SCHEME).append(':').append(groupNumber).append(':')
-				.append(trackNumber).append(idPath);
+				.append(trackNumber).append(idPath).append(':').append(file.getRid());
 		int ct = CATCHUP_TYPE_AUTO;
 		int cd = -1;
 
@@ -160,12 +162,12 @@ public class TvM3uItem extends M3uItem implements TvItem {
 		return me.aap.fermata.R.drawable.tv;
 	}
 
-	public FutureSupplier<TvM3uTrackItem> getTrack(int gid, int tid) {
-		return super.getTrack(gid, tid).cast();
+	public FutureSupplier<TvM3uTrackItem> getTrack(int gid, int tid, @Nullable String uri) {
+		return super.getTrack(gid, tid, uri).cast();
 	}
 
-	public FutureSupplier<TvM3uGroupItem> getGroup(int id) {
-		return super.getGroup(id).cast();
+	public FutureSupplier<TvM3uGroupItem> getGroup(int id, @Nullable String name) {
+		return super.getGroup(id, name).cast();
 	}
 
 	@Override

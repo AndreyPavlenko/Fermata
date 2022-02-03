@@ -101,7 +101,7 @@ class DefaultPlaylist extends ItemContainer<PlayableItem> implements Playlist, P
 	}
 
 	public FutureSupplier<List<Item>> listChildren() {
-		return listChildren(getPlaylistItemsPref());
+		return listChildren(getPlaylistPreferenceStore(), PLAYLIST_ITEMS);
 	}
 
 	@Override
