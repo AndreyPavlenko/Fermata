@@ -53,6 +53,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	private WebBrowserAddon addon;
 	private FermataWebClient webClient;
 	private FermataChromeClient chrome;
+	private Boolean isDarkPhoneTheme;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -151,9 +152,24 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 	private void setForceDark(WebBrowserAddon a, boolean reload) {
 		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
-			int v = a.isForceDark() ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_AUTO;
+			getPhoneTheme();
+			int v;
+			if (a.isForceDark() || (isDarkPhoneTheme && !a.isDisableDark())) v = WebSettingsCompat.FORCE_DARK_ON;
+			else if (a.isAutoDark() || !isDarkPhoneTheme) v = WebSettingsCompat.FORCE_DARK_AUTO;
+			else v = WebSettingsCompat.FORCE_DARK_OFF;
 			WebSettingsCompat.setForceDark(getSettings(), v);
 			if (reload) reload();
+		}
+	}
+
+	public void getPhoneTheme() {
+		switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
+			case Configuration.UI_MODE_NIGHT_YES:
+				isDarkPhoneTheme = true;
+				break;
+			case Configuration.UI_MODE_NIGHT_NO:
+				isDarkPhoneTheme = false;
+				break;
 		}
 	}
 
