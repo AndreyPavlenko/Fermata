@@ -1,18 +1,27 @@
 package me.aap.fermata.util;
 
 import static android.content.pm.PackageManager.FEATURE_LEANBACK;
+import static android.os.Build.VERSION.SDK_INT;
 
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Build.VERSION_CODES;
+import android.os.Environment;
+
+import androidx.annotation.Nullable;
 
 import com.google.android.play.core.splitcompat.SplitCompat;
 
+import java.io.File;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.app.App;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.net.http.HttpFileDownloader;
 import me.aap.utils.ui.notif.HttpDownloadStatusListener;
@@ -56,11 +65,28 @@ public class Utils {
 		return ctx;
 	}
 
-	public static boolean isSafSupported(MainActivityDelegate a) {
-		if (a.isCarActivity()) return false;
-		Context ctx = a.getContext();
+	public static boolean isSafSupported(@Nullable MainActivityDelegate a) {
+		if ((a != null) && a.isCarActivity()) return false;
+		Context ctx = (a == null) ? App.get() : a.getContext();
 		if (ctx.getPackageManager().hasSystemFeature(FEATURE_LEANBACK)) return false;
 		Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 		return i.resolveActivity(ctx.getPackageManager()) != null;
+	}
+
+	public static boolean isExternalStorageManager() {
+		return (SDK_INT >= VERSION_CODES.R) && Environment.isExternalStorageManager();
+	}
+
+	public static File getAddonsFileDir(AddonInfo i) {
+		Context ctx = App.get();
+		String name = "addons/" + i.getModuleName();
+		File f = ctx.getExternalFilesDir(name);
+		return ((f == null) ? new File(ctx.getFilesDir(), name) : f);
+	}
+
+	public static File getAddonsCacheDir(AddonInfo i) {
+		Context ctx = App.get();
+		File f = ctx.getExternalCacheDir();
+		return new File((f == null) ? ctx.getCacheDir() : f, "addons/" + i.getModuleName());
 	}
 }

@@ -17,6 +17,7 @@
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
+    <string name="addon_name_felex" translatable="false">Felex</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>

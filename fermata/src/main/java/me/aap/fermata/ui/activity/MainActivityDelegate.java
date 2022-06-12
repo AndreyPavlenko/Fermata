@@ -752,7 +752,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		Promise<List<String>> p = new Promise<>();
 		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString());
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
 		speechListener = new SpeechListener(p, textInput);
 		speechListener.start(i);

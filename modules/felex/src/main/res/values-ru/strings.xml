@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dict_folder">Папка хранения словарей</string>
+    <string name="cache_folder">Папка хранения кэша</string>
+    <string name="dict_sub1">Слов: %1$d</string>
+    <string name="dict_sub2">Слов: %1$d. Прогресс: %2$d/%3$d.</string>
+    <string name="start_tutor">Начать обучение</string>
+    <string name="start_tutor_dir">Прямой перевод</string>
+    <string name="start_tutor_rev">Обратный перевод</string>
+    <string name="start_tutor_mix">Смешанный</string>
+    <string name="start_tutor_listen">Прослушивание</string>
+</resources>

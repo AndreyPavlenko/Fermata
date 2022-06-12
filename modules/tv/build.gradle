@@ -10,7 +10,8 @@ ext {
             [
                     name : 'tv',
                     icon : 'tv',
-                    class: 'me.aap.fermata.addon.tv.TvAddon'
+                    class: 'me.aap.fermata.addon.tv.TvAddon',
+                    order: 1
             ]
     ]
 }

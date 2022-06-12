@@ -139,8 +139,8 @@ public class M3uFile implements VirtualFile {
 
 	@Nullable
 	@Override
-	public RandomAccessChannel getChannel() {
-		return LocalFileSystem.getInstance().getFile(getLocalFile()).getChannel();
+	public RandomAccessChannel getChannel(String mode) {
+		return LocalFileSystem.getInstance().getFile(getLocalFile()).getChannel(mode);
 	}
 
 	@Override
