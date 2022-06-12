@@ -1,6 +1,11 @@
 package me.aap.fermata.ui.fragment;
 
+import android.content.Context;
+
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+
+import com.google.android.play.core.splitcompat.SplitCompat;
 
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.VoiceCommand;
@@ -12,6 +17,12 @@ import me.aap.utils.ui.view.FloatingButton;
  * @author Andrey Pavlenko
  */
 public abstract class MainActivityFragment extends ActivityFragment {
+
+	@Override
+	public void onAttach(@NonNull Context context) {
+		super.onAttach(context);
+		SplitCompat.install(context);
+	}
 
 	@Override
 	public MainActivityDelegate getActivityDelegate() {

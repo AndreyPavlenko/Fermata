@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dict_folder">Dictionaries folder</string>
+    <string name="cache_folder">Cache folder</string>
+    <string name="dict_sub1">Words: %1$d</string>
+    <string name="dict_sub2">Words: %1$d. Progress: %2$d/%3$d.</string>
+    <string name="start_tutor">Start tutor</string>
+    <string name="start_tutor_dir">Direct translation</string>
+    <string name="start_tutor_rev">Reverse translation</string>
+    <string name="start_tutor_mix">Mixed</string>
+    <string name="start_tutor_listen">Listening</string>
+</resources>

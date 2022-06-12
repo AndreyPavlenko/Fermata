@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="start_tutor" type="id" />
+    <item name="start_tutor_dir" type="id" />
+    <item name="start_tutor_rev" type="id" />
+    <item name="start_tutor_mix" type="id" />
+    <item name="start_tutor_listen" type="id" />
+</resources>

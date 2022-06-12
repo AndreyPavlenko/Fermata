@@ -1,0 +1,34 @@
+#Name		Example
+#SourceLang	de
+#TargetLang	en
+#Count		4
+
+Sein
+	To be
+		ich bin
+			I am
+		du bist
+			you are
+		er/sie/es ist
+			he/she/it is
+		wir sind
+			we are
+		ihr seid
+			you are
+		sie sind
+			they are
+
+[das] Geld
+	Money
+		Ich bin Student und habe nicht viel Geld
+			I'm a student and don't have much money
+
+[der] Preis
+	Price
+		Unsere Wahl hängt von dem Preis ab
+			Our choice depends on the price
+
+[die] Ware
+	Goods
+		Die Verkäuferin packt mir die Ware ein
+			The saleswoman packs the goods for me

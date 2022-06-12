@@ -1,7 +1,7 @@
 ext {
     def abi = project.properties['ABI']
-    VERSION_CODE = 193
-    VERSION_NAME = "1.8.12"
+    VERSION_CODE = 200
+    VERSION_NAME = "1.9.0"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 31
     SDK_COMPILE_VERSION = 31
@@ -111,19 +111,19 @@ gradle.projectsEvaluated {
         if (p.ext.has('addons')) {
             p.ext.addons.forEach {
                 if (gradle.ext.addonInfo.length() == 0) {
-                    gradle.ext.addonInfo.append('new me.aap.fermata.addon.AddonInfo[] {\n')
+                    gradle.ext.addonInfo.append('me.aap.utils.collection.CollectionUtils.sort(new me.aap.fermata.addon.AddonInfo[] {\n')
                 } else {
                     gradle.ext.addonInfo.append(',\n')
                 }
 
                 gradle.ext.addonInfo.append(
-                        "new me.aap.fermata.addon.AddonInfo(\"${p.name}\", \"${it['class']}\", R.string.addon_name_${it['name']}, R.drawable.${it['icon']})")
+                        "new me.aap.fermata.addon.AddonInfo(\"${p.name}\", \"${it['class']}\", R.string.addon_name_${it['name']}, R.drawable.${it['icon']}, ${it['order']}, ${it['enabled']})")
             }
         }
     }
 
     if (gradle.ext.addonInfo.length() != 0) {
-        gradle.ext.addonInfo.append('\n}')
+        gradle.ext.addonInfo.append('\n})')
         project(':fermata').android.productFlavors.forEach {
             it.buildConfigField 'me.aap.fermata.addon.AddonInfo[]', 'ADDONS', gradle.ext.addonInfo.toString()
         }
