@@ -13,7 +13,7 @@ import me.aap.utils.async.FutureSupplier;
  */
 public class Word implements Comparable<Word> {
 	private final String raw;
-	private final long offset;
+	private long offset;
 	private long cacheOffset;
 	private int cacheLen;
 	private byte dirProgress;
@@ -91,7 +91,7 @@ public class Word implements Comparable<Word> {
 	}
 
 	public FutureSupplier<List<Translation>> getTranslations(Dict dict) {
-		return dict.getMgr().enqueue(() -> dict.readTranslations(this));
+		return dict.readTranslations(this);
 	}
 
 	public boolean matches(String w) {
@@ -141,6 +141,10 @@ public class Word implements Comparable<Word> {
 
 	long getOffset() {
 		return offset;
+	}
+
+	void setOffset(long offset) {
+		this.offset = offset;
 	}
 
 	long getCacheOffset() {
