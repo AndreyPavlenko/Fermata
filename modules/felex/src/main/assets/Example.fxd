@@ -3,6 +3,16 @@
 #TargetLang	en
 #Count		4
 
+[das] Geld
+	Money
+		Ich bin Student und habe nicht viel Geld
+			I'm a student and don't have much money
+
+[der] Preis
+	Price
+		Unsere Wahl hängt von dem Preis ab
+			Our choice depends on the price
+
 Sein
 	To be
 		ich bin
@@ -17,16 +27,6 @@ Sein
 			you are
 		sie sind
 			they are
-
-[das] Geld
-	Money
-		Ich bin Student und habe nicht viel Geld
-			I'm a student and don't have much money
-
-[der] Preis
-	Price
-		Unsere Wahl hängt von dem Preis ab
-			Our choice depends on the price
 
 [die] Ware
 	Goods

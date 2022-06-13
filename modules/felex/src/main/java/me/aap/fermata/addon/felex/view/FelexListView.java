@@ -3,6 +3,7 @@ package me.aap.fermata.addon.felex.view;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.addon.felex.dict.Dict.findWord;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.UiUtils.toPx;
@@ -57,7 +58,9 @@ public class FelexListView extends RecyclerView implements Closeable {
 	private final MainActivityDelegate activity;
 	@NonNull
 	private Content<?, ?, ?> content = new MgrContent();
+	@Nullable
 	private Pattern filter;
+	@NonNull
 	private String filterText = "";
 	private boolean closed;
 
@@ -69,8 +72,18 @@ public class FelexListView extends RecyclerView implements Closeable {
 		setAdapter(new DictAdapter());
 	}
 
-	public DictMgr getDictMgr() {
+	DictMgr getDictMgr() {
 		return content.mgr();
+	}
+
+	Object getContent() {
+		return content.content;
+	}
+
+	void setContent(Dict d) {
+		MgrContent mgr = content.root();
+		mgr.ls = null;
+		adapter().setContent(new DictContent(mgr, d));
 	}
 
 	@Nullable
@@ -112,7 +125,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 	public void close() {
 		if (isClosed()) return;
 		closed = true;
-		content.mgr().close();
+		content.mgr().reset();
 	}
 
 	public boolean isClosed() {
@@ -121,8 +134,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 
 	public void onFolderChanged() {
 		Log.d("Dictionaries or cache folder changed - reloading");
-		content.mgr().close();
-		adapter().setContent(new MgrContent());
+		content.mgr().reset().thenRun(() -> adapter().setContent(new MgrContent()));
 	}
 
 	public void onProgressChanged(Dict d, Word w) {
@@ -150,7 +162,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 	}
 
 	@SuppressLint("NotifyDataSetChanged")
-	void setFilter(String filter) {
+	void setFilter(@NonNull String filter) {
 		if (filter.equals(filterText)) return;
 		filterText = filter;
 		this.filter = filter.isEmpty() ? null
@@ -244,7 +256,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 	private abstract class Content<C, L, P extends Content> {
 		final P parent;
 		final C content;
-		private FutureSupplier<List<L>> ls;
+		FutureSupplier<List<L>> ls;
 
 		Content(P parent, C content) {
 			this.parent = parent;
@@ -271,7 +283,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 			}));
 		}
 
-		private List<L> filter(List<L> list) {
+		List<L> filter(List<L> list) {
 			Pattern f = filter;
 			if (f == null) return list;
 			List<L> ls = new ArrayList<>();
@@ -280,11 +292,17 @@ public class FelexListView extends RecyclerView implements Closeable {
 			}
 			return ls;
 		}
+
+		MgrContent root() {
+			for (Content c = this; ; c = c.parent) {
+				if (c instanceof MgrContent) return (MgrContent) c;
+			}
+		}
 	}
 
 	private final class MgrContent extends Content<DictMgr, Dict, MgrContent> {
 		MgrContent() {
-			super(null, DictMgr.create());
+			super(null, DictMgr.get());
 		}
 
 		@NonNull
@@ -345,6 +363,17 @@ public class FelexListView extends RecyclerView implements Closeable {
 		@Override
 		boolean matches(Pattern filter, Word item) {
 			return filter.matcher(item.getWord()).matches();
+		}
+
+		@Override
+		List<Word> filter(List<Word> list) {
+			Pattern f = filter;
+			if ((f == null) || filterText.isEmpty()) return list;
+			int from = findWord(list, filterText);
+			if (from < 0) from = -from - 1;
+			int to = from;
+			for (int s = list.size(); (to < s) && matches(f, list.get(to)); to++) ;
+			return list.subList(from, to);
 		}
 	}
 
@@ -549,6 +578,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 			if ((dir == 100) && (rev == 100)) {
 				progress.setProgressDrawable(new ColorDrawable(Color.GREEN));
 			} else {
+				progress.setVisibility(VISIBLE);
+
 				if (dir < rev) {
 					progress.setProgress(rev);
 					progress.setSecondaryProgress(dir);
@@ -559,8 +590,6 @@ public class FelexListView extends RecyclerView implements Closeable {
 					progress.setProgressDrawable(revProgLess);
 				}
 			}
-
-			progress.setVisibility(VISIBLE);
 		}
 
 		void scale(float scale) {
