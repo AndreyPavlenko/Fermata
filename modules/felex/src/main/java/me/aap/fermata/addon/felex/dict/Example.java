@@ -12,6 +12,11 @@ public class Example {
 		this.sentence = sentence;
 	}
 
+	Example(String sentence, String translation) {
+		this.sentence = sentence;
+		this.translation = translation;
+	}
+
 	public String getSentence() {
 		return sentence;
 	}

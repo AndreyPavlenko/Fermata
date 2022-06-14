@@ -1,6 +1,8 @@
 package me.aap.fermata.addon.felex.dict;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.DictMgr.CACHE_EXT;
 import static me.aap.utils.async.Completed.completed;
@@ -9,8 +11,10 @@ import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 import static me.aap.utils.misc.Assert.assertMainThread;
 import static me.aap.utils.text.TextUtils.compareToIgnoreCase;
 import static me.aap.utils.text.TextUtils.isBlank;
+import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -33,7 +37,7 @@ import me.aap.utils.async.Promise;
 import me.aap.utils.function.CheckedFunction;
 import me.aap.utils.function.CheckedSupplier;
 import me.aap.utils.function.ToIntFunction;
-import me.aap.utils.holder.BiHolder;
+import me.aap.utils.io.ByteBufferOutputStream;
 import me.aap.utils.io.CountingOutputStream;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.io.RandomAccessChannel;
@@ -50,7 +54,6 @@ public class Dict implements Comparable<Dict> {
 	private static final String TAG_NAME = "#Name";
 	private static final String TAG_SRC_LANG = "#SourceLang";
 	private static final String TAG_TARGET_LANG = "#TargetLang";
-	private static final String TAG_COUNT = "#Count";
 	private final DictMgr mgr;
 	private final VirtualFile dictFile;
 	private final RandomAccessChannel channel;
@@ -58,24 +61,23 @@ public class Dict implements Comparable<Dict> {
 	private final Locale targetLang;
 	private final String name;
 	private boolean closed;
-	private int wordsCount;
 	private FutureSupplier<List<Word>> words;
 	private ByteBuffer bb;
 	private StringBuilder sb;
+	private int wordsCount;
 	private int dirProgress;
 	private int revProgress;
 	private RandomAccessChannel cacheChannel;
 	private List<Word> progressUpdate;
 
 	private Dict(DictMgr mgr, VirtualFile dictFile, RandomAccessChannel channel, String name,
-							 Locale sourceLang, Locale targetLang, int wordsCount) {
+							 Locale sourceLang, Locale targetLang) {
 		this.mgr = mgr;
 		this.dictFile = dictFile;
 		this.channel = channel;
 		this.sourceLang = sourceLang;
 		this.name = name;
 		this.targetLang = targetLang;
-		this.wordsCount = wordsCount;
 	}
 
 	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile) {
@@ -89,7 +91,6 @@ public class Dict implements Comparable<Dict> {
 			String name = null;
 			Locale srcLang = null;
 			Locale targetLang = null;
-			int count = 0;
 
 			for (int i = r.readLine(sb); i != -1; sb.setLength(0), i = r.readLine(sb)) {
 				if ((sb.length() == 0) || sb.charAt(0) != '#') break;
@@ -99,19 +100,18 @@ public class Dict implements Comparable<Dict> {
 					srcLang = new Locale(sb.substring(TAG_SRC_LANG.length()).trim());
 				else if (TextUtils.startsWith(sb, TAG_TARGET_LANG))
 					targetLang = new Locale(sb.substring(TAG_TARGET_LANG.length()).trim());
-				else if (TextUtils.startsWith(sb, TAG_COUNT))
-					count = Integer.parseInt(sb.substring(TAG_COUNT.length()).trim());
 			}
 
 			if ((name != null) && (srcLang != null) && (targetLang != null)) {
-				return new Dict(mgr, dictFile, ch, name, srcLang, targetLang, count);
+				return new Dict(mgr, dictFile, ch, name, srcLang, targetLang);
 			}
 
 			ch.close();
 			throw new IllegalArgumentException("Invalid dictionary header: " + dictFile.getName());
 		}).then(d -> d.readCacheHeader().map(h -> {
-			d.dirProgress = h.value1;
-			d.revProgress = h.value2;
+			d.wordsCount = h.wordsCount;
+			d.dirProgress = h.dirProgress;
+			d.revProgress = h.revProgress;
 			return d;
 		}));
 	}
@@ -122,9 +122,9 @@ public class Dict implements Comparable<Dict> {
 			RandomAccessChannel ch = dictFile.getChannel("rw");
 			if (ch == null)
 				throw new IOException("Unable to create dictionary file: " + dictFile.getName());
-			Dict d = new Dict(mgr, dictFile, ch, name, srcLang, targetLang, 0);
+			Dict d = new Dict(mgr, dictFile, ch, name, srcLang, targetLang);
 			try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(ch.getOutputStream(0), UTF_8))) {
-				d.writeDictHeader(w, 0);
+				d.writeDictHeader(w);
 			}
 			return d;
 		});
@@ -160,34 +160,48 @@ public class Dict implements Comparable<Dict> {
 		return (c == 0) ? 0 : revProgress / c;
 	}
 
+	public VirtualFile getDictFile() {
+		return dictFile;
+	}
+
+	FutureSupplier<VirtualFile> getCacheFile(boolean create) {
+		return FelexAddon.get().getCacheFolder().then(dir -> {
+			String name = dictFile.getName();
+			int i = name.lastIndexOf('.');
+			if (i != -1) name = name.substring(0, i) + CACHE_EXT;
+			return create ? dir.createFile(name) : dir.getChild(name).cast();
+		});
+	}
+
 	public FutureSupplier<List<Word>> getWords() {
 		assertMainThread();
 		if (isClosed()) throw new IllegalStateException();
-		if (words != null) return words.fork();
 
-		int wc = wordsCount;
-		words = readWords(wc).then(w -> {
-			List<Word> aligned = align(w);
-			if ((aligned != null) || (wc != w.size())) {
-				return writeWords((aligned == null) ? w : aligned);
-			} else {
-				return completed(w);
-			}
-		}).then(w -> readCache(w).main().map(h -> {
-			dirProgress = h.value1;
-			revProgress = h.value2;
-			wordsCount = w.size();
-			return w;
-		})).onFailure(err -> {
-			Log.e(err, "Failed to load words from ", dictFile.getName());
-			close();
-		});
+		if (words == null) {
+			words = readWords(wordsCount).then(words -> readCache(words).main().onCompletion((h, err) -> {
+				if (err != null) {
+					Log.e(err, "Failed to load words from ", dictFile.getName());
+					close();
+				} else {
+					wordsCount = words.size();
+					dirProgress = h.dirProgress;
+					revProgress = h.revProgress;
+					this.words = completed(words);
 
-		return words;
+					if (h.wordsCount != wordsCount) {
+						h.wordsCount = wordsCount;
+						writeCacheHeader(h).onFailure(herr -> Log.e(herr, "Failed to write cache header"));
+					}
+				}
+			}).map(c -> words));
+		}
+
+		return words.fork();
 	}
 
 	public FutureSupplier<Word> getRandomWord(Random rnd, Deque<Word> history,
 																						ToIntFunction<Word> getProgress) {
+		assertMainThread();
 		return getWords().main().map(words -> {
 			int s = words.size();
 			if (s == 0) return null;
@@ -229,6 +243,62 @@ public class Dict implements Comparable<Dict> {
 		});
 	}
 
+	public FutureSupplier<Integer> addWord(String word, String trans, @Nullable String example,
+																				 @Nullable String exampleTrans) {
+		assertMainThread();
+		return getWords().main().then(words -> {
+			Word w = Word.create(word);
+			int i = findWord(words, w.getWord());
+			if (i > 0) throw new IllegalArgumentException("Word " + word + " is already exists");
+			int idx = -i - 1;
+			long off = (idx < words.size()) ? words.get(idx).getOffset() : -1;
+
+			return writeDict(ch -> {
+				ByteBuffer bb = bb();
+				bb.clear();
+
+				try (Writer writer = new OutputStreamWriter(new ByteBufferOutputStream(bb), UTF_8)) {
+					Translation tr = new Translation(trans);
+					if (!isNullOrBlank(example) && !isNullOrBlank(exampleTrans)) {
+						tr.addExample(new Example(example, exampleTrans));
+					}
+					w.write(writer, singletonList(tr));
+					writer.append('\n');
+				}
+
+				bb.flip();
+
+				if (off == -1) {
+					long o = ch.size();
+					ch.write(bb, o);
+					w.setOffset(o);
+				} else {
+					int len = bb.remaining();
+					ch.transferFrom(channel, off, off + len, ch.size() - off);
+					ch.write(bb, off);
+					w.setOffset(off);
+
+					for (int j = idx, n = words.size(); j < n; j++) {
+						Word next = words.get(j);
+						next.setOffset(next.getOffset() + len);
+					}
+				}
+
+				return idx;
+			}).main().onCompletion((wd, err) -> {
+				if (err != null) {
+					Log.e(err, "Failed to add word ", word, " to dictionary ", this);
+				} else {
+					words.add(idx, w);
+				}
+			});
+		});
+	}
+
+	public FutureSupplier<Boolean> hasWord(CharSequence word) {
+		return getWords().map(words -> findWord(words, Word.create(word).getWord()) >= 0);
+	}
+
 	FutureSupplier<?> close() {
 		assertMainThread();
 		if (isClosed()) return completedVoid();
@@ -262,7 +332,7 @@ public class Dict implements Comparable<Dict> {
 
 	private List<Translation> readTranslations(Word w, RandomAccessChannel ch) throws IOException {
 		Utf8LineReader r = new Utf8LineReader(ch.getInputStream(w.getOffset(), Long.MAX_VALUE, bb()));
-		r.skipLine();
+		if (r.skipLine() == -1) return emptyList();
 		StringBuilder sb = sb();
 		List<Translation> list = new ArrayList<>();
 		Example example = Example.DUMMY;
@@ -305,22 +375,34 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	private FutureSupplier<?> flush() {
+		assertMainThread();
 		if (progressUpdate == null) return completedVoid();
-		List<Word> updates = progressUpdate;
-		progressUpdate = null;
-		int dirProg = getDirProgress();
-		int revProg = getRevProgress();
-		Log.d("Flushing ", updates.size(), " updates.");
-		return useCache(true, ch -> {
-			ByteBuffer bb = bb();
-			writeCacheHeader(ch, bb, dirProg, revProg);
-			for (Word u : updates) writeWordCache(ch, bb, u);
-			return null;
+
+		return getWords().main().then(words -> {
+			if (progressUpdate == null) return completedVoid();
+			List<Word> updates = progressUpdate;
+			progressUpdate = null;
+			CacheHeader hdr = new CacheHeader(words.size(), getDirProgress(), getRevProgress());
+			Log.d("Flushing ", updates.size(), " updates.");
+			return useCache(true, ch -> {
+				ByteBuffer bb = bb();
+				writeCacheHeader(ch, bb, hdr);
+				for (Word u : updates) writeWordCache(ch, bb, u);
+				return null;
+			});
 		});
 	}
 
 	private <T> FutureSupplier<T> readDict(CheckedFunction<RandomAccessChannel, T, Throwable> reader) {
 		return getMgr().enqueue(() -> reader.apply(channel));
+	}
+
+	private <T> FutureSupplier<T> writeDict(CheckedFunction<RandomAccessChannel, T, Throwable> writer) {
+		return getMgr().enqueue(() -> {
+			try (RandomAccessChannel ch = requireNonNull(dictFile.getChannel("w"))) {
+				return writer.apply(ch);
+			}
+		});
 	}
 
 	private <T> FutureSupplier<T> useCache(boolean create,
@@ -368,7 +450,41 @@ public class Dict implements Comparable<Dict> {
 			list.trimToSize();
 			Collections.sort(list);
 			return list;
-		});
+		}).then(this::align);
+	}
+
+	private FutureSupplier<List<Word>> align(List<Word> words) {
+		if (words.isEmpty() || (words.size() == 1)) return completed(words);
+		int dups = 0;
+		boolean move = false;
+		Iterator<Word> it = words.listIterator();
+		Word prev = it.next();
+
+		while (it.hasNext()) {
+			Word w = it.next();
+			if (w.getWord().equals(prev.getWord())) dups++;
+			else if (prev.getOffset() >= w.getOffset()) move = true;
+			prev = w;
+		}
+
+		if (dups != 0) {
+			List<Word> aligned = new ArrayList<>(words.size() - dups);
+			it = words.listIterator();
+			prev = it.next();
+			aligned.add(prev);
+
+			while (it.hasNext()) {
+				Word w = it.next();
+				if (!w.getWord().equals(prev.getWord())) aligned.add(w);
+				prev = w;
+			}
+
+			return writeWords(aligned);
+		} else if (move) {
+			return writeWords(words);
+		} else {
+			return completed(words);
+		}
 	}
 
 	private FutureSupplier<List<Word>> writeWords(List<Word> words) {
@@ -382,7 +498,7 @@ public class Dict implements Comparable<Dict> {
 						CountingOutputStream out = new CountingOutputStream(
 								new BufferedOutputStream(tch.getOutputStream(0)));
 						Writer w = new OutputStreamWriter(out, UTF_8);
-						writeDictHeader(w, words.size());
+						writeDictHeader(w);
 						w.flush();
 
 						for (Word word : words) {
@@ -411,43 +527,45 @@ public class Dict implements Comparable<Dict> {
 		return p;
 	}
 
-	private void writeDictHeader(Appendable a, int count) throws IOException {
+	private void writeDictHeader(Appendable a) throws IOException {
 		a.append(TAG_NAME).append("\t\t").append(getName()).append('\n');
 		a.append(TAG_SRC_LANG).append("\t").append(getSourceLang().toString()).append('\n');
 		a.append(TAG_TARGET_LANG).append("\t").append(getTargetLang().toString()).append('\n');
-		a.append(TAG_COUNT).append("\t\t").append(String.valueOf(count)).append("\n\n");
 	}
 
-	private FutureSupplier<BiHolder<Integer, Integer>> readCacheHeader() {
-		return useCache(false, ch -> (ch == null) ? new BiHolder<>(0, 0)
-				: readCacheHeader(ch, ByteBuffer.allocate(8))).ifFail(err -> {
-			Log.e(err, "Failed to read dictionary cache file ", getName());
-			return new BiHolder<>(0, 0);
+	private FutureSupplier<CacheHeader> readCacheHeader() {
+		return useCache(false, ch -> (ch == null) ? new CacheHeader()
+				: readCacheHeader(ch, ByteBuffer.allocate(CacheHeader.SIZE))).ifFail(err -> {
+			Log.e(err, "Failed to read dictionary cache file: ", getName());
+			return new CacheHeader();
 		});
 	}
 
-	// Leading 2 bytes are reserved for the version code, the next 8 bytes - dir/rev progress
-	private BiHolder<Integer, Integer> readCacheHeader(RandomAccessChannel ch, ByteBuffer bb)
+	private CacheHeader readCacheHeader(RandomAccessChannel ch, ByteBuffer bb)
 			throws IOException {
-		bb.position(0).limit(8);
-		if (ch.read(bb, 2) != bb.limit()) {
-			cacheChannel = null;
-			ch.close();
-			throw new IOException("Dictionary cache corrupted: " + getName());
+		bb.position(0).limit(CacheHeader.SIZE);
+		if (ch.read(bb, 0) != bb.limit()) {
+			Log.e("Dictionary ", getName(), " cache corrupted - resetting.");
+			bb.position(0);
+			new CacheHeader().put(bb);
+			bb.flip();
+			ch.write(bb, 0);
+			ch.truncate(CacheHeader.SIZE);
 		}
-		return new BiHolder<>(bb.getInt(0), bb.getInt(4));
+		bb.flip();
+		return new CacheHeader(bb);
 	}
 
-	private FutureSupplier<BiHolder<Integer, Integer>> readCache(List<Word> words) {
+	private FutureSupplier<CacheHeader> readCache(List<Word> words) {
 		return useCache(false, ch -> {
-			if (ch == null) return new BiHolder<>(0, 0);
+			if (ch == null) return new CacheHeader();
 			int dirProgress = 0;
 			int revProgress = 0;
 			ByteBuffer bb = bb();
 			StringBuilder sb = sb();
-			BiHolder<Integer, Integer> hdr = readCacheHeader(ch, bb);
-			Utf8Reader r = new Utf8Reader(ch.getInputStream(10, Long.MAX_VALUE, bb));
-			r.setBytesRead(10);
+			CacheHeader hdr = readCacheHeader(ch, bb);
+			Utf8Reader r = new Utf8Reader(ch.getInputStream(CacheHeader.SIZE, Long.MAX_VALUE, bb));
+			r.setBytesRead(CacheHeader.SIZE);
 
 			read:
 			for (int high = words.size() - 1; ; ) {
@@ -484,26 +602,26 @@ public class Dict implements Comparable<Dict> {
 				}
 			}
 
-			if ((hdr.value1 != dirProgress) || (hdr.value2 != revProgress)) {
-				writeCacheHeader(ch, bb, dirProgress, revProgress);
-			}
-
-			hdr.value1 = dirProgress;
-			hdr.value2 = revProgress;
-			return hdr;
+			CacheHeader h = new CacheHeader(words.size(), dirProgress, revProgress);
+			if (!hdr.equals(h)) writeCacheHeader(ch, bb, h);
+			return h;
 		});
 	}
 
-	private void writeCacheHeader(RandomAccessChannel ch, ByteBuffer bb, int dirProg, int revProg)
+	private FutureSupplier<Void> writeCacheHeader(CacheHeader h) {
+		return useCache(true, ch -> {
+			writeCacheHeader(ch, bb(), h);
+			return null;
+		});
+	}
+
+	private void writeCacheHeader(RandomAccessChannel ch, ByteBuffer bb, CacheHeader h)
 			throws IOException {
-		Log.d("Writing cache header: dir=", dirProg, ", rev=", revProg);
-		bb.position(0).limit(10);
-		bb.putShort(0, (short) 0);
-		bb.putInt(2, dirProg);
-		bb.putInt(6, revProg);
-		if (ch.write(bb, 0) != bb.limit()) {
-			throw new IOException("Failed to write cache header");
-		}
+		Log.d("Writing ", h);
+		bb.clear();
+		h.put(bb);
+		bb.flip();
+		if (ch.write(bb, 0) != bb.limit()) throw new IOException("Failed to write cache header");
 	}
 
 	private void writeWordCache(RandomAccessChannel ch, ByteBuffer bb, Word word) throws IOException {
@@ -529,17 +647,8 @@ public class Dict implements Comparable<Dict> {
 		ch.write(bb, off + word.getCacheLen() - 2);
 	}
 
-	private FutureSupplier<VirtualFile> getCacheFile(boolean create) {
-		return FelexAddon.get().getCacheFolder().then(dir -> {
-			String name = dictFile.getName();
-			int i = name.lastIndexOf('.');
-			if (i != -1) name = name.substring(0, i) + CACHE_EXT;
-			return create ? dir.createFile(name) : dir.getChild(name).cast();
-		});
-	}
-
 	public static int findWord(List<Word> words, CharSequence word) {
-		return findWord(words, word, words.size());
+		return findWord(words, word, words.size() - 1);
 	}
 
 	private static int findWord(List<Word> words, CharSequence word, int high) {
@@ -573,41 +682,59 @@ public class Dict implements Comparable<Dict> {
 		return b;
 	}
 
-	private List<Word> align(List<Word> words) {
-		if (words.isEmpty()) return null;
-		int dups = 0;
-		boolean align = false;
-		Iterator<Word> it = words.listIterator();
-		Word prev = it.next();
-
-		while (it.hasNext()) {
-			Word w = it.next();
-			if (w.getWord().equals(prev.getWord())) dups++;
-			else if (prev.getOffset() >= w.getOffset()) align = true;
-			prev = w;
-		}
-
-		if (dups != 0) {
-			List<Word> aligned = new ArrayList<>(words.size() - dups);
-			it = words.listIterator();
-			prev = it.next();
-			aligned.add(prev);
-
-			while (it.hasNext()) {
-				Word w = it.next();
-				if (!w.getWord().equals(prev.getWord())) aligned.add(w);
-				prev = w;
-			}
-
-			return aligned;
-		} else if (align) {
-			return words;
-		} else {
-			return null;
-		}
-	}
-
 	private <T> FutureSupplier<T> enqueue(CheckedSupplier<T, Throwable> task) {
 		return getMgr().enqueue(task);
+	}
+
+	/*
+		Header structure:
+		int - words count
+		int - direct progress
+		int - reverse progress
+		24 bytes - reserved
+	 */
+	private static final class CacheHeader {
+		static final int SIZE = 36;
+		int wordsCount;
+		int dirProgress;
+		int revProgress;
+
+		CacheHeader() {
+			this(0, 0, 0);
+		}
+
+		CacheHeader(ByteBuffer b) {
+			this(b.getInt(), b.getInt(), b.getInt());
+		}
+
+		CacheHeader(int wordsCount, int dirProgress, int revProgress) {
+			this.wordsCount = wordsCount;
+			this.dirProgress = dirProgress;
+			this.revProgress = revProgress;
+		}
+
+		void put(ByteBuffer b) {
+			b.putInt(wordsCount);
+			b.putInt(dirProgress);
+			b.putInt(revProgress);
+			b.putLong(0);
+			b.putLong(0);
+			b.putLong(0);
+		}
+
+		public boolean equals(CacheHeader h) {
+			return (wordsCount == h.wordsCount) && (dirProgress == h.dirProgress)
+					&& (revProgress == h.revProgress);
+		}
+
+		@NonNull
+		@Override
+		public String toString() {
+			return "CacheHeader{" +
+					"wordsCount=" + wordsCount +
+					", dirProgress=" + dirProgress +
+					", revProgress=" + revProgress +
+					'}';
+		}
 	}
 }

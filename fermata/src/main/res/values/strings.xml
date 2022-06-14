@@ -215,6 +215,7 @@
     <string name="rescan">Rescan</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+    <string name="delete_confirm">Delete %1$s?</string>
     <string name="delete_file_title">Delete file</string>
     <string name="delete_file_question">Are you sure you want to delete file?</string>
     <string name="delete_file_failed">Failed to delete file %1$s</string>

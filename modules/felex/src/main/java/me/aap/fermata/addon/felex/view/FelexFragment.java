@@ -7,6 +7,7 @@ import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.collection.CollectionUtils.comparing;
 import static me.aap.utils.collection.CollectionUtils.contains;
 import static me.aap.utils.text.TextUtils.isNullOrBlank;
+import static me.aap.utils.ui.UiUtils.queryPrefs;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.content.Context;
@@ -37,7 +38,6 @@ import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
-import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
@@ -229,7 +229,7 @@ public class FelexFragment extends MainActivityFragment implements
 			FelexFragment ff = (FelexFragment) f;
 			Object content = ff.view().getContent();
 
-			if (content instanceof DictMgr) {
+			if ((content instanceof DictMgr) || (content instanceof Dict)) {
 				tb.findViewById(R.id.add).setVisibility(View.VISIBLE);
 			} else {
 				tb.findViewById(R.id.add).setVisibility(GONE);
@@ -245,6 +245,8 @@ public class FelexFragment extends MainActivityFragment implements
 
 			if (content instanceof DictMgr) {
 				addDict(ff, (DictMgr) content);
+			} else if (content instanceof Dict) {
+				addWord(ff, (Dict) content);
 			}
 		}
 
@@ -274,7 +276,7 @@ public class FelexFragment extends MainActivityFragment implements
 				Pref<Supplier<String>> namePref = Pref.s("NAME", "");
 				Pref<IntSupplier> srcLangPref = Pref.i("SRC_LANG", defaultLangIdx);
 				Pref<IntSupplier> targetLangPref = Pref.i("TARGET_LANG", defaultLangIdx);
-				UiUtils.queryPrefs(ctx, R.string.add_dict, (store, set) -> {
+				queryPrefs(ctx, R.string.add_dict, (store, set) -> {
 					set.addStringPref(o -> {
 						o.pref = namePref;
 						o.title = R.string.dict_name;
@@ -314,6 +316,54 @@ public class FelexFragment extends MainActivityFragment implements
 									ff.view().setContent(d);
 								}
 							});
+				});
+			});
+		}
+
+		private static void addWord(FelexFragment ff, Dict d) {
+			Pref<Supplier<String>> wordPref = Pref.s("WORD");
+			Pref<Supplier<String>> transPref = Pref.s("TRANS");
+			Pref<Supplier<String>> exPref = Pref.s("EX");
+			Pref<Supplier<String>> exTransPref = Pref.s("EX_TRANS");
+
+			queryPrefs(ff.getContext(), R.string.add_word, (store, set) -> {
+				set.addStringPref(o -> {
+					o.pref = wordPref;
+					o.title = R.string.word;
+					o.store = store;
+				});
+				set.addStringPref(o -> {
+					o.pref = transPref;
+					o.title = R.string.trans;
+					o.store = store;
+				});
+				set.addStringPref(o -> {
+					o.pref = exPref;
+					o.title = R.string.example;
+					o.store = store;
+				});
+				set.addStringPref(o -> {
+					o.pref = exTransPref;
+					o.title = R.string.example_trans;
+					o.store = store;
+				});
+			}, p -> {
+				if (isNullOrBlank(p.getStringPref(transPref))) return false;
+				String word = p.getStringPref(wordPref);
+				if (isNullOrBlank(word)) return false;
+				Boolean exist = d.hasWord(word).peek();
+				return (exist == null) || !exist;
+			}).onSuccess(p -> {
+				String word = p.getStringPref(wordPref);
+				String trans = p.getStringPref(transPref);
+				String ex = p.getStringPref(exPref);
+				String exTrans = p.getStringPref(exTransPref);
+				d.addWord(word, trans, ex, exTrans).main().onCompletion((idx, err) -> {
+					if (err != null) {
+						showAlert(ff.getContext(), err.getLocalizedMessage());
+					} else {
+						ff.view().refresh(idx);
+					}
 				});
 			});
 		}

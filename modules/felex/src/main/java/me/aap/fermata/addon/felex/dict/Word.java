@@ -24,6 +24,9 @@ public class Word implements Comparable<Word> {
 		this.offset = offset;
 	}
 
+	static Word create(CharSequence word) {
+		return create(new StringBuilder(word), 0);
+	}
 	static Word create(StringBuilder sb, long offset) {
 		String raw = sb.toString().trim();
 		int i = raw.indexOf('[');
@@ -98,6 +101,7 @@ public class Word implements Comparable<Word> {
 		String word = getWord();
 		if (word.equalsIgnoreCase(w)) return true;
 		String expr = getExpr();
+		//noinspection StringEquality
 		return (expr != word) && expr.equalsIgnoreCase(w);
 	}
 
