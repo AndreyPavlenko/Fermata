@@ -14,4 +14,9 @@
     <string name="src_lang">Source language</string>
     <string name="target_lang">Target language</string>
     <string name="no_lang_supported">No languages supported by TTS</string>
+    <string name="add_word">Add word</string>
+    <string name="word">Word</string>
+    <string name="trans">Translation</string>
+    <string name="example">Example</string>
+    <string name="example_trans">Example translation</string>
 </resources>

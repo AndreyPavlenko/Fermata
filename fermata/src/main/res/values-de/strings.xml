@@ -190,6 +190,7 @@
     <string name="rescan">neu einlesen</string>
     <string name="edit">bearbeiten</string>
     <string name="delete">Löschen</string>
+    <string name="delete_confirm">Löschen %1$s?</string>
     <string name="delete_file_title">Datei löschen</string>
     <string name="delete_file_question">Sind Sie sicher, dass Sie die Datei löschen wollen?</string>
     <string name="delete_file_failed">Datei %1$s konnte nicht gelöscht werden</string>

@@ -88,6 +88,19 @@ public class DictMgr {
 		});
 	}
 
+	public FutureSupplier<Boolean> deleteDictionary(Dict d) {
+		assertMainThread();
+		return getDictionaries().main().then(dicts -> {
+			if (!dicts.remove(d)) return completed(false);
+			Log.i("Deleting dictionary ", d);
+			dictionaries = completed(dicts);
+			return d.close().then(v -> d.getDictFile().delete()
+							.then(fd -> d.getCacheFile(false)
+									.then(c -> (c == null) ? completed(true) : c.delete())))
+					.map(cd -> true);
+		});
+	}
+
 	public FutureSupplier<?> reset() {
 		assertMainThread();
 		if (dictionaries == null) return completedVoid();

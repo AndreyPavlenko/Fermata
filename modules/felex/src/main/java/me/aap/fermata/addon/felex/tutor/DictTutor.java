@@ -119,7 +119,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 					.then(dir ->
 							TextToSpeech.create(ctx, dict.getTargetLang()).onFailure(err -> dir.close())
 									.map(rev -> new DictTutor(activity, dict, mode, dir, rev)))
-					.onFailure(err -> showAlert(ctx, err.toString()));
+					.onFailure(err -> showAlert(ctx, err.getLocalizedMessage()));
 		});
 	}
 
@@ -230,7 +230,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 		if (isClosed()) return;
 		if (err != null) {
 			Log.e(err, "Speech failed");
-			showAlert(getContext(), err.toString());
+			showAlert(getContext(), err.getLocalizedMessage());
 			close();
 		} else if (checkState()) {
 			if (mode == MODE_LISTENING) {
@@ -253,15 +253,18 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 				if (e.getErrorCode() == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
 					showAlert(getContext(), me.aap.fermata.R.string.err_no_audio_record_perm);
 				} else {
-					showAlert(getContext(), e.toString());
+					if (!checkState()) return;
+					setTransText(e.getLocalizedMessage());
+					Task t = r.getData();
+					activity.postDelayed(() -> speak(t), 5000);
 				}
 			}
-			close();
 		} else {
-			Task t = r.getData();
 			if (!checkState()) return;
+			Task t = r.getData();
 			String text = r.getText();
 			setTransText(text);
+
 			if (t.validTranslation(text)) {
 				t.w.incrProgress(dict, t.direct, 10);
 				listView.onProgressChanged(dict, t.w);
@@ -361,7 +364,9 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 					direct = true;
 					break;
 				case MODE_MIXED:
-					if (rnd.nextBoolean()) {
+					int dir = w.getDirProgress();
+					int rev = w.getRevProgress();
+					if ((dir == rev) ? rnd.nextBoolean() : (dir < rev)) {
 						speak = w.getExpr();
 						direct = true;
 						break;

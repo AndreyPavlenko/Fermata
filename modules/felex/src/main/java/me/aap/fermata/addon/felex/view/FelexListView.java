@@ -2,9 +2,11 @@ package me.aap.fermata.addon.felex.view;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static androidx.appcompat.content.res.AppCompatResources.getDrawable;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.Dict.findWord;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.ui.UiUtils.showQuestion;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED;
@@ -46,8 +48,10 @@ import me.aap.fermata.addon.felex.dict.Word;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ScalableTextView;
 
 /**
@@ -84,6 +88,11 @@ public class FelexListView extends RecyclerView implements Closeable {
 		MgrContent mgr = content.root();
 		mgr.ls = null;
 		adapter().setContent(new DictContent(mgr, d));
+	}
+
+	void refresh(int scrollTo) {
+		adapter().setContent(content);
+		activity.post(() -> scrollToPosition(scrollTo));
 	}
 
 	@Nullable
@@ -134,7 +143,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 
 	public void onFolderChanged() {
 		Log.d("Dictionaries or cache folder changed - reloading");
-		content.mgr().reset().thenRun(() -> adapter().setContent(new MgrContent()));
+		content.mgr().reset().thenRun(() -> adapter().setContent(content.root()));
 	}
 
 	public void onProgressChanged(Dict d, Word w) {
@@ -177,7 +186,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 		}
 	}
 
-	private final class DictAdapter extends Adapter<Holder> implements OnClickListener {
+	private final class DictAdapter extends Adapter<Holder> implements OnClickListener,
+			OnLongClickListener {
 
 		@NonNull
 		@Override
@@ -185,6 +195,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 			DictItemView v = new DictItemView(parent.getContext());
 			v.setClickable(true);
 			v.setOnClickListener(this);
+			v.setOnLongClickListener(this);
 			return new Holder(v);
 		}
 
@@ -242,6 +253,45 @@ public class FelexListView extends RecyclerView implements Closeable {
 			}
 
 			stack.addLast(dv.pos);
+		}
+
+		@Override
+		public boolean onLongClick(View v) {
+			DictItemView dv = (DictItemView) v;
+			Object item = dv.item;
+
+			if (item instanceof Dict) {
+				activity.getContextMenu().show(b -> {
+					b.setSelectionHandler(this::menuHandler);
+					b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
+							me.aap.fermata.R.string.delete).setData(item);
+				});
+				return true;
+			}
+
+			return false;
+		}
+
+		private boolean menuHandler(OverlayMenuItem i) {
+			if (i.getItemId() == me.aap.fermata.R.id.delete) {
+				Object data = i.getData();
+				Supplier<FutureSupplier<?>> delete;
+
+				if (data instanceof Dict) {
+					delete = () -> getDictMgr().deleteDictionary((Dict) data);
+				} else {
+					return false;
+				}
+
+				Context ctx = getContext();
+				String title = ctx.getString(me.aap.fermata.R.string.delete);
+				String msg = ctx.getString(me.aap.fermata.R.string.delete_confirm, data.toString());
+				Drawable icon = getDrawable(ctx, me.aap.fermata.R.drawable.delete);
+				showQuestion(ctx, title, msg, icon).onSuccess(v -> delete.get().main()
+						.thenRun(() -> setContent(content)));
+			}
+
+			return true;
 		}
 
 		@SuppressLint("NotifyDataSetChanged")
@@ -456,6 +506,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 		private final ScalableTextView title;
 		private final ScalableTextView subtitle;
 		private final ProgressBar progress;
+		private final LayerDrawable dirProgEq;
+		private final LayerDrawable dirProgDone;
 		private final LayerDrawable dirProgLess;
 		private final LayerDrawable revProgLess;
 		Object item;
@@ -472,10 +524,18 @@ public class FelexListView extends RecyclerView implements Closeable {
 			MarginLayoutParams lp = new MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT);
 			lp.bottomMargin = toIntPx(ctx, 3);
 			setLayoutParams(lp);
+			Drawable eqBg = new ScaleDrawable(new ColorDrawable(0xFFFFA200), Gravity.START, 1, -1);
+			Drawable doneBg = new ScaleDrawable(new ColorDrawable(Color.GREEN), Gravity.START, 1, -1);
 			Drawable dirBg = new ScaleDrawable(new ColorDrawable(Color.YELLOW), Gravity.START, 1, -1);
 			Drawable revBg = new ScaleDrawable(new ColorDrawable(Color.RED), Gravity.START, 1, -1);
+			dirProgEq = new LayerDrawable(new Drawable[]{eqBg, eqBg});
+			dirProgDone = new LayerDrawable(new Drawable[]{doneBg, doneBg});
 			dirProgLess = new LayerDrawable(new Drawable[]{revBg, dirBg});
 			revProgLess = new LayerDrawable(new Drawable[]{dirBg, revBg});
+			dirProgEq.setId(0, android.R.id.progress);
+			dirProgEq.setId(1, android.R.id.secondaryProgress);
+			dirProgDone.setId(0, android.R.id.progress);
+			dirProgDone.setId(1, android.R.id.secondaryProgress);
 			dirProgLess.setId(0, android.R.id.progress);
 			dirProgLess.setId(1, android.R.id.secondaryProgress);
 			revProgLess.setId(0, android.R.id.progress);
@@ -493,15 +553,22 @@ public class FelexListView extends RecyclerView implements Closeable {
 			} else if (item instanceof Dict) {
 				Dict d = (Dict) item;
 				Context ctx = getContext();
+				int wc = d.getWordsCount();
 				int dir = d.getDirProgress();
 				int rev = d.getRevProgress();
 				setIcon(me.aap.fermata.R.drawable.felex);
 				title.setText(d.toString());
-				setProgress(dir, rev);
-				if ((dir == 0) && (rev == 0)) {
-					setSubtitle(ctx.getString(R.string.dict_sub1, d.getWordsCount()));
+
+				if (wc > 0) {
+					setProgress(dir, rev);
+					if ((dir == 0) && (rev == 0)) {
+						setSubtitle(ctx.getString(R.string.dict_sub1, wc));
+					} else {
+						setSubtitle(ctx.getString(R.string.dict_sub2, wc, dir, rev));
+					}
 				} else {
-					setSubtitle(ctx.getString(R.string.dict_sub2, d.getWordsCount(), dir, rev));
+					setSubtitle(null);
+					setProgress(0, 0);
 				}
 			} else if (item instanceof Word) {
 				assert content instanceof DictContent;
@@ -575,20 +642,20 @@ public class FelexListView extends RecyclerView implements Closeable {
 				return;
 			}
 
-			if ((dir == 100) && (rev == 100)) {
-				progress.setProgressDrawable(new ColorDrawable(Color.GREEN));
-			} else {
-				progress.setVisibility(VISIBLE);
+			progress.setVisibility(VISIBLE);
 
-				if (dir < rev) {
-					progress.setProgress(rev);
-					progress.setSecondaryProgress(dir);
-					progress.setProgressDrawable(dirProgLess);
-				} else {
-					progress.setProgress(dir);
-					progress.setSecondaryProgress(rev);
-					progress.setProgressDrawable(revProgLess);
-				}
+			if (dir == rev) {
+				progress.setProgress(dir);
+				progress.setSecondaryProgress(rev);
+				progress.setProgressDrawable((dir == 100) ? dirProgDone : dirProgEq);
+			} else if (dir < rev) {
+				progress.setProgress(rev);
+				progress.setSecondaryProgress(dir);
+				progress.setProgressDrawable(dirProgLess);
+			} else {
+				progress.setProgress(dir);
+				progress.setSecondaryProgress(rev);
+				progress.setProgressDrawable(revProgLess);
 			}
 		}
 

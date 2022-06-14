@@ -192,6 +192,7 @@
     <string name="rescan">Пересканировать</string>
     <string name="edit">Редактировать</string>
     <string name="delete">Удалить</string>
+    <string name="delete_confirm">Удалить %1$s?</string>
     <string name="delete_file_title">Удалить файл</string>
     <string name="delete_file_question">Вы уверены, что хотите удалить файл?</string>
     <string name="delete_file_failed">Не удалось удалить файл %1$s</string>
