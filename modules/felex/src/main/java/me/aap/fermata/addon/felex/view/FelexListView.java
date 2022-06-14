@@ -48,9 +48,15 @@ import me.aap.fermata.addon.felex.dict.Word;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PreferenceSet;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ScalableTextView;
 
@@ -260,11 +266,17 @@ public class FelexListView extends RecyclerView implements Closeable {
 			DictItemView dv = (DictItemView) v;
 			Object item = dv.item;
 
-			if (item instanceof Dict) {
+			if ((item instanceof Dict) || (item instanceof Word)) {
 				activity.getContextMenu().show(b -> {
 					b.setSelectionHandler(this::menuHandler);
 					b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
 							me.aap.fermata.R.string.delete).setData(item);
+
+					if (item instanceof Word) {
+						assert content instanceof DictContent;
+						b.addItem(R.id.change_prog, R.drawable.progress, R.string.change_prog)
+								.setSubmenu(sb -> addProgressMenu(sb, (DictContent) content, (Word) item));
+					}
 				});
 				return true;
 			}
@@ -294,8 +306,41 @@ public class FelexListView extends RecyclerView implements Closeable {
 			return true;
 		}
 
+		private void addProgressMenu(OverlayMenu.Builder b, DictContent dc, Word w) {
+			Context ctx = getContext();
+			PreferenceSet set = new PreferenceSet();
+			PreferenceStore store = new BasicPreferenceStore();
+			Pref<IntSupplier> dir = Pref.i("DIR", w.getDirProgress());
+			Pref<IntSupplier> rev = Pref.i("REV", w.getRevProgress());
+
+			set.addIntPref(o -> {
+				o.pref = dir;
+				o.store = store;
+				o.seekScale = 10;
+				o.title = R.string.dir_prog;
+			});
+			set.addIntPref(o -> {
+				o.pref = rev;
+				o.store = store;
+				o.seekScale = 10;
+				o.title = R.string.rev_prog;
+			});
+
+			b.setView(set.createView(ctx, true));
+			b.setCloseHandlerHandler(m -> {
+				Dict d = dc.content;
+				w.incrProgress(d, true, store.getIntPref(dir) - w.getDirProgress());
+				w.incrProgress(d, false, store.getIntPref(rev) - w.getRevProgress());
+				dc.ls().onSuccess(words -> {
+					int idx = words.indexOf(w);
+					if (idx >= 0) notifyItemChanged(idx);
+					else notifyDataSetChanged();
+				});
+			});
+		}
+
 		@SuppressLint("NotifyDataSetChanged")
-		private void setContent(@NonNull Content<?, ?, ?> c) {
+		void setContent(@NonNull Content<?, ?, ?> c) {
 			content = c;
 			notifyDataSetChanged();
 			activity.fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);

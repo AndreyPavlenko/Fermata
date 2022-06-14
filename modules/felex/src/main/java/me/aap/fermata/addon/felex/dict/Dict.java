@@ -34,6 +34,7 @@ import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.CheckedFunction;
 import me.aap.utils.function.CheckedSupplier;
 import me.aap.utils.function.ToIntFunction;
@@ -365,12 +366,14 @@ public class Dict implements Comparable<Dict> {
 
 	void incrProgress(Word w, boolean dir, int diff) {
 		assertMainThread();
+		if (diff == 0) return;
 		if (dir) dirProgress += diff;
 		else revProgress += diff;
 		if (progressUpdate == null) {
 			progressUpdate = new ArrayList<>();
 			App.get().getHandler().postDelayed(this::flush, 30000);
 		}
+		if (CollectionUtils.contains(progressUpdate, u -> u == w)) return;
 		progressUpdate.add(w);
 	}
 

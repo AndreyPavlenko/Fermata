@@ -74,6 +74,7 @@ public class Word implements Comparable<Word> {
 	}
 
 	public void incrProgress(Dict dict, boolean dir, int diff) {
+		if (diff == 0) return;
 		int prog = (dir ? dirProgress : revProgress);
 		int newProg = prog + diff;
 		newProg = (newProg < 0) ? 0 : Math.min(newProg, 100);
