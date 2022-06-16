@@ -1,12 +1,18 @@
 package me.aap.fermata.addon.felex.dict;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.io.MemOutputStream;
 
 /**
  * @author Andrey Pavlenko
@@ -27,6 +33,7 @@ public class Word implements Comparable<Word> {
 	static Word create(CharSequence word) {
 		return create(new StringBuilder(word), 0);
 	}
+
 	static Word create(StringBuilder sb, long offset) {
 		String raw = sb.toString().trim();
 		int i = raw.indexOf('[');
@@ -85,6 +92,10 @@ public class Word implements Comparable<Word> {
 		dict.incrProgress(this, dir, diff);
 	}
 
+	void wipeProgress() {
+		dirProgress = revProgress = 0;
+	}
+
 	private static void checkProg(int prog) {
 		assert (prog >= 0);
 		assert (prog <= 100);
@@ -127,6 +138,17 @@ public class Word implements Comparable<Word> {
 	@Override
 	public String toString() {
 		return getWord();
+	}
+
+	public ByteBuffer toBytes(List<Translation> translations) {
+		MemOutputStream m = new MemOutputStream(512);
+		try (Writer w = new OutputStreamWriter(m, UTF_8)) {
+			write(w, translations);
+			w.append('\n');
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
+		return ByteBuffer.wrap(m.getBuffer(), 0, m.getCount());
 	}
 
 	public void write(Appendable a, List<Translation> translations) throws IOException {

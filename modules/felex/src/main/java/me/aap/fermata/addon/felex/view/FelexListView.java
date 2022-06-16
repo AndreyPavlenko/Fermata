@@ -6,6 +6,7 @@ import static androidx.appcompat.content.res.AppCompatResources.getDrawable;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.Dict.findWord;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.ui.UiUtils.showAlert;
 import static me.aap.utils.ui.UiUtils.showQuestion;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.UiUtils.toPx;
@@ -97,6 +98,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 	}
 
 	void refresh(int scrollTo) {
+		content.ls = null;
 		adapter().setContent(content);
 		activity.post(() -> scrollToPosition(scrollTo));
 	}
@@ -128,7 +130,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 		activity.post(() -> {
 			for (int n = getChildCount(), i = 0; i < n; i++) {
 				View c = getChildAt(i);
-				if ((c instanceof DictItemView) && (((DictItemView) c).pos == position)) {
+				if ((c instanceof DictItemView) && (((DictItemView) c).pos() == position)) {
 					c.requestFocus();
 					return;
 				}
@@ -155,11 +157,10 @@ public class FelexListView extends RecyclerView implements Closeable {
 	public void onProgressChanged(Dict d, Word w) {
 		for (int n = getChildCount(), i = 0; i < n; i++) {
 			View c = getChildAt(i);
-			if (c instanceof DictItemView) {
-				DictItemView dv = (DictItemView) c;
-				if (dv.item == d) dv.setProgress(d.getDirProgress(), d.getRevProgress());
-				else if (dv.item == w) dv.setProgress(w.getDirProgress(), w.getRevProgress());
-			}
+			if (!((c instanceof DictItemView)) || (c.getVisibility() != VISIBLE)) continue;
+			DictItemView dv = (DictItemView) c;
+			if (dv.item == d) dv.setItem(dv.item, dv.pos());
+			else if (dv.item == w) dv.setProgress(w.getDirProgress(), w.getRevProgress());
 		}
 	}
 
@@ -258,56 +259,72 @@ public class FelexListView extends RecyclerView implements Closeable {
 				return;
 			}
 
-			stack.addLast(dv.pos);
+			stack.addLast(dv.pos());
 		}
 
 		@Override
 		public boolean onLongClick(View v) {
 			DictItemView dv = (DictItemView) v;
 			Object item = dv.item;
+			activity.getContextMenu().show(b -> {
+				b.setSelectionHandler(this::menuHandler);
+				b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
+						me.aap.fermata.R.string.delete).setData(dv);
 
-			if ((item instanceof Dict) || (item instanceof Word)) {
-				activity.getContextMenu().show(b -> {
-					b.setSelectionHandler(this::menuHandler);
-					b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
-							me.aap.fermata.R.string.delete).setData(item);
-
-					if (item instanceof Word) {
-						assert content instanceof DictContent;
-						b.addItem(R.id.change_prog, R.drawable.progress, R.string.change_prog)
-								.setSubmenu(sb -> addProgressMenu(sb, (DictContent) content, (Word) item));
-					}
-				});
-				return true;
-			}
-
-			return false;
+				if (item instanceof Dict) {
+					b.addItem(R.id.wipe_prog, R.drawable.progress, R.string.wipe_prog).setData(dv);
+				} else if (item instanceof Word) {
+					assert content instanceof DictContent;
+					b.addItem(R.id.change_prog, R.drawable.progress, R.string.change_prog)
+							.setSubmenu(sb -> addProgressMenu(sb, dv));
+				}
+			});
+			return true;
 		}
 
 		private boolean menuHandler(OverlayMenuItem i) {
-			if (i.getItemId() == me.aap.fermata.R.id.delete) {
-				Object data = i.getData();
-				Supplier<FutureSupplier<?>> delete;
+			int id = i.getItemId();
+			DictItemView dv = i.getData();
+			int pos = dv.pos();
+			Content<?, ?, ?> cnt = content;
+			Context ctx = getContext();
 
-				if (data instanceof Dict) {
-					delete = () -> getDictMgr().deleteDictionary((Dict) data);
+			if (id == me.aap.fermata.R.id.delete) {
+				Object item = dv.item;
+				Supplier<FutureSupplier<Integer>> delete;
+
+				if (item instanceof Dict) {
+					delete = () -> getDictMgr().deleteDictionary((Dict) item);
+				} else if (item instanceof Word) {
+					delete = () -> requireNonNull(content.dict()).deleteWord(((Word) item).getWord());
 				} else {
 					return false;
 				}
 
-				Context ctx = getContext();
 				String title = ctx.getString(me.aap.fermata.R.string.delete);
-				String msg = ctx.getString(me.aap.fermata.R.string.delete_confirm, data.toString());
+				String msg = ctx.getString(me.aap.fermata.R.string.delete_confirm, item.toString());
 				Drawable icon = getDrawable(ctx, me.aap.fermata.R.drawable.delete);
 				showQuestion(ctx, title, msg, icon).onSuccess(v -> delete.get().main()
-						.thenRun(() -> setContent(content)));
+						.onFailure(err -> showAlert(ctx, err.toString()))
+						.onSuccess(idx -> {
+							if ((cnt == content) && (idx >= 0)) notifyItemRemoved(idx);
+						}));
+			} else if (id == R.id.wipe_prog) {
+				Dict d = (Dict) dv.item;
+				String title = ctx.getString(R.string.wipe_prog);
+				String msg = ctx.getString(R.string.wipe_prog_for, d.toString());
+				Drawable icon = getDrawable(ctx, R.drawable.progress);
+				showQuestion(ctx, title, msg, icon).onSuccess(v -> d.wipeProgress().main().thenRun(() -> {
+					if (cnt == content) notifyItemChanged(pos);
+				}));
 			}
 
 			return true;
 		}
 
-		private void addProgressMenu(OverlayMenu.Builder b, DictContent dc, Word w) {
-			Context ctx = getContext();
+		private void addProgressMenu(OverlayMenu.Builder b, DictItemView dv) {
+			Word w = (Word) dv.item;
+			DictContent dc = (DictContent) content;
 			PreferenceSet set = new PreferenceSet();
 			PreferenceStore store = new BasicPreferenceStore();
 			Pref<IntSupplier> dir = Pref.i("DIR", w.getDirProgress());
@@ -326,16 +343,12 @@ public class FelexListView extends RecyclerView implements Closeable {
 				o.title = R.string.rev_prog;
 			});
 
-			b.setView(set.createView(ctx, true));
+			b.setView(set.createView(getContext(), true));
 			b.setCloseHandlerHandler(m -> {
 				Dict d = dc.content;
 				w.incrProgress(d, true, store.getIntPref(dir) - w.getDirProgress());
 				w.incrProgress(d, false, store.getIntPref(rev) - w.getRevProgress());
-				dc.ls().onSuccess(words -> {
-					int idx = words.indexOf(w);
-					if (idx >= 0) notifyItemChanged(idx);
-					else notifyDataSetChanged();
-				});
+				notifyItemChanged(dv.pos());
 			});
 		}
 
@@ -587,6 +600,13 @@ public class FelexListView extends RecyclerView implements Closeable {
 			revProgLess.setId(1, android.R.id.secondaryProgress);
 		}
 
+		int pos() {
+			List<?> l = content.list().peek();
+			if ((l == null) || (pos < 0) || (pos >= l.size())) return 0;
+			if (l.get(pos) != item) pos = Math.max(l.indexOf(item), 0);
+			return pos;
+		}
+
 		void setItem(Object item, int pos) {
 			this.item = item;
 			this.pos = pos;
@@ -688,6 +708,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 			}
 
 			progress.setVisibility(VISIBLE);
+			// A workaround for the progress update issue
+			progress.setLayoutParams(progress.getLayoutParams());
 
 			if (dir == rev) {
 				progress.setProgress(dir);

@@ -255,8 +255,8 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 				} else {
 					if (!checkState()) return;
 					setTransText(e.getLocalizedMessage());
-					Task t = r.getData();
-					activity.postDelayed(() -> speak(t), 5000);
+					Task t = current;
+					if (t != null) activity.postDelayed(() -> speak(t), 15000);
 				}
 			}
 		} else {

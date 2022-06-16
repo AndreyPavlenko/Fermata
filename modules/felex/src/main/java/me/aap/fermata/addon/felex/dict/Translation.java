@@ -1,6 +1,9 @@
 package me.aap.fermata.addon.felex.dict;
 
+import static me.aap.utils.text.TextUtils.isNullOrBlank;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +19,14 @@ public class Translation {
 
 	Translation(String translation) {
 		this.translation = translation;
+	}
+
+	Translation(String translation, @Nullable String example,
+							@Nullable String exampleTrans) {
+		this(translation);
+		if (!isNullOrBlank(example) && !isNullOrBlank(exampleTrans)) {
+			addExample(new Example(example, exampleTrans));
+		}
 	}
 
 	public String getTranslation() {

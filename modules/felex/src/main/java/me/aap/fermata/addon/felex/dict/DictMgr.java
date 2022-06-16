@@ -33,7 +33,7 @@ public class DictMgr {
 	public static final String DICT_EXT = ".fxd";
 	public static final String CACHE_EXT = ".fxc";
 	private static final DictMgr instance = new DictMgr();
-	private final PromiseQueue queue = new PromiseQueue();
+	final PromiseQueue queue = new PromiseQueue();
 	private FutureSupplier<List<Dict>> dictionaries;
 
 	private DictMgr() {
@@ -85,20 +85,22 @@ public class DictMgr {
 						Collections.sort(newDicts);
 						dictionaries = Completed.completed(newDicts);
 					});
-		});
+		}).main();
 	}
 
-	public FutureSupplier<Boolean> deleteDictionary(Dict d) {
+	public FutureSupplier<Integer> deleteDictionary(Dict d) {
 		assertMainThread();
 		return getDictionaries().main().then(dicts -> {
-			if (!dicts.remove(d)) return completed(false);
+			int idx = dicts.indexOf(d);
+			if (idx < 0) return completed(-1);
 			Log.i("Deleting dictionary ", d);
+			dicts.remove(idx);
 			dictionaries = completed(dicts);
 			return d.close().then(v -> d.getDictFile().delete()
 							.then(fd -> d.getCacheFile(false)
 									.then(c -> (c == null) ? completed(true) : c.delete())))
-					.map(cd -> true);
-		});
+					.map(cd -> idx);
+		}).main();
 	}
 
 	public FutureSupplier<?> reset() {
@@ -111,7 +113,7 @@ public class DictMgr {
 				});
 	}
 
-	<T> FutureSupplier<T> enqueue(CheckedSupplier<T, Throwable> task) {
+	private <T> FutureSupplier<T> enqueue(CheckedSupplier<T, Throwable> task) {
 		return queue.enqueue(task);
 	}
 
