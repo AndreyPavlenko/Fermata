@@ -1,6 +1,7 @@
 package me.aap.fermata.media.lib;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.shuffle;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedVoid;
@@ -18,7 +19,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import me.aap.fermata.R;
@@ -285,15 +285,6 @@ public abstract class BrowsableItemBase extends ItemBase implements BrowsableIte
 	private void setSeqNum(SortedItems sorted) {
 		for (int i = 0; i < sorted.size(); i++) {
 			((ItemBase) sorted.get(i)).setSeqNum(i + 1);
-		}
-	}
-
-	private void shuffle(List<?> l) {
-		Random rnd = new Random();
-
-		for (int i = 0, s = l.size(); i < s; i++) {
-			int next = rnd.nextInt(s - i);
-			Collections.swap(l, i, next);
 		}
 	}
 

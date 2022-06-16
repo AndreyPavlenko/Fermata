@@ -7,11 +7,12 @@ import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.DictMgr.CACHE_EXT;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.collection.CollectionUtils.comparingInt;
 import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 import static me.aap.utils.misc.Assert.assertMainThread;
+import static me.aap.utils.misc.Assert.assertNotMainThread;
 import static me.aap.utils.text.TextUtils.compareToIgnoreCase;
 import static me.aap.utils.text.TextUtils.isBlank;
-import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -37,8 +38,8 @@ import me.aap.utils.async.Promise;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.CheckedFunction;
 import me.aap.utils.function.CheckedSupplier;
+import me.aap.utils.function.LongObjectFunction;
 import me.aap.utils.function.ToIntFunction;
-import me.aap.utils.io.ByteBufferOutputStream;
 import me.aap.utils.io.CountingOutputStream;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.io.RandomAccessChannel;
@@ -83,7 +84,7 @@ public class Dict implements Comparable<Dict> {
 
 	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile) {
 		Log.d("Loading dictionary from file ", dictFile);
-		return mgr.enqueue(() -> {
+		return mgr.queue.enqueue(() -> {
 			RandomAccessChannel ch = dictFile.getChannel("r");
 			if (ch == null)
 				throw new IOException("Unable to read dictionary file: " + dictFile.getName());
@@ -119,7 +120,7 @@ public class Dict implements Comparable<Dict> {
 
 	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile,
 																						String name, Locale srcLang, Locale targetLang) {
-		return mgr.enqueue(() -> {
+		return mgr.queue.enqueue(() -> {
 			RandomAccessChannel ch = dictFile.getChannel("rw");
 			if (ch == null)
 				throw new IOException("Unable to create dictionary file: " + dictFile.getName());
@@ -129,10 +130,6 @@ public class Dict implements Comparable<Dict> {
 			}
 			return d;
 		});
-	}
-
-	DictMgr getMgr() {
-		return mgr;
 	}
 
 	public String getName() {
@@ -179,22 +176,20 @@ public class Dict implements Comparable<Dict> {
 		if (isClosed()) throw new IllegalStateException();
 
 		if (words == null) {
-			words = readWords(wordsCount).then(words -> readCache(words).main().onCompletion((h, err) -> {
-				if (err != null) {
-					Log.e(err, "Failed to load words from ", dictFile.getName());
-					close();
-				} else {
-					wordsCount = words.size();
-					dirProgress = h.dirProgress;
-					revProgress = h.revProgress;
-					this.words = completed(words);
-
-					if (h.wordsCount != wordsCount) {
-						h.wordsCount = wordsCount;
-						writeCacheHeader(h).onFailure(herr -> Log.e(herr, "Failed to write cache header"));
-					}
+			words = readWords(wordsCount).then(words -> readCache(words).main().then(h -> {
+				wordsCount = words.size();
+				dirProgress = h.dirProgress;
+				revProgress = h.revProgress;
+				this.words = completed(words);
+				if (h.wordsCount != wordsCount) {
+					h.wordsCount = wordsCount;
+					return writeCacheHeader(h).map(v -> words);
 				}
-			}).map(c -> words));
+				return completed(words);
+			})).onFailure(err -> {
+				Log.e(err, "Failed to load words from ", dictFile.getName());
+				close();
+			}).main();
 		}
 
 		return words.fork();
@@ -203,107 +198,97 @@ public class Dict implements Comparable<Dict> {
 	public FutureSupplier<Word> getRandomWord(Random rnd, Deque<Word> history,
 																						ToIntFunction<Word> getProgress) {
 		assertMainThread();
+		if (!history.isEmpty()) return completed(history.pollFirst());
+
 		return getWords().main().map(words -> {
 			int s = words.size();
 			if (s == 0) return null;
-			int r = rnd.nextInt(s);
-			Word min = words.get(r);
-			int minProg = getProgress.applyAsInt(min);
-			boolean minHistory = history.contains(min);
 
-			if ((minProg != 0) || minHistory) {
-				for (int i = r + 1; i != r; i++) {
-					if ((i == s) && ((i = 0) == r)) break;
-					Word w = words.get(i);
+			List<Word> sorted = new ArrayList<>(words);
+			Collections.shuffle(sorted, rnd);
+			Collections.sort(sorted, comparingInt(getProgress::applyAsInt));
 
-					if (history.contains(w)) {
-						if (!minHistory) continue;
-						int p = getProgress.applyAsInt(w);
-						if (minProg <= p) continue;
-						min = w;
-						minProg = p;
-					} else {
-						int p = getProgress.applyAsInt(w);
-
-						if (p == 0) {
-							min = w;
-							break;
-						} else if (minHistory || (minProg > p)) {
-							min = w;
-							minProg = p;
-							minHistory = false;
-						}
-					}
-				}
+			for (int i = 0, n = Math.min(100, s); i < n; i++) {
+				history.addLast(sorted.get(i));
 			}
 
-			if (history.peekLast() == min) history.clear();
-			else if (history.size() == 10) history.pollLast();
-			history.addFirst(min);
-			return min;
+			return history.pollFirst();
 		});
 	}
 
 	public FutureSupplier<Integer> addWord(String word, String trans, @Nullable String example,
 																				 @Nullable String exampleTrans) {
 		assertMainThread();
-		return getWords().main().then(words -> {
+		return editWords((size, words) -> {
 			Word w = Word.create(word);
 			int i = findWord(words, w.getWord());
 			if (i > 0) throw new IllegalArgumentException("Word " + word + " is already exists");
 			int idx = -i - 1;
-			long off = (idx < words.size()) ? words.get(idx).getOffset() : -1;
+			long off = (idx < words.size()) ? words.get(idx).getOffset() : size;
+			ByteBuffer bb = w.toBytes(singletonList(new Translation(trans, example, exampleTrans)));
+			int len = bb.remaining();
+			w.setOffset(off);
+			words.add(idx, w);
+			shiftWords(words, idx + 1, len);
+			return dictInsert(off, bb).map(v -> idx);
+		}).then(f -> f).main()
+				.onFailure(err -> Log.e(err, "Failed to add word ", word, " to dictionary ", this));
+	}
 
-			return writeDict(ch -> {
-				ByteBuffer bb = bb();
-				bb.clear();
-
-				try (Writer writer = new OutputStreamWriter(new ByteBufferOutputStream(bb), UTF_8)) {
-					Translation tr = new Translation(trans);
-					if (!isNullOrBlank(example) && !isNullOrBlank(exampleTrans)) {
-						tr.addExample(new Example(example, exampleTrans));
-					}
-					w.write(writer, singletonList(tr));
-					writer.append('\n');
-				}
-
-				bb.flip();
-
-				if (off == -1) {
-					long o = ch.size();
-					ch.write(bb, o);
-					w.setOffset(o);
-				} else {
-					int len = bb.remaining();
-					ch.transferFrom(channel, off, off + len, ch.size() - off);
-					ch.write(bb, off);
-					w.setOffset(off);
-
-					for (int j = idx, n = words.size(); j < n; j++) {
-						Word next = words.get(j);
-						next.setOffset(next.getOffset() + len);
-					}
-				}
-
-				return idx;
-			}).main().onCompletion((wd, err) -> {
-				if (err != null) {
-					Log.e(err, "Failed to add word ", word, " to dictionary ", this);
-				} else {
-					words.add(idx, w);
-				}
-			});
+	public FutureSupplier<Integer> deleteWord(String word) {
+		assertMainThread();
+		return editWords((size, words) -> {
+			int idx = findWord(words, word);
+			if (idx < 0) return completed(-1);
+			Word w = words.remove(idx);
+			wordsCount = words.size();
+			dirProgress -= w.getDirProgress();
+			revProgress -= w.getRevProgress();
+			assert (dirProgress >= 0) && (revProgress >= 0);
+			CacheHeader hdr = new CacheHeader(wordsCount, dirProgress, revProgress);
+			long off = w.getOffset();
+			long len = (idx == words.size()) ? -1 : words.get(idx).getOffset() - off;
+			shiftWords(words, idx, -len);
+			return dictDelete(off, len).then(v -> writeCacheHeader(hdr)).map(v -> idx);
+		}).then(f -> f).main().onFailure(b -> {
+			Log.e("Failed to remove word ", word);
+			close();
 		});
+	}
+
+	private void shiftWords(List<Word> words, int idx, long diff) {
+		for (int n = words.size(); idx < n; idx++) {
+			Word next = words.get(idx);
+			next.setOffset(next.getOffset() + diff);
+		}
 	}
 
 	public FutureSupplier<Boolean> hasWord(CharSequence word) {
 		return getWords().map(words -> findWord(words, Word.create(word).getWord()) >= 0);
 	}
 
+	public FutureSupplier<Void> wipeProgress() {
+		assertMainThread();
+		return getWords().then(words -> {
+			CacheHeader hdr = new CacheHeader(words.size(), 0, 0);
+			dirProgress = revProgress = 0;
+			for (Word w : words) w.wipeProgress();
+			return useCache(false, ch -> {
+				if (ch == null) return null;
+				ByteBuffer bb = bb();
+				bb.position(0).limit(CacheHeader.SIZE);
+				hdr.put(bb);
+				ch.write(bb, 0);
+				ch.truncate(CacheHeader.SIZE);
+				return null;
+			});
+		});
+	}
+
 	FutureSupplier<?> close() {
 		assertMainThread();
 		if (isClosed()) return completedVoid();
-		return flush().then(v -> mgr.enqueue(() -> {
+		return flush().then(v -> enqueue(() -> {
 			IoUtils.close(channel, cacheChannel);
 			cacheChannel = null;
 			bb = null;
@@ -381,11 +366,11 @@ public class Dict implements Comparable<Dict> {
 		assertMainThread();
 		if (progressUpdate == null) return completedVoid();
 
-		return getWords().main().then(words -> {
+		return getWords().then(words -> {
 			if (progressUpdate == null) return completedVoid();
 			List<Word> updates = progressUpdate;
 			progressUpdate = null;
-			CacheHeader hdr = new CacheHeader(words.size(), getDirProgress(), getRevProgress());
+			CacheHeader hdr = new CacheHeader(words.size(), dirProgress, revProgress);
 			Log.d("Flushing ", updates.size(), " updates.");
 			return useCache(true, ch -> {
 				ByteBuffer bb = bb();
@@ -393,18 +378,69 @@ public class Dict implements Comparable<Dict> {
 				for (Word u : updates) writeWordCache(ch, bb, u);
 				return null;
 			});
-		});
+		}).main();
 	}
 
 	private <T> FutureSupplier<T> readDict(CheckedFunction<RandomAccessChannel, T, Throwable> reader) {
-		return getMgr().enqueue(() -> reader.apply(channel));
+		return enqueue(() -> reader.apply(channel));
 	}
 
 	private <T> FutureSupplier<T> writeDict(CheckedFunction<RandomAccessChannel, T, Throwable> writer) {
-		return getMgr().enqueue(() -> {
+		return enqueue(() -> {
 			try (RandomAccessChannel ch = requireNonNull(dictFile.getChannel("w"))) {
 				return writer.apply(ch);
 			}
+		});
+	}
+
+	// Whe words must be edited in the main thread and the background tasks must not be running
+	private <T> FutureSupplier<T> editWords(LongObjectFunction<List<Word>, T> func) {
+		assertMainThread();
+		return enqueue(channel::size).main().then(size -> {
+			if (!mgr.queue.isEmpty()) return editWords(func);
+			List<Word> w = words.peek();
+			return (w != null) ? completed(func.apply(size, w)) : editWords(func);
+		});
+	}
+
+	private FutureSupplier<Void> dictInsert(long off, ByteBuffer bb) {
+		return writeDict(ch -> {
+			long size = ch.size();
+
+			if (off == size) {
+				ch.write(bb, ch.size());
+			} else {
+				int len = bb.remaining();
+				ch.transferFrom(channel, off, off + len, size - off);
+				ch.write(bb, off);
+			}
+
+			return null;
+		});
+	}
+
+	private FutureSupplier<Void> dictDelete(long off, long del) {
+		return writeDict(ch -> {
+			if (del == -1) {
+				ch.truncate(off);
+			} else {
+				long size = ch.size();
+				long newSize = size - del;
+				ch.transferFrom(channel, off + del, off, newSize - off);
+				ch.truncate(newSize);
+			}
+			return null;
+		});
+	}
+
+	private FutureSupplier<Void> dictReplace(long off, long del, ByteBuffer ins) {
+		return writeDict(ch -> {
+			long size = ch.size();
+			int len = ins.remaining();
+			ch.transferFrom(channel, off + del, off + len, size - off - del);
+			ch.truncate(size + len - del);
+			ch.write(bb, off);
+			return null;
 		});
 	}
 
@@ -422,7 +458,7 @@ public class Dict implements Comparable<Dict> {
 				}
 			}
 
-			getCacheFile(create).then(f -> (f == null) ? completed(a.apply(null)) : enqueue(() -> {
+			getCacheFile(create).main().then(f -> (f == null) ? completed(a.apply(null)) : enqueue(() -> {
 				if (cacheChannel == null) cacheChannel = requireNonNull(f.getChannel("rw"));
 				return a.apply(cacheChannel);
 			})).thenComplete(p);
@@ -482,9 +518,9 @@ public class Dict implements Comparable<Dict> {
 				prev = w;
 			}
 
-			return writeWords(aligned);
+			return completed(aligned).main().then(this::writeWords);
 		} else if (move) {
-			return writeWords(words);
+			return completed(words).main().then(this::writeWords);
 		} else {
 			return completed(words);
 		}
@@ -493,7 +529,7 @@ public class Dict implements Comparable<Dict> {
 	private FutureSupplier<List<Word>> writeWords(List<Word> words) {
 		Log.i("Saving dictionary ", getName(), " to ", dictFile);
 		Promise<List<Word>> p = new Promise<>();
-		mgr.enqueue(() -> dictFile.getParent()
+		enqueue(() -> dictFile.getParent()
 				.then(parent -> parent.createTempFile(dictFile.getName() + '-', ".tmp"))
 				.then(tmp -> {
 					try (RandomAccessChannel tch = requireNonNull(tmp.getChannel("rw"));
@@ -533,7 +569,7 @@ public class Dict implements Comparable<Dict> {
 	private void writeDictHeader(Appendable a) throws IOException {
 		a.append(TAG_NAME).append("\t\t").append(getName()).append('\n');
 		a.append(TAG_SRC_LANG).append("\t").append(getSourceLang().toString()).append('\n');
-		a.append(TAG_TARGET_LANG).append("\t").append(getTargetLang().toString()).append('\n');
+		a.append(TAG_TARGET_LANG).append("\t").append(getTargetLang().toString()).append("\n\n");
 	}
 
 	private FutureSupplier<CacheHeader> readCacheHeader() {
@@ -673,12 +709,14 @@ public class Dict implements Comparable<Dict> {
 
 
 	private ByteBuffer bb() {
+		assertNotMainThread();
 		ByteBuffer b = bb;
 		if (b == null) bb = b = ByteBuffer.allocateDirect(8192);
 		return b;
 	}
 
 	private StringBuilder sb() {
+		assertNotMainThread();
 		StringBuilder b = sb;
 		if (b == null) sb = b = new StringBuilder(512);
 		b.setLength(0);
@@ -686,7 +724,7 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	private <T> FutureSupplier<T> enqueue(CheckedSupplier<T, Throwable> task) {
-		return getMgr().enqueue(task);
+		return mgr.queue.enqueue(task);
 	}
 
 	/*

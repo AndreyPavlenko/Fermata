@@ -6,5 +6,6 @@
     <item name="start_tutor_rev" type="id" />
     <item name="start_tutor_mix" type="id" />
     <item name="start_tutor_listen" type="id" />
+    <item name="wipe_prog" type="id" />
     <item name="change_prog" type="id" />
 </resources>

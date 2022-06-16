@@ -19,6 +19,8 @@
     <string name="trans">Translation</string>
     <string name="example">Example</string>
     <string name="example_trans">Example translation</string>
+    <string name="wipe_prog">Wipe progress</string>
+    <string name="wipe_prog_for">Wipe progress for %1$s?</string>
     <string name="change_prog">Change progress</string>
     <string name="dir_prog">Direct progress</string>
     <string name="rev_prog">Reverse progress</string>
