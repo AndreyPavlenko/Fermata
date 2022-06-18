@@ -3,14 +3,20 @@ package me.aap.fermata.addon.felex.view;
 import static android.view.View.GONE;
 import static me.aap.fermata.addon.felex.FelexAddon.CACHE_FOLDER;
 import static me.aap.fermata.addon.felex.FelexAddon.DICT_FOLDER;
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
+import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.comparing;
 import static me.aap.utils.collection.CollectionUtils.contains;
 import static me.aap.utils.text.TextUtils.isNullOrBlank;
 import static me.aap.utils.ui.UiUtils.queryPrefs;
+import static me.aap.utils.ui.UiUtils.queryText;
 import static me.aap.utils.ui.UiUtils.showAlert;
+import static me.aap.utils.ui.UiUtils.showQuestion;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,7 +24,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,15 +35,19 @@ import java.util.Locale;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
+import me.aap.fermata.addon.felex.dict.DictInfo;
 import me.aap.fermata.addon.felex.dict.DictMgr;
 import me.aap.fermata.addon.felex.tutor.DictTutor;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -51,6 +63,7 @@ import me.aap.utils.voice.TextToSpeech;
 public class FelexFragment extends MainActivityFragment implements
 		MainActivityListener, PreferenceStore.Listener, ToolBarView.Listener {
 	private DictTutor tutor;
+	private Uri importDict;
 
 	@Override
 	public int getFragmentId() {
@@ -91,6 +104,12 @@ public class FelexFragment extends MainActivityFragment implements
 	}
 
 	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		importDict();
+	}
+
+	@Override
 	public void onDestroyView() {
 		view().close();
 		activity().onSuccess(this::cleanUp);
@@ -99,16 +118,47 @@ public class FelexFragment extends MainActivityFragment implements
 
 	@Override
 	public void onHiddenChanged(boolean hidden) {
-		closeTutor();
 		super.onHiddenChanged(hidden);
+		closeTutor();
+	}
+
+	public boolean canScrollUp() {
+		FelexListView v = view();
+		Object content = v.getContent();
+		if (!(content instanceof DictMgr) && !(content instanceof Dict)) return true;
+		return (v.getScrollY() > 0);
 	}
 
 	@Override
-	public void contributeToNavBarMenu(OverlayMenu.Builder b) {
+	public void onRefresh(BooleanConsumer refreshing) {
+		refresh(view().getContent()).onCompletion((r, f) -> refreshing.accept(false));
+	}
+
+	private FutureSupplier<Void> refresh(Object content) {
+		if (content instanceof DictMgr) {
+			return ((DictMgr) content).reset().thenRun(() -> view().refresh(0));
+		} else if (content instanceof Dict) {
+			return ((Dict) content).reset().thenRun(() -> view().refresh(0));
+		} else {
+			return completedVoid();
+		}
+	}
+
+	@Override
+	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
 		FutureSupplier<List<Dict>> f = view().getDictMgr().getDictionaries();
 		if (!f.isDone() || f.peek(Collections::emptyList).isEmpty()) return;
+		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
 		b.addItem(R.id.start_tutor, me.aap.fermata.R.drawable.record_voice,
 				R.string.start_tutor).setSubmenu(this::buildTutorMenu);
+
+		Object content = view().getContent();
+
+		if ((content instanceof DictMgr) || (content instanceof Dict)) {
+			b.addItem(me.aap.fermata.R.id.refresh, me.aap.fermata.R.drawable.refresh,
+					me.aap.fermata.R.string.refresh).setData(content);
+		}
+
 		super.contributeToNavBarMenu(b);
 	}
 
@@ -131,7 +181,10 @@ public class FelexFragment extends MainActivityFragment implements
 			startTutor(DictTutor.MODE_MIXED);
 		} else if (id == R.id.start_tutor_listen) {
 			startTutor(DictTutor.MODE_LISTENING);
+		} else if (id == me.aap.fermata.R.id.refresh) {
+			refresh(item.getData());
 		}
+
 		return true;
 	}
 
@@ -158,6 +211,49 @@ public class FelexFragment extends MainActivityFragment implements
 		if (event == FILTER_CHANGED) {
 			view().setFilter(tb.getFilter().getText().toString());
 		}
+	}
+
+	@Override
+	public void setInput(Object input) {
+		if (!(input instanceof Uri)) return;
+		importDict = (Uri) input;
+		if (getView() != null) importDict();
+	}
+
+	private void importDict() {
+		if (importDict == null) return;
+		Uri uri = importDict;
+		importDict = null;
+		Context ctx = requireContext();
+		App.get().execute(() -> {
+			try (InputStream in = ctx.getContentResolver().openInputStream(uri)) {
+				return DictInfo.read(in);
+			}
+		}).main().onFailure(err -> {
+			Log.e(err);
+			showAlert(ctx, ctx.getString(R.string.err_invalid_dict_hdr, uri));
+		}).then(info -> {
+			String title = ctx.getString(R.string.import_dict);
+			String msg = ctx.getString(R.string.import_dict_q, info);
+			Drawable icon = AppCompatResources.getDrawable(ctx, me.aap.fermata.R.drawable.felex);
+			return showQuestion(ctx, title, msg, icon).then(v -> DictMgr.get()
+					.getDictionary(info.getName()).then(d -> {
+						if (d == null) {
+							return DictMgr.get().createDictionary(info);
+						} else if (d.getSourceLang().equals(info.getSourceLang())
+								&& d.getTargetLang().equals(info.getTargetLang())) {
+							return showQuestion(ctx, title, ctx.getString(R.string.import_dict_exist, d), icon)
+									.then(ok -> completed(d), cancel -> createDict(info));
+						} else {
+							return createDict(info);
+						}
+					}));
+		}).then(d -> d.addWords(uri)).onSuccess(view()::setContent);
+	}
+
+	private FutureSupplier<Dict> createDict(DictInfo i) {
+		return queryText(requireContext(), R.string.dict_name, me.aap.fermata.R.drawable.felex)
+				.then(name -> DictMgr.get().createDictionary(name, i.getSourceLang(), i.getTargetLang()));
 	}
 
 	@NonNull

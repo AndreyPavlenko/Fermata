@@ -20,6 +20,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.CheckedSupplier;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
@@ -67,9 +68,20 @@ public class DictMgr {
 		return dictionaries.fork();
 	}
 
+	public FutureSupplier<Dict> getDictionary(String name) {
+		return getDictionaries().map(dicts -> CollectionUtils
+				.find(dicts, d -> d.getName().equals(name)));
+	}
+
 	public FutureSupplier<Dict> createDictionary(String name, Locale srcLang, Locale targetLang) {
+		return createDictionary(new DictInfo(name, srcLang, targetLang));
+	}
+
+	public FutureSupplier<Dict> createDictionary(DictInfo info) {
 		assertMainThread();
 		return getDictionaries().then(dicts -> {
+			String name = info.getName();
+
 			if (contains(dicts, d -> d.getName().equalsIgnoreCase(name))) {
 				throw new IllegalStateException("Dictionary already exists: " + name);
 			}
@@ -78,7 +90,8 @@ public class DictMgr {
 			return FelexAddon.get().getDictFolder().then(dir -> dir.getChild(fileName)
 							.then(c -> (c == null) ? dir.createFile(fileName)
 									: dir.createTempFile(name + '-', DICT_EXT)))
-					.then(f -> Dict.create(this, f, name, srcLang, targetLang)).main().onSuccess(d -> {
+					.then(f -> Dict.create(this, f, info)).main()
+					.onSuccess(d -> {
 						List<Dict> newDicts = new ArrayList<>(dicts.size() + 1);
 						newDicts.addAll(dicts);
 						newDicts.add(d);
@@ -103,7 +116,7 @@ public class DictMgr {
 		}).main();
 	}
 
-	public FutureSupplier<?> reset() {
+	public FutureSupplier<Void> reset() {
 		assertMainThread();
 		if (dictionaries == null) return completedVoid();
 		return dictionaries.then(dicts -> Async.forEach(Dict::close, dicts))

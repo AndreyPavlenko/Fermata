@@ -6,10 +6,9 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
-import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.Base64;
 
@@ -21,6 +20,8 @@ import java.io.FileNotFoundException;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.FermataAddon;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
 
@@ -28,7 +29,8 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 public class FermataContentProvider extends ContentProvider {
-	private static final String URI_PREF = "content://" + BuildConfig.APPLICATION_ID + "/image/";
+	private static final String IMG_PREF = "content://" + BuildConfig.APPLICATION_ID + "/image/";
+	private static final String ADDON_PREF = "content://" + BuildConfig.APPLICATION_ID + "/addon/";
 
 	public static boolean isSupportedFileScheme(String scheme) {
 		if (scheme == null) return false;
@@ -43,9 +45,16 @@ public class FermataContentProvider extends ContentProvider {
 		}
 	}
 
-	public static Uri toContentUri(Uri uri) {
+	public static Uri toImgUri(Uri uri) {
 		String enc = Base64.encodeToString(uri.toString().getBytes(US_ASCII), URL_SAFE);
-		return Uri.parse(URI_PREF + enc);
+		return Uri.parse(IMG_PREF + enc);
+	}
+
+	public static Uri toAddonUri(String addon, Uri uri, @Nullable String displayName) {
+		String enc = Base64.encodeToString(uri.toString().getBytes(US_ASCII), URL_SAFE);
+		String u = ADDON_PREF + addon + '/' + enc;
+		if (displayName != null) u = u + '/' + displayName;
+		return Uri.parse(u);
 	}
 
 	@Nullable
@@ -58,31 +67,36 @@ public class FermataContentProvider extends ContentProvider {
 	@Override
 	public ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode)
 			throws FileNotFoundException {
-		String s = uri.toString();
-		if ((s.length() <= URI_PREF.length()))
-			throw new FileNotFoundException(uri.toString());
-		String imgUri = new String(Base64.decode(s.substring(URI_PREF.length()), URL_SAFE), US_ASCII);
+		UriInfo info = UriInfo.parse(uri);
+		if (info == null) throw new FileNotFoundException(uri.toString());
+		String pref = info.getPref();
 
-		if (imgUri.startsWith("file:/")) {
-			return ParcelFileDescriptor.open(new File(imgUri.substring(6)), MODE_READ_ONLY);
-		} else if (imgUri.startsWith("http")) {
-			try {
-				return ParcelFileDescriptor.open(FermataApplication.get().getBitmapCache()
-						.downloadImage(imgUri).get().getLocalFile(), MODE_READ_ONLY);
-			} catch (Exception ex) {
-				Log.e(ex, "Failed to download image ", uri);
+		if (pref.equals(IMG_PREF)) {
+			Uri u = info.getUri();
+			String s = u.getScheme();
+			if (s == null) throw new FileNotFoundException(uri.toString());
+
+			switch (s) {
+				case "file":
+					return ParcelFileDescriptor.open(new File(u.toString().substring(6)), MODE_READ_ONLY);
+				case "http":
+				case "https":
+					try {
+						return ParcelFileDescriptor.open(FermataApplication.get().getBitmapCache()
+								.downloadImage(u.toString()).get().getLocalFile(), MODE_READ_ONLY);
+					} catch (Exception ex) {
+						String msg = "Failed to download image: " + u;
+						Log.e(ex, msg);
+						throw new FileNotFoundException(msg);
+					}
+				case "content":
+					return FermataApplication.get().getBitmapCache().openResourceImage(u);
 			}
-		} else if (imgUri.startsWith("content:/")) {
-			return FermataApplication.get().getBitmapCache().openResourceImage(Uri.parse(imgUri));
+		} else if (pref.equals(ADDON_PREF)) {
+			return info.getAddon().openFile(info.getUri());
 		}
 
 		throw new FileNotFoundException(uri.toString());
-	}
-
-	@Nullable
-	@Override
-	public AssetFileDescriptor openTypedAssetFile(@NonNull Uri uri, @NonNull String mimeTypeFilter, @Nullable Bundle opts) throws FileNotFoundException {
-		return super.openTypedAssetFile(uri, mimeTypeFilter, opts);
 	}
 
 	@Override
@@ -94,14 +108,18 @@ public class FermataContentProvider extends ContentProvider {
 	@Override
 	public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
 											@Nullable String[] selectionArgs, @Nullable String sortOrder) {
-		return null;
+		UriInfo info = UriInfo.parse(uri);
+		if (info == null) return null;
+		MatrixCursor c = new MatrixCursor(new String[]{"_display_name", "mime_type"});
+		c.addRow(new Object[]{info.getDisplayName(), info.getType()});
+		return c;
 	}
 
 	@Nullable
 	@Override
 	public String getType(@NonNull Uri uri) {
-		String path = uri.getPath();
-		return (path == null) ? null : FileUtils.getMimeType(path);
+		UriInfo info = UriInfo.parse(uri);
+		return (info == null) ? null : info.getType();
 	}
 
 	@Nullable
@@ -119,5 +137,70 @@ public class FermataContentProvider extends ContentProvider {
 	public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection,
 										@Nullable String[] selectionArgs) {
 		return 0;
+	}
+
+	private static final class UriInfo {
+		private final Uri uri;
+		private final String pref;
+		private final String displayName;
+		private final FermataAddon addon;
+
+		private UriInfo(String uri, String pref, String displayName, FermataAddon addon) {
+			this.uri = Uri.parse(uri);
+			this.pref = pref;
+			this.displayName = displayName;
+			this.addon = addon;
+		}
+
+		@Nullable
+		static UriInfo parse(Uri uri) {
+			String s = uri.toString();
+
+			if (s.startsWith(IMG_PREF)) {
+				return new UriInfo(new String(Base64.decode(s.substring(IMG_PREF.length()), URL_SAFE),
+						US_ASCII), IMG_PREF, null, null);
+			} else if (s.startsWith(ADDON_PREF)) {
+				int idx = s.indexOf('/', ADDON_PREF.length());
+				if (idx < 0) return null;
+				String name = s.substring(ADDON_PREF.length(), idx);
+				FermataAddon a = AddonManager.get().getAddon(name);
+				if (a == null) return null;
+				int end = s.lastIndexOf('/');
+
+				if (end == idx) {
+					return new UriInfo(new String(Base64.decode(s.substring(idx + 1), URL_SAFE), US_ASCII),
+							ADDON_PREF, null, a);
+				} else {
+					return new UriInfo(new String(Base64.decode(s.substring(idx + 1, end), URL_SAFE),
+							US_ASCII), ADDON_PREF, s.substring(end + 1), a);
+				}
+			}
+
+			return null;
+		}
+
+		public Uri getUri() {
+			return uri;
+		}
+
+		public String getPref() {
+			return pref;
+		}
+
+		public String getDisplayName() {
+			if (displayName != null) return displayName;
+			String u = uri.toString();
+			int idx = u.lastIndexOf('/');
+			return (idx < 0) ? null : u.substring(idx + 1);
+		}
+
+		public String getType() {
+			return (addon != null) ? addon.getFileType(uri, getDisplayName())
+					: FileUtils.getMimeType(uri.getPath());
+		}
+
+		public FermataAddon getAddon() {
+			return addon;
+		}
 	}
 }
