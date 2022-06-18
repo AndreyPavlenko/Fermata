@@ -24,6 +24,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.net.http.HttpFileDownloader;
+import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.notif.HttpDownloadStatusListener;
 
 /**
@@ -88,5 +89,13 @@ public class Utils {
 		Context ctx = App.get();
 		File f = ctx.getExternalCacheDir();
 		return new File((f == null) ? ctx.getCacheDir() : f, "addons/" + i.getModuleName());
+	}
+
+	public static void send(ActivityDelegate a, Uri uri, String title, String mime) {
+		Intent i = new Intent();
+		i.setAction(Intent.ACTION_SEND);
+		i.putExtra(Intent.EXTRA_STREAM, uri);
+		i.setType(mime);
+		a.startActivity(Intent.createChooser(i, title));
 	}
 }

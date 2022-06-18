@@ -54,8 +54,15 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	@Nullable
-	public FermataAddon getAddon(String className) {
-		return addons.get(className);
+	public FermataAddon getAddon(String moduleOrClassName) {
+		if (moduleOrClassName.indexOf('.') < 0) {
+			for (FermataAddon a : addons.values()) {
+				if (a.getInfo().getModuleName().equals(moduleOrClassName)) return a;
+			}
+		} else {
+			return addons.get(moduleOrClassName);
+		}
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")

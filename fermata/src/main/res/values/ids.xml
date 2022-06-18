@@ -123,5 +123,6 @@
     <item name="m3u_playlist" type="id" />
 
     <item name="car_edit_text" type="id" />
+    <item name="share" type="id" />
 
 </resources>

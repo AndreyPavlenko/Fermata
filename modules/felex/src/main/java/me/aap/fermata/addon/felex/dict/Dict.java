@@ -2,7 +2,9 @@ package me.aap.fermata.addon.felex.dict;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.sort;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.DictMgr.CACHE_EXT;
 import static me.aap.utils.async.Completed.completed;
@@ -14,17 +16,20 @@ import static me.aap.utils.misc.Assert.assertNotMainThread;
 import static me.aap.utils.text.TextUtils.compareToIgnoreCase;
 import static me.aap.utils.text.TextUtils.isBlank;
 
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -41,27 +46,22 @@ import me.aap.utils.function.CheckedSupplier;
 import me.aap.utils.function.LongObjectFunction;
 import me.aap.utils.function.ToIntFunction;
 import me.aap.utils.io.CountingOutputStream;
+import me.aap.utils.io.FileUtils;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.io.RandomAccessChannel;
 import me.aap.utils.io.Utf8LineReader;
 import me.aap.utils.io.Utf8Reader;
 import me.aap.utils.log.Log;
-import me.aap.utils.text.TextUtils;
 import me.aap.utils.vfs.VirtualFile;
 
 /**
  * @author Andrey Pavlenko
  */
 public class Dict implements Comparable<Dict> {
-	private static final String TAG_NAME = "#Name";
-	private static final String TAG_SRC_LANG = "#SourceLang";
-	private static final String TAG_TARGET_LANG = "#TargetLang";
 	private final DictMgr mgr;
 	private final VirtualFile dictFile;
 	private final RandomAccessChannel channel;
-	private final Locale sourceLang;
-	private final Locale targetLang;
-	private final String name;
+	private final DictInfo info;
 	private boolean closed;
 	private FutureSupplier<List<Word>> words;
 	private ByteBuffer bb;
@@ -72,14 +72,11 @@ public class Dict implements Comparable<Dict> {
 	private RandomAccessChannel cacheChannel;
 	private List<Word> progressUpdate;
 
-	private Dict(DictMgr mgr, VirtualFile dictFile, RandomAccessChannel channel, String name,
-							 Locale sourceLang, Locale targetLang) {
+	private Dict(DictMgr mgr, VirtualFile dictFile, RandomAccessChannel channel, DictInfo info) {
 		this.mgr = mgr;
 		this.dictFile = dictFile;
 		this.channel = channel;
-		this.sourceLang = sourceLang;
-		this.name = name;
-		this.targetLang = targetLang;
+		this.info = info;
 	}
 
 	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile) {
@@ -88,26 +85,8 @@ public class Dict implements Comparable<Dict> {
 			RandomAccessChannel ch = dictFile.getChannel("r");
 			if (ch == null)
 				throw new IOException("Unable to read dictionary file: " + dictFile.getName());
-			Utf8LineReader r = new Utf8LineReader(ch.getInputStream(0, 4096, ByteBuffer.allocate(256)));
-			StringBuilder sb = new StringBuilder(64);
-			String name = null;
-			Locale srcLang = null;
-			Locale targetLang = null;
-
-			for (int i = r.readLine(sb); i != -1; sb.setLength(0), i = r.readLine(sb)) {
-				if ((sb.length() == 0) || sb.charAt(0) != '#') break;
-				if (TextUtils.startsWith(sb, TAG_NAME))
-					name = sb.substring(TAG_NAME.length()).trim();
-				else if (TextUtils.startsWith(sb, TAG_SRC_LANG))
-					srcLang = new Locale(sb.substring(TAG_SRC_LANG.length()).trim());
-				else if (TextUtils.startsWith(sb, TAG_TARGET_LANG))
-					targetLang = new Locale(sb.substring(TAG_TARGET_LANG.length()).trim());
-			}
-
-			if ((name != null) && (srcLang != null) && (targetLang != null)) {
-				return new Dict(mgr, dictFile, ch, name, srcLang, targetLang);
-			}
-
+			DictInfo info = DictInfo.read(ch.getInputStream(0, 4096, ByteBuffer.allocate(256)));
+			if (info != null) return new Dict(mgr, dictFile, ch, info);
 			ch.close();
 			throw new IllegalArgumentException("Invalid dictionary header: " + dictFile.getName());
 		}).then(d -> d.readCacheHeader().map(h -> {
@@ -118,30 +97,33 @@ public class Dict implements Comparable<Dict> {
 		}));
 	}
 
-	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile,
-																						String name, Locale srcLang, Locale targetLang) {
+	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile, DictInfo info) {
 		return mgr.queue.enqueue(() -> {
 			RandomAccessChannel ch = dictFile.getChannel("rw");
 			if (ch == null)
 				throw new IOException("Unable to create dictionary file: " + dictFile.getName());
-			Dict d = new Dict(mgr, dictFile, ch, name, srcLang, targetLang);
+			Dict d = new Dict(mgr, dictFile, ch, info);
 			try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(ch.getOutputStream(0), UTF_8))) {
-				d.writeDictHeader(w);
+				info.write(w);
 			}
 			return d;
 		});
 	}
 
+	public DictInfo getInfo() {
+		return info;
+	}
+
 	public String getName() {
-		return name;
+		return getInfo().getName();
 	}
 
 	public Locale getSourceLang() {
-		return sourceLang;
+		return getInfo().getSourceLang();
 	}
 
 	public Locale getTargetLang() {
-		return targetLang;
+		return getInfo().getTargetLang();
 	}
 
 	public int getWordsCount() {
@@ -205,8 +187,8 @@ public class Dict implements Comparable<Dict> {
 			if (s == 0) return null;
 
 			List<Word> sorted = new ArrayList<>(words);
-			Collections.shuffle(sorted, rnd);
-			Collections.sort(sorted, comparingInt(getProgress::applyAsInt));
+			shuffle(sorted, rnd);
+			sort(sorted, comparingInt(getProgress));
 
 			for (int i = 0, n = Math.min(100, s); i < n; i++) {
 				history.addLast(sorted.get(i));
@@ -214,6 +196,19 @@ public class Dict implements Comparable<Dict> {
 
 			return history.pollFirst();
 		});
+	}
+
+	public FutureSupplier<Dict> addWords(Uri dictUri) {
+		assertMainThread();
+		return writeDict(ch -> {
+			try (InputStream in = App.get().getContentResolver().openInputStream(dictUri);
+					 OutputStream out = ch.getOutputStream(ch.size())) {
+				DictInfo i = DictInfo.read(in);
+				if (i == null) throw new IOException("Invalid dictionary header: " + dictUri);
+				FileUtils.copy(in, out);
+				return this;
+			}
+		}).main().onSuccess(v -> words = null);
 	}
 
 	public FutureSupplier<Integer> addWord(String word, String trans, @Nullable String example,
@@ -285,6 +280,12 @@ public class Dict implements Comparable<Dict> {
 		});
 	}
 
+	public FutureSupplier<Void> reset() {
+		assertMainThread();
+		if (words == null) return completedVoid();
+		return words.thenRun(() -> words = null).map(w -> null);
+	}
+
 	FutureSupplier<?> close() {
 		assertMainThread();
 		if (isClosed()) return completedVoid();
@@ -308,8 +309,7 @@ public class Dict implements Comparable<Dict> {
 	@NonNull
 	@Override
 	public String toString() {
-		return getName() + " (" + getSourceLang().getLanguage().toUpperCase()
-				+ '-' + getTargetLang().getLanguage().toUpperCase() + ')';
+		return getInfo().toString();
 	}
 
 	FutureSupplier<List<Translation>> readTranslations(Word w) {
@@ -487,7 +487,7 @@ public class Dict implements Comparable<Dict> {
 			}
 
 			list.trimToSize();
-			Collections.sort(list);
+			sort(list);
 			return list;
 		}).then(this::align);
 	}
@@ -537,7 +537,7 @@ public class Dict implements Comparable<Dict> {
 						CountingOutputStream out = new CountingOutputStream(
 								new BufferedOutputStream(tch.getOutputStream(0)));
 						Writer w = new OutputStreamWriter(out, UTF_8);
-						writeDictHeader(w);
+						getInfo().write(w);
 						w.flush();
 
 						for (Word word : words) {
@@ -564,12 +564,6 @@ public class Dict implements Comparable<Dict> {
 			else Log.i("Dictionary has been saved: ", getName());
 		});
 		return p;
-	}
-
-	private void writeDictHeader(Appendable a) throws IOException {
-		a.append(TAG_NAME).append("\t\t").append(getName()).append('\n');
-		a.append(TAG_SRC_LANG).append("\t").append(getSourceLang().toString()).append('\n');
-		a.append(TAG_TARGET_LANG).append("\t").append(getTargetLang().toString()).append("\n\n");
 	}
 
 	private FutureSupplier<CacheHeader> readCacheHeader() {

@@ -191,6 +191,7 @@
     <string name="refresh">Обновить</string>
     <string name="rescan">Пересканировать</string>
     <string name="edit">Редактировать</string>
+    <string name="share">Поделиться</string>
     <string name="delete">Удалить</string>
     <string name="delete_confirm">Удалить %1$s?</string>
     <string name="delete_file_title">Удалить файл</string>

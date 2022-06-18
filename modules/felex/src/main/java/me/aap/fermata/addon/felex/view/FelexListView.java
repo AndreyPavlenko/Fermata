@@ -19,6 +19,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.ScaleDrawable;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -40,13 +41,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
 import me.aap.fermata.addon.felex.dict.DictMgr;
 import me.aap.fermata.addon.felex.dict.Example;
 import me.aap.fermata.addon.felex.dict.Translation;
 import me.aap.fermata.addon.felex.dict.Word;
+import me.aap.fermata.provider.FermataContentProvider;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.IntSupplier;
@@ -98,7 +102,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 	}
 
 	void refresh(int scrollTo) {
-		content.ls = null;
+		content.clear();
 		adapter().setContent(content);
 		activity.post(() -> scrollToPosition(scrollTo));
 	}
@@ -272,6 +276,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 						me.aap.fermata.R.string.delete).setData(dv);
 
 				if (item instanceof Dict) {
+					b.addItem(me.aap.fermata.R.id.share, me.aap.fermata.R.drawable.share,
+							me.aap.fermata.R.string.share).setData(dv);
 					b.addItem(R.id.wipe_prog, R.drawable.progress, R.string.wipe_prog).setData(dv);
 				} else if (item instanceof Word) {
 					assert content instanceof DictContent;
@@ -317,6 +323,11 @@ public class FelexListView extends RecyclerView implements Closeable {
 				showQuestion(ctx, title, msg, icon).onSuccess(v -> d.wipeProgress().main().thenRun(() -> {
 					if (cnt == content) notifyItemChanged(pos);
 				}));
+			} else if (id == me.aap.fermata.R.id.share) {
+				Dict d = (Dict) dv.item;
+				Uri u = FermataContentProvider.toAddonUri(FelexAddon.get().getInfo().moduleName,
+						d.getDictFile().getRid().toAndroidUri(), d.getName() + DictMgr.DICT_EXT);
+				Utils.send(activity, u, d.toString(), "text/plain");
 			}
 
 			return true;
@@ -406,6 +417,11 @@ public class FelexListView extends RecyclerView implements Closeable {
 				if (c instanceof MgrContent) return (MgrContent) c;
 			}
 		}
+
+		void clear() {
+			ls = null;
+			if (parent != null) parent.clear();
+		}
 	}
 
 	private final class MgrContent extends Content<DictMgr, Dict, MgrContent> {
@@ -460,7 +476,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 
 		@Override
 		CharSequence title() {
-			return content.getName();
+			return content.toString();
 		}
 
 		@Override
