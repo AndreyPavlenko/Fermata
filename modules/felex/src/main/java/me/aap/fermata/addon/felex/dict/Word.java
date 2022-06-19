@@ -109,6 +109,10 @@ public class Word implements Comparable<Word> {
 		return dict.readTranslations(this);
 	}
 
+	public FutureSupplier<Void> setTranslations(Dict dict, List<Translation> translations) {
+		return dict.writeTranslations(this, translations);
+	}
+
 	public boolean matches(String w) {
 		String word = getWord();
 		if (word.equalsIgnoreCase(w)) return true;

@@ -1,6 +1,7 @@
 package me.aap.fermata.addon.felex.view;
 
 import static android.view.View.GONE;
+import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.FelexAddon.CACHE_FOLDER;
 import static me.aap.fermata.addon.felex.FelexAddon.DICT_FOLDER;
 import static me.aap.utils.async.Completed.completed;
@@ -37,6 +38,9 @@ import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
 import me.aap.fermata.addon.felex.dict.DictInfo;
 import me.aap.fermata.addon.felex.dict.DictMgr;
+import me.aap.fermata.addon.felex.dict.Example;
+import me.aap.fermata.addon.felex.dict.Translation;
+import me.aap.fermata.addon.felex.dict.Word;
 import me.aap.fermata.addon.felex.tutor.DictTutor;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
@@ -44,6 +48,7 @@ import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.BooleanConsumer;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -325,7 +330,8 @@ public class FelexFragment extends MainActivityFragment implements
 			FelexFragment ff = (FelexFragment) f;
 			Object content = ff.view().getContent();
 
-			if ((content instanceof DictMgr) || (content instanceof Dict)) {
+			if ((content instanceof DictMgr) || (content instanceof Dict)
+					|| (content instanceof Word) || (content instanceof Translation)) {
 				tb.findViewById(R.id.add).setVisibility(View.VISIBLE);
 			} else {
 				tb.findViewById(R.id.add).setVisibility(GONE);
@@ -337,12 +343,18 @@ public class FelexFragment extends MainActivityFragment implements
 			ActivityFragment f = a.getActiveFragment();
 			if (!(f instanceof FelexFragment)) return;
 			FelexFragment ff = (FelexFragment) f;
-			Object content = ff.view().getContent();
+			FelexListView lv = ff.view();
+			Object content = lv.getContent();
 
 			if (content instanceof DictMgr) {
 				addDict(ff, (DictMgr) content);
 			} else if (content instanceof Dict) {
 				addWord(ff, (Dict) content);
+			} else if (content instanceof Word) {
+				addTrans(ff, requireNonNull(lv.getCurrentDict()), (Word) content);
+			} else if (content instanceof Translation) {
+				addExample(ff, requireNonNull(lv.getCurrentDict()),
+						requireNonNull(lv.getCurrentWord()), (Translation) content);
 			}
 		}
 
@@ -460,6 +472,94 @@ public class FelexFragment extends MainActivityFragment implements
 					} else {
 						ff.view().refresh(idx);
 					}
+				});
+			});
+		}
+
+		private static void addTrans(FelexFragment ff, Dict d, Word w) {
+			Pref<Supplier<String>> transPref = Pref.s("TRANS");
+			Pref<Supplier<String>> exPref = Pref.s("EX");
+			Pref<Supplier<String>> exTransPref = Pref.s("EX_TRANS");
+
+			w.getTranslations(d).then(translations ->
+					queryPrefs(ff.getContext(), R.string.add_trans, (store, set) -> {
+						set.addStringPref(o -> {
+							o.pref = transPref;
+							o.title = R.string.trans;
+							o.store = store;
+						});
+						set.addStringPref(o -> {
+							o.pref = exPref;
+							o.title = R.string.example;
+							o.store = store;
+						});
+						set.addStringPref(o -> {
+							o.pref = exTransPref;
+							o.title = R.string.example_trans;
+							o.store = store;
+						});
+					}, p -> {
+						String trans = p.getStringPref(transPref);
+						if (isNullOrBlank(trans)) return false;
+						return !CollectionUtils.contains(translations,
+								t -> trans.equalsIgnoreCase(t.getTranslation()));
+					}).onSuccess(p -> {
+						String trans = p.getStringPref(transPref);
+						String ex = p.getStringPref(exPref);
+						String exTrans = p.getStringPref(exTransPref);
+						List<Translation> newTrans = new ArrayList<>(translations.size() + 1);
+						newTrans.addAll(translations);
+						newTrans.add(new Translation(trans, ex, exTrans));
+						w.setTranslations(d, newTrans).onCompletion((v, err) -> {
+							if (err != null) {
+								showAlert(ff.getContext(), err.getLocalizedMessage());
+							} else {
+								ff.view().refresh(newTrans.size() - 1);
+							}
+						});
+					}));
+		}
+
+		private static void addExample(FelexFragment ff, Dict d, Word w, Translation tr) {
+			Pref<Supplier<String>> exPref = Pref.s("EX");
+			Pref<Supplier<String>> exTransPref = Pref.s("EX_TRANS");
+
+			w.getTranslations(d).then(translations -> {
+				int idx = CollectionUtils.indexOf(translations,
+						t -> t.getTranslation().equalsIgnoreCase(tr.getTranslation()));
+				if (idx == -1) return completedNull();
+				translations.set(idx, tr);
+				return queryPrefs(ff.getContext(), R.string.add_example, (store, set) -> {
+					set.addStringPref(o -> {
+						o.pref = exPref;
+						o.title = R.string.example;
+						o.store = store;
+					});
+					set.addStringPref(o -> {
+						o.pref = exTransPref;
+						o.title = R.string.example_trans;
+						o.store = store;
+					});
+				}, p -> {
+					String ex = p.getStringPref(exPref);
+					if (isNullOrBlank(ex)) return false;
+					return !CollectionUtils.contains(tr.getExamples(),
+							e -> ex.equalsIgnoreCase(e.getSentence()));
+				}).onSuccess(p -> {
+					String ex = p.getStringPref(exPref);
+					String exTrans = p.getStringPref(exTransPref);
+					List<Example> examples = tr.getExamples();
+					List<Example> newExamples = new ArrayList<>(examples.size() + 1);
+					newExamples.addAll(examples);
+					newExamples.add(new Example(ex, exTrans));
+					tr.setExamples(newExamples);
+					w.setTranslations(d, translations).onCompletion((v, err) -> {
+						if (err != null) {
+							showAlert(ff.getContext(), err.getLocalizedMessage());
+						} else {
+							ff.view().refresh(newExamples.size() - 1);
+						}
+					});
 				});
 			});
 		}

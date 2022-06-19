@@ -97,7 +97,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 
 	void setContent(Dict d) {
 		MgrContent mgr = content.root();
-		mgr.ls = null;
+		mgr.filtered = null;
 		adapter().setContent(new DictContent(mgr, d));
 	}
 
@@ -110,6 +110,11 @@ public class FelexListView extends RecyclerView implements Closeable {
 	@Nullable
 	public Dict getCurrentDict() {
 		return content.dict();
+	}
+
+	@Nullable
+	public Word getCurrentWord() {
+		return content.word();
 	}
 
 	public CharSequence getTitle() {
@@ -187,7 +192,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 		filterText = filter;
 		this.filter = filter.isEmpty() ? null
 				: Pattern.compile(Pattern.quote(filter) + ".*", Pattern.CASE_INSENSITIVE);
-		content.ls = null;
+		content.filtered = null;
 		adapter().notifyDataSetChanged();
 	}
 
@@ -303,6 +308,27 @@ public class FelexListView extends RecyclerView implements Closeable {
 					delete = () -> getDictMgr().deleteDictionary((Dict) item);
 				} else if (item instanceof Word) {
 					delete = () -> requireNonNull(content.dict()).deleteWord(((Word) item).getWord());
+				} else if (item instanceof Translation) {
+					WordContent wc = (WordContent) content;
+					delete = () -> wc.ls().then(tr -> {
+						int idx = tr.indexOf(item);
+						if (idx == -1) return completed(-1);
+						tr.remove(idx);
+						wc.notFiltered.remove(item);
+						return wc.content.setTranslations(wc.dict(), wc.notFiltered).map(v -> idx);
+					});
+				} else if (item instanceof Example) {
+					TransContent tc = (TransContent) content;
+					delete = () -> tc.ls().then(ex -> {
+						if ((tc.parent.notFiltered == null) || !tc.parent.notFiltered.contains(tc.content))
+							return completed(-1);
+						int idx = ex.indexOf(item);
+						if (idx == -1) return completed(-1);
+						ex.remove(idx);
+						tc.notFiltered.remove(item);
+						return tc.parent.content.setTranslations(tc.dict(),
+								tc.parent.notFiltered).map(v -> idx);
+					});
 				} else {
 					return false;
 				}
@@ -375,7 +401,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 	private abstract class Content<C, L, P extends Content> {
 		final P parent;
 		final C content;
-		FutureSupplier<List<L>> ls;
+		FutureSupplier<List<L>> filtered;
+		List<L> notFiltered;
 
 		Content(P parent, C content) {
 			this.parent = parent;
@@ -388,6 +415,9 @@ public class FelexListView extends RecyclerView implements Closeable {
 		@Nullable
 		abstract Dict dict();
 
+		@Nullable
+		abstract Word word();
+
 		abstract CharSequence title();
 
 		abstract FutureSupplier<List<L>> list();
@@ -395,9 +425,10 @@ public class FelexListView extends RecyclerView implements Closeable {
 		abstract boolean matches(Pattern filter, L item);
 
 		FutureSupplier<List<L>> ls() {
-			return (ls != null) ? ls : (ls = list().main().map(l -> {
+			return (filtered != null) ? filtered : (filtered = list().main().map(l -> {
 				List<L> filtered = filter(l);
-				ls = completed(filtered);
+				this.filtered = completed(filtered);
+				this.notFiltered = l;
 				return filtered;
 			}));
 		}
@@ -419,7 +450,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 		}
 
 		void clear() {
-			ls = null;
+			filtered = null;
 			if (parent != null) parent.clear();
 		}
 	}
@@ -438,6 +469,12 @@ public class FelexListView extends RecyclerView implements Closeable {
 		@Nullable
 		@Override
 		Dict dict() {
+			return null;
+		}
+
+		@Nullable
+		@Override
+		Word word() {
 			return null;
 		}
 
@@ -472,6 +509,12 @@ public class FelexListView extends RecyclerView implements Closeable {
 		@Override
 		Dict dict() {
 			return content;
+		}
+
+		@Nullable
+		@Override
+		Word word() {
+			return null;
 		}
 
 		@Override
@@ -519,6 +562,12 @@ public class FelexListView extends RecyclerView implements Closeable {
 			return parent.dict();
 		}
 
+		@NonNull
+		@Override
+		Word word() {
+			return content;
+		}
+
 		@Override
 		CharSequence title() {
 			return content.getExpr();
@@ -556,6 +605,12 @@ public class FelexListView extends RecyclerView implements Closeable {
 		@Override
 		Dict dict() {
 			return parent.dict();
+		}
+
+		@NonNull
+		@Override
+		Word word() {
+			return parent.word();
 		}
 
 		@Override
