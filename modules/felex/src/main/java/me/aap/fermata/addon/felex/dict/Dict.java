@@ -313,7 +313,21 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	FutureSupplier<List<Translation>> readTranslations(Word w) {
-		return readDict(ch -> readTranslations(w, ch));
+		return readDict(ch -> readTranslations(w, ch)).main();
+	}
+
+	FutureSupplier<Void> writeTranslations(Word w, List<Translation> translations) {
+		assertMainThread();
+		return editWords((size, words) -> {
+			int idx = findWord(words, w.getWord());
+			if (idx < 0) throw new IllegalArgumentException("Word " + w + " not found");
+			long nextOff = (idx != (words.size() - 1)) ? words.get(idx + 1).getOffset() : size;
+			ByteBuffer bb = w.toBytes(translations);
+			long len = nextOff - w.getOffset();
+			shiftWords(words, idx + 1, bb.remaining() - len);
+			return dictReplace(w.getOffset(), len, bb);
+		}).then(f -> f).main()
+				.onFailure(err -> Log.e(err, "Failed to write word translation to dictionary ", this));
 	}
 
 	private List<Translation> readTranslations(Word w, RandomAccessChannel ch) throws IOException {
@@ -439,7 +453,7 @@ public class Dict implements Comparable<Dict> {
 			int len = ins.remaining();
 			ch.transferFrom(channel, off + del, off + len, size - off - del);
 			ch.truncate(size + len - del);
-			ch.write(bb, off);
+			ch.write(ins, off);
 			return null;
 		});
 	}

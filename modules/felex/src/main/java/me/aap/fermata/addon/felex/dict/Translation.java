@@ -17,14 +17,14 @@ public class Translation {
 	private final String translation;
 	private List<Example> examples = Collections.emptyList();
 
-	Translation(String translation) {
+	public Translation(String translation) {
 		this.translation = translation;
 	}
 
-	Translation(String translation, @Nullable String example,
-							@Nullable String exampleTrans) {
+	public Translation(String translation, @Nullable String example,
+										 @Nullable String exampleTrans) {
 		this(translation);
-		if (!isNullOrBlank(example) && !isNullOrBlank(exampleTrans)) {
+		if (!isNullOrBlank(example)) {
 			addExample(new Example(example, exampleTrans));
 		}
 	}
@@ -35,6 +35,10 @@ public class Translation {
 
 	public List<Example> getExamples() {
 		return examples;
+	}
+
+	public void setExamples(List<Example> examples) {
+		this.examples = examples;
 	}
 
 	public boolean matches(String trans) {

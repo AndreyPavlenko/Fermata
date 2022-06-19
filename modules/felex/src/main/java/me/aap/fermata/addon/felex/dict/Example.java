@@ -8,11 +8,11 @@ public class Example {
 	private final String sentence;
 	private String translation;
 
-	Example(String sentence) {
+	public Example(String sentence) {
 		this.sentence = sentence;
 	}
 
-	Example(String sentence, String translation) {
+	public Example(String sentence, String translation) {
 		this.sentence = sentence;
 		this.translation = translation;
 	}
@@ -27,5 +27,10 @@ public class Example {
 
 	void setTranslation(String translation) {
 		this.translation = translation;
+	}
+
+	@Override
+	public String toString() {
+		return getSentence();
 	}
 }
