@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dict_folder">Папка хранения словарей</string>
+    <string name="cache_folder">Папка хранения кэша</string>
+    <string name="dict_sub1">Слов: %1$d</string>
+    <string name="dict_sub2">Слов: %1$d. Прогресс: %2$d/%3$d.</string>
+    <string name="start_tutor">Начать обучение</string>
+    <string name="start_tutor_dir">Прямой перевод</string>
+    <string name="start_tutor_rev">Обратный перевод</string>
+    <string name="start_tutor_mix">Смешанный</string>
+    <string name="start_tutor_listen">Прослушивание</string>
+    <string name="add_dict">Добавить словарь</string>
+    <string name="dict_name">Название словаря</string>
+    <string name="src_lang">Исходный язык</string>
+    <string name="target_lang">Язык перевода</string>
+    <string name="no_lang_supported">Нет языков, поддерживаемых TTS</string>
+    <string name="add_word">Добавить слово</string>
+    <string name="add_trans">Добавить перевод</string>
+    <string name="add_example">Добавить пример</string>
+    <string name="word">Слово</string>
+    <string name="trans">Перевод</string>
+    <string name="example">Пример</string>
+    <string name="example_trans">Перевод примера</string>
+    <string name="wipe_prog">Очистить прогресс</string>
+    <string name="wipe_prog_for">Очистить прогресс для %1$s?</string>
+    <string name="change_prog">Изменить прогресс</string>
+    <string name="dir_prog">Прогресс прямого перевода</string>
+    <string name="rev_prog">Прогресс обратного перевода</string>
+    <string name="import_dict">Импортировать словарь</string>
+    <string name="import_dict_q">Импортировать словарь %1$s?</string>
+    <string name="import_dict_exist">Добавить слова в существующий словарь %1$s?</string>
+    <string name="err_invalid_dict_hdr">Невалидный заголовок словаря: %1$s?</string>
+</resources>

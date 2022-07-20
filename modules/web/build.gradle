@@ -10,12 +10,14 @@ ext {
             [
                     name : 'youtube',
                     icon : 'youtube',
-                    class: 'me.aap.fermata.addon.web.yt.YoutubeAddon'
+                    class: 'me.aap.fermata.addon.web.yt.YoutubeAddon',
+                    order: 2
             ],
             [
                     name : 'web_browser',
                     icon : 'web',
-                    class: 'me.aap.fermata.addon.web.WebBrowserAddon'
+                    class: 'me.aap.fermata.addon.web.WebBrowserAddon',
+                    order: 3
             ]
     ]
 }

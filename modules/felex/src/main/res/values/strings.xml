@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dict_folder">Dictionaries folder</string>
+    <string name="cache_folder">Cache folder</string>
+    <string name="dict_sub1">Words: %1$d</string>
+    <string name="dict_sub2">Words: %1$d. Progress: %2$d/%3$d.</string>
+    <string name="start_tutor">Start tutor</string>
+    <string name="start_tutor_dir">Direct translation</string>
+    <string name="start_tutor_rev">Reverse translation</string>
+    <string name="start_tutor_mix">Mixed</string>
+    <string name="start_tutor_listen">Listening</string>
+    <string name="add_dict">Add dictionary</string>
+    <string name="dict_name">Dictionary name</string>
+    <string name="src_lang">Source language</string>
+    <string name="target_lang">Target language</string>
+    <string name="no_lang_supported">No languages supported by TTS</string>
+    <string name="add_word">Add word</string>
+    <string name="add_trans">Add translation</string>
+    <string name="add_example">Add example</string>
+    <string name="word">Word</string>
+    <string name="trans">Translation</string>
+    <string name="example">Example</string>
+    <string name="example_trans">Example translation</string>
+    <string name="wipe_prog">Wipe progress</string>
+    <string name="wipe_prog_for">Wipe progress for %1$s?</string>
+    <string name="change_prog">Change progress</string>
+    <string name="dir_prog">Direct progress</string>
+    <string name="rev_prog">Reverse progress</string>
+    <string name="import_dict">Import dictionary</string>
+    <string name="import_dict_q">Import dictionary %1$s?</string>
+    <string name="import_dict_exist">Add words to existing dictionary %1$s?</string>
+    <string name="err_invalid_dict_hdr">Invalid dictionary header: %1$s?</string>
+</resources>

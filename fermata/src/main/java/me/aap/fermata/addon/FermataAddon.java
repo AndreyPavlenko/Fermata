@@ -1,9 +1,22 @@
 package me.aap.fermata.addon;
 
+import static android.os.ParcelFileDescriptor.MODE_READ_ONLY;
+
+import android.content.Intent;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.app.App;
+import me.aap.utils.io.FileUtils;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
@@ -34,6 +47,28 @@ public interface FermataAddon {
 	}
 
 	default void uninstall() {
+	}
+
+	default boolean handleIntent(MainActivityDelegate a, Intent intent) {
+		return false;
+	}
+
+	@Nullable
+	default ParcelFileDescriptor openFile(Uri uri) throws FileNotFoundException {
+		String s = uri.getScheme();
+		if (s == null) throw new FileNotFoundException(uri.toString());
+		if (s.equals("file")) {
+			return ParcelFileDescriptor.open(new File(uri.toString().substring(6)), MODE_READ_ONLY);
+		} else if (s.equals("content")) {
+			return App.get().getContentResolver().openFileDescriptor(uri, "r");
+		}
+		throw new FileNotFoundException(uri.toString());
+	}
+
+	@Nullable
+	default String getFileType(Uri uri, String displayName) {
+		if (displayName == null) displayName = uri.getPath();
+		return FileUtils.getMimeType(displayName);
 	}
 
 	@NonNull

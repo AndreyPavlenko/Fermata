@@ -203,7 +203,7 @@ public interface MediaLib {
 				b.setSubtitle(md.getSubtitle());
 
 				if (FermataContentProvider.isSupportedFileScheme(uri.getScheme())) {
-					b.setIconUri(FermataContentProvider.toContentUri(uri));
+					b.setIconUri(FermataContentProvider.toImgUri(uri));
 				}
 
 				return completed(b.build());

@@ -91,7 +91,7 @@ class DefaultFavorites extends ItemContainer<PlayableItem> implements Favorites,
 
 	@Override
 	public FutureSupplier<List<Item>> listChildren() {
-		return listChildren(getFavoritesPref());
+		return listChildren(getFavoritesPreferenceStore(), FAVORITES);
 	}
 
 	@Override

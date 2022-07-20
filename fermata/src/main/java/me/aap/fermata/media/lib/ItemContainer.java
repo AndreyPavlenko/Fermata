@@ -1,22 +1,27 @@
 package me.aap.fermata.media.lib;
 
+import static me.aap.utils.async.Async.forEach;
+import static me.aap.utils.async.Completed.completedEmptyList;
+
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.vfs.VirtualResource;
-
-import static me.aap.utils.async.Async.forEach;
 
 
 /**
@@ -47,18 +52,38 @@ public abstract class ItemContainer<C extends Item> extends BrowsableItemBase {
 		});
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	FutureSupplier<List<Item>> listChildren(String[] ids) {
+	FutureSupplier<List<Item>> listChildren(PreferenceStore prefs, Pref<Supplier<String[]>> idsPref) {
+		String[] ids = prefs.getStringArrayPref(idsPref);
+		if ((ids == null) || (ids.length == 0)) return completedEmptyList();
 		MediaLib lib = getLib();
-		List children = new ArrayList<>(ids.length);
+		List<Item> children = new ArrayList<>(ids.length);
+		AtomicBoolean update = new AtomicBoolean();
+		AtomicInteger counter = new AtomicInteger();
 		return forEach(id -> lib.getItem(id)
 				.ifFail(err -> {
 					Log.e(err, "Failed to get item: ", id);
+					counter.incrementAndGet();
 					return null;
 				}).map(c -> {
-					if (c != null) children.add(toChildItem(c));
+					if (c == null) {
+						Log.w("Item not found: ", ids[counter.get()]);
+					} else {
+						children.add(toChildItem(c));
+						String newId = c.getId();
+						String oldId = ids[counter.get()];
+						if (!newId.equals(oldId)) {
+							Log.i("Item id has been changed. Updating ", oldId, " -> ", newId);
+							ids[counter.get()] = newId;
+							update.set(true);
+						}
+					}
+
+					counter.incrementAndGet();
 					return null;
-				}), ids).map(v -> children);
+				}), ids).main().map(v -> {
+			if (update.get()) prefs.applyStringArrayPref(idsPref, ids);
+			return children;
+		});
 	}
 
 	public FutureSupplier<Void> addItem(C item) {

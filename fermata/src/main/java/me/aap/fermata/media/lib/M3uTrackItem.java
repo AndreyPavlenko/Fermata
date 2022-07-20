@@ -73,12 +73,14 @@ public class M3uTrackItem extends PlayableItemBase {
 		start = end + 1;
 		end = id.indexOf(':', start);
 		int tid = Integer.parseInt(id.substring(start, end));
+		start = id.indexOf(':', end + 1);
+		String uri = (start > 0) ? id.substring(start + 1) : null;
 		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(M3uItem.SCHEME).append(id, end, id.length());
+		tb.append(M3uItem.SCHEME).append(id, end, (start > 0) ? start : id.length());
 
 		return lib.getItem(tb.releaseString()).then(i -> {
 			M3uItem m3u = (M3uItem) i;
-			return (m3u != null) ? m3u.getTrack(gid, tid) : completedNull();
+			return (m3u != null) ? m3u.getTrack(gid, tid, uri) : completedNull();
 		});
 	}
 

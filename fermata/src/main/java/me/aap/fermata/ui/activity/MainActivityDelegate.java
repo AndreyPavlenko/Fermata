@@ -264,21 +264,31 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
 		Uri u = intent.getData();
-		if (u == null) return completed(false);
-		String action = u.getHost();
-		if (action == null) return completed(false);
-		String id = u.getPath();
-		if (id == null) return completed(false);
-		id = new String(Base64.decode(id.substring(1), URL_SAFE), US_ASCII);
 
-		if (INTENT_ACTION_OPEN.equals(action)) {
-			goToItem(id).map(i -> i != null);
-		} else if (INTENT_ACTION_PLAY.equals(action)) {
-			goToItem(id).map(i -> {
-				if (!(i instanceof PlayableItem)) return false;
-				getMediaServiceBinder().playItem((PlayableItem) i);
-				return true;
-			});
+		if (u != null) {
+			if (INTENT_SCHEME.equals(u.getScheme())) {
+				String action = u.getHost();
+				if (action == null) return completed(false);
+				String id = u.getPath();
+				if (id == null) return completed(false);
+				id = new String(Base64.decode(id.substring(1), URL_SAFE), US_ASCII);
+
+				if (INTENT_ACTION_OPEN.equals(action)) {
+					goToItem(id).map(i -> i != null);
+					return completed(true);
+				} else if (INTENT_ACTION_PLAY.equals(action)) {
+					goToItem(id).map(i -> {
+						if (!(i instanceof PlayableItem)) return false;
+						getMediaServiceBinder().playItem((PlayableItem) i);
+						return true;
+					});
+					return completed(true);
+				}
+			}
+		}
+
+		for (FermataAddon a : AddonManager.get().getAddons()) {
+			if (a.handleIntent(this, intent)) return completed(true);
 		}
 
 		return completed(false);
@@ -752,7 +762,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		Promise<List<String>> p = new Promise<>();
 		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString());
 		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
 		speechListener = new SpeechListener(p, textInput);
 		speechListener.start(i);

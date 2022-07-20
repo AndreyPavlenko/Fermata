@@ -1,5 +1,9 @@
 package me.aap.fermata.media.lib;
 
+import static java.util.Objects.requireNonNull;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedNull;
+
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
@@ -11,10 +15,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
-
-import static java.util.Objects.requireNonNull;
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedNull;
 
 /**
  * @author Andrey Pavlenko
@@ -39,15 +39,24 @@ M3uGroupItem extends BrowsableItemBase {
 	@NonNull
 	static FutureSupplier<? extends M3uGroupItem> create(DefaultMediaLib lib, String id) {
 		assert id.startsWith(SCHEME);
-		int start = id.indexOf(':') + 1;
-		int end = id.indexOf(':', start);
-		int gid = Integer.parseInt(id.substring(start, end));
-		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(M3uItem.SCHEME).append(id, end, id.length());
+		int gstart = id.indexOf(':') + 1;
+		int gend = id.indexOf(':', gstart);
+		int nstart = id.indexOf(':', gend + 1);
+		int gid = Integer.parseInt(id.substring(gstart, gend));
+		SharedTextBuilder tb = SharedTextBuilder.get().append(M3uItem.SCHEME);
+		String name;
+
+		if (nstart > 0) {
+			name = id.substring(nstart + 1);
+			tb.append(id, gend, nstart);
+		} else {
+			name = null;
+			tb.append(id, gend, id.length());
+		}
 
 		return lib.getItem(tb.releaseString()).then(i -> {
 			M3uItem m3u = (M3uItem) i;
-			return (m3u != null) ? m3u.getGroup(gid) : completedNull();
+			return (m3u != null) ? m3u.getGroup(gid, name) : completedNull();
 		});
 	}
 

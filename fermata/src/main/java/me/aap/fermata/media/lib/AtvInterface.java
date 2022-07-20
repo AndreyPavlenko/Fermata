@@ -177,7 +177,7 @@ public class AtvInterface implements Item.ChangeListener {
 					.setDescription(ifNull(d.getSubtitle(), "").toString())
 					.setIntentUri(toIntentUri(INTENT_ACTION_PLAY, id));
 			if (p.item.isStream()) b.setLive(true);
-			if (art != null) b.setPosterArtUri(FermataContentProvider.toContentUri(art));
+			if (art != null) b.setPosterArtUri(FermataContentProvider.toImgUri(art));
 
 			Bundle ext = d.getExtras();
 			long start = 0;

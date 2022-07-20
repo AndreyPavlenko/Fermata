@@ -191,6 +191,7 @@
     <string name="rescan">Scansiona di nuovo</string>
     <string name="edit">Modifica</string>
     <string name="delete">Elimina</string>
+    <string name="delete_confirm">Elimina %1$s?</string>
     <string name="delete_file_title">Elimina file</string>
     <string name="delete_file_question">Vuoi davvero eliminare il file?</string>
     <string name="delete_file_failed">Impossibile eliminare il file %1$s</string>

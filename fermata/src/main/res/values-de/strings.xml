@@ -1,22 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile" translatable="false">Fermata</string>
-    <string name="app_name_auto" translatable="false">Fermata Auto</string>
-    <string name="media_service_name" translatable="false">Fermata</string>
-    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
-    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
-    <string name="engine_vlc_name" translatable="false">VLC</string>
-
-    <string name="module_name_gdrive" translatable="false">Google Drive</string>
-    <string name="module_name_sftp" translatable="false">SFTP</string>
-    <string name="module_name_smb" translatable="false">SMB</string>
-    <string name="module_name_web" translatable="false">Web</string>
-    <string name="module_name_tv" translatable="false">TV</string>
-
     <string name="addons">Addons</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Browser</string>
-    <string name="addon_name_youtube" translatable="false">YouTube</string>
 
     <string name="interface_prefs">Benutzeroberfläche</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -30,7 +16,6 @@
     <string name="theme_dark">Dark</string>
     <string name="theme_day_night">Tag/Nacht</string>
     <string name="theme_black">Schwarz</string>
-    <string name="theme_star_wars" translatable="false">Star Wars</string>
 
     <string name="nav_bar_pos">Navigationsleistenposition</string>
     <string name="nav_bar_pos_sub">aktuelle Position: %1$s</string>
@@ -90,7 +75,6 @@
     <string name="voice_control_sub_double">Aktivieren der Sprachsteuerung durch Doppel-Drücken</string>
     <string name="voice_control_subst">Wortersetzung</string>
     <string name="voice_control_subst_sub">Ersetzen Sie ein Wort durch ein anderes Wort oder einen Satz</string>
-    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
 
     <string name="module_installation">Modul-Installation: %1$s</string>
     <string name="install_pending">Installation läuft: %1$s</string>
@@ -116,8 +100,6 @@
     <string name="video_scaling_best">Bestmögliche Auflösung</string>
     <string name="video_scaling_fill">Bildschirm ausfüllen</string>
     <string name="video_scaling_orig">Original Größe</string>
-    <string name="video_scaling_4" translatable="false">4x3</string>
-    <string name="video_scaling_16" translatable="false">16x9</string>
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Audio Verzögerung</string>
@@ -132,7 +114,6 @@
     <string name="preferred_sub_key">Untertitel mit Schlüsselwörtern bevorzugen</string>
     <string name="select_subtitles">Untertitel auswählen</string>
 
-    <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -209,6 +190,7 @@
     <string name="rescan">neu einlesen</string>
     <string name="edit">bearbeiten</string>
     <string name="delete">Löschen</string>
+    <string name="delete_confirm">Löschen %1$s?</string>
     <string name="delete_file_title">Datei löschen</string>
     <string name="delete_file_question">Sind Sie sicher, dass Sie die Datei löschen wollen?</string>
     <string name="delete_file_failed">Datei %1$s konnte nicht gelöscht werden</string>
@@ -221,13 +203,9 @@
     <string name="vfs_content">SD-Card / System</string>
     <string name="vfs_file_system">Dateisystem</string>
     <string name="vfs_gdrive">Google Drive</string>
-    <string name="vfs_sftp" translatable="false">SFTP</string>
-    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">m3u Playlist</string>
     <string name="m3u_playlist_name">Name</string>
     <string name="m3u_playlist_location">Speicherort</string>
     <string name="m3u_playlist_location_hint">Datei oder Http(s) URL</string>
-    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_video">Video Playlist?</string>
 
     <string name="eq_manual">Anleitung</string>

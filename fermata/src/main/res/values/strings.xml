@@ -17,6 +17,7 @@
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web browser</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
+    <string name="addon_name_felex" translatable="false">Felex</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -214,8 +215,10 @@
     <string name="unselect_all">Unselect all</string>
     <string name="refresh">Refresh</string>
     <string name="rescan">Rescan</string>
+    <string name="share">Share</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+    <string name="delete_confirm">Delete %1$s?</string>
     <string name="delete_file_title">Delete file</string>
     <string name="delete_file_question">Are you sure you want to delete file?</string>
     <string name="delete_file_failed">Failed to delete file %1$s</string>

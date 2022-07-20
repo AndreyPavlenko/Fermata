@@ -12,7 +12,6 @@ import me.aap.fermata.addon.tv.TvRootItem;
 import me.aap.fermata.media.lib.M3uGroupItem;
 import me.aap.fermata.media.lib.M3uItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
-import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.text.SharedTextBuilder;
 
@@ -28,15 +27,25 @@ public class TvM3uGroupItem extends M3uGroupItem implements TvItem {
 
 	public static FutureSupplier<TvM3uGroupItem> create(TvRootItem root, String id) {
 		assert id.startsWith(SCHEME);
-		int start = id.indexOf(':') + 1;
-		int end = id.indexOf(':', start);
-		int gid = Integer.parseInt(id.substring(start, end));
-		SharedTextBuilder tb = SharedTextBuilder.get();
-		tb.append(TvM3uItem.SCHEME).append(id, end, id.length());
+		int gstart = id.indexOf(':') + 1;
+		int gend = id.indexOf(':', gstart);
+		int gid = Integer.parseInt(id.substring(gstart, gend));
+		int nstart = id.indexOf(':', gend + 1);
+		SharedTextBuilder tb = SharedTextBuilder.get().append(TvM3uItem.SCHEME);
+		String name;
+
+		if (nstart > 0) {
+			name = id.substring(nstart + 1);
+			tb.append(id, gend, nstart);
+		} else {
+			name = null;
+			tb.append(id, gend, id.length());
+		}
+
 		FutureSupplier<? extends Item> f = root.getItem(TvM3uItem.SCHEME, tb.releaseString());
 		return (f == null) ? completedNull() : f.then(i -> {
 			TvM3uItem m3u = (TvM3uItem) i;
-			return (m3u != null) ? m3u.getGroup(gid) : completedNull();
+			return (m3u != null) ? m3u.getGroup(gid, name) : completedNull();
 		});
 	}
 
