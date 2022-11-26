@@ -66,19 +66,15 @@ android {
             }
         }
     }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/license.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt', 'META-INF/notice.txt', 'META-INF/ASL2.0']
+        }
+    }
 
     dynamicFeatures.addAll(gradle.ext.modules)
 
-    packagingOptions {
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/license.txt'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/NOTICE.txt'
-        exclude 'META-INF/notice.txt'
-        exclude 'META-INF/ASL2.0'
-    }
+    namespace 'me.aap.fermata'
 }
 
 dependencies {
@@ -90,4 +86,5 @@ dependencies {
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:${ANDROIDX_SWIPEREFRESHLAYOUT_VERSION}"
     implementation "com.google.android.play:core:${ANDROID_PLAY_CORE_VERSION}"
     implementation 'androidx.tvprovider:tvprovider:1.0.0'
+    implementation 'com.google.guava:guava:31.0.1-android'
 }

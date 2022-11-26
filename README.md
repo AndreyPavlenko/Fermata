@@ -55,7 +55,7 @@ To build the apks with a dirrenent package name, use the APP_ID property:
 ## Donation
 If you like the application, please consider making a donation:
 
-[PayPal](https://paypal.me/AndrewPavlenko)
+[PayPal](https://www.paypal.com/donate/?hosted_button_id=NP5Q3YDSCJ98N)
 
 [CloudTips](https://pay.cloudtips.ru/p/a03a73da)
 

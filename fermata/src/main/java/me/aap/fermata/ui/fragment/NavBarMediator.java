@@ -282,7 +282,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 				IntHolder selection = new IntHolder();
 				String[] wallets = new String[]{"PayPal", "CloudTips", "Yandex",};
 				String[] urls = new String[]{
-						"https://paypal.me/AndrewPavlenko",
+						"https://www.paypal.com/donate/?hosted_button_id=NP5Q3YDSCJ98N",
 						"https://pay.cloudtips.ru/p/a03a73da",
 						"https://yoomoney.ru/to/410014661137336"
 				};
