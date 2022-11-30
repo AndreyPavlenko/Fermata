@@ -153,7 +153,11 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			return false;
 		} finally {
 			if (media != null) media.release();
-			if (mmr != null) mmr.release();
+			try {
+				mmr.release();
+			} catch (Exception ex) {
+				Log.d(ex);
+			}
 			IoUtils.close(fd);
 		}
 	}

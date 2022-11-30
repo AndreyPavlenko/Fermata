@@ -1,5 +1,8 @@
 package me.aap.fermata.media.engine;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,9 +16,6 @@ import java.util.Collections;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.utils.log.Log;
-
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * @author Andrey Pavlenko
@@ -96,7 +96,13 @@ public class MediaPlayerEngineProvider implements MediaEngineProvider {
 			Log.d(ex, "Failed to retrieve media metadata of ", item.getLocation());
 			return false;
 		} finally {
-			if (mmr != null) mmr.release();
+			if (mmr != null) {
+				try {
+					mmr.release();
+				} catch (Exception ex) {
+					Log.d(ex);
+				}
+			}
 		}
 	}
 

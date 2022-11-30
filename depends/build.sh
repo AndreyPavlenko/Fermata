@@ -52,9 +52,6 @@ else
 fi
 
 # Clone or update ExoPlayer
-# EXO_VERSION=release-v2
-# Temporary use this version due to 'No virtual method buildOrThrow()Lcom/google/common/collect/ImmutableMap' error
-EXO_VERSION=7fca1a0876c3f43f3e36f383f46c7575b13bc0df
 if [ -d "$EXO_DIR" ]; then
     cd "$EXO_DIR"
     git clean -xfd && git reset --hard && git pull origin release-v2
@@ -62,7 +59,7 @@ else
     git clone 'https://github.com/google/ExoPlayer.git' "$EXO_DIR"
     cd "$EXO_DIR"
 fi
-git checkout $EXO_VERSION
+git checkout release-v2
 
 sed -i "s/minSdkVersion .*/minSdkVersion = $SDK_MIN_VERSION/" "$EXO_DIR/constants.gradle"
 sed -i "s/targetSdkVersion .*/targetSdkVersion = $SDK_TARGET_VERSION/" "$EXO_DIR/constants.gradle"

@@ -38,8 +38,9 @@ android {
             debuggable true
         }
     }
+    namespace 'me.aap.fermata.auto.control'
 }
 
 dependencies {
-    implementation 'androidx.media:media:1.4.3'
+    implementation 'androidx.media:media:1.6.0'
 }
