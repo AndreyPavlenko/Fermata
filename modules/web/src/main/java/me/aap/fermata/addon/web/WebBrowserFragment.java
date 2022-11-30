@@ -88,6 +88,31 @@ public class WebBrowserFragment extends MainActivityFragment
 		}
 	}
 
+	@Override
+	public void onPause() {
+		super.onPause();
+		FermataWebView v = getWebView();
+		if (v != null) {
+			FermataChromeClient chrome = v.getWebChromeClient();
+
+			if (chrome != null) {
+				if (chrome.isFullScreen()) {
+					chrome.exitFullScreen();
+				}
+			}
+		}
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+
+		// Calling here onResume makes the video to not get freezed when you switch to another app and go back to Fermata
+		if (getWebView() != null ){
+			getWebView().onResume();
+		}
+	}
+
 	protected void registerListeners(MainActivityDelegate a) {
 		a.addBroadcastListener(this, MainActivityListener.ACTIVITY_DESTROY);
 	}

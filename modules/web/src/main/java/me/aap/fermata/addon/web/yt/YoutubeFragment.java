@@ -130,7 +130,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			if (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem()) && b.isPlaying()) {
-				b.getMediaSessionCallback().onPause();
+				//b.getMediaSessionCallback().onPause();
 				playOnResume = true;
 			} else {
 				playOnResume = false;
