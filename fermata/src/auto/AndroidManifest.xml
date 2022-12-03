@@ -14,7 +14,22 @@
         </intent>
     </queries>
 
+
     <application>
+
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Android Auto hooks" />
+        <meta-data
+            android:name="xposedminversion"
+            android:value="54" />
+        <meta-data
+            android:name="xposedscope"
+            android:resource="@array/xposedscope" />
+
 
         <service
             android:name="me.aap.fermata.media.service.FermataMediaService"
