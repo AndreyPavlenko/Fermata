@@ -87,4 +87,5 @@ dependencies {
     implementation "com.google.android.play:core:${ANDROID_PLAY_CORE_VERSION}"
     implementation 'androidx.tvprovider:tvprovider:1.0.0'
     implementation 'com.google.guava:guava:31.0.1-android'
+    compileOnly 'de.robv.android.xposed:api:82'
 }
