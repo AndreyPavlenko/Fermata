@@ -61,6 +61,7 @@ else
 fi
 git checkout release-v2
 
+echo > "$EXO_DIR/publish.gradle"
 sed -i "s/minSdkVersion .*/minSdkVersion = $SDK_MIN_VERSION/" "$EXO_DIR/constants.gradle"
 sed -i "s/targetSdkVersion .*/targetSdkVersion = $SDK_TARGET_VERSION/" "$EXO_DIR/constants.gradle"
 sed -i "s/appTargetSdkVersion .*/appTargetSdkVersion = $SDK_TARGET_VERSION/" "$EXO_DIR/constants.gradle"
