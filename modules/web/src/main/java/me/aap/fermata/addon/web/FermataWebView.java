@@ -1,9 +1,13 @@
 package me.aap.fermata.addon.web;
 
+import static android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+import static android.content.res.Configuration.UI_MODE_NIGHT_YES;
 import static android.os.Build.VERSION;
 import static android.os.Build.VERSION_CODES;
 import static android.view.MotionEvent.ACTION_UP;
+import static androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING;
 import static androidx.webkit.WebViewFeature.FORCE_DARK;
+import static androidx.webkit.WebViewFeature.FORCE_DARK_STRATEGY;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
@@ -155,12 +159,32 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if (reload) reload();
 	}
 
+	@SuppressWarnings("deprecation")
 	private void setForceDark(WebBrowserAddon a, boolean reload) {
-		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
-			int v = a.isForceDark() ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_AUTO;
-			WebSettingsCompat.setForceDark(getSettings(), v);
+		if ((VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) && (WebViewFeature.isFeatureSupported(ALGORITHMIC_DARKENING))) {
+			boolean dark = a.isForceDark() || (isDarkPhoneTheme() && a.isAutoDark());
+			WebSettingsCompat.setAlgorithmicDarkeningAllowed(getSettings(), dark);
+			if (reload) reload();
+		} else if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
+			int force;
+			int strategy;
+			if (a.isForceDark() || (isDarkPhoneTheme() && a.isAutoDark())) {
+				force = WebSettingsCompat.FORCE_DARK_ON;
+				strategy = WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING;
+			} else {
+				force = WebSettingsCompat.FORCE_DARK_OFF;
+				strategy = WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY;
+			}
+			WebSettingsCompat.setForceDark(getSettings(), force);
+			if (WebViewFeature.isFeatureSupported(FORCE_DARK_STRATEGY))
+				WebSettingsCompat.setForceDarkStrategy(getSettings(), strategy);
 			if (reload) reload();
 		}
+	}
+
+	private boolean isDarkPhoneTheme() {
+		int mode = getResources().getConfiguration().uiMode;
+		return (mode & UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES;
 	}
 
 	protected FermataJsInterface createJsInterface() {
