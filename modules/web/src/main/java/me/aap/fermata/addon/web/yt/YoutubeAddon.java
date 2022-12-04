@@ -15,6 +15,7 @@ import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -29,7 +30,10 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Listener {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(YoutubeAddon.class.getName());
-	private static final Pref<BooleanSupplier> YT_FORCE_DARK = Pref.b("YT_FORCE_DARK", false);
+	public static final int YT_DARK_MODE_DISABLED = 0;
+	public static final int YT_DARK_MODE_ENABLED = 1;
+	public static final int YT_DARK_MODE_AUTO = 2;
+	private static final Pref<IntSupplier> YT_DARK_MODE = Pref.i("YT_DARK_MODE", YT_DARK_MODE_AUTO);
 	private static final Pref<BooleanSupplier> YT_DESKTOP_VERSION = Pref.b("YT_DESKTOP_VERSION", false);
 	private static final Pref<Supplier<String[]>> YT_BOOKMARKS = Pref.sa("YT_BOOKMARKS");
 	private static final Pref<Supplier<String>> VIDEO_SCALE = Pref.s("VIDEO_SCALE", VideoScale.CONTAIN::prefName);
@@ -55,8 +59,8 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	}
 
 	@Override
-	public Pref<BooleanSupplier> getForceDarkPref() {
-		return YT_FORCE_DARK;
+	public Pref<IntSupplier> getForceDarkPref() {
+		return YT_DARK_MODE;
 	}
 
 	@Override

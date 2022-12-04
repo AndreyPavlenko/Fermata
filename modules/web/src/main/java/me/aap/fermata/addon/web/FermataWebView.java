@@ -3,7 +3,9 @@ package me.aap.fermata.addon.web;
 import static android.os.Build.VERSION;
 import static android.os.Build.VERSION_CODES;
 import static android.view.MotionEvent.ACTION_UP;
+import static androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING;
 import static androidx.webkit.WebViewFeature.FORCE_DARK;
+import static androidx.webkit.WebViewFeature.FORCE_DARK_STRATEGY;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EDIT;
 import static me.aap.fermata.addon.web.FermataJsInterface.JS_EVENT;
@@ -53,6 +55,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	private WebBrowserAddon addon;
 	private FermataWebClient webClient;
 	private FermataChromeClient chrome;
+	private Boolean isDarkPhoneTheme;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -150,10 +153,37 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	}
 
 	private void setForceDark(WebBrowserAddon a, boolean reload) {
-		if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
-			int v = a.isForceDark() ? WebSettingsCompat.FORCE_DARK_ON : WebSettingsCompat.FORCE_DARK_AUTO;
-			WebSettingsCompat.setForceDark(getSettings(), v);
+		if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
+			if (WebViewFeature.isFeatureSupported(ALGORITHMIC_DARKENING)) {
+				getPhoneTheme();
+				boolean t = a.isForceDark() || (isDarkPhoneTheme && a.isAutoDark());
+				WebSettingsCompat.setAlgorithmicDarkeningAllowed(getSettings(), t);
+				if (reload) reload();
+			}
+		} else if (WebViewFeature.isFeatureSupported(FORCE_DARK)) {
+			getPhoneTheme();
+			int v, z;
+			if (a.isForceDark() || (isDarkPhoneTheme && a.isAutoDark())) {
+				v = WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING;
+				z = WebSettingsCompat.FORCE_DARK_ON;
+			} else {
+				v = WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY;
+				z = WebSettingsCompat.FORCE_DARK_OFF;
+			}
+			WebSettingsCompat.setForceDark(getSettings(), z);
+			if (WebViewFeature.isFeatureSupported(FORCE_DARK_STRATEGY)) WebSettingsCompat.setForceDarkStrategy(getSettings(), v);
 			if (reload) reload();
+		}
+	}
+
+	public void getPhoneTheme() {
+		switch (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) {
+			case Configuration.UI_MODE_NIGHT_YES:
+				isDarkPhoneTheme = true;
+				break;
+			case Configuration.UI_MODE_NIGHT_NO:
+				isDarkPhoneTheme = false;
+				break;
 		}
 	}
 
