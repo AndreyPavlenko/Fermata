@@ -86,9 +86,7 @@
     <string name="equalier">Equalizzatore</string>
     <string name="preset_name">Nome preset</string>
     <string name="virtualizer">Virtualizzatore</string>
-    <string name="enabled">Attivato</string>
-    <string name="disabled">Disattivato</string>
-    <string name="auto">Automatico</string>
+    <string name="auto">Auto</string>
     <string name="binaural">Binaurale</string>
     <string name="transaural">Transaurale</string>
     <string name="bass_boost">Potenziamento bassi</string>

@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="force_dark">Forza modalità scura, se supportata</string>
-    <string name="force_dark_sub">Usa "\"Automatico"\" per seguire il tema del telefono</string>
+    <string name="force_dark_sub">%1$s. &lt;-Usa "\"Automatico"\" per seguire il tema del telefono</string>
+    <string name="force_dark_auto">Automatico</string>
+    <string name="force_dark_enabled">Attivato</string>
+    <string name="force_dark_disabled">Disattivato</string>
     <string name="user_agent_desktop">User-Agent - Versione desktop</string>
     <string name="desktop_version">Versione desktop</string>
     <string name="full_screen">Schermo intero</string>

@@ -82,7 +82,7 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 			o.subtitle = R.string.force_dark_sub;
 			o.visibility = visibility;
 			o.formatSubtitle = true;
-			o.values = new int[]{me.aap.fermata.R.string.disabled, me.aap.fermata.R.string.enabled, me.aap.fermata.R.string.auto};
+			o.values = new int[]{R.string.force_dark_disabled, R.string.force_dark_enabled, R.string.force_dark_auto};
 		});
 
 		if (getClass() == WebBrowserAddon.class) {

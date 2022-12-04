@@ -108,8 +108,6 @@
     <string name="equalier">Equalizer</string>
     <string name="preset_name">Preset name</string>
     <string name="virtualizer">Virtualizer</string>
-    <string name="enabled">Enabled</string>
-    <string name="disabled">Disabled</string>
     <string name="auto">Auto</string>
     <string name="binaural">Binaural</string>
     <string name="transaural">Transaural</string>
