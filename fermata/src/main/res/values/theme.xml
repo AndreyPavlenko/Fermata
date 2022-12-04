@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
     <attr name="appMediaItemStyle" format="reference" />
     <attr name="appControlPanelStyle" format="reference" />
@@ -9,6 +9,8 @@
     <attr name="appVideoInfoStyle" format="reference" />
 
     <style name="AppTheme" parent="Theme.Utils.Base">
+        <item name="android:forceDarkAllowed" tools:targetApi="q">true</item>
+        <item name="android:isLightTheme" tools:targetApi="q">false</item>
         <item name="android:windowBackground">@drawable/app_background</item>
         <item name="appMediaItemStyle">@style/AppTheme.MediaItemStyle</item>
         <item name="appControlPanelStyle">@style/AppTheme.ControlPanelStyle</item>

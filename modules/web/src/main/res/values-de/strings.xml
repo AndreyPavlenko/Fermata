@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="force_dark">Darkmode erzwingen (wenn unterstützt)</string>
+    <string name="force_dark_sub">%1$s. Wählen Sie "\"Auto"\", um dem Device Theme zu folgen.</string>
+    <string name="force_dark_auto">Auto</string>
+    <string name="force_dark_enabled">Aktiviert</string>
+    <string name="force_dark_disabled">Deaktiviert</string>
     <string name="user_agent" translatable="false">User-Agent</string>
     <string name="user_agent_desktop">User-Agent - Desktop Version</string>
     <string name="desktop_version">Desktop-Version</string>

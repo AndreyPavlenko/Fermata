@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="force_dark">Форсировать темный стиль, если поддерживается</string>
+    <string name="force_dark_sub">%1$s. Выберите "\"Авто"\", чтобы соответствовать теме устройства.</string>
+    <string name="force_dark_auto">Авто</string>
+    <string name="force_dark_enabled">Включить</string>
+    <string name="force_dark_disabled">Выключить</string>
     <string name="user_agent_desktop">User-Agent - Версия для ПК</string>
     <string name="desktop_version">Версия для ПК</string>
     <string name="full_screen">Полноэкранный режим</string>

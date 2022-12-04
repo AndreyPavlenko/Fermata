@@ -17,6 +17,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
+import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -34,7 +35,10 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");
-	private static final Pref<BooleanSupplier> FORCE_DARK = Pref.b("FORCE_DARK", false);
+	public static final int DARK_MODE_DISABLED = 0;
+	public static final int DARK_MODE_ENABLED = 1;
+	public static final int DARK_MODE_AUTO = 2;
+	private static final Pref<IntSupplier> DARK_MODE = Pref.i("DARK_MODE", DARK_MODE_AUTO);
 	private static final Pref<Supplier<String>> USER_AGENT = Pref.s("USER_AGENT",
 			"Mozilla/5.0 (Linux; Android {ANDROID_VERSION}) " +
 					"AppleWebKit/{WEBKIT_VERSION} (KHTML, like Gecko) " +
@@ -71,11 +75,14 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 
 	@Override
 	public void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
-		set.addBooleanPref(o -> {
+		set.addListPref(o -> {
 			o.store = getPreferenceStore();
 			o.pref = getForceDarkPref();
 			o.title = R.string.force_dark;
+			o.subtitle = R.string.force_dark_sub;
 			o.visibility = visibility;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.force_dark_disabled, R.string.force_dark_enabled, R.string.force_dark_auto};
 		});
 
 		if (getClass() == WebBrowserAddon.class) {
@@ -115,8 +122,8 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 		return (listeners != null) ? listeners : (listeners = new LinkedList<>());
 	}
 
-	public Pref<BooleanSupplier> getForceDarkPref() {
-		return FORCE_DARK;
+	public Pref<IntSupplier> getForceDarkPref() {
+		return DARK_MODE;
 	}
 
 	public Pref<Supplier<String>> getUserAgentPref() {
@@ -139,8 +146,16 @@ public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
 		return TextUtils.isNullOrBlank(ua) ? p.getDefaultValue().get() : ua;
 	}
 
+	public boolean isDisableDark() {
+		return getPreferenceStore().getIntPref(getForceDarkPref()) == 0;
+	}
+
 	public boolean isForceDark() {
-		return getPreferenceStore().getBooleanPref(getForceDarkPref());
+		return getPreferenceStore().getIntPref(getForceDarkPref()) == 1;
+	}
+
+	public boolean isAutoDark() {
+		return getPreferenceStore().getIntPref(getForceDarkPref()) == 2;
 	}
 
 	public Pref<BooleanSupplier> getDesktopVersionPref() {
