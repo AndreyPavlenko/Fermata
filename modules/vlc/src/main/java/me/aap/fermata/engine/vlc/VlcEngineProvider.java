@@ -3,7 +3,6 @@ package me.aap.fermata.engine.vlc;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.media.AudioManager;
-import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
@@ -86,7 +85,6 @@ public class VlcEngineProvider implements MediaEngineProvider {
 	public boolean getMediaMetadata(MetadataBuilder meta, PlayableItem item) {
 		Media media = null;
 		ParcelFileDescriptor fd = null;
-		MediaMetadataRetriever mmr = null;
 
 		try {
 			Uri uri = item.getLocation();
@@ -153,11 +151,6 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			return false;
 		} finally {
 			if (media != null) media.release();
-			try {
-				mmr.release();
-			} catch (Exception ex) {
-				Log.d(ex);
-			}
 			IoUtils.close(fd);
 		}
 	}
