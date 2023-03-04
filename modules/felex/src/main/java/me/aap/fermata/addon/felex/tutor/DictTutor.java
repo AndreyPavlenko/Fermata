@@ -194,13 +194,13 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 	}
 
 	private void requestAudioFocus() {
-		AudioManager am = (AudioManager) activity.getContext().getSystemService(Context.AUDIO_SERVICE);
+		AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 		if (am == null) return;
 		AudioManagerCompat.requestAudioFocus(am, audioFocusReq);
 	}
 
 	private void releaseAudioFocus() {
-		AudioManager am = (AudioManager) activity.getContext().getSystemService(Context.AUDIO_SERVICE);
+		AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 		if (am == null) return;
 		AudioManagerCompat.requestAudioFocus(am, audioFocusReq);
 	}

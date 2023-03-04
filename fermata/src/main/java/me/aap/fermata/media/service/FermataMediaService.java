@@ -63,6 +63,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 	public static final String ACTION_CAR_MEDIA_SERVICE = "me.aap.fermata.action.CarMediaService";
 	public static final String INTENT_ATTR_NOTIF_COLOR = "me.aap.fermata.notif.color";
 	public static final String DEFAULT_NOTIF_COLOR = "#546e7a";
+	public static final String NOTIF_CHANNEL_ID = "Fermata";
+	private static final int NOTIF_ID = 1;
 	private static final int INTENT_CODE = 1;
 	private static final String INTENT_PREV = "me.aap.fermata.action.prev";
 	private static final String INTENT_RW = "me.aap.fermata.action.rw";
@@ -74,8 +76,6 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 	private static final String INTENT_FAVORITE_ADD = "me.aap.fermata.action.favorite.add";
 	private static final String INTENT_FAVORITE_REMOVE = "me.aap.fermata.action.favorite.remove";
 	private static final String EXTRA_MEDIA_SEARCH_SUPPORTED = "android.media.browse.SEARCH_SUPPORTED";
-	private static final int NOTIF_ID = 1;
-	private static final String NOTIF_CHANNEL_ID = "Fermata";
 	private DefaultMediaLib lib;
 	private MediaSessionCompat session;
 	MediaSessionCallback callback;

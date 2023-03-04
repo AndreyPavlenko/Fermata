@@ -1,6 +1,5 @@
 package me.aap.fermata.addon.web.yt;
 
-import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_YT;
 import static me.aap.fermata.util.Utils.dynCtx;
 import static me.aap.utils.async.Completed.completed;
 
@@ -28,7 +27,6 @@ import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.text.SharedTextBuilder;
@@ -42,6 +40,7 @@ import me.aap.utils.vfs.generic.GenericFileSystem;
  * @author Andrey Pavlenko
  */
 class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
+	private static final int MEDIA_ENG_ID = 1 << 8;
 	private static final int VIDEO_QUALITY_MASK = 1 << 31;
 	private static final String ID = "youtube";
 	private static final String CURRENT_ID = ID + ":current";
@@ -100,7 +99,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 	@Override
 	public int getId() {
-		return MEDIA_ENG_YT;
+		return MEDIA_ENG_ID;
 	}
 
 	@Override
@@ -159,20 +158,6 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	@Override
 	public void setSpeed(float speed) {
 		web.setSpeed(speed);
-	}
-
-	@Override
-	public void setVideoView(VideoView view) {
-	}
-
-	@Override
-	public float getVideoWidth() {
-		return 0;
-	}
-
-	@Override
-	public float getVideoHeight() {
-		return 0;
 	}
 
 	@Override
@@ -280,7 +265,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 		@Override
 		public int getVideoEnginePref() {
-			return MEDIA_ENG_YT;
+			return MEDIA_ENG_ID;
 		}
 
 		@Override

@@ -53,14 +53,19 @@ public interface MediaEngine extends Closeable {
 
 	void setSpeed(float speed);
 
-	void setVideoView(VideoView view);
-
-	float getVideoWidth();
-
-	float getVideoHeight();
-
 	@Override
 	void close();
+
+	default void setVideoView(VideoView view) {
+	}
+
+	default float getVideoWidth() {
+		return 0;
+	}
+
+	default float getVideoHeight() {
+		return 0;
+	}
 
 	@Nullable
 	default AudioEffects getAudioEffects() {

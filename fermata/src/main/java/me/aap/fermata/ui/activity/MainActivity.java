@@ -44,6 +44,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.media.service.FermataMediaService;
 import me.aap.fermata.media.service.FermataMediaServiceConnection;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -62,6 +63,12 @@ import me.aap.utils.ui.activity.SplitCompatActivityBase;
 public class MainActivity extends SplitCompatActivityBase
 		implements FermataActivity, AddonManager.Listener {
 	private static FermataMediaServiceConnection service;
+
+	public static FutureSupplier<MainActivity> create(Context ctx) {
+		String name = ctx.getString(R.string.media_service_name);
+		return create(ctx, FermataMediaService.NOTIF_CHANNEL_ID, name, R.drawable.notification, name,
+				null, MainActivity.class);
+	}
 
 	@Override
 	protected FutureSupplier<MainActivityDelegate> createDelegate(AppActivity a) {

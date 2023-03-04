@@ -167,7 +167,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	@NonNull
 	public static MainActivityDelegate get(Context ctx) {
-		return (MainActivityDelegate) ActivityDelegate.get(ctx);
+		MainActivityDelegate a = getActivityDelegate(ctx).peek();
+		return (a != null) ? a : MainActivity.create(ctx).then(MainActivity::getActivityDelegate).getOrThrow();
 	}
 
 	@NonNull
@@ -810,45 +811,31 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		addPlaylistMenu(builder, () -> selection, () -> "");
 	}
 
-	public void addPlaylistMenu(OverlayMenu.Builder builder,
-															Supplier<FutureSupplier<List<PlayableItem>>> selection,
-															Supplier<? extends CharSequence> initName) {
-		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add)
-				.setSubmenu(b -> createPlaylistMenu(b, selection, initName));
+	public void addPlaylistMenu(OverlayMenu.Builder builder, Supplier<FutureSupplier<List<PlayableItem>>> selection, Supplier<? extends CharSequence> initName) {
+		builder.addItem(R.id.playlist_add, R.drawable.playlist_add, R.string.playlist_add).setSubmenu(b -> createPlaylistMenu(b, selection, initName));
 	}
 
-	private void createPlaylistMenu(OverlayMenu.Builder b,
-																	Supplier<FutureSupplier<List<PlayableItem>>> selection,
-																	Supplier<? extends CharSequence> initName) {
+	private void createPlaylistMenu(OverlayMenu.Builder b, Supplier<FutureSupplier<List<PlayableItem>>> selection, Supplier<? extends CharSequence> initName) {
 		getLib().getPlaylists().getUnsortedChildren().main().onSuccess(playlists -> {
-			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create)
-					.setHandler(i -> createPlaylist(selection.get(), initName));
+			b.addItem(R.id.playlist_create, R.drawable.playlist_add, R.string.playlist_create).setHandler(i -> createPlaylist(selection.get(), initName));
 
 			for (int i = 0; i < playlists.size(); i++) {
 				Playlist pl = (Playlist) playlists.get(i);
 				String name = pl.getName();
-				b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name)
-						.setHandler(item -> addToPlaylist(name, selection.get()));
+				b.addItem(UiUtils.getArrayItemId(i), R.drawable.playlist, name).setHandler(item -> addToPlaylist(name, selection.get()));
 			}
 		});
 	}
 
-	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection,
-																 Supplier<? extends CharSequence> initName) {
-		UiUtils.queryText(getContext(), R.string.playlist_name, R.drawable.playlist,
-				initName.get()).onSuccess(name -> {
+	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection, Supplier<? extends CharSequence> initName) {
+		UiUtils.queryText(getContext(), R.string.playlist_name, R.drawable.playlist, initName.get()).onSuccess(name -> {
 			discardSelection();
 			if (name == null) return;
 
-			getLib().getPlaylists().addItem(name)
-					.onFailure(err -> showAlert(getContext(), err.getMessage()))
-					.then(pl -> selection.main().then(items -> pl.addItems(items)
-							.onFailure(err -> showAlert(getContext(), err.getMessage()))
-							.thenRun(() -> {
-								MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
-								if (f != null) f.getAdapter().reload();
-							}))
-					);
+			getLib().getPlaylists().addItem(name).onFailure(err -> showAlert(getContext(), err.getMessage())).then(pl -> selection.main().then(items -> pl.addItems(items).onFailure(err -> showAlert(getContext(), err.getMessage())).thenRun(() -> {
+				MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
+				if (f != null) f.getAdapter().reload();
+			})));
 		});
 		return true;
 	}
@@ -874,12 +861,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public void removeFromPlaylist(Playlist pl, List<PlayableItem> selection) {
 		discardSelection();
-		pl.removeItems(selection)
-				.onFailure(err -> showAlert(getContext(), err.getMessage()))
-				.thenRun(() -> {
-					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
-					if (f != null) f.getAdapter().reload();
-				});
+		pl.removeItems(selection).onFailure(err -> showAlert(getContext(), err.getMessage())).thenRun(() -> {
+			MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
+			if (f != null) f.getAdapter().reload();
+		});
 	}
 
 	private void discardSelection() {
@@ -921,8 +906,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private static String[] getRequiredPermissions() {
 		if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE,
-					permission.ACCESS_MEDIA_LOCATION, permission.USE_FULL_SCREEN_INTENT};
+			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION, permission.USE_FULL_SCREEN_INTENT};
 		} else if (VERSION.SDK_INT >= VERSION_CODES.P) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE};
 		} else {

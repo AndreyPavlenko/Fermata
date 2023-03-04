@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.media.engine.MediaEngineProvider;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.io.FileUtils;
@@ -69,6 +70,11 @@ public interface FermataAddon {
 	default String getFileType(Uri uri, String displayName) {
 		if (displayName == null) displayName = uri.getPath();
 		return FileUtils.getMimeType(displayName);
+	}
+
+	@Nullable
+	default MediaEngineProvider getMediaEngineProvider(int id) {
+		return null;
 	}
 
 	@NonNull

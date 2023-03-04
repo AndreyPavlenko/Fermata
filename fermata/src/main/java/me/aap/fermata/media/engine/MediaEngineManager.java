@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -124,6 +126,13 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 			case MEDIA_ENG_VLC:
 				if (vlcPlayer != null) return vlcPlayer;
 			default:
+				for (FermataAddon a : AddonManager.get().getAddons()) {
+					MediaEngineProvider p = a.getMediaEngineProvider(id);
+					if (p != null) {
+						p.init(lib.getContext());
+						return p;
+					}
+				}
 				return mediaPlayer;
 		}
 	}
