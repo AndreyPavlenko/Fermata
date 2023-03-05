@@ -97,6 +97,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 				lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
 				setLayoutParams(lp);
 				setZOrderMediaOverlay(true);
+				setZOrderOnTop(true);
 				getHolder().setFormat(PixelFormat.TRANSLUCENT);
 				getHolder().addCallback(VideoView.this);
 			}
@@ -109,7 +110,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	protected void addInfoView(Context context) {
-		VideInfoView d = new VideInfoView(context, null);
+		VideoInfoView d = new VideoInfoView(context, null);
 		FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
 		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
 		d.setLayoutParams(lp);
@@ -164,8 +165,8 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 	}
 
 	@Nullable
-	public VideInfoView getVideoInfoView() {
-		return (VideInfoView) getChildAt(2);
+	public VideoInfoView getVideoInfoView() {
+		return (VideoInfoView) getChildAt(2);
 	}
 
 	public void showVideo(boolean hideTitle) {
@@ -182,7 +183,7 @@ public class VideoView extends FrameLayout implements SurfaceHolder.Callback,
 			setSurfaceSize(eng);
 			cb.addVideoView(this, a.isCarActivity() ? 0 : 1);
 
-			VideInfoView info = getVideoInfoView();
+			VideoInfoView info = getVideoInfoView();
 			if (hideTitle && (info != null)) info.setVisibility(GONE);
 		}
 	}

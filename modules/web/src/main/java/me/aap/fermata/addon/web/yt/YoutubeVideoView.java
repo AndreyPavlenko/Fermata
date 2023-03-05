@@ -10,7 +10,7 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import me.aap.fermata.ui.view.VideInfoView;
+import me.aap.fermata.ui.view.VideoInfoView;
 import me.aap.fermata.ui.view.VideoView;
 
 /**
@@ -30,8 +30,8 @@ public class YoutubeVideoView extends VideoView {
 
 	@NonNull
 	@Override
-	public VideInfoView getVideoInfoView() {
-		return (VideInfoView) getChildAt(1);
+	public VideoInfoView getVideoInfoView() {
+		return (VideoInfoView) getChildAt(1);
 	}
 
 	@Nullable
