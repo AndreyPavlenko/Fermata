@@ -34,7 +34,7 @@ build_apk() {
     fi
 
     ./gradlew clean fermata:packageAutoReleaseUniversalApk -PABI=$abi -PAPP_ID_SFX=$APP_ID_SFX
-    local path=$(ls ./fermata/build/outputs/universal_apk/autoRelease/fermata-*.apk)
+    local path=$(ls ./fermata/build/outputs/apk_from_bundle/autoRelease/fermata-*.apk)
     local name=${path##*/}
     mv $path "$DEST_DIR/${name%auto-release-universal.apk}auto-universal-$sfx.apk"
 }

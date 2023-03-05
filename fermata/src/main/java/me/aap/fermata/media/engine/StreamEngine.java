@@ -24,7 +24,7 @@ import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.lib.PlayableItemWrapper;
-import me.aap.fermata.ui.view.VideInfoView;
+import me.aap.fermata.ui.view.VideoInfoView;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -118,7 +118,7 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 					lag = lg;
 					position = 0;
 					state = STATE_PLAYING;
-					VideInfoView vi = (videoView != null) ? videoView.getVideoInfoView() : null;
+					VideoInfoView vi = (videoView != null) ? videoView.getVideoInfoView() : null;
 					if (vi != null) vi.onPlayableChanged(src, src);
 				});
 			} else {
@@ -129,7 +129,7 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 					endTime = e.getEndTime();
 					position = 0;
 					startStamp = System.currentTimeMillis();
-					VideInfoView vi = (videoView != null) ? videoView.getVideoInfoView() : null;
+					VideoInfoView vi = (videoView != null) ? videoView.getVideoInfoView() : null;
 					if (vi != null) {
 						src.getMediaDescription().main().and(e.getMediaDescription().main(), (sd, ed) -> {
 							if ((source != src) || !isPlaying()) return;

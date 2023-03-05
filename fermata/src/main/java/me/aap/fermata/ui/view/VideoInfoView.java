@@ -29,14 +29,14 @@ import me.aap.utils.async.FutureSupplier;
 /**
  * @author Andrey Pavlenko
  */
-public class VideInfoView extends ConstraintLayout
+public class VideoInfoView extends ConstraintLayout
 		implements MainActivityListener, FermataServiceUiBinder.Listener {
 
-	public VideInfoView(@NonNull Context context, @Nullable AttributeSet attrs) {
+	public VideoInfoView(@NonNull Context context, @Nullable AttributeSet attrs) {
 		this(context, attrs, 0);
 	}
 
-	public VideInfoView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+	public VideoInfoView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
 		inflate(context, R.layout.video_info_layout, this);
 		getActivity().onSuccess(a -> {
