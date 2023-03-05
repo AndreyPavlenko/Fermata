@@ -110,6 +110,9 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 			PendingSource pending = new PendingSource(source, media, fd);
 			this.source = pending;
+			media.setHWDecoderEnabled(true, true);
+			media.addOption(":no-omxil-dr");
+			media.addOption(":no-mediacodec-dr");
 			media.addOption(":input-fast-seek");
 
 			if (media.isParsed()) {
