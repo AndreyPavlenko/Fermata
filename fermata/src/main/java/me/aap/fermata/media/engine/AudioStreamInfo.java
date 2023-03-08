@@ -5,7 +5,7 @@ package me.aap.fermata.media.engine;
  */
 public class AudioStreamInfo extends MediaStreamInfo {
 
-	public AudioStreamInfo(int id, String language, String description) {
+	public AudioStreamInfo(long id, String language, String description) {
 		super(id, language, description);
 	}
 }

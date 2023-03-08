@@ -201,7 +201,8 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 		Source src = source;
 
 		if ((src != Source.NULL) && src.isSeekable()) {
-			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) : pendingPosition);
+			return completed((pendingPosition == -1) ? (player.getTime() - src.getItem().getOffset()) :
+					pendingPosition);
 		} else {
 			return completed(0L);
 		}
@@ -318,7 +319,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 	@Override
 	public void setCurrentAudioStream(AudioStreamInfo i) {
-		player.setAudioTrack((i != null) ? i.getId() : -1);
+		player.setAudioTrack((i != null) ? (int) i.getId() : -1);
 	}
 
 	@Override
@@ -329,7 +330,7 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 
 	@Override
 	public void setCurrentSubtitleStream(SubtitleStreamInfo i) {
-		player.setSpuTrack((i != null) ? i.getId() : -1);
+		player.setSpuTrack((i != null) ? (int) i.getId() : -1);
 	}
 
 	@Override
@@ -584,14 +585,14 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 			PlayableItemPrefs prefs = vs.getItem().getPrefs();
 			int delay = prefs.getAudioDelayPref();
 			AudioStreamInfo ai = selectAudioStream(prefs);
-			if (ai != null) player.setAudioTrack(ai.getId());
+			if (ai != null) player.setAudioTrack((int) ai.getId());
 			if (delay != 0) player.setAudioDelay(delay * 1000L);
 
 			if (prefs.getSubEnabledPref()) {
 				SubtitleStreamInfo si = selectSubtitleStream(prefs);
 
 				if (si != null) {
-					player.setSpuTrack(si.getId());
+					player.setSpuTrack((int) si.getId());
 					delay = prefs.getSubDelayPref();
 					if (delay != 0) player.setSpuDelay(delay * 1000L);
 				}
@@ -619,12 +620,12 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	}
 
 	private static <I extends MediaStreamInfo> I selectMediaStream(List<I> streams,
-																																 Supplier<Integer> idSupplier,
+																																 Supplier<Long> idSupplier,
 																																 Supplier<String> langSupplier,
 																																 Supplier<String> keySupplier) {
 		if (streams.isEmpty()) return null;
 
-		Integer id = idSupplier.get();
+		Long id = idSupplier.get();
 
 		if (id != null) {
 			for (I i : streams) {

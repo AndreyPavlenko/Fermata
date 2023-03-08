@@ -7,17 +7,17 @@ import androidx.annotation.Nullable;
  * @author Andrey Pavlenko
  */
 public class MediaStreamInfo {
-	private final int id;
+	private final long id;
 	private final String language;
 	private final String description;
 
-	public MediaStreamInfo(int id, String language, String description) {
+	public MediaStreamInfo(long id, String language, String description) {
 		this.id = id;
 		this.language = language;
 		this.description = description;
 	}
 
-	public int getId() {
+	public long getId() {
 		return id;
 	}
 
@@ -31,7 +31,7 @@ public class MediaStreamInfo {
 
 	@Override
 	public int hashCode() {
-		return getId();
+		return Long.hashCode(getId());
 	}
 
 	@Override

@@ -202,7 +202,9 @@ public class BodyLayout extends ConstraintLayout implements
 		if ((newItem == null) || !newItem.isVideo() || newItem.isExternal()) {
 			setMode(BodyLayout.Mode.FRAME);
 		} else {
-			if (isFrameMode()) setMode(BodyLayout.Mode.VIDEO);
+			MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
+			if ((eng == null) || !eng.isVideoModeRequired()) setMode(BodyLayout.Mode.FRAME);
+			else if (isFrameMode()) setMode(BodyLayout.Mode.VIDEO);
 			else getVideoView().showVideo(false);
 		}
 	}

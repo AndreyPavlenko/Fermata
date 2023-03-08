@@ -1,6 +1,7 @@
 package me.aap.fermata.media.engine;
 
 import android.media.AudioManager;
+import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
 import androidx.media.AudioFocusRequestCompat;
@@ -100,6 +101,11 @@ public interface MediaEngine extends Closeable {
 	default void setAudioDelay(int milliseconds) {
 	}
 
+	default boolean isVideoModeRequired() {
+		PlayableItem src = getSource();
+		return (src != null) && src.isVideo();
+	}
+
 	default boolean isSubtitleDelaySupported() {
 		return false;
 	}
@@ -115,12 +121,15 @@ public interface MediaEngine extends Closeable {
 		return false;
 	}
 
-	default boolean requestAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
+	default boolean requestAudioFocus(@Nullable AudioManager audioManager,
+																		@Nullable AudioFocusRequestCompat audioFocusReq) {
 		return (audioManager == null) || (audioFocusReq == null) ||
-				(AudioManagerCompat.requestAudioFocus(audioManager, audioFocusReq) == AUDIOFOCUS_REQUEST_GRANTED);
+				(AudioManagerCompat.requestAudioFocus(audioManager, audioFocusReq) ==
+						AUDIOFOCUS_REQUEST_GRANTED);
 	}
 
-	default void releaseAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
+	default void releaseAudioFocus(@Nullable AudioManager audioManager,
+																 @Nullable AudioFocusRequestCompat audioFocusReq) {
 		if ((audioManager != null) && (audioFocusReq != null))
 			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
 	}
@@ -128,7 +137,12 @@ public interface MediaEngine extends Closeable {
 	default void contributeToMenu(OverlayMenu.Builder b) {
 	}
 
+	default boolean adjustVolume(KeyEvent event) {
+		return false;
+	}
+
 	interface Listener {
+		Listener DUMMY = new Listener() {};
 
 		default void onEnginePrepared(MediaEngine engine) {
 		}

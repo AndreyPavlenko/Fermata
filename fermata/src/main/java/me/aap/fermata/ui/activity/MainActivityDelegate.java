@@ -82,8 +82,11 @@ import java.util.Locale;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.FermataActivityAddon;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.fermata.addon.MediaLibAddon;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
@@ -137,8 +140,8 @@ import me.aap.utils.ui.view.ToolBarView;
 /**
  * @author Andrey Pavlenko
  */
-public class MainActivityDelegate extends ActivityDelegate implements
-		MediaSessionCallbackAssistant, PreferenceStore.Listener {
+public class MainActivityDelegate extends ActivityDelegate
+		implements MediaSessionCallbackAssistant, PreferenceStore.Listener {
 	public static final String INTENT_ACTION_OPEN = "open";
 	public static final String INTENT_ACTION_PLAY = "play";
 	public static final String INTENT_ACTION_UPDATE = "update";
@@ -229,12 +232,18 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if (b.getCurrentItem() == null) b.getMediaSessionCallback().onPrepare();
 		init();
 
+		for (FermataAddon addon : AddonManager.get().getAddons()) {
+			if (addon instanceof FermataActivityAddon)
+				((FermataActivityAddon) addon).onActivityCreate(this);
+		}
+
 		String[] perms = getRequiredPermissions();
 		a.checkPermissions(perms).onCompletion((result, fail) -> {
 			if (fail != null) {
 				if (!isCarActivity()) Log.e(fail);
 			} else {
-				Log.d("Requested permissions: ", Arrays.toString(perms), ". Result: " + Arrays.toString(result));
+				Log.d("Requested permissions: ", Arrays.toString(perms),
+						". Result: " + Arrays.toString(result));
 			}
 
 			if (fragmentId != ID_NULL) {
@@ -300,8 +309,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		if (showAddon != null) {
 			FermataAddon addon = AddonManager.get().getAddon(showAddon);
 
-			if (addon != null) {
-				showFragment(addon.getFragmentId());
+			if (addon instanceof FermataFragmentAddon) {
+				showFragment(((FermataFragmentAddon) addon).getFragmentId());
 				checkUpdates();
 				return;
 			}
@@ -350,6 +359,19 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	@Override
 	public void onActivityResume() {
 		super.onActivityResume();
+		for (FermataAddon addon : AddonManager.get().getAddons()) {
+			if (addon instanceof FermataActivityAddon)
+				((FermataActivityAddon) addon).onActivityResume(this);
+		}
+	}
+
+	@Override
+	protected void onActivityPause() {
+		super.onActivityPause();
+		for (FermataAddon addon : AddonManager.get().getAddons()) {
+			if (addon instanceof FermataActivityAddon)
+				((FermataActivityAddon) addon).onActivityPause(this);
+		}
 	}
 
 	@Override
@@ -360,6 +382,11 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		getPrefs().removeBroadcastListener(this);
 		if (speechListener != null) speechListener.destroy();
 
+		for (FermataAddon addon : AddonManager.get().getAddons()) {
+			if (addon instanceof FermataActivityAddon)
+				((FermataActivityAddon) addon).onActivityDestroy(this);
+		}
+
 		if (me.aap.utils.BuildConfig.D) {
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
 				if (l instanceof ExportedItem.ListenerWrapper)
@@ -368,7 +395,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 				if (l instanceof AtvInterface) return false;
 				if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
 				if ((l instanceof MediaEngineManager) && (b instanceof DefaultMediaLib)) return false;
-				return (!(l instanceof AddonManager)) || (b != FermataApplication.get().getPreferenceStore());
+				return (!(l instanceof AddonManager)) ||
+						(b != FermataApplication.get().getPreferenceStore());
 			});
 			if (leaks) throw new IllegalStateException("Listener leaks detected!");
 		}
@@ -667,8 +695,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public FutureSupplier<Boolean> goToCurrent() {
 		PlayableItem pi = getMediaServiceBinder().getCurrentItem();
-		return (pi == null) ? getLib().getLastPlayedItem().main().map(this::goToItem)
-				: completed(goToItem(pi));
+		return (pi == null) ? getLib().getLastPlayedItem().main().map(this::goToItem) :
+				completed(goToItem(pi));
 	}
 
 	public FutureSupplier<Item> goToItem(String id) {
@@ -693,7 +721,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		} else {
 			MediaLibAddon a = AddonManager.get().getMediaLibAddon(root);
 			if (a != null) {
-				showFragment(a.getAddonId());
+				showFragment(a.getFragmentId());
 			} else {
 				Log.d("Unsupported item: ", i);
 				return false;
@@ -725,9 +753,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public void startVoiceSearch() {
 		View focus = getCurrentFocus();
-		FutureSupplier<int[]> check = isCarActivity()
-				? completed(new int[]{PERMISSION_GRANTED})
-				: getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
+		FutureSupplier<int[]> check = isCarActivity() ? completed(new int[]{PERMISSION_GRANTED}) :
+				getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
 		check.onCompletion((r, err) -> {
 			if ((err == null) && (r[0] == PERMISSION_GRANTED)) {
 				voiceSearch(focus);
@@ -775,8 +802,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		MediaLibFragment f = getActiveMediaLibFragment();
 		if (f == null) return MediaSessionCallbackAssistant.super.getPrevPlayable(i);
 		BrowsableItem p = f.getAdapter().getParent();
-		return (p instanceof SearchFolder) ? ((SearchFolder) p).getPrevPlayable(i)
-				: MediaSessionCallbackAssistant.super.getPrevPlayable(i);
+		return (p instanceof SearchFolder) ? ((SearchFolder) p).getPrevPlayable(i) :
+				MediaSessionCallbackAssistant.super.getPrevPlayable(i);
 	}
 
 	@NonNull
@@ -785,8 +812,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		MediaLibFragment f = getActiveMediaLibFragment();
 		if (f == null) return MediaSessionCallbackAssistant.super.getNextPlayable(i);
 		BrowsableItem p = f.getAdapter().getParent();
-		return (p instanceof SearchFolder) ? ((SearchFolder) p).getNextPlayable(i)
-				: MediaSessionCallbackAssistant.super.getNextPlayable(i);
+		return (p instanceof SearchFolder) ? ((SearchFolder) p).getNextPlayable(i) :
+				MediaSessionCallbackAssistant.super.getNextPlayable(i);
 	}
 
 	@Override
@@ -806,7 +833,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 		return DialogBuilder.create(getContextMenu());
 	}
 
-	public void addPlaylistMenu(OverlayMenu.Builder builder, FutureSupplier<List<PlayableItem>> selection) {
+	public void addPlaylistMenu(OverlayMenu.Builder builder,
+															FutureSupplier<List<PlayableItem>> selection) {
 		addPlaylistMenu(builder, () -> selection, () -> "");
 	}
 
@@ -835,21 +863,19 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	private boolean createPlaylist(FutureSupplier<List<PlayableItem>> selection,
 																 Supplier<? extends CharSequence> initName) {
-		UiUtils.queryText(getContext(), R.string.playlist_name, R.drawable.playlist,
-				initName.get()).onSuccess(name -> {
-			discardSelection();
-			if (name == null) return;
+		UiUtils.queryText(getContext(), R.string.playlist_name, R.drawable.playlist, initName.get())
+				.onSuccess(name -> {
+					discardSelection();
+					if (name == null) return;
 
-			getLib().getPlaylists().addItem(name)
-					.onFailure(err -> showAlert(getContext(), err.getMessage()))
-					.then(pl -> selection.main().then(items -> pl.addItems(items)
-							.onFailure(err -> showAlert(getContext(), err.getMessage()))
-							.thenRun(() -> {
-								MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
-								if (f != null) f.getAdapter().reload();
-							}))
-					);
-		});
+					getLib().getPlaylists().addItem(name)
+							.onFailure(err -> showAlert(getContext(), err.getMessage())).then(
+									pl -> selection.main().then(items -> pl.addItems(items)
+											.onFailure(err -> showAlert(getContext(), err.getMessage())).thenRun(() -> {
+												MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
+												if (f != null) f.getAdapter().reload();
+											})));
+				});
 		return true;
 	}
 
@@ -874,8 +900,7 @@ public class MainActivityDelegate extends ActivityDelegate implements
 
 	public void removeFromPlaylist(Playlist pl, List<PlayableItem> selection) {
 		discardSelection();
-		pl.removeItems(selection)
-				.onFailure(err -> showAlert(getContext(), err.getMessage()))
+		pl.removeItems(selection).onFailure(err -> showAlert(getContext(), err.getMessage()))
 				.thenRun(() -> {
 					MediaLibFragment f = getMediaLibFragment(R.id.playlists_fragment);
 					if (f != null) f.getAdapter().reload();
@@ -1018,6 +1043,10 @@ public class MainActivityDelegate extends ActivityDelegate implements
 					FermataApplication.get().getHandler().postDelayed(() -> exitPressed = false, 2000);
 				}
 				return true;
+			case KeyEvent.KEYCODE_VOLUME_UP:
+			case KeyEvent.KEYCODE_VOLUME_DOWN:
+				MediaEngine eng = getMediaServiceBinder().getCurrentEngine();
+				if ((eng != null) && eng.adjustVolume(event)) return true;
 		}
 
 		return super.onKeyDown(code, event, next);
@@ -1045,7 +1074,8 @@ public class MainActivityDelegate extends ActivityDelegate implements
 	}
 
 	@Override
-	public boolean onKeyLongPress(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
+	public boolean onKeyLongPress(int code, KeyEvent event,
+																IntObjectFunction<KeyEvent, Boolean> next) {
 		switch (code) {
 			case KeyEvent.KEYCODE_M:
 			case KeyEvent.KEYCODE_MENU:

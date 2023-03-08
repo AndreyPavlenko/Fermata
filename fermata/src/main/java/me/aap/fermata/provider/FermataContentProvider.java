@@ -22,6 +22,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.FermataContentAddon;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
 
@@ -143,9 +144,9 @@ public class FermataContentProvider extends ContentProvider {
 		private final Uri uri;
 		private final String pref;
 		private final String displayName;
-		private final FermataAddon addon;
+		private final FermataContentAddon addon;
 
-		private UriInfo(String uri, String pref, String displayName, FermataAddon addon) {
+		private UriInfo(String uri, String pref, String displayName, FermataContentAddon addon) {
 			this.uri = Uri.parse(uri);
 			this.pref = pref;
 			this.displayName = displayName;
@@ -164,15 +165,15 @@ public class FermataContentProvider extends ContentProvider {
 				if (idx < 0) return null;
 				String name = s.substring(ADDON_PREF.length(), idx);
 				FermataAddon a = AddonManager.get().getAddon(name);
-				if (a == null) return null;
+				if (!(a instanceof FermataContentAddon)) return null;
 				int end = s.lastIndexOf('/');
 
 				if (end == idx) {
 					return new UriInfo(new String(Base64.decode(s.substring(idx + 1), URL_SAFE), US_ASCII),
-							ADDON_PREF, null, a);
+							ADDON_PREF, null, (FermataContentAddon) a);
 				} else {
 					return new UriInfo(new String(Base64.decode(s.substring(idx + 1, end), URL_SAFE),
-							US_ASCII), ADDON_PREF, s.substring(end + 1), a);
+							US_ASCII), ADDON_PREF, s.substring(end + 1), (FermataContentAddon) a);
 				}
 			}
 
@@ -199,7 +200,7 @@ public class FermataContentProvider extends ContentProvider {
 					: FileUtils.getMimeType(uri.getPath());
 		}
 
-		public FermataAddon getAddon() {
+		public FermataContentAddon getAddon() {
 			return addon;
 		}
 	}

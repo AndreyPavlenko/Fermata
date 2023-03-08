@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 import me.aap.fermata.R;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.ArchiveItem;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
@@ -616,7 +617,9 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			PlayableItem cur = b.getCurrentItem();
 			b.playItem(i);
-			if (i.equals(cur) && cur.isVideo()) a.getBody().setMode(BodyLayout.Mode.VIDEO);
+			MediaEngine eng = b.getCurrentEngine();
+			if (i.equals(cur) && (eng != null) && eng.isVideoModeRequired())
+				a.getBody().setMode(BodyLayout.Mode.VIDEO);
 		}
 
 		@Override

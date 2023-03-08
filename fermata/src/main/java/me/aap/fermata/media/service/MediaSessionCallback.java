@@ -102,6 +102,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
+import me.aap.fermata.media.engine.MediaEngineProvider;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
@@ -315,6 +316,21 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		if (assistants == null) return this;
 		Prioritized<MediaSessionCallbackAssistant> w = assistants.peek();
 		return (w == null) ? this : w.obj;
+	}
+
+	public void setEngineProvider(@NonNull MediaEngineProvider engineProvider) {
+		getEngineManager().setEngineProvider(engineProvider);
+		if (getEngine() != null) {
+			if (isPlaying()) onStop(true).onSuccess(v -> handler.post(this::play));
+			else onStop();
+		}
+	}
+
+	public void removeEngineProvider(MediaEngineProvider engineProvider) {
+		if (getEngineManager().removeEngineProvider(engineProvider)) {
+			if (isPlaying()) onStop(true).onSuccess(v -> handler.post(this::play));
+			else onStop();
+		}
 	}
 
 	@NonNull
@@ -540,19 +556,19 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		onStop(true);
 	}
 
-	private void onStop(boolean setPosition) {
+	private FutureSupplier<?> onStop(boolean setPosition) {
 		MediaEngine eng = getEngine();
 
 		if (setPosition && (eng != null)) {
 			PlayableItem i = eng.getSource();
-			if ((i != null) && i.isExternal()) onStop(eng, -1);
-			else eng.getPosition().main().onSuccess(pos -> onStop(eng, pos));
+			if ((i != null) && i.isExternal()) return onStop(eng, -1);
+			else return eng.getPosition().main().then(pos -> onStop(eng, pos));
 		} else {
-			onStop(eng, -1);
+			return onStop(eng, -1);
 		}
 	}
 
-	private void onStop(MediaEngine eng, long pos) {
+	private FutureSupplier<?> onStop(MediaEngine eng, long pos) {
 		if (eng != null) {
 			if (pos != -1) {
 				PlayableItem i = eng.getSource();
@@ -566,6 +582,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 		}
 
 		stopped();
+		return completedVoid();
 	}
 
 	private void stopped() {

@@ -85,7 +85,9 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	@Nullable
 	public ActivityFragment createFragment(@IdRes int id) {
 		for (FermataAddon a : getAddons()) {
-			if (a.getAddonId() == id) return a.createFragment();
+			if (a instanceof FermataFragmentAddon) {
+				if (a.getAddonId() == id) return ((FermataFragmentAddon) a).createFragment();
+			}
 		}
 		return null;
 	}

@@ -15,6 +15,7 @@ import java.util.Map;
 
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
@@ -31,7 +32,7 @@ import me.aap.utils.ui.fragment.ActivityFragment;
  */
 @Keep
 @SuppressWarnings("unused")
-public class WebBrowserAddon implements FermataAddon, SharedPreferenceStore {
+public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceStore {
 	@NonNull
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WebBrowserAddon.class.getName());
 	private static final Pref<Supplier<String>> LAST_URL = Pref.s("LAST_URL", "http://google.com");

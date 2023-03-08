@@ -36,6 +36,7 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
@@ -96,7 +97,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 			}
 
 			FermataAddon a = amgr.getAddon(name);
-			if (a != null) {
+			if (a instanceof FermataFragmentAddon) {
 				AddonInfo ai = a.getInfo();
 				items.add(create(ctx, a.getAddonId(), ai.icon, ai.addonName, items.size() < max));
 				continue;
@@ -351,7 +352,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 		names.add("playlists");
 		for (AddonInfo ai : BuildConfig.ADDONS) {
 			FermataAddon a = amgr.getAddon(ai.className);
-			if (a != null) names.add(ai.className);
+			if (a instanceof FermataFragmentAddon) names.add(ai.className);
 		}
 		names.add("menu");
 		return names;
@@ -366,7 +367,7 @@ public class NavBarMediator extends PrefNavBarMediator implements AddonManager.L
 		AddonManager amgr = getAddonManager();
 		for (AddonInfo ai : BuildConfig.ADDONS) {
 			FermataAddon a = amgr.getAddon(ai.className);
-			if ((a != null) && (a.getAddonId() == id)) return ai.className;
+			if ((a instanceof FermataFragmentAddon) && (a.getAddonId() == id)) return ai.className;
 		}
 
 		Log.e("Unknown NavBarItem id: ", id);
