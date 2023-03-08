@@ -16,8 +16,8 @@ public interface PlayableItemPrefs extends MediaPrefs {
 	Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS", new String[0]).withInheritance(false);
 	Pref<BooleanSupplier> WATCHED = Pref.b("WATCHED", false).withInheritance(false);
 	Pref<LongSupplier> POSITION = Pref.l("POSITION", 0).withInheritance(false);
-	Pref<IntSupplier> SUB_ID = Pref.i("SUB_ID", -1).withInheritance(false);
-	Pref<IntSupplier> AUDIO_ID = Pref.i("AUDIO_ID", -1).withInheritance(false);
+	Pref<LongSupplier> SUB_ID = Pref.l("SUB_ID", -1).withInheritance(false);
+	Pref<LongSupplier> AUDIO_ID = Pref.l("AUDIO_ID", -1).withInheritance(false);
 
 	default String[] getBookmarks() {
 		return getStringArrayPref(BOOKMARKS);
@@ -65,22 +65,37 @@ public interface PlayableItemPrefs extends MediaPrefs {
 		}
 	}
 
-	default Integer getSubIdPref() {
-		return hasPref(SUB_ID) ? getIntPref(SUB_ID) : null;
+	default Long getSubIdPref() {
+		convertIntLongPref(SUB_ID);
+		return hasPref(SUB_ID) ? getLongPref(SUB_ID) : null;
 	}
 
-	default void setSubIdPref(Integer id) {
+	default void setSubIdPref(Long id) {
+		convertIntLongPref(SUB_ID);
 		if (id == null) removePref(SUB_ID);
-		else applyIntPref(SUB_ID, id);
+		else applyLongPref(SUB_ID, id);
 	}
 
-	default Integer getAudioIdPref() {
-		return hasPref(AUDIO_ID) ? getIntPref(AUDIO_ID) : null;
+	default Long getAudioIdPref() {
+		convertIntLongPref(AUDIO_ID);
+		return hasPref(AUDIO_ID) ? getLongPref(AUDIO_ID) : null;
 	}
 
-	default void setAudioIdPref(Integer id) {
+	default void setAudioIdPref(Long id) {
+		convertIntLongPref(AUDIO_ID);
 		if (id == null) removePref(AUDIO_ID);
-		else applyIntPref(AUDIO_ID, id);
+		else applyLongPref(AUDIO_ID, id);
+	}
+
+	default void convertIntLongPref(Pref<LongSupplier> lpref) {
+		try {
+			getLongPref(lpref);
+		} catch (ClassCastException ex) {
+			Pref<IntSupplier> ipref = Pref.i(lpref.getName(), -1);
+			long value = getIntPref(ipref);
+			removePref(ipref);
+			applyLongPref(lpref, value);
+		}
 	}
 
 	static String bookmarkName(String bookmark) {

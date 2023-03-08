@@ -46,6 +46,9 @@ import java.util.concurrent.TimeUnit;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.FermataMediaServiceAddon;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -118,10 +121,18 @@ public class FermataMediaService extends MediaBrowserServiceCompat implements Sh
 		notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
 		App.get().getScheduler().schedule(lib::cleanUpPrefs, 1, TimeUnit.HOURS);
 		Log.d("FermataMediaService created");
+		for (FermataAddon a : AddonManager.get().getAddons()) {
+			if (a instanceof FermataMediaServiceAddon)
+				((FermataMediaServiceAddon) a).onServiceCreate(callback);
+		}
 	}
 
 	@Override
 	public void onDestroy() {
+		for (FermataAddon a : AddonManager.get().getAddons()) {
+			if (a instanceof FermataMediaServiceAddon)
+				((FermataMediaServiceAddon) a).onServiceDestroy(callback);
+		}
 		super.onDestroy();
 		NotificationManagerCompat.from(this).cancel(NOTIF_ID);
 		if (intentReceiver != null) unregisterReceiver(intentReceiver);

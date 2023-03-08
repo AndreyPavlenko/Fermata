@@ -9,7 +9,7 @@ import me.aap.utils.async.FutureSupplier;
 /**
  * @author Andrey Pavlenko
  */
-public interface MediaLibAddon extends FermataAddon {
+public interface MediaLibAddon extends FermataFragmentAddon {
 
 	@Nullable
 	FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme, String id);

@@ -11,6 +11,7 @@ import android.content.Context;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import com.google.android.play.core.splitinstall.SplitInstallManager;
@@ -36,7 +37,8 @@ import me.aap.utils.ui.activity.ActivityBase;
  * @author Andrey Pavlenko
  */
 public class MediaEngineManager implements PreferenceStore.Listener {
-	private static final String EXO_PROV_CLASS = "me.aap.fermata.engine.exoplayer.ExoPlayerEngineProvider";
+	private static final String EXO_PROV_CLASS =
+			"me.aap.fermata.engine.exoplayer.ExoPlayerEngineProvider";
 	private static final String VLC_PROV_CLASS = "me.aap.fermata.engine.vlc.VlcEngineProvider";
 	private static final String MODULE_EXO = "exoplayer";
 	private static final String MODULE_VLC = "vlc";
@@ -44,6 +46,8 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	final MediaPlayerEngineProvider mediaPlayer;
 	MediaEngineProvider exoPlayer;
 	MediaEngineProvider vlcPlayer;
+	@Nullable
+	private MediaEngineProvider engineProvider;
 
 	public MediaEngineManager(MediaLib lib) {
 		MediaLibPrefs prefs = lib.getPrefs();
@@ -66,6 +70,16 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		setVlcPlayer(true);
 	}
 
+	public void setEngineProvider(@NonNull MediaEngineProvider engineProvider) {
+		this.engineProvider = engineProvider;
+	}
+
+	public boolean removeEngineProvider(MediaEngineProvider engineProvider) {
+		if (this.engineProvider != engineProvider) return false;
+		this.engineProvider = null;
+		return true;
+	}
+
 	public boolean isExoPlayerSupported() {
 		return exoPlayer != null;
 	}
@@ -79,6 +93,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine createEngine(MediaEngine current, PlayableItem i, Listener listener) {
+		if (engineProvider != null) return engineProvider.createEngine(listener);
 		if (!isAdditionalPlayerSupported()) {
 			if (current != null) {
 				if (current.getId() == MEDIA_ENG_MP) return create(mediaPlayer, current, i, listener);
@@ -100,6 +115,7 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine createAnotherEngine(@NonNull MediaEngine current, Listener listener) {
+		if (engineProvider != null) return engineProvider.createEngine(listener);
 		int id = current.getId();
 		PlayableItem i = current.getSource();
 		current.close();
@@ -233,8 +249,9 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		String channelId = "fermata.engine.install";
 		String title = ctx.getString(R.string.module_installation, name);
 		String installing = ctx.getString(R.string.installing, name);
-		FutureSupplier<MainActivity> getActivity = ActivityBase.create(ctx, channelId,
-				title, R.drawable.notification, title, null, MainActivity.class);
+		FutureSupplier<MainActivity> getActivity =
+				ActivityBase.create(ctx, channelId, title, R.drawable.notification, title, null,
+						MainActivity.class);
 
 		return getActivity.then(a -> {
 			DynamicModuleInstaller i = new DynamicModuleInstaller(a);

@@ -22,6 +22,8 @@ import java.io.InputStream;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.FermataContentAddon;
+import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.fermata.addon.felex.dict.DictInfo;
 import me.aap.fermata.addon.felex.view.FelexFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -42,7 +44,7 @@ import me.aap.utils.vfs.VirtualFolder;
  */
 @Keep
 @SuppressWarnings("unused")
-public class FelexAddon implements FermataAddon {
+public class FelexAddon implements FermataFragmentAddon, FermataContentAddon {
 	private static final AddonInfo info = FermataAddon.findAddonInfo(FelexAddon.class.getName());
 	public static final Pref<Supplier<String>> DICT_FOLDER = Pref.s("FELEX_DICT_FOLDER",
 			() -> getAddonsFileDir(info).getAbsolutePath());
@@ -97,7 +99,7 @@ public class FelexAddon implements FermataAddon {
 		if (displayName == null) displayName = uri.getPath();
 		String ext = getFileExtension(displayName);
 		if ((ext != null) && DICT_EXT.regionMatches(1, ext, 0, ext.length())) return "text/plain";
-		return FermataAddon.super.getFileType(uri, displayName);
+		return FermataContentAddon.super.getFileType(uri, displayName);
 
 	}
 

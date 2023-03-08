@@ -1,0 +1,21 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
+    package="me.aap.fermata.addon.cast"
+    split="sftp"
+    android:isFeatureSplit="true">
+
+    <dist:module
+        dist:instant="false"
+        dist:title="@string/addon_name_cast">
+        <dist:delivery>
+            <dist:on-demand />
+            <dist:install-time>
+                <dist:conditions>
+                    <dist:device-feature dist:name="android.software.leanback" />
+                </dist:conditions>
+            </dist:install-time>
+        </dist:delivery>
+        <dist:fusing dist:include="true" />
+    </dist:module>
+</manifest>
+
