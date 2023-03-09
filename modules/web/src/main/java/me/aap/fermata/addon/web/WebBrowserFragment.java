@@ -21,6 +21,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -86,6 +87,33 @@ public class WebBrowserFragment extends MainActivityFragment
 			v.getWebViewClient().loading = refreshing;
 			v.reload();
 		}
+	}
+
+	@Override
+	public void onPause() {
+		super.onPause();
+		if (!BuildConfig.AUTO) return;
+		FermataWebView v = getWebView();
+		if (v == null) return;
+		FermataChromeClient chrome = v.getWebChromeClient();
+		if ((chrome != null) && chrome.isFullScreen()) chrome.exitFullScreen();
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		if (!BuildConfig.AUTO) return;
+		FermataWebView v = getWebView();
+		if (v == null) return;
+		// Calling here onResume makes the video to not get freezed
+		// when you switch to another app and go back to Fermata
+		v.onResume();
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
+			a.post(() -> {
+				FermataChromeClient chrome = v.getWebChromeClient();
+				if (chrome != null) chrome.enterFullScreen();
+			});
+		});
 	}
 
 	protected void registerListeners(MainActivityDelegate a) {

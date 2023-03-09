@@ -9,6 +9,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataWebView;
@@ -127,22 +128,24 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 
 	@Override
 	public void onPause() {
-		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
-			FermataServiceUiBinder b = a.getMediaServiceBinder();
-			if (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem()) && b.isPlaying()) {
-				b.getMediaSessionCallback().onPause();
-				playOnResume = true;
-			} else {
-				playOnResume = false;
-			}
-		});
+		if (!BuildConfig.AUTO) {
+			MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
+				FermataServiceUiBinder b = a.getMediaServiceBinder();
+				if (YoutubeMediaEngine.isYoutubeItem(b.getCurrentItem()) && b.isPlaying()) {
+					b.getMediaSessionCallback().onPause();
+					playOnResume = true;
+				} else {
+					playOnResume = false;
+				}
+			});
+		}
 		super.onPause();
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (!playOnResume) return;
+		if (BuildConfig.AUTO || !playOnResume) return;
 		playOnResume = false;
 		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();

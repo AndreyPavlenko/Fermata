@@ -19,6 +19,7 @@ import android.text.Editable;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.CookieManager;
 import android.webkit.WebSettings;
@@ -98,6 +99,12 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 		setDesktopMode(addon, false);
 		setForceDark(addon, false);
+	}
+
+	@Override
+	protected void onWindowVisibilityChanged(int visibility) {
+		if (!BuildConfig.AUTO) super.onWindowVisibilityChanged(visibility);
+		else if (visibility != View.GONE) super.onWindowVisibilityChanged(View.VISIBLE);
 	}
 
 	@Override
