@@ -96,7 +96,12 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebView v = getWebView();
 		if (v == null) return;
 		FermataChromeClient chrome = v.getWebChromeClient();
-		if ((chrome != null) && chrome.isFullScreen()) chrome.exitFullScreen();
+		if (chrome != null) {
+			if (chrome.isFullScreen()) {
+				chrome.exitFullScreen();
+				wasFullScreen(true);
+			} else wasFullScreen(false);
+		}
 	}
 
 	@Override
@@ -111,9 +116,14 @@ public class WebBrowserFragment extends MainActivityFragment
 		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
 			a.post(() -> {
 				FermataChromeClient chrome = v.getWebChromeClient();
-				if (chrome != null) chrome.enterFullScreen();
+				if (chrome != null && wasFullScreen) chrome.enterFullScreen();
 			});
 		});
+	}
+
+	static boolean wasFullScreen;
+	public static void wasFullScreen(Boolean status) {
+		wasFullScreen = status;
 	}
 
 	protected void registerListeners(MainActivityDelegate a) {
