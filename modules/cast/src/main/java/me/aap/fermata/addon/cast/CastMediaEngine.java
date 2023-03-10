@@ -177,6 +177,10 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 		client.unregisterCallback(this);
 	}
 
+	public boolean isMediaStreamInfoSupported() {
+		return true;
+	}
+
 	@Override
 	public List<AudioStreamInfo> getAudioStreamInfo() {
 		List<MediaTrack> tracks = getMediaTracks();

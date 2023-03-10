@@ -268,6 +268,11 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	}
 
 	@Override
+	public boolean isMediaStreamInfoSupported() {
+		return true;
+	}
+
+	@Override
 	public List<AudioStreamInfo> getAudioStreamInfo() {
 		if (source == Source.NULL) return Collections.emptyList();
 		TrackDescription[] tracks = player.getAudioTracks();
@@ -346,11 +351,6 @@ public class VlcEngine implements MediaEngine, MediaPlayer.EventListener,
 	@Override
 	public void setAudioDelay(int milliseconds) {
 		player.setAudioDelay(milliseconds * 1000L);
-	}
-
-	@Override
-	public boolean isSubtitleDelaySupported() {
-		return true;
 	}
 
 	@Override

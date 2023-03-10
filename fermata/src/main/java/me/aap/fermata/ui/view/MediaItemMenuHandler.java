@@ -17,6 +17,8 @@ import static me.aap.utils.async.Completed.completedVoid;
 
 import android.content.Context;
 
+import androidx.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -83,6 +85,11 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		return item;
 	}
 
+	@Nullable
+	public MediaEngine getEngine() {
+		return getMainActivity().getMediaServiceBinder().getCurrentEngine();
+	}
+
 	public void show() {
 		menu.showFuture(this::build);
 	}
@@ -111,23 +118,30 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	private boolean canDelete() {
 		BrowsableItem p = item.getParent();
 		if ((p == null) || (p.getParent() == null)) return false;
-		return (((item instanceof FileItem) || (item instanceof FolderItem) || (item instanceof M3uItem))
-				&& item.getResource().canDelete());
+		return (
+				((item instanceof FileItem) || (item instanceof FolderItem) || (item instanceof M3uItem)) &&
+						item.getResource().canDelete());
 	}
 
 	protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
 																	 boolean initRepeat) {
+		if (!pi.isExternal()) {
+			if (pi instanceof StreamItem) {
+				b.addItem(R.id.programme_guide, R.drawable.epg, R.string.programme_guide);
+			}
+
+			if (pi.isFavoriteItem()) {
+				b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
+			} else {
+				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
+			}
+		}
+
+		if (pi.isVideo() && ((getEngine() == null) || !getEngine().hasVideoMenu())) {
+			b.addItem(R.id.video, R.drawable.video, R.string.video).setSubmenu(this::buildVideoMenu);
+		}
+
 		if (pi.isExternal()) return;
-
-		if (pi instanceof StreamItem) {
-			b.addItem(R.id.programme_guide, R.drawable.epg, R.string.programme_guide);
-		}
-
-		if (pi.isFavoriteItem()) {
-			b.addItem(R.id.favorites_remove, R.drawable.favorite_filled, R.string.favorites_remove);
-		} else {
-			b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
-		}
 
 		if (!(item instanceof StreamItem) && !(item instanceof ArchiveItem)) {
 			if (pi.getPrefs().hasPref(BOOKMARKS)) {
@@ -147,12 +161,9 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			}
 		}
 
-		if (pi.isVideo()) {
-			b.addItem(R.id.video, R.drawable.video, R.string.video).setSubmenu(this::buildVideoMenu);
-		}
-
 		if ((pi.getParent() instanceof Playlist)) {
-			b.addItem(R.id.playlist_remove_item, R.drawable.playlist_remove, R.string.playlist_remove_item);
+			b.addItem(R.id.playlist_remove_item, R.drawable.playlist_remove,
+					R.string.playlist_remove_item);
 		} else {
 			a.addPlaylistMenu(b, completed(Collections.singletonList(pi)));
 		}
@@ -160,7 +171,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		addMediaEngineMenu(a, b);
 	}
 
-	private FutureSupplier<Void> buildBrowsableMenu(MainActivityDelegate a, OverlayMenu.Builder b, BrowsableItem bi) {
+	private FutureSupplier<Void> buildBrowsableMenu(MainActivityDelegate a, OverlayMenu.Builder b,
+																									BrowsableItem bi) {
 		return bi.getUnsortedChildren().main().then(children -> {
 			boolean hasBookmarks = false;
 			BrowsableItem parent = bi.getParent();
@@ -176,7 +188,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				b.addItem(R.id.favorites_add, R.drawable.favorite, R.string.favorites_add);
 
 				if ((bi instanceof Playlist)) {
-					b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove).setData(bi);
+					b.addItem(R.id.playlist_remove, R.drawable.playlist_remove, R.string.playlist_remove)
+							.setData(bi);
 				}
 			}
 
@@ -185,7 +198,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			}
 
 			if (hasBookmarks) {
-				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks).setFutureSubmenu(this::buildBookmarksMenu);
+				b.addItem(R.id.bookmarks, R.drawable.bookmark_filled, R.string.bookmarks)
+						.setFutureSubmenu(this::buildBookmarksMenu);
 			}
 			if (!(bi instanceof Playlist)) {
 				a.addPlaylistMenu(b, () -> bi.getPlayableChildren(true), bi::getName);
@@ -218,8 +232,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		if (item instanceof PlayableItem) {
 			buildMediaEngMenu(b, ((PlayableItem) item).isVideo());
 		} else if (item instanceof BrowsableItem) {
-			b.addItem(R.id.preferred_audio_engine, R.string.preferred_audio_engine).setSubmenu(this::buildAudioEngMenu);
-			b.addItem(R.id.preferred_video_engine, R.string.preferred_video_engine).setSubmenu(this::buildVideoEngMenu);
+			b.addItem(R.id.preferred_audio_engine, R.string.preferred_audio_engine)
+					.setSubmenu(this::buildAudioEngMenu);
+			b.addItem(R.id.preferred_video_engine, R.string.preferred_video_engine)
+					.setSubmenu(this::buildVideoEngMenu);
 		}
 	}
 
@@ -234,27 +250,32 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	private void buildMediaEngMenu(OverlayMenu.Builder b, boolean video) {
 		MediaPrefs prefs = item.getPrefs();
 		MediaEngineManager mgr = getMainActivity().getMediaSessionCallback().getEngineManager();
-		Pref<IntSupplier> p = video ? MediaPrefs.VIDEO_ENGINE.withInheritance(false)
-				: MediaPrefs.AUDIO_ENGINE.withInheritance(false);
-		int eng = prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
+		Pref<IntSupplier> p = video ? MediaPrefs.VIDEO_ENGINE.withInheritance(false) :
+				MediaPrefs.AUDIO_ENGINE.withInheritance(false);
+		int eng =
+				prefs.hasPref(p) ? (video ? prefs.getVideoEnginePref() : prefs.getAudioEnginePref()) : -1;
 		b.setSelectionHandler(this);
 
-		OverlayMenuItem i = b.addItem(video ? R.id.preferred_video_engine_default
-				: R.id.preferred_audio_engine_default, null, R.string.by_default);
+		OverlayMenuItem i =
+				b.addItem(video ? R.id.preferred_video_engine_default :
+								R.id.preferred_audio_engine_default,
+						null, R.string.by_default);
 		i.setChecked(eng == -1, true);
-		i = b.addItem(video ? R.id.preferred_video_engine_mp
-				: R.id.preferred_audio_engine_mp, null, R.string.engine_mp_name);
+		i = b.addItem(video ? R.id.preferred_video_engine_mp : R.id.preferred_audio_engine_mp, null,
+				R.string.engine_mp_name);
 		i.setChecked(eng == MediaPrefs.MEDIA_ENG_MP, true);
 
 		if (mgr.isExoPlayerSupported()) {
-			i = b.addItem(video ? R.id.preferred_video_engine_exo
-					: R.id.preferred_audio_engine_exo, null, R.string.engine_exo_name);
+			i = b.addItem(video ? R.id.preferred_video_engine_exo : R.id.preferred_audio_engine_exo,
+					null,
+					R.string.engine_exo_name);
 			i.setChecked(eng == MediaPrefs.MEDIA_ENG_EXO, true);
 		}
 
 		if (mgr.isVlcPlayerSupported()) {
-			i = b.addItem(video ? R.id.preferred_video_engine_vlc
-					: R.id.preferred_audio_engine_vlc, null, R.string.engine_vlc_name);
+			i = b.addItem(video ? R.id.preferred_video_engine_vlc : R.id.preferred_audio_engine_vlc,
+					null,
+					R.string.engine_vlc_name);
 			i.setChecked(eng == MediaPrefs.MEDIA_ENG_VLC, true);
 		}
 	}
@@ -262,7 +283,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	protected void buildVideoMenu(OverlayMenu.Builder b) {
 		b.setSelectionHandler(this);
 
-		if ((item instanceof PlayableItem)) {
+		if ((item instanceof PlayableItem) && !item.isExternal()) {
 			PlayableItem pi = (PlayableItem) item;
 
 			if (pi.getPrefs().getWatchedPref()) {
@@ -275,18 +296,22 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		}
 
 		b.addItem(R.id.video_scaling, R.string.video_scaling).setSubmenu(this::buildVideoScalingMenu);
+		MediaEngine eng = getEngine();
+		boolean hasVlc = item.getLib().getPrefs().getVlcEnabledPref();
 
-		if (item.getLib().getPrefs().getVlcEnabledPref()) {
-			if ((item instanceof PlayableItem)) {
+		if ((item instanceof PlayableItem)) {
+			if (((eng == null) && hasVlc) || eng.isAudioDelaySupported())
 				b.addItem(R.id.audio_delay, R.string.audio_delay).setSubmenu(this::buildAudioDelayMenu);
 
-				if (((PlayableItem) item).getPrefs().getSubEnabledPref()) {
-					b.addItem(R.id.subtitle_delay, R.string.subtitle_delay).setSubmenu(this::buildSubtitleDelayMenu);
-				}
-			} else if ((item instanceof BrowsableItem)) {
-				b.addItem(R.id.audio_prefs, R.string.audio).setSubmenu(this::buildAudioPrefsMenu);
-				b.addItem(R.id.subtitle_prefs, R.string.subtitles).setSubmenu(this::buildSubtitlePrefsMenu);
+			if ((((eng == null) && hasVlc) || eng.isSubtitleDelaySupported()) &&
+					((PlayableItem) item).getPrefs().getSubEnabledPref()) {
+				b.addItem(R.id.subtitle_delay, R.string.subtitle_delay)
+						.setSubmenu(this::buildSubtitleDelayMenu);
 			}
+		} else if ((((eng == null) && hasVlc) || eng.isMediaStreamInfoSupported()) &&
+				(item instanceof BrowsableItem)) {
+			b.addItem(R.id.audio_prefs, R.string.audio).setSubmenu(this::buildAudioPrefsMenu);
+			b.addItem(R.id.subtitle_prefs, R.string.subtitles).setSubmenu(this::buildSubtitlePrefsMenu);
 		}
 	}
 
@@ -300,7 +325,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 		if (item instanceof PlayableItem) {
 			addBookmarks(b, Collections.singletonList((PlayableItem) item));
-			b.addItem(R.id.bookmark_create, R.string.create_bookmark).setSubmenu(this::buildCreateBookmarkMenu);
+			b.addItem(R.id.bookmark_create, R.string.create_bookmark)
+					.setSubmenu(this::buildCreateBookmarkMenu);
 			return completedVoid();
 		} else if (item instanceof BrowsableItem) {
 			return ((BrowsableItem) item).getPlayableChildren(true).main().then(items -> {
@@ -327,11 +353,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			Bookmark bm = i.getData();
 			i.getMenu().show(b -> {
 				b.setTitle(i.getTitle());
-				b.addItem(R.id.bookmark_remove, R.string.remove_bookmark)
-						.setHandler(mi -> {
-							((PlayableItem) item).getPrefs().removeBookmark(bm.name, bm.time);
-							return true;
-						});
+				b.addItem(R.id.bookmark_remove, R.string.remove_bookmark).setHandler(mi -> {
+					((PlayableItem) item).getPrefs().removeBookmark(bm.name, bm.time);
+					return true;
+				});
 			});
 		} else {
 			Bookmark bm = i.getData();
@@ -342,13 +367,19 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	private void buildVideoScalingMenu(OverlayMenu.Builder b) {
-		int scale = item.getPrefs().hasPref(VIDEO_SCALE, false) ? item.getPrefs().getVideoScalePref() : -1;
+		int scale =
+				item.getPrefs().hasPref(VIDEO_SCALE, false) ? item.getPrefs().getVideoScalePref() : -1;
 		b.addItem(R.id.video_scaling_default, null, R.string.by_default).setChecked(scale == -1, true);
-		b.addItem(R.id.video_scaling_best, null, R.string.video_scaling_best).setChecked(scale == SCALE_BEST, true);
-		b.addItem(R.id.video_scaling_fill, null, R.string.video_scaling_fill).setChecked(scale == SCALE_FILL, true);
-		b.addItem(R.id.video_scaling_orig, null, R.string.video_scaling_orig).setChecked(scale == SCALE_ORIGINAL, true);
-		b.addItem(R.id.video_scaling_4, null, R.string.video_scaling_4).setChecked(scale == SCALE_4_3, true);
-		b.addItem(R.id.video_scaling_16, null, R.string.video_scaling_16).setChecked(scale == SCALE_16_9, true);
+		b.addItem(R.id.video_scaling_best, null, R.string.video_scaling_best)
+				.setChecked(scale == SCALE_BEST, true);
+		b.addItem(R.id.video_scaling_fill, null, R.string.video_scaling_fill)
+				.setChecked(scale == SCALE_FILL, true);
+		b.addItem(R.id.video_scaling_orig, null, R.string.video_scaling_orig)
+				.setChecked(scale == SCALE_ORIGINAL, true);
+		b.addItem(R.id.video_scaling_4, null, R.string.video_scaling_4)
+				.setChecked(scale == SCALE_4_3, true);
+		b.addItem(R.id.video_scaling_16, null, R.string.video_scaling_16)
+				.setChecked(scale == SCALE_16_9, true);
 		b.setSelectionHandler(this);
 	}
 
@@ -360,7 +391,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	private void buildSubtitleDelayMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
-		addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay, null);
+		addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay,
+				null);
 		prefSet.addToMenu(b, true);
 	}
 
@@ -422,8 +454,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			f = getMainActivity().getMediaLibFragment(R.id.favorites_fragment);
 			if (f != null) f.reload();
 		} else if (id == R.id.playlist_remove_item) {
-			getMainActivity().removeFromPlaylist(
-					(Playlist) requireNonNull(item.getParent()),
+			getMainActivity().removeFromPlaylist((Playlist) requireNonNull(item.getParent()),
 					Collections.singletonList((PlayableItem) item));
 		} else if (id == R.id.playlist_remove) {
 			Playlist p = i.getData();
@@ -452,9 +483,11 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 				ActivityFragment mf = getMainActivity().getActiveFragment();
 				if (mf instanceof MediaLibFragment) ((MediaLibFragment) mf).getAdapter().refresh();
 			}
-		} else if (id == R.id.preferred_audio_engine_default || id == R.id.preferred_video_engine_default) {
-			item.getPrefs().removePref((id == R.id.preferred_audio_engine_default)
-					? MediaPrefs.AUDIO_ENGINE : MediaPrefs.VIDEO_ENGINE);
+		} else if (id == R.id.preferred_audio_engine_default ||
+				id == R.id.preferred_video_engine_default) {
+			item.getPrefs().removePref(
+					(id == R.id.preferred_audio_engine_default) ? MediaPrefs.AUDIO_ENGINE :
+							MediaPrefs.VIDEO_ENGINE);
 		} else if (id == R.id.preferred_audio_engine_mp) {
 			item.getPrefs().setAudioEnginePref(MediaPrefs.MEDIA_ENG_MP);
 		} else if (id == R.id.preferred_video_engine_mp) {
@@ -480,13 +513,13 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		} else if (id == R.id.video_scaling_16) {
 			item.getPrefs().setVideoScalePref(SCALE_16_9);
 		} else if (id == R.id.delete) {
-			UiUtils.showQuestion(getContext(), R.string.delete_file_title,
-					R.string.delete_file_question, R.drawable.delete).onSuccess(v -> {
+			UiUtils.showQuestion(getContext(), R.string.delete_file_title, R.string.delete_file_question,
+					R.drawable.delete).onSuccess(v -> {
 				VirtualResource res = item.getResource();
 				res.delete().main().onCompletion((deleted, err) -> {
 					if ((err == null) && deleted) {
 						MainActivityDelegate a = getMainActivity();
-						MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
+						MediaEngine eng = getEngine();
 						if ((eng != null) && item.equals(eng.getSource()))
 							a.getMediaSessionCallback().onSkipToNext();
 						ActivityFragment mf = a.getActiveFragment();
@@ -512,7 +545,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	private void buildCreateBookmarkMenu(OverlayMenu.Builder b) {
-		MediaEngine eng = getMainActivity().getMediaServiceBinder().getCurrentEngine();
+		MediaEngine eng = getEngine();
 
 		if ((eng != null) && item.equals(eng.getSource())) {
 			eng.getPosition().onSuccess(pos -> buildCreateBookmarkMenu(b, (int) (pos / 1000)));

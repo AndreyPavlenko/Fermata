@@ -37,8 +37,11 @@ import me.aap.utils.vfs.VirtualResource;
  */
 public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStore {
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static final AtomicReferenceFieldUpdater<ItemBase, FutureSupplier<MediaDescriptionCompat>> MD =
-			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class, FutureSupplier.class, "description");
+	private static final AtomicReferenceFieldUpdater<ItemBase,
+			FutureSupplier<MediaDescriptionCompat>>
+			MD =
+			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class,
+					FutureSupplier.class, "description");
 	@Keep
 	@SuppressWarnings({"unused", "FieldCanBeLocal"})
 	private volatile FutureSupplier<MediaDescriptionCompat> description;
@@ -51,10 +54,9 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		this.id = id.intern();
 		this.parent = parent;
 		this.file = resource;
-		MediaLib lib = getLib();
 
-		if (!isExternal() && (lib instanceof DefaultMediaLib)) {
-			((DefaultMediaLib) lib).addToCache(this);
+		if (!isExternal() && (getLib() instanceof DefaultMediaLib)) {
+			((DefaultMediaLib) getLib()).addToCache(this);
 		}
 	}
 

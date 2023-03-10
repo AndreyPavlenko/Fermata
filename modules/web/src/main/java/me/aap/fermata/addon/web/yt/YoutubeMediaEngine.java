@@ -189,6 +189,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	@Override
+	public boolean hasVideoMenu() {
+		return true;
+	}
+
+	@Override
 	public void contributeToMenu(OverlayMenu.Builder b) {
 		Context ctx = dynCtx(web.getContext());
 		Resources r = ctx.getResources();
@@ -256,6 +261,11 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 			int d = item.getData();
 			if ((d & VIDEO_QUALITY_MASK) != 0) web.setVideoQuality(d & ~VIDEO_QUALITY_MASK);
 		}
+		return false;
+	}
+
+	@Override
+	public boolean isSplitModeSupported() {
 		return false;
 	}
 

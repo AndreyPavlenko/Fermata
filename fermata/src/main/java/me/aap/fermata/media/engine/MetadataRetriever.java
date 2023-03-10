@@ -165,7 +165,7 @@ public class MetadataRetriever implements Closeable {
 			} catch (Throwable ex) {
 				Log.e(ex, "Failed retrieve data from MediaStore: ", res);
 			}
-		} else if (fs instanceof ContentFileSystem) {
+		} else if ((fs instanceof ContentFileSystem) || "content".equals(res.getRid().getScheme())) {
 			try {
 				if (queryContentProvider(item, mb)) {
 					insertMetadata(mb, item);

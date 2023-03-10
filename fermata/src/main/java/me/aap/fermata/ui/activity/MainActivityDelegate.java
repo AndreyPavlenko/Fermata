@@ -92,6 +92,7 @@ import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.ExportedItem;
 import me.aap.fermata.media.lib.ExtRoot;
+import me.aap.fermata.media.lib.IntentPlayable;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
@@ -293,6 +294,15 @@ public class MainActivityDelegate extends ActivityDelegate
 					});
 					return completed(true);
 				}
+			} else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+				PlayableItem i = new IntentPlayable(this, u);
+				getMediaServiceBinder().stop();
+				post(() -> {
+					if (!(getActiveFragment() instanceof MediaLibFragment))
+						goToCurrent().onSuccess(v -> getMediaServiceBinder().playItem(i));
+					else getMediaServiceBinder().playItem(i);
+				});
+				return completed(false);
 			}
 		}
 
@@ -695,8 +705,8 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public FutureSupplier<Boolean> goToCurrent() {
 		PlayableItem pi = getMediaServiceBinder().getCurrentItem();
-		return (pi == null) ? getLib().getLastPlayedItem().main().map(this::goToItem) :
-				completed(goToItem(pi));
+		return ((pi == null) || (pi.isExternal())) ?
+				getLib().getLastPlayedItem().main().map(this::goToItem) : completed(goToItem(pi));
 	}
 
 	public FutureSupplier<Item> goToItem(String id) {

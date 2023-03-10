@@ -352,6 +352,10 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 		return eng.getAudioEffects();
 	}
 
+	public boolean isMediaStreamInfoSupported() {
+		return eng.isMediaStreamInfoSupported();
+	}
+
 	@Override
 	public List<AudioStreamInfo> getAudioStreamInfo() {
 		return eng.getAudioStreamInfo();
@@ -418,13 +422,20 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
-	public boolean requestAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
+	public boolean requestAudioFocus(@Nullable AudioManager audioManager,
+																	 @Nullable AudioFocusRequestCompat audioFocusReq) {
 		return eng.requestAudioFocus(audioManager, audioFocusReq);
 	}
 
 	@Override
-	public void releaseAudioFocus(@Nullable AudioManager audioManager, @Nullable AudioFocusRequestCompat audioFocusReq) {
+	public void releaseAudioFocus(@Nullable AudioManager audioManager,
+																@Nullable AudioFocusRequestCompat audioFocusReq) {
 		eng.releaseAudioFocus(audioManager, audioFocusReq);
+	}
+
+	@Override
+	public boolean hasVideoMenu() {
+		return eng.hasVideoMenu();
 	}
 
 	@Override

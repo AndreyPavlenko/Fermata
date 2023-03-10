@@ -68,6 +68,10 @@ public interface MediaEngine extends Closeable {
 		return null;
 	}
 
+	default boolean isMediaStreamInfoSupported() {
+		return false;
+	}
+
 	default List<AudioStreamInfo> getAudioStreamInfo() {
 		return Collections.emptyList();
 	}
@@ -106,8 +110,12 @@ public interface MediaEngine extends Closeable {
 		return (src != null) && src.isVideo();
 	}
 
+	default boolean isSplitModeSupported() {
+		return true;
+	}
+
 	default boolean isSubtitleDelaySupported() {
-		return false;
+		return !getSubtitleStreamInfo().isEmpty();
 	}
 
 	default int getSubtitleDelay() {
@@ -132,6 +140,10 @@ public interface MediaEngine extends Closeable {
 																 @Nullable AudioFocusRequestCompat audioFocusReq) {
 		if ((audioManager != null) && (audioFocusReq != null))
 			AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusReq);
+	}
+
+	default boolean hasVideoMenu() {
+		return false;
 	}
 
 	default void contributeToMenu(OverlayMenu.Builder b) {

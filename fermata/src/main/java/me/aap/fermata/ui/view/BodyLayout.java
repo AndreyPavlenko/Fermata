@@ -29,8 +29,8 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 /**
  * @author Andrey Pavlenko
  */
-public class BodyLayout extends ConstraintLayout implements
-		SwipeRefreshLayout.OnRefreshListener, SwipeRefreshLayout.OnChildScrollUpCallback,
+public class BodyLayout extends ConstraintLayout
+		implements SwipeRefreshLayout.OnRefreshListener, SwipeRefreshLayout.OnChildScrollUpCallback,
 		View.OnTouchListener, FermataServiceUiBinder.Listener, MainActivityListener {
 	private Mode mode;
 
@@ -185,7 +185,8 @@ public class BodyLayout extends ConstraintLayout implements
 
 				MediaLib.PlayableItem i = eng.getSource();
 
-				if ((i != null) && i.isVideo() && !i.isExternal() && (cb.getVideoView() == getVideoView())) {
+				if ((i != null) && i.isVideo() && eng.isSplitModeSupported() &&
+						(cb.getVideoView() == getVideoView())) {
 					setMode(Mode.BOTH);
 				} else {
 					setMode(Mode.FRAME);
@@ -198,12 +199,12 @@ public class BodyLayout extends ConstraintLayout implements
 	public void onPlayableChanged(MediaLib.PlayableItem oldItem, MediaLib.PlayableItem newItem) {
 		MainActivityDelegate a = getActivity();
 		if (a.getActiveMediaLibFragment() == null) return;
+		MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
 
-		if ((newItem == null) || !newItem.isVideo() || newItem.isExternal()) {
+		if ((newItem == null) || !newItem.isVideo() || (eng == null) || !eng.isSplitModeSupported()) {
 			setMode(BodyLayout.Mode.FRAME);
 		} else {
-			MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
-			if ((eng == null) || !eng.isVideoModeRequired()) setMode(BodyLayout.Mode.FRAME);
+			if (!eng.isVideoModeRequired()) setMode(BodyLayout.Mode.FRAME);
 			else if (isFrameMode()) setMode(BodyLayout.Mode.VIDEO);
 			else getVideoView().showVideo(false);
 		}

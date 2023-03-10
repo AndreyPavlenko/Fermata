@@ -29,6 +29,7 @@ public class ExtRoot extends ExtBrowsable {
 	@NonNull
 	@Override
 	public PreferenceStore getParentPreferenceStore() {
+		MediaLib lib = getLib();
 		if (lib instanceof PreferenceStore) return (PreferenceStore) lib;
 		throw new UnsupportedOperationException();
 	}

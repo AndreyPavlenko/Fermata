@@ -110,6 +110,10 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		}
 	}
 
+	public void stop() {
+		mediaController.getTransportControls().stop();
+	}
+
 	public void bindPlayPauseButton(View v) {
 		playPauseButton = v;
 		v.setOnClickListener(b -> onPlayPauseButtonClick());
