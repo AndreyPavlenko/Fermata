@@ -46,6 +46,7 @@ import me.aap.utils.ui.view.ToolBarView;
 @SuppressWarnings("unused")
 public class WebBrowserFragment extends MainActivityFragment
 		implements OverlayMenu.SelectionHandler, MainActivityListener {
+	private boolean fullScreenOnResume;
 
 	@Override
 	public int getFragmentId() {
@@ -96,13 +97,20 @@ public class WebBrowserFragment extends MainActivityFragment
 		FermataWebView v = getWebView();
 		if (v == null) return;
 		FermataChromeClient chrome = v.getWebChromeClient();
-		if ((chrome != null) && chrome.isFullScreen()) chrome.exitFullScreen();
+		if (chrome != null) {
+			if (chrome.isFullScreen()) {
+				chrome.exitFullScreen();
+				fullScreenOnResume = true;
+			} else {
+				fullScreenOnResume = false;
+			}
+		}
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (!BuildConfig.AUTO) return;
+		if (!BuildConfig.AUTO || !fullScreenOnResume) return;
 		FermataWebView v = getWebView();
 		if (v == null) return;
 		// Calling here onResume makes the video to not get freezed
