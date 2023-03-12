@@ -66,8 +66,6 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 	}
 
 	private EditText createAddress(ToolBarView tb, WebBrowserFragment f) {
-		Context ctx = tb.getContext();
-		int p = (int) toPx(ctx, 2);
 		EditText t = createEditText(tb);
 		ConstraintLayout.LayoutParams lp = setLayoutParams(t, 0, WRAP_CONTENT);
 		lp.horizontalWeight = 2;
@@ -75,8 +73,6 @@ public class WebToolBarMediator implements ToolBarView.Mediator {
 		t.setOnKeyListener((v, keyCode, event) -> onKey(f, t, keyCode, event));
 		t.setMaxLines(1);
 		t.setSingleLine(true);
-		t.setPadding(p, p, p, p);
-		lp.horizontalWeight = 2;
 		return t;
 	}
 

@@ -16,6 +16,7 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_RU;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_TR;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
@@ -540,6 +541,14 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 				o.pref = VOICE_CONTROL_SUBST;
 				o.store = a.getPrefs();
 				o.maxLines = 10;
+				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
+			});
+			sub1.addTtsLocalePref(o -> {
+				o.title = R.string.lang;
+				o.subtitle = me.aap.fermata.R.string.string_format;
+				o.pref = VOICE_CONTROL_LANG;
+				o.store = a.getPrefs();
+				o.formatSubtitle = true;
 				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 		}

@@ -58,6 +58,10 @@ public abstract class MainActivityFragment extends ActivityFragment {
 	public void discardSelection() {
 	}
 
+	public boolean startVoiceAssistant(){
+		return false;
+	}
+
 	public boolean isVoiceCommandsSupported() {
 		return false;
 	}

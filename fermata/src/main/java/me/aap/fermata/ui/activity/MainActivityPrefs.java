@@ -59,6 +59,8 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
 	Pref<BooleanSupplier> VOICE_CONTROl_M = Pref.b("VOICE_CONTROl_M", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
+	Pref<Supplier<String>> VOICE_CONTROL_LANG = Pref.s("VOICE_CONTROL_LANG",
+			() -> Locale.getDefault().toLanguageTag());
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
 	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", () -> {
 		switch (Locale.getDefault().getLanguage()) {
@@ -246,6 +248,10 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default boolean getVoiceControlMenuPref() {
 		return getBooleanPref(VOICE_CONTROl_M);
+	}
+
+	default String getVoiceControlLang(MainActivityDelegate a) {
+		return a.getPrefs().getStringPref(VOICE_CONTROL_LANG);
 	}
 
 	default int getClockPosPref() {

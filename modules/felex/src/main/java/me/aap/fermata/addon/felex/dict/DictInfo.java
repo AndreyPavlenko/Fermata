@@ -22,7 +22,7 @@ public class DictInfo {
 	private final Locale targetLang;
 
 	public DictInfo(String name, String sourceLang, String targetLang) {
-		this(name, new Locale(sourceLang), new Locale(targetLang));
+		this(name, Locale.forLanguageTag(sourceLang), Locale.forLanguageTag(targetLang));
 	}
 
 	public DictInfo(String name, Locale sourceLang, Locale targetLang) {
@@ -58,8 +58,8 @@ public class DictInfo {
 
 	public void write(Appendable a) throws IOException {
 		a.append(TAG_NAME).append("\t\t").append(getName()).append('\n');
-		a.append(TAG_SRC_LANG).append("\t").append(getSourceLang().toString()).append('\n');
-		a.append(TAG_TARGET_LANG).append("\t").append(getTargetLang().toString()).append("\n\n");
+		a.append(TAG_SRC_LANG).append("\t").append(getSourceLang().toLanguageTag()).append('\n');
+		a.append(TAG_TARGET_LANG).append("\t").append(getTargetLang().toLanguageTag()).append("\n\n");
 	}
 
 	public String getName() {

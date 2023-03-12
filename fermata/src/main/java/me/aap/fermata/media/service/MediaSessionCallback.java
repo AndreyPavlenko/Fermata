@@ -1516,7 +1516,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 					return true;
 				} else if (a == KeyEvent.ACTION_UP) {
 					mediaKeyHandler = null;
-					getAssistant().startVoiceSearch();
+					getAssistant().startVoiceAssistant();
 					return true;
 				}
 			}

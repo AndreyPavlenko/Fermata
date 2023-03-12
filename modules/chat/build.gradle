@@ -1,0 +1,24 @@
+android {
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+
+ext {
+    addons = [
+            [
+                    name   : 'chat',
+                    icon   : 'chat',
+                    class  : 'me.aap.fermata.addon.chat.ChatAddon',
+                    enabled: false
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation "com.google.android.material:material:${ANDROID_MATERIAL_VERSION}"
+}

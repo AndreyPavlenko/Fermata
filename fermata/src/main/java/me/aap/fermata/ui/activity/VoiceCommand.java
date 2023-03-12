@@ -7,6 +7,7 @@ public class VoiceCommand {
 	public static final int ACTION_PLAY = 1;
 	public static final int ACTION_FIND = 2;
 	public static final int ACTION_OPEN = 4;
+	public static final int ACTION_CHAT = 5;
 
 	private final String query;
 	private final int action;

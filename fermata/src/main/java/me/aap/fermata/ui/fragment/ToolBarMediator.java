@@ -53,7 +53,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		ToolBarView.Mediator.BackTitleFilter.super.enable(tb, f);
 		MainActivityDelegate a = MainActivityDelegate.get(tb.getContext());
 		addButton(tb, R.drawable.title, ToolBarMediator::onViewButtonClick, R.id.tool_view);
-		View sort = addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
+		addButton(tb, R.drawable.sort, ToolBarMediator::onSortButtonClick, R.id.tool_sort);
 
 		if ((f instanceof MediaLibFragment) && ((MediaLibFragment) f).isGridSupported()) {
 			int gridIcon = a.isGridView() ? R.drawable.view_list : R.drawable.view_grid;

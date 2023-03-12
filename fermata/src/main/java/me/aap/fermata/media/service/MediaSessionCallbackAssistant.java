@@ -11,7 +11,7 @@ import me.aap.utils.async.FutureSupplier;
  */
 public interface MediaSessionCallbackAssistant {
 
-	default void startVoiceSearch(){}
+	default void startVoiceAssistant(){}
 
 	@NonNull
 	default FutureSupplier<MediaLib.PlayableItem> getPrevPlayable(Item i) {

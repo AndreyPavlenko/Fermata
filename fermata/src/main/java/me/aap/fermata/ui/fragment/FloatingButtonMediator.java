@@ -50,7 +50,7 @@ public class FloatingButtonMediator implements BackMenu {
 	public boolean onLongClick(View v) {
 		MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
 		if (a.getPrefs().getVoiceControlFBPref()) {
-			a.startVoiceSearch();
+			a.startVoiceAssistant();
 			return true;
 		}
 		ActivityFragment f = a.getActiveFragment();

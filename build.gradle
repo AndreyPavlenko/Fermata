@@ -1,7 +1,7 @@
 ext {
     def abi = project.properties['ABI']
-    VERSION_CODE = 213
-    VERSION_NAME = "1.9.1"
+    VERSION_CODE = 214
+    VERSION_NAME = "1.9.2"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 33
     SDK_COMPILE_VERSION = 33
@@ -88,8 +88,8 @@ subprojects {
         }
 
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_1_8
-            targetCompatibility = JavaVersion.VERSION_1_8
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
         }
 
         testOptions {

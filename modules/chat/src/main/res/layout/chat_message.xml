@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<me.aap.utils.ui.view.ScalableTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="?attr/appMediaItemStyle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="2dp"
+    android:padding="4dp"
+    android:background="@drawable/media_item_bg"
+    android:textAppearance="?attr/textAppearanceListItem"
+    app:drawableTint="?attr/colorOnSecondary"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toEndOf="@id/icon"
+    app:layout_constraintTop_toTopOf="parent" />

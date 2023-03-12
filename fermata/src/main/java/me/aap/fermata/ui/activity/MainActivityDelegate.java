@@ -23,6 +23,8 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_M;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
@@ -761,18 +763,10 @@ public class MainActivityDelegate extends ActivityDelegate
 		return findViewById(R.id.tool_menu);
 	}
 
-	public void startVoiceSearch() {
-		View focus = getCurrentFocus();
-		FutureSupplier<int[]> check = isCarActivity() ? completed(new int[]{PERMISSION_GRANTED}) :
-				getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
-		check.onCompletion((r, err) -> {
-			if ((err == null) && (r[0] == PERMISSION_GRANTED)) {
-				voiceSearch(focus);
-				return;
-			}
-			if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
-			showAlert(getContext(), R.string.err_no_audio_record_perm);
-		});
+	public void startVoiceAssistant() {
+		ActivityFragment f = getActiveFragment();
+		if (!(f instanceof MainActivityFragment) || !((MainActivityFragment) f).startVoiceAssistant())
+			voiceSearch(getCurrentFocus());
 	}
 
 	private void voiceSearch(View focus) {
@@ -791,19 +785,30 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public FutureSupplier<List<String>> startSpeechRecognizer() {
-		return startSpeechRecognizer(false);
+		return startSpeechRecognizer(null, false);
 	}
 
-	public FutureSupplier<List<String>> startSpeechRecognizer(boolean textInput) {
-		if (speechListener != null) speechListener.destroy();
-		Promise<List<String>> p = new Promise<>();
-		Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-		i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString());
-		i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		speechListener = new SpeechListener(p, textInput);
-		speechListener.start(i);
-		return p;
+	public FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput) {
+		FutureSupplier<int[]> check = isCarActivity() ? completed(new int[]{PERMISSION_GRANTED}) :
+				getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
+		return check.then(r -> {
+			if (r[0] == PERMISSION_GRANTED) return completedVoid();
+			else return failed(new IllegalStateException("Audio recording permission is not granted"));
+		}).onFailure(err -> {
+			Log.e(err, "Failed to request RECORD_AUDIO permission");
+			showAlert(getContext(), R.string.err_no_audio_record_perm);
+		}).then(v -> {
+			if (speechListener != null) speechListener.destroy();
+			Promise<List<String>> p = new Promise<>();
+			String lang = (locale == null) ? getPrefs().getVoiceControlLang(this) : locale;
+			Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+			i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+			i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang);
+			i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+			speechListener = new SpeechListener(p, textInput);
+			speechListener.start(i);
+			return p;
+		});
 	}
 
 	@NonNull
@@ -1089,7 +1094,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		switch (code) {
 			case KeyEvent.KEYCODE_M:
 			case KeyEvent.KEYCODE_MENU:
-				if (getPrefs().getVoiceControlMenuPref()) startVoiceSearch();
+				if (getPrefs().getVoiceControlMenuPref()) startVoiceAssistant();
 				return true;
 		}
 		return super.onKeyLongPress(code, event, next);
@@ -1105,6 +1110,21 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	public Cancellable postDelayed(Runnable task, long delay) {
 		return getHandler().schedule(task, delay);
+	}
+
+	public Cancellable interruptPlayback() {
+		MediaSessionCallback cb = getMediaSessionCallback();
+		if (!cb.isPlaying()) return Cancellable.CANCELED;
+		PlaybackStateCompat playbackState = cb.getPlaybackState();
+		cb.onPause();
+		return () -> {
+			PlaybackStateCompat state = cb.getPlaybackState();
+			if ((state.getState() == PlaybackStateCompat.STATE_PAUSED) &&
+					((state == playbackState) || (state.getPosition() != playbackState.getPosition()))) {
+				cb.onPlay();
+			}
+			return true;
+		};
 	}
 
 	static final class Prefs implements MainActivityPrefs {

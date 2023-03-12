@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="openai_key">OpenAI Key</string>
+    <string name="openai_key_sub">To create your personal key, go to https://platform.openai.com/account/api-keys</string>
+</resources>
