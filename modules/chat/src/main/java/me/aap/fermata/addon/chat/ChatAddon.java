@@ -1,7 +1,10 @@
 package me.aap.fermata.addon.chat;
 
+import static me.aap.fermata.util.Utils.openUrl;
+
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.core.text.HtmlCompat;
 
 import java.util.Locale;
 
@@ -9,6 +12,7 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
+import me.aap.utils.app.App;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -56,10 +60,13 @@ public class ChatAddon implements FermataFragmentAddon {
 	public void contributeSettings(PreferenceStore store, PreferenceSet set,
 																 ChangeableCondition visibility) {
 		set.addStringPref(o -> {
+			String keyUrl = "https://platform.openai.com/account/api-keys";
+			String sub = App.get().getString(R.string.openai_key_sub, keyUrl);
 			o.store = store;
 			o.pref = OPENAI_KEY;
 			o.title = R.string.openai_key;
-			o.subtitle = R.string.openai_key_sub;
+			o.csubtitle = HtmlCompat.fromHtml(sub, HtmlCompat.FROM_HTML_MODE_COMPACT);
+			o.clickListener = v -> openUrl(v.getContext(), keyUrl);
 		});
 		set.addTtsLocalePref(o -> {
 			o.store = store;

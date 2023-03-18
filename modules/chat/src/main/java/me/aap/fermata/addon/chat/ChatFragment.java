@@ -7,11 +7,13 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.LEFT;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.RIGHT;
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.addon.chat.ChatListView.URL_PATTERN;
 import static me.aap.fermata.util.Utils.dynCtx;
 import static me.aap.utils.text.TextUtils.isBlank;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -26,12 +28,14 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CancellationException;
+import java.util.regex.Pattern;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.ui.activity.VoiceCommand;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
@@ -46,7 +50,9 @@ import me.aap.utils.voice.TextToSpeech;
 public class ChatFragment extends MainActivityFragment
 		implements ChatGpt.Listener, PreferenceStore.Listener {
 	private final ChatGpt chat = new ChatGpt();
-	TextToSpeech tts;
+	private TextToSpeech tts;
+	private String chatLang;
+	private Pattern openPattern;
 
 	@Override
 	public int getFragmentId() {
@@ -87,6 +93,7 @@ public class ChatFragment extends MainActivityFragment
 		ChatGpt.getInstance().removeBroadcastListener(this);
 		if (tts != null) tts.close();
 		tts = null;
+		chatLang = null;
 	}
 
 	@Override
@@ -121,8 +128,35 @@ public class ChatFragment extends MainActivityFragment
 		if (tts != null) tts.stop();
 		MainActivityDelegate.get(getContext()).startSpeechRecognizer(a.getGetChatLang(), false)
 				.onSuccess(q -> {
-					if (!q.isEmpty()) sendRequest(q.get(0), true);
+					if (q.isEmpty()) return;
+					var msg = q.get(0);
+					var addon = requireNonNull(AddonManager.get().getAddon(ChatAddon.class));
+					var lang = addon.getGetChatLang();
+
+					if ((openPattern == null) || !lang.equals(chatLang)) {
+						var ctx = requireContext();
+						var cfg = new Configuration(ctx.getResources().getConfiguration());
+						cfg.setLocale(Locale.forLanguageTag(lang));
+						var res = ctx.createConfigurationContext(cfg).getResources();
+						openPattern = Pattern.compile(res.getString(me.aap.fermata.R.string.vcmd_action_open));
+					}
+
+					if (openPattern.matcher(msg).matches()) {
+						var last = ChatGpt.getInstance().getLastMessages(1);
+						if (!last.isEmpty()) {
+							var content = last.get(0).content;
+							var m = URL_PATTERN.matcher(content);
+							if (m.find()) {
+								var url = content.substring(m.start(), m.end());
+								Utils.openUrl(requireContext(), url);
+								return;
+							}
+						}
+					}
+
+					sendRequest(msg, true);
 				});
+
 		return true;
 	}
 
@@ -150,10 +184,14 @@ public class ChatFragment extends MainActivityFragment
 			} else {
 				ChatGpt.getInstance().addMessage(resp, ChatGpt.Role.ASSISTANT);
 				if (!voice) return;
-				if (tts == null) {
-					ChatAddon addon = requireNonNull(AddonManager.get().getAddon(ChatAddon.class));
-					Locale lang = Locale.forLanguageTag(addon.getGetChatLang());
-					TextToSpeech.create(requireContext(), lang).onCompletion((tts, terr) -> {
+				var addon = requireNonNull(AddonManager.get().getAddon(ChatAddon.class));
+				var lang = addon.getGetChatLang();
+				if ((tts == null) || !lang.equals(chatLang)) {
+					if (tts != null) tts.close();
+					tts = null;
+					chatLang = lang;
+					Locale locale = Locale.forLanguageTag(lang);
+					TextToSpeech.create(requireContext(), locale).onCompletion((tts, terr) -> {
 						if (terr != null) {
 							UiUtils.showAlert(requireContext(), "TTS failed: " + terr);
 						} else {

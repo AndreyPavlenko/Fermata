@@ -46,37 +46,44 @@ class VoiceCommandHandler {
 	private static final String NUMBER = "N";
 	private static final String UNIT = "U";
 	private final MainActivityDelegate activity;
-	private final Pattern aFind;
-	private final Pattern aOpen;
-	private final Pattern aPause;
-	private final Pattern aStop;
-	private final Pattern aPlay;
-	private final Pattern aPlayFavorites;
-	private final Pattern aSubOn;
-	private final Pattern aSubOff;
-	private final Pattern aSubChange;
-	private final Pattern aAudioChange;
-	private final Pattern lFolders;
-	private final Pattern lFavorites;
-	private final Pattern lPlaylists;
-	private final Pattern lTV;
-	private final Pattern lYoutube;
-	private final Pattern lBrowser;
-	private final Pattern uMinute;
-	private final Pattern uHour;
-	private final Pattern cCurTrack;
-	private final PatternCompat cFF;
-	private final PatternCompat cRW;
-	private final PatternCompat cFindPlayOpen;
-	private final PatternCompat cChat;
-	private final String[] nums;
+	private String lang;
+	private Pattern aFind;
+	private Pattern aOpen;
+	private Pattern aPause;
+	private Pattern aStop;
+	private Pattern aPlay;
+	private Pattern aPlayFavorites;
+	private Pattern aSubOn;
+	private Pattern aSubOff;
+	private Pattern aSubChange;
+	private Pattern aAudioChange;
+	private Pattern lFolders;
+	private Pattern lFavorites;
+	private Pattern lPlaylists;
+	private Pattern lTV;
+	private Pattern lYoutube;
+	private Pattern lBrowser;
+	private Pattern uMinute;
+	private Pattern uHour;
+	private Pattern cCurTrack;
+	private PatternCompat cFF;
+	private PatternCompat cRW;
+	private PatternCompat cFindPlayOpen;
+	private PatternCompat cChat;
+	private String[] nums;
 	private Map<String, String> subst = Collections.emptyMap();
 
 	VoiceCommandHandler(MainActivityDelegate activity) {
 		this.activity = activity;
+	}
+
+	private void init() {
+		String lang = activity.getPrefs().getVoiceControlLang(activity);
+		if (lang.equals(this.lang)) return;
+
 		Context ctx = activity.getContext();
 		Configuration cfg = new Configuration(ctx.getResources().getConfiguration());
-		cfg.setLocale(Locale.forLanguageTag(activity.getPrefs().getVoiceControlLang(activity)));
+		cfg.setLocale(Locale.forLanguageTag(lang));
 		Resources res = ctx.createConfigurationContext(cfg).getResources();
 		aFind = compile(res, R.string.vcmd_action_find);
 		aOpen = compile(res, R.string.vcmd_action_open);
@@ -110,6 +117,7 @@ class VoiceCommandHandler {
 	}
 
 	public boolean handle(String cmd) {
+		init();
 		cmd = subst(cmd);
 
 		AddonManager amgr = AddonManager.get();

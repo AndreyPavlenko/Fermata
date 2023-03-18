@@ -1,13 +1,14 @@
 package me.aap.fermata.addon.chat;
 
+import static android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE;
 import static java.util.Objects.requireNonNull;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ImageSpan;
+import android.text.style.URLSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,13 +19,19 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.util.Utils;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.ScalableTextView;
 
 /**
  * @author Andrey Pavlenko
  */
 public class ChatListView extends RecyclerView {
+	static final Pattern URL_PATTERN = Pattern.compile("https?://\\S+");
 	private final Drawable userIcon;
 	private final Drawable assistantIcon;
 
@@ -86,9 +93,43 @@ public class ChatListView extends RecyclerView {
 			}
 
 			icon.setTintList(text.getCompoundDrawableTintList());
-			SpannableString s = new SpannableString(" " + msg.content);
-			ImageSpan is = new ImageSpan(icon, ImageSpan.ALIGN_CENTER);
-			s.setSpan(is, 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+			var s = new SpannableString(" " + msg.content);
+			var is = new ImageSpan(icon, ImageSpan.ALIGN_CENTER);
+			s.setSpan(is, 0, 1, SPAN_EXCLUSIVE_EXCLUSIVE);
+			var urls = new ArrayList<String>();
+
+			for (var m = URL_PATTERN.matcher(msg.content); m.find(); ) {
+				var start = m.start();
+				var end = m.end();
+				var url = m.group();
+				urls.add(url);
+				s.setSpan(new URLSpan(url), start + 1, end + 1, SPAN_EXCLUSIVE_EXCLUSIVE);
+			}
+
+			if (urls.isEmpty()) {
+				text.setOnClickListener(null);
+			} else {
+				text.setOnClickListener(v -> {
+					if (urls.size() == 1) {
+						Utils.openUrl(getContext(), urls.get(0));
+					} else {
+						MainActivityDelegate.get(getContext()).getContextMenu().show(b -> {
+							for (int i = 0, n = urls.size(); i < n; i++) {
+								var url = urls.get(i);
+								var title = new SpannableString(url);
+								title.setSpan(new URLSpan(url), 0, url.length(), SPAN_EXCLUSIVE_EXCLUSIVE);
+								b.addItem(i, title);
+							}
+							b.setSelectionHandler(i -> Utils.openUrl(getContext(), urls.get(i.getItemId())));
+						});
+					}
+				});
+			}
+
+			text.setOnLongClickListener(t-> {
+				UiUtils.addToClipboard(getContext(),msg.role.toString(),msg.content);
+				return true;
+			});
 			text.setText(s);
 		}
 

@@ -2,7 +2,7 @@
 
 <!DOCTYPE resources [
     <!ENTITY action_find "найти|искать">
-    <!ENTITY action_open "открыть">
+    <!ENTITY action_open "откр(ыть|ой)">
     <!ENTITY action_pause "пауза">
     <!ENTITY action_stop "стоп">
     <!ENTITY action_play "игра(ть|й)|включи(ть)?">

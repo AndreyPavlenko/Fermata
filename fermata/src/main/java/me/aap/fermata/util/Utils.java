@@ -3,6 +3,7 @@ package me.aap.fermata.util;
 import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 import static android.os.Build.VERSION.SDK_INT;
 
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.io.FileUtils;
+import me.aap.utils.log.Log;
 import me.aap.utils.net.http.HttpFileDownloader;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.notif.HttpDownloadStatusListener;
@@ -97,5 +99,40 @@ public class Utils {
 		i.putExtra(Intent.EXTRA_STREAM, uri);
 		i.setType(mime);
 		a.startActivity(Intent.createChooser(i, title));
+	}
+
+	public static boolean openUrl(Context ctx, String url) {
+		MainActivityDelegate a = MainActivityDelegate.get(ctx);
+		boolean gmap = url.contains("google.") && url.contains("/map");
+
+		if (!gmap && a.isCarActivity()) return openUrlInBrowserFragment(ctx, url);
+
+		Uri u = Uri.parse(url);
+		Intent intent = new Intent(Intent.ACTION_VIEW, u);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		if (gmap) intent.setPackage("com.google.android.apps.maps");
+
+		try {
+			a.startActivity(intent);
+			return true;
+		} catch (ActivityNotFoundException ex) {
+			if (openUrlInBrowserFragment(ctx, url)) return true;
+
+			String msg = ctx.getResources().getString(R.string.err_failed_open_url, u);
+			a.createDialogBuilder().setMessage(msg)
+					.setPositiveButton(android.R.string.ok, null).show();
+			return false;
+		}
+	}
+
+	public static boolean openUrlInBrowserFragment(Context ctx, String url) {
+		try {
+			MainActivityDelegate a = MainActivityDelegate.get(ctx);
+			a.showFragment(R.id.web_browser_fragment).setInput(url);
+			return true;
+		} catch (Exception ex) {
+			Log.d(ex);
+			return false;
+		}
 	}
 }
