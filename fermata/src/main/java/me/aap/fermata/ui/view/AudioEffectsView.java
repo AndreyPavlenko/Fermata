@@ -510,7 +510,8 @@ public class AudioEffectsView extends ScrollView implements PreferenceStore.List
 	@Override
 	public View focusSearch(View focused, int direction) {
 		if ((direction == FOCUS_UP) && (focused != null) && (focused.getId() == R.id.equalizer_switch)) {
-			View v = MainActivityDelegate.get(getContext()).getToolBar().findViewById(R.id.tool_bar_back_button);
+			View v = MainActivityDelegate.get(getContext()).getToolBar()
+					.findViewById(me.aap.utils.R.id.tool_bar_back_button);
 			if (v.getVisibility() == VISIBLE) return v;
 		}
 

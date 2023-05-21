@@ -178,7 +178,7 @@ public class FoldersFragment extends MediaLibFragment {
 	}
 
 	private void addFolderPicker(VirtualFileSystem fs) {
-		FilePickerFragment f = getMainActivity().showFragment(R.id.file_picker);
+		FilePickerFragment f = getMainActivity().showFragment(me.aap.utils.R.id.file_picker);
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setFileSystem(fs);
 		f.setFileConsumer(this::addFolderResult);

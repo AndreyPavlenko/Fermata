@@ -64,7 +64,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 			addButton(tb, R.drawable.pg_down, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_down, LEFT);
 			addButton(tb, R.drawable.pg_up, ToolBarMediator::onPgUpDownButtonClick, R.id.tool_pg_up, LEFT);
 		} else {
-			tb.findViewById(R.id.tool_bar_back_button);
+			tb.findViewById(me.aap.utils.R.id.tool_bar_back_button);
 		}
 
 		for (FermataAddon addon : AddonManager.get().getAddons()) {
@@ -108,7 +108,7 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		} else if (direction == FOCUS_DOWN) {
 			int id = focused.getId();
 			Context ctx = tb.getContext();
-			if (id == R.id.tool_bar_back_button) {
+			if (id == me.aap.utils.R.id.tool_bar_back_button) {
 				return MediaItemListView.focusSearchFirst(ctx, focused);
 			} else {
 				return MediaItemListView.focusSearchFirstVisible(ctx, focused);

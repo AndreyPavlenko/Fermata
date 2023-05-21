@@ -612,7 +612,7 @@ public interface MediaLib {
 		@DrawableRes
 		@Override
 		default int getIcon() {
-			return R.drawable.folder;
+			return me.aap.utils.R.drawable.folder;
 		}
 
 		@NonNull
@@ -682,7 +682,7 @@ public interface MediaLib {
 
 		@Override
 		default int getIcon() {
-			return R.drawable.folder;
+			return me.aap.utils.R.drawable.folder;
 		}
 
 		@NonNull

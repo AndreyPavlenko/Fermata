@@ -285,10 +285,10 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		if (!a.hasSelectable()) return;
 
 		if (a.getListView().isSelectionActive()) {
-			b.addItem(R.id.nav_select_all, R.drawable.check_box, R.string.select_all);
-			b.addItem(R.id.nav_unselect_all, R.drawable.check_box_blank, R.string.unselect_all);
+			b.addItem(R.id.nav_select_all, me.aap.utils.R.drawable.check_box, R.string.select_all);
+			b.addItem(R.id.nav_unselect_all, me.aap.utils.R.drawable.check_box_blank, R.string.unselect_all);
 		} else {
-			b.addItem(R.id.nav_select, R.drawable.check_box, R.string.select);
+			b.addItem(R.id.nav_select, me.aap.utils.R.drawable.check_box, R.string.select);
 		}
 	}
 

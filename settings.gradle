@@ -1,4 +1,3 @@
-rootProject.name = 'Fermata Music Player'
 gradle.ext.modules = []
 gradle.ext.addonInfo = new StringBuilder(512)
 gradle.ext.localProps = new Properties()
@@ -22,6 +21,7 @@ if (exoRoot.isDirectory()) {
     apply from: new File(exoRoot, 'core_settings.gradle')
 }
 
+rootProject.name = 'Fermata Music Player'
 include ':fermata'
 include ':control'
 include ':utils'

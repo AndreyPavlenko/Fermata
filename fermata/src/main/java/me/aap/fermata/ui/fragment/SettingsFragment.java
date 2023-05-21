@@ -107,7 +107,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
 													 @Nullable Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.pref_list_view, container, false);
+		return inflater.inflate(me.aap.utils.R.layout.pref_list_view, container, false);
 	}
 
 	@Override
@@ -123,7 +123,7 @@ public class SettingsFragment extends MainActivityFragment implements MainActivi
 			a.addBroadcastListener(this);
 			a.getPrefs().addBroadcastListener(this);
 
-			RecyclerView listView = view.findViewById(R.id.prefs_list_view);
+			RecyclerView listView = view.findViewById(me.aap.utils.R.id.prefs_list_view);
 			listView.setHasFixedSize(true);
 			listView.setLayoutManager(new LinearLayoutManager(getContext()));
 			listView.setAdapter(adapter);

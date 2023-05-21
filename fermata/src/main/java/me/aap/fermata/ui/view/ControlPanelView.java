@@ -529,7 +529,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 	private void setShowHideBarsIcon(MainActivityDelegate a) {
 		a.post(() -> showHideBars.setImageResource(
-				a.isBarsHidden() ? R.drawable.expand : R.drawable.collapse));
+				a.isBarsHidden() ? R.drawable.expand : me.aap.utils.R.drawable.collapse));
 	}
 
 	private MainActivityDelegate getActivity() {

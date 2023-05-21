@@ -42,13 +42,14 @@ if [ -z "$HOST_PLATFORM" ]; then
 fi
 
 # Clone or update FFmpeg
+FFMPEG_VER="release/4.4"
 if [ -d "$FFMPEG_DIR" ]; then
     cd "$FFMPEG_DIR"
-    git clean -xfd && git reset --hard && git checkout release/4.4 && git reset --hard && git pull
+    git clean -xfd && git reset --hard && git checkout $FFMPEG_VER && git reset --hard && git pull
 else
     git clone 'git://source.ffmpeg.org/ffmpeg' "$FFMPEG_DIR"
     cd "$FFMPEG_DIR"
-    git checkout release/4.4
+    git checkout $FFMPEG_VER
 fi
 
 # Clone or update ExoPlayer
@@ -70,6 +71,14 @@ sed -i "s/androidxMediaVersion .*/androidxMediaVersion = $ANDROIDX_MEDIA_VERSION
 sed -i "s/androidxAppCompatVersion .*/androidxAppCompatVersion = $ANDROIDX_APPCOMPAT_VERSION/" "$EXO_DIR/constants.gradle"
 sed -i "s/minSdkVersion .*/minSdkVersion $SDK_MIN_VERSION/" "$EXO_DIR/extensions/leanback/build.gradle"
 
+# Move package name to the android.namespace property
+for i in $(find "$EXO_DIR/" -name AndroidManifest.xml | grep /src/main/); do
+    pkg=$(grep -o ' package="[^ ]*"' "$i")
+    pkg="$(eval "$pkg; echo \$package")"
+    sed -i 's/ package="[^ ]*"//' "$i"
+    echo "android.namespace = '$pkg'" >> "$(dirname $i)/../../build.gradle"
+done
+
 # Build ExoPlayer FFmpeg extension
 FFMPEG_DECODERS=(vorbis alac mp3 aac ac3 eac3 mlp truehd)
 
@@ -79,6 +88,8 @@ sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-nm|${TOOLCHAIN_PREFIX}/llvm-nm
 sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-ar|${TOOLCHAIN_PREFIX}/llvm-ar|g' build_ffmpeg.sh
 sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-ranlib|${TOOLCHAIN_PREFIX}/llvm-ranlib|g' build_ffmpeg.sh
 sed -ie 's|${TOOLCHAIN_PREFIX}/.*-linux-android.*-strip|${TOOLCHAIN_PREFIX}/llvm-strip|g' build_ffmpeg.sh
+sed -ie 's|android16|android23|g' build_ffmpeg.sh
+sed -ie 's|androideabi16|androideabi23|g' build_ffmpeg.sh
 
 ./build_ffmpeg.sh "$(pwd)/.." "$NDK_DIR" "$HOST_PLATFORM" "${FFMPEG_DECODERS[@]}"
 

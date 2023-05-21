@@ -1,4 +1,5 @@
 android {
+    namespace = "me.aap.fermata.engine.exoplayer"
     defaultConfig {
         versionCode 1
         versionName "1.0"

@@ -1,4 +1,5 @@
 android {
+    namespace = "me.aap.fermata.vfs.gdrive"
     defaultConfig {
         versionCode 1
         versionName "1.0"

@@ -81,8 +81,8 @@ public class NavBarMediator extends PrefNavBarMediator
 		for (String name : names) {
 			switch (name) {
 				case "folders":
-					items.add(create(ctx, R.id.folders_fragment, R.drawable.folder, R.string.folders,
-							items.size() < max));
+					items.add(create(ctx, R.id.folders_fragment, me.aap.utils.R.drawable.folder,
+							R.string.folders, items.size() < max));
 					continue;
 				case "favorites":
 					items.add(
@@ -94,7 +94,7 @@ public class NavBarMediator extends PrefNavBarMediator
 							items.size() < max));
 					continue;
 				case "menu":
-					items.add(create(ctx, R.id.menu, R.drawable.menu, R.string.menu, items.size() < max));
+					items.add(create(ctx, R.id.menu, me.aap.utils.R.drawable.menu, R.string.menu, items.size() < max));
 					continue;
 			}
 
@@ -255,7 +255,7 @@ public class NavBarMediator extends PrefNavBarMediator
 			return true;
 		} else if (itemId == R.id.nav_about) {
 			MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
-			GenericFragment f = a.showFragment(R.id.generic_fragment);
+			GenericFragment f = a.showFragment(me.aap.utils.R.id.generic_fragment);
 			f.setTitle(item.getContext().getString(R.string.about));
 			f.setContentProvider(g -> {
 				Context ctx = g.getContext();

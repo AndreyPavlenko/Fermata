@@ -70,7 +70,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 			MainActivityDelegate a, VirtualFileSystem fs, VirtualResource parent,
 			List<? extends VirtualResource> children) {
 		Promise<VirtualResource> p = new Promise<>();
-		FilePickerFragment f = a.showFragment(R.id.file_picker);
+		FilePickerFragment f = a.showFragment(me.aap.utils.R.id.file_picker);
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setResources(parent, children);
 		f.setFileConsumer(p::complete);

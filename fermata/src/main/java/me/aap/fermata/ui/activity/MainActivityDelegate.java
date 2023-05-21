@@ -1233,7 +1233,8 @@ public class MainActivityDelegate extends ActivityDelegate
 				LinearLayoutCompat layout = new LinearLayoutCompat(ctx);
 				layout.setOrientation(LinearLayoutCompat.VERTICAL);
 				AppCompatImageView img = new AppCompatImageView(ctx);
-				TypedArray ta = ctx.getTheme().obtainStyledAttributes(new int[]{R.attr.colorOnSecondary});
+				TypedArray ta = ctx.getTheme()
+						.obtainStyledAttributes(new int[]{com.google.android.material.R.attr.colorOnSecondary});
 				int imgColor = ta.getColor(0, 0);
 				ta.recycle();
 				img.setMinimumWidth(size);
