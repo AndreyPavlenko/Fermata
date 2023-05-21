@@ -14,6 +14,7 @@ import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -24,6 +25,9 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.media.AudioAttributesCompat;
+import androidx.media.AudioFocusRequestCompat;
+import androidx.media.AudioManagerCompat;
 
 import java.util.List;
 import java.util.Locale;
@@ -53,6 +57,7 @@ public class ChatFragment extends MainActivityFragment
 	private TextToSpeech tts;
 	private String chatLang;
 	private Pattern openPattern;
+	private AudioFocusRequestCompat audioFocusReq;
 
 	@Override
 	public int getFragmentId() {
@@ -208,12 +213,41 @@ public class ChatFragment extends MainActivityFragment
 
 	private void speak(String text) {
 		assert tts != null;
+		requestAudioFocus();
 		Cancellable interrupt = getActivityDelegate().interruptPlayback();
 		tts.speak(text).onCompletion((r, err) -> {
+			releaseAudioFocus();
 			if ((err != null) && !(err instanceof CancellationException))
 				UiUtils.showAlert(requireContext(), "TTS failed: " + err);
 			interrupt.cancel();
 		});
+	}
+
+	private void requestAudioFocus() {
+		AudioManager am = (AudioManager) requireContext().getSystemService(Context.AUDIO_SERVICE);
+		if (am == null) return;
+		AudioManagerCompat.requestAudioFocus(am, getAudioFocusReq());
+	}
+
+	private void releaseAudioFocus() {
+		AudioManager am = (AudioManager) requireContext().getSystemService(Context.AUDIO_SERVICE);
+		if (am == null) return;
+		AudioManagerCompat.requestAudioFocus(am, getAudioFocusReq());
+	}
+
+	public AudioFocusRequestCompat getAudioFocusReq() {
+		if (audioFocusReq == null) {
+			AudioAttributesCompat attrs = new AudioAttributesCompat.Builder()
+					.setUsage(AudioAttributesCompat.USAGE_MEDIA)
+					.setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC)
+					.build();
+			audioFocusReq = new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
+					.setAudioAttributes(attrs)
+					.setWillPauseWhenDucked(false)
+					.setOnAudioFocusChangeListener(ignore -> {})
+					.build();
+		}
+		return audioFocusReq;
 	}
 
 	private static final class ChatToolMediator implements ToolBarView.Mediator {
