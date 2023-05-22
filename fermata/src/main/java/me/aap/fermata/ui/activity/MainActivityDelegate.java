@@ -275,6 +275,10 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
+		for (FermataAddon a : AddonManager.get().getAddons()) {
+			if (a.handleIntent(this, intent)) return completed(true);
+		}
+
 		Uri u = intent.getData();
 
 		if (u != null) {
@@ -304,12 +308,7 @@ public class MainActivityDelegate extends ActivityDelegate
 						goToCurrent().onSuccess(v -> getMediaServiceBinder().playItem(i));
 					else getMediaServiceBinder().playItem(i);
 				});
-				return completed(false);
 			}
-		}
-
-		for (FermataAddon a : AddonManager.get().getAddons()) {
-			if (a.handleIntent(this, intent)) return completed(true);
 		}
 
 		return completed(false);

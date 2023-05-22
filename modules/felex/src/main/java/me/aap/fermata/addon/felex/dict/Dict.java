@@ -425,7 +425,7 @@ public class Dict implements Comparable<Dict> {
 				ch.write(bb, ch.size());
 			} else {
 				int len = bb.remaining();
-				ch.transferFrom(channel, off, off + len, size - off);
+				moveRight(channel, ch, off, len);
 				ch.write(bb, off);
 			}
 
@@ -449,13 +449,29 @@ public class Dict implements Comparable<Dict> {
 
 	private FutureSupplier<Void> dictReplace(long off, long del, ByteBuffer ins) {
 		return writeDict(ch -> {
-			long size = ch.size();
 			int len = ins.remaining();
-			ch.transferFrom(channel, off + del, off + len, size - off - del);
-			ch.truncate(size + len - del);
+
+			if (len > del) {
+				moveRight(channel, ch, off + del, len - del);
+			} else {
+				long size = ch.size();
+				ch.transferFrom(channel, off + del, off + len, size - off - del);
+				ch.truncate(size + len - del);
+			}
+
 			ch.write(ins, off);
 			return null;
 		});
+	}
+
+	private static void moveRight(RandomAccessChannel reader, RandomAccessChannel writer, long off,
+													 long len) throws IOException {
+		long size = writer.size();
+		long tailLen = (size - off) % len;
+		reader.transferTo(size - tailLen, size + len - tailLen, tailLen, writer);
+		for (long i = size - tailLen, end = off + len; i >= end; i -= len) {
+			reader.transferTo(i - len, i, len, writer);
+		}
 	}
 
 	private <T> FutureSupplier<T> useCache(boolean create,
