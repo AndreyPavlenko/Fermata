@@ -11,5 +11,5 @@ dependencies {
     implementation project(':fermata')
     implementation 'androidx.core:core:' + ANDROIDX_CORE_VERSION
     implementation 'androidx.appcompat:appcompat:' + ANDROIDX_APPCOMPAT_VERSION
-    implementation 'org.videolan.android:libvlc-all:3.6.0-eap7'
+    implementation 'org.videolan.android:libvlc-all:3.6.0-eap9'
 }
