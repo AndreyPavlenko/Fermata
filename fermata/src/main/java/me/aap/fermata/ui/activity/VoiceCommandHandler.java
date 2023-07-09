@@ -160,8 +160,9 @@ class VoiceCommandHandler {
 		if (mgr.isVlcPlayerSupported() && ((eng = cb.getEngine()) != null)) {
 			if (aSubOn.matcher(cmd).matches()) {
 				if (eng.getCurrentSubtitleStreamInfo() != null) return true;
-				List<SubtitleStreamInfo> sub = eng.getSubtitleStreamInfo();
-				if (!sub.isEmpty()) eng.setCurrentSubtitleStream(sub.get(0));
+				eng.getSubtitleStreamInfo().main().onSuccess(sub -> {
+					if (!sub.isEmpty()) eng.setCurrentSubtitleStream(sub.get(0));
+				});
 				return true;
 			}
 			if (aSubOff.matcher(cmd).matches()) {
@@ -169,8 +170,12 @@ class VoiceCommandHandler {
 				return true;
 			}
 			if (aSubChange.matcher(cmd).matches()) {
-				eng.setCurrentSubtitleStream(
-						next(eng.getSubtitleStreamInfo(), eng.getCurrentSubtitleStreamInfo()));
+				eng.getSubtitleStreamInfo().main().onSuccess(sub -> {
+					if (!sub.isEmpty()) return;
+					var cur = eng.getCurrentSubtitleStreamInfo();
+					if (cur == null) eng.setCurrentSubtitleStream(sub.get(0));
+					else eng.setCurrentSubtitleStream(next(sub, cur));
+				});
 				return true;
 			}
 			if (aAudioChange.matcher(cmd).matches()) {

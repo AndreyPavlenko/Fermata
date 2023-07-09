@@ -26,7 +26,7 @@ import com.google.android.exoplayer2.video.VideoSize;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.AudioEffects;
-import me.aap.fermata.media.engine.MediaEngine;
+import me.aap.fermata.media.engine.MediaEngineBase;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.ui.view.VideoView;
@@ -35,9 +35,8 @@ import me.aap.utils.async.FutureSupplier;
 /**
  * @author Andrey Pavlenko
  */
-public class ExoPlayerEngine implements MediaEngine, Player.Listener {
+public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener {
 	private final Context ctx;
-	private final Listener listener;
 	private final ExoPlayer player;
 	private final AudioEffects audioEffects;
 	private final DataSource.Factory dsFactory;
@@ -49,10 +48,10 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	private boolean isHls;
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
+		super(listener);
 		this.ctx = ctx;
-		this.listener = listener;
-		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx)
-				.setExtensionRendererMode(EXTENSION_RENDERER_MODE_PREFER)).build();
+		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx).setExtensionRendererMode(
+				EXTENSION_RENDERER_MODE_PREFER)).build();
 		player.addListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
 		dsFactory = new DefaultDataSourceFactory(ctx, "Fermata/" + BuildConfig.VERSION_NAME);
@@ -66,6 +65,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	@SuppressLint("SwitchIntDef")
 	@Override
 	public void prepare(PlayableItem source) {
+		stopped(false);
 		this.source = source;
 		preparing = true;
 		buffering = false;
@@ -75,19 +75,19 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 		int type = Util.inferContentType(uri, null);
 
 		switch (type) {
-			case C.TYPE_HLS:
+			case C.TYPE_HLS -> {
 				if (hls == null) hls = new HlsMediaSource.Factory(getDsFactory(source));
 				isHls = true;
-				player.setMediaSource(hls.createMediaSource(m), false);
-				break;
-			case C.TYPE_OTHER:
+				player.setMediaSource(hls.createMediaSource(m), true);
+			}
+			case C.TYPE_OTHER -> {
 				if (progressive == null)
 					progressive = new ProgressiveMediaSource.Factory(getDsFactory(source));
 				isHls = false;
-				player.setMediaSource(progressive.createMediaSource(m), false);
-				break;
-			default:
-				listener.onEngineError(this, new IllegalArgumentException("Unsupported type: " + type));
+				player.setMediaSource(progressive.createMediaSource(m), true);
+			}
+			default ->
+					listener.onEngineError(this, new IllegalArgumentException("Unsupported type: " + type));
 		}
 
 		player.prepare();
@@ -102,16 +102,19 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	public void start() {
 		player.setPlayWhenReady(true);
 		listener.onEngineStarted(this);
+		started();
 	}
 
 	@Override
 	public void stop() {
+		stopped(false);
 		player.stop();
 		source = null;
 	}
 
 	@Override
 	public void pause() {
+		stopped(true);
 		player.setPlayWhenReady(false);
 	}
 
@@ -127,26 +130,41 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 
 	@Override
 	public FutureSupplier<Long> getPosition() {
-		return completed(!isHls && (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0);
+		long pos = pos();
+		syncSub(pos, speed(), false);
+		return completed(pos);
+	}
+
+	private long pos() {
+		return !isHls && (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0;
 	}
 
 	@Override
 	public void setPosition(long position) {
-		if (source != null) player.seekTo(source.getOffset() + position);
+		if (source == null) return;
+		long pos = source.getOffset() + position;
+		player.seekTo(pos);
+		syncSub(pos, speed(), true);
 	}
 
 	@Override
 	public FutureSupplier<Float> getSpeed() {
-		return completed(player.getPlaybackParameters().speed);
+		return completed(speed());
+	}
+
+	private float speed() {
+		return player.getPlaybackParameters().speed;
 	}
 
 	@Override
 	public void setSpeed(float speed) {
 		player.setPlaybackParameters(new PlaybackParameters(speed));
+		syncSub(pos(), speed, true);
 	}
 
 	@Override
 	public void setVideoView(VideoView view) {
+		super.setVideoView(view);
 		player.setVideoSurfaceHolder((view == null) ? null : view.getVideoSurface().getHolder());
 	}
 
@@ -170,12 +188,10 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 	@Override
 	public void close() {
 		stop();
+		super.close();
 		player.release();
 		source = null;
-
-		if (audioEffects != null) {
-			audioEffects.release();
-		}
+		if (audioEffects != null) audioEffects.release();
 	}
 
 	@Override
@@ -195,6 +211,7 @@ public class ExoPlayerEngine implements MediaEngine, Player.Listener {
 				listener.onEnginePrepared(this);
 			}
 		} else if (playbackState == Player.STATE_ENDED) {
+			stopped(false);
 			listener.onEngineEnded(this);
 		}
 	}

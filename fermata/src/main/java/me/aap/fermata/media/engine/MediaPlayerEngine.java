@@ -1,6 +1,8 @@
 package me.aap.fermata.media.engine;
 
 import static android.content.ContentResolver.SCHEME_CONTENT;
+import static android.media.MediaPlayer.TrackInfo.MEDIA_TRACK_TYPE_AUDIO;
+import static java.util.Collections.emptyList;
 import static me.aap.utils.async.Completed.completed;
 
 import android.content.Context;
@@ -10,8 +12,11 @@ import android.media.PlaybackParams;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -22,24 +27,21 @@ import me.aap.utils.log.Log;
 /**
  * @author Andrey Pavlenko
  */
-public class MediaPlayerEngine implements MediaEngine,
-		MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
-		MediaPlayer.OnVideoSizeChangedListener,
-		MediaPlayer.OnErrorListener {
+public class MediaPlayerEngine extends MediaEngineBase
+		implements MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
+		MediaPlayer.OnVideoSizeChangedListener, MediaPlayer.OnErrorListener {
 	private final Context ctx;
-	private final Listener listener;
 	private final MediaPlayer player;
 	private final AudioEffects audioEffects;
 	private PlayableItem source;
 
 	public MediaPlayerEngine(Context ctx, Listener listener) {
+		super(listener);
 		this.ctx = ctx;
-		this.listener = listener;
 		player = new MediaPlayer();
 		int sessionId = player.getAudioSessionId();
 		audioEffects = AudioEffects.create(0, sessionId);
-		AudioAttributes attrs = new AudioAttributes.Builder()
-				.setUsage(AudioAttributes.USAGE_MEDIA)
+		AudioAttributes attrs = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
 				.setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build();
 		player.setAudioAttributes(attrs);
 		player.setOnPreparedListener(this);
@@ -55,6 +57,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void prepare(PlayableItem source) {
+		stopped(false);
 		this.source = source;
 		Uri u = source.getLocation();
 
@@ -84,10 +87,12 @@ public class MediaPlayerEngine implements MediaEngine,
 	public void start() {
 		player.start();
 		listener.onEngineStarted(this);
+		started();
 	}
 
 	@Override
 	public void stop() {
+		stopped(false);
 		player.stop();
 		player.reset();
 		source = null;
@@ -95,6 +100,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void pause() {
+		stopped(true);
 		player.pause();
 	}
 
@@ -110,21 +116,34 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public FutureSupplier<Long> getPosition() {
-		return completed((source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0);
+		long pos = pos();
+		syncSub(pos, speed(), false);
+		return completed(pos);
+	}
+
+	private long pos() {
+		return (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0;
 	}
 
 	@Override
 	public void setPosition(long position) {
-		if (source != null) player.seekTo((int) (source.getOffset() + position));
+		if (source == null) return;
+		long pos = source.getOffset() + position;
+		player.seekTo((int) pos);
+		syncSub(pos, speed(), true);
 	}
 
 	@Override
 	public FutureSupplier<Float> getSpeed() {
+		return completed(speed());
+	}
+
+	private float speed() {
 		try {
-			return completed(player.getPlaybackParams().getSpeed());
+			return player.getPlaybackParams().getSpeed();
 		} catch (IllegalStateException ex) {
 			Log.d(ex);
-			return completed(1f);
+			return 1f;
 		}
 	}
 
@@ -134,6 +153,7 @@ public class MediaPlayerEngine implements MediaEngine,
 			PlaybackParams p = player.getPlaybackParams();
 			p.setSpeed(speed);
 			player.setPlaybackParams(p);
+			syncSub(pos(), speed, true);
 		} catch (Exception ex) {
 			Log.e(ex, "Failed to set speed: ", speed);
 		}
@@ -142,6 +162,7 @@ public class MediaPlayerEngine implements MediaEngine,
 	@Override
 	public void setVideoView(VideoView view) {
 		try {
+			super.setVideoView(view);
 			player.setDisplay((view == null) ? null : view.getVideoSurface().getHolder());
 		} catch (IllegalStateException | IllegalArgumentException ex) {
 			Log.e(ex, "Failed to set display");
@@ -165,7 +186,50 @@ public class MediaPlayerEngine implements MediaEngine,
 	}
 
 	@Override
+	public List<AudioStreamInfo> getAudioStreamInfo() {
+		try {
+			var tracks = player.getTrackInfo();
+			if (tracks.length == 0) return emptyList();
+			var streams = new ArrayList<AudioStreamInfo>(tracks.length);
+			for (int i = 0; i < tracks.length; i++) {
+				var t = tracks[i];
+				if (t.getTrackType() != MEDIA_TRACK_TYPE_AUDIO) continue;
+				streams.add(new AudioStreamInfo(i, t.getLanguage(), null));
+			}
+			return streams;
+		} catch (Exception ex) {
+			Log.e(ex, "Failed get audio tracks");
+			return emptyList();
+		}
+	}
+
+	@Nullable
+	@Override
+	public AudioStreamInfo getCurrentAudioStreamInfo() {
+		try {
+			var id = player.getSelectedTrack(MEDIA_TRACK_TYPE_AUDIO);
+			if (id < 0) return null;
+			var t = player.getTrackInfo()[id];
+			return new AudioStreamInfo(id, t.getLanguage(), null);
+		} catch (Exception ex) {
+			Log.e(ex, "Failed get selected audio stream");
+			return null;
+		}
+	}
+
+	@Override
+	public void setCurrentAudioStream(@Nullable AudioStreamInfo i) {
+		try {
+			if (i != null) player.selectTrack((int) i.getId());
+		} catch (Exception ex) {
+			Log.e(ex, "Failed selected audio stream: ", i);
+		}
+	}
+
+	@Override
 	public void close() {
+		super.close();
+
 		try {
 			if (player.isPlaying()) player.stop();
 		} catch (IllegalStateException ignore) {
@@ -186,6 +250,7 @@ public class MediaPlayerEngine implements MediaEngine,
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
+		stopped(false);
 		player.reset();
 		listener.onEngineEnded(this);
 	}

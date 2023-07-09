@@ -74,7 +74,8 @@ public class ChatListView extends RecyclerView {
 		@NonNull
 		@Override
 		public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-			var v = LayoutInflater.from(getContext()).inflate(R.layout.chat_message, parent, false);
+			var v = LayoutInflater.from(getContext())
+					.inflate(me.aap.fermata.R.layout.list_item, parent, false);
 			return new Holder(v);
 		}
 

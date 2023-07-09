@@ -177,7 +177,7 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 		client.unregisterCallback(this);
 	}
 
-	public boolean isMediaStreamInfoSupported() {
+	public boolean isSubtitlesSupported() {
 		return true;
 	}
 
@@ -193,16 +193,17 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 	}
 
 	@Override
-	public List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+	public FutureSupplier<List<SubtitleStreamInfo>> getSubtitleStreamInfo() {
 		List<MediaTrack> tracks = getMediaTracks();
 		List<SubtitleStreamInfo> list = new ArrayList<>(tracks.size());
 		for (MediaTrack t : tracks) {
 			if (t.getType() != MediaTrack.TYPE_TEXT) continue;
 			list.add(new SubtitleStreamInfo(t.getId(), t.getLanguage(), t.getName()));
 		}
-		return list;
+		return completed(list);
 	}
 
+	@Nullable
 	@Override
 	public AudioStreamInfo getCurrentAudioStreamInfo() {
 		long[] ids = getActiveTrackIds();
@@ -212,17 +213,18 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 		return null;
 	}
 
+	@Nullable
 	@Override
 	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
 		long[] ids = getActiveTrackIds();
-		for (SubtitleStreamInfo info : getSubtitleStreamInfo()) {
+		for (SubtitleStreamInfo info : getSubtitleStreamInfo().getOrThrow()) {
 			if (contains(ids, info.getId())) return info;
 		}
 		return null;
 	}
 
 	@Override
-	public void setCurrentAudioStream(AudioStreamInfo i) {
+	public void setCurrentAudioStream(@Nullable AudioStreamInfo i) {
 		List<Long> ids = boxed(getActiveTrackIds());
 		AudioStreamInfo cur = getCurrentAudioStreamInfo();
 		if (cur != null) ids.remove(cur.getId());
@@ -231,7 +233,7 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 	}
 
 	@Override
-	public void setCurrentSubtitleStream(SubtitleStreamInfo i) {
+	public void setCurrentSubtitleStream(@Nullable SubtitleStreamInfo i) {
 		List<Long> ids = boxed(getActiveTrackIds());
 		SubtitleStreamInfo cur = getCurrentSubtitleStreamInfo();
 		if (cur != null) ids.remove(cur.getId());

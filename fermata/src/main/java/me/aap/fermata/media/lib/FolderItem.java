@@ -17,8 +17,11 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.resource.Rid;
 import me.aap.utils.vfs.VirtualFile;
+import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
+import me.aap.utils.vfs.content.ContentFileSystem;
+import me.aap.utils.vfs.local.LocalFileSystem;
 
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
@@ -98,7 +101,8 @@ public class FolderItem extends BrowsableItemBase implements FolderItemPrefs {
 		String sub = super.buildSubtitle(children);
 		if (getParent() instanceof MediaLib.Folders) {
 			VirtualResource f = getResource();
-			if (!f.isLocalFile()) {
+			VirtualFileSystem fs = f.getVirtualFileSystem();
+			if (!(fs instanceof LocalFileSystem) && !(fs instanceof ContentFileSystem)) {
 				Rid rid = f.getRid();
 				return sub + " (" + rid.getScheme() + "://" + rid.getAuthority() + ')';
 			}

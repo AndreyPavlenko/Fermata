@@ -49,6 +49,8 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<BooleanSupplier> GRID_VIEW = Pref.b("GRID_VIEW", false);
 	Pref<DoubleSupplier> P_SPLIT_PERCENT = Pref.f("P_SPLIT_PERCENT", 0.6f);
 	Pref<DoubleSupplier> L_SPLIT_PERCENT = Pref.f("L_SPLIT_PERCENT", 0.4f);
+	Pref<DoubleSupplier> P_SPLIT_PERCENT_SUB = Pref.f("P_SPLIT_PERCENT_SUB", 0.5f);
+	Pref<DoubleSupplier> L_SPLIT_PERCENT_SUB = Pref.f("L_SPLIT_PERCENT_SUB", 0.5f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
 	Pref<BooleanSupplier> CHECK_UPDATES = Pref.b("CHECK_UPDATES", true);
 	Pref<BooleanSupplier> SYS_BARS_ON_VIDEO_TOUCH = Pref.b("SYS_BARS_ON_VIDEO_TOUCH", false);
@@ -99,22 +101,6 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 
 	default int getThemePref(boolean auto) {
 		return (AUTO && auto) ? getIntPref(THEME_AA) : getIntPref(THEME_MAIN);
-	}
-
-	default float getSplitPercent(Context ctx) {
-		if (ctx.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-			return getFloatPref(P_SPLIT_PERCENT);
-		} else {
-			return getFloatPref(L_SPLIT_PERCENT);
-		}
-	}
-
-	default void setSplitPercent(Context ctx, float percent) {
-		if (ctx.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-			applyFloatPref(P_SPLIT_PERCENT, percent);
-		} else {
-			applyFloatPref(L_SPLIT_PERCENT, percent);
-		}
 	}
 
 	@Nullable

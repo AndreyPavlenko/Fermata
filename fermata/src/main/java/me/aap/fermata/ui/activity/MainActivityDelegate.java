@@ -113,6 +113,7 @@ import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.NavBarMediator;
 import me.aap.fermata.ui.fragment.PlaylistsFragment;
 import me.aap.fermata.ui.fragment.SettingsFragment;
+import me.aap.fermata.ui.fragment.SubtitlesFragment;
 import me.aap.fermata.ui.view.BodyLayout;
 import me.aap.fermata.ui.view.ControlPanelView;
 import me.aap.fermata.ui.view.VideoView;
@@ -129,6 +130,7 @@ import me.aap.utils.function.IntObjectFunction;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
@@ -290,7 +292,7 @@ public class MainActivityDelegate extends ActivityDelegate
 				id = new String(Base64.decode(id.substring(1), URL_SAFE), US_ASCII);
 
 				if (INTENT_ACTION_OPEN.equals(action)) {
-					goToItem(id).map(i -> i != null);
+					goToItem(id).map(MiscUtils::nonNull);
 					return completed(true);
 				} else if (INTENT_ACTION_PLAY.equals(action)) {
 					goToItem(id).map(i -> {
@@ -440,23 +442,14 @@ public class MainActivityDelegate extends ActivityDelegate
 	@SuppressWarnings("deprecation")
 	public static void setTheme(FermataActivity a) {
 		switch (Prefs.instance.getThemePref(a.isCarActivity())) {
-			default:
-			case MainActivityPrefs.THEME_DARK:
-				a.setTheme(R.style.AppTheme_Dark);
-				break;
-			case MainActivityPrefs.THEME_LIGHT:
-				a.setTheme(R.style.AppTheme_Light);
-				break;
-			case MainActivityPrefs.THEME_DAY_NIGHT:
+			case MainActivityPrefs.THEME_DARK -> a.setTheme(R.style.AppTheme_Dark);
+			case MainActivityPrefs.THEME_LIGHT -> a.setTheme(R.style.AppTheme_Light);
+			case MainActivityPrefs.THEME_DAY_NIGHT -> {
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_TIME);
 				a.setTheme(R.style.AppTheme_DayNight);
-				break;
-			case MainActivityPrefs.THEME_BLACK:
-				a.setTheme(R.style.AppTheme_Black);
-				break;
-			case MainActivityPrefs.THEME_STAR_WARS:
-				a.setTheme(R.style.AppTheme_BlackStarWars);
-				break;
+			}
+			case MainActivityPrefs.THEME_BLACK -> a.setTheme(R.style.AppTheme_Black);
+			case MainActivityPrefs.THEME_STAR_WARS -> a.setTheme(R.style.AppTheme_BlackStarWars);
 		}
 	}
 
@@ -578,12 +571,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		if (videoMode) {
 			this.videoMode = true;
 			setSystemUiVisibility();
-			getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
+			keepScreenOn(true);
 			cp.enableVideoMode(v);
 		} else {
 			this.videoMode = false;
 			setSystemUiVisibility();
-			getWindow().clearFlags(FLAG_KEEP_SCREEN_ON);
+			keepScreenOn(false);
 			if (cp != null) cp.disableVideoMode();
 		}
 
@@ -606,6 +599,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		}
 
 		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+	}
+
+	public void keepScreenOn(boolean on) {
+		if (on) getWindow().addFlags(FLAG_KEEP_SCREEN_ON);
+		else getWindow().clearFlags(FLAG_KEEP_SCREEN_ON);
 	}
 
 	public int getBrightness() {
@@ -671,6 +669,8 @@ public class MainActivityDelegate extends ActivityDelegate
 			return new SettingsFragment();
 		} else if (id == R.id.audio_effects_fragment) {
 			return new AudioEffectsFragment();
+		} else if (id == R.id.subtitles_fragment) {
+			return new SubtitlesFragment();
 		}
 		ActivityFragment f = FermataApplication.get().getAddonManager().createFragment(id);
 		return (f != null) ? f : super.createFragment(id);
@@ -691,8 +691,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Nullable
 	public MediaLibFragment getMediaLibFragment(int id) {
 		for (Fragment f : getSupportFragmentManager().getFragments()) {
-			if (!(f instanceof MediaLibFragment)) continue;
-			MediaLibFragment m = (MediaLibFragment) f;
+			if (!(f instanceof MediaLibFragment m)) continue;
 			if (m.getFragmentId() == id) return m;
 		}
 
@@ -947,22 +946,22 @@ public class MainActivityDelegate extends ActivityDelegate
 	@LayoutRes
 	private int getLayout() {
 		MainActivityPrefs prefs = getPrefs();
-
-		switch (prefs.getNavBarPosPref(this)) {
-			default:
-				return R.layout.main_activity;
-			case NavBarView.POSITION_LEFT:
-				return R.layout.main_activity_left;
-			case NavBarView.POSITION_RIGHT:
-				return R.layout.main_activity_right;
-		}
+		return switch (prefs.getNavBarPosPref(this)) {
+			default -> R.layout.main_activity;
+			case NavBarView.POSITION_LEFT -> R.layout.main_activity_left;
+			case NavBarView.POSITION_RIGHT -> R.layout.main_activity_right;
+		};
 	}
 
 	private static String[] getRequiredPermissions() {
-		if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+		if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
+			return new String[]{permission.READ_MEDIA_AUDIO, permission.READ_MEDIA_VIDEO,
+					permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION,
+					permission.USE_FULL_SCREEN_INTENT};
+		} else if (VERSION.SDK_INT >= VERSION_CODES.Q) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE,
 					permission.ACCESS_MEDIA_LOCATION, permission.USE_FULL_SCREEN_INTENT};
-		} else if (VERSION.SDK_INT >= VERSION_CODES.P) {
+		} else if (VERSION.SDK_INT == VERSION_CODES.P) {
 			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE};
 		} else {
 			return new String[]{permission.READ_EXTERNAL_STORAGE};
@@ -1091,10 +1090,10 @@ public class MainActivityDelegate extends ActivityDelegate
 	public boolean onKeyLongPress(int code, KeyEvent event,
 																IntObjectFunction<KeyEvent, Boolean> next) {
 		switch (code) {
-			case KeyEvent.KEYCODE_M:
-			case KeyEvent.KEYCODE_MENU:
+			case KeyEvent.KEYCODE_M, KeyEvent.KEYCODE_MENU -> {
 				if (getPrefs().getVoiceControlMenuPref()) startVoiceAssistant();
 				return true;
+			}
 		}
 		return super.onKeyLongPress(code, event, next);
 	}

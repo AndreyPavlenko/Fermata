@@ -10,7 +10,6 @@ import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.media.AudioManager;
@@ -49,6 +48,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
@@ -67,8 +67,9 @@ import me.aap.utils.ui.view.NavBarView;
 /**
  * @author Andrey Pavlenko
  */
-public class ControlPanelView extends ConstraintLayout implements MainActivityListener,
-		PreferenceStore.Listener, OverlayMenu.SelectionHandler, GestureListener {
+public class ControlPanelView extends ConstraintLayout
+		implements MainActivityListener, PreferenceStore.Listener, OverlayMenu.SelectionHandler,
+		GestureListener {
 	private static final byte MASK_VISIBLE = 1;
 	private static final byte MASK_VIDEO_MODE = 2;
 	private final GestureDetectorCompat gestureDetector;
@@ -84,7 +85,6 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	private TextView playbackTimer;
 	private long scrollStamp;
 
-	@SuppressLint("PrivateResource")
 	public ControlPanelView(Context context, AttributeSet attrs) {
 		super(context, attrs, R.attr.appControlPanelStyle);
 		gestureDetector = new GestureDetectorCompat(context, this);
@@ -121,8 +121,7 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 	@Override
 	protected void onRestoreInstanceState(Parcelable st) {
-		if (st instanceof Bundle) {
-			Bundle b = (Bundle) st;
+		if (st instanceof Bundle b) {
 			super.onRestoreInstanceState(b.getParcelable("PARENT"));
 			mask = b.getByte("MASK");
 			if (mask != MASK_VISIBLE) super.setVisibility(GONE);
@@ -344,15 +343,9 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			FermataServiceUiBinder b = getActivity().getMediaServiceBinder();
 
 			switch (e2.getPointerCount()) {
-				case 1:
-					b.onRwFfButtonClick(distanceX < 0);
-					break;
-				case 2:
-					b.onRwFfButtonLongClick(distanceX < 0);
-					break;
-				default:
-					b.onPrevNextButtonLongClick(distanceX < 0);
-					break;
+				case 1 -> b.onRwFfButtonClick(distanceX < 0);
+				case 2 -> b.onRwFfButtonLongClick(distanceX < 0);
+				default -> b.onPrevNextButtonLongClick(distanceX < 0);
 			}
 
 			onVideoSeek();
@@ -365,7 +358,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		} else {
 			AudioManager amgr = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 			if (amgr == null) return false;
-			amgr.adjustStreamVolume(STREAM_MUSIC, (distanceY > 0) ? ADJUST_RAISE : ADJUST_LOWER, FLAG_SHOW_UI);
+			amgr.adjustStreamVolume(STREAM_MUSIC, (distanceY > 0) ? ADJUST_RAISE : ADJUST_LOWER,
+					FLAG_SHOW_UI);
 		}
 
 		return true;
@@ -515,12 +509,9 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 
 	private void showMenu(View v) {
 		MainActivityDelegate a = getActivity();
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		PlayableItem i = b.getCurrentItem();
-		if (i == null) return;
-
-		MenuHandler h = new MenuHandler(getMenu(a), i);
-		h.show();
+		MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
+		PlayableItem i = (eng == null) ? null : eng.getSource();
+		if (i != null) new MenuHandler(getMenu(a), i, eng).show();
 	}
 
 	private OverlayMenu getMenu(MainActivityDelegate a) {
@@ -559,15 +550,15 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 				playbackTimer.setTextAppearance(textAppearance);
 				ViewGroup.LayoutParams lp = playbackTimer.getLayoutParams();
 
-				if (lp instanceof ConstraintLayout.LayoutParams) {
-					ConstraintLayout.LayoutParams clp = (ConstraintLayout.LayoutParams) lp;
+				if (lp instanceof LayoutParams clp) {
 					clp.startToStart = PARENT_ID;
 					clp.endToEnd = PARENT_ID;
 					clp.bottomToTop = getId();
 					clp.resolveLayoutDirection(LAYOUT_DIRECTION_LTR);
 				}
 
-				playbackTimer.setOnClickListener(v -> getMenu(a).show(b -> new TimerMenuHandler(a).build(b)));
+				playbackTimer.setOnClickListener(
+						v -> getMenu(a).show(b -> new TimerMenuHandler(a).build(b)));
 			}
 
 			if (getVisibility() != VISIBLE) {
@@ -586,77 +577,29 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 	}
 
 	private final class MenuHandler extends MediaItemMenuHandler {
+		private final MediaEngine engine;
 
-		public MenuHandler(OverlayMenu menu, Item item) {
+		public MenuHandler(OverlayMenu menu, Item item, MediaEngine engine) {
 			super(menu, item);
+			this.engine = engine;
 		}
 
 		@Override
-		protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b, PlayableItem pi,
-																		 boolean initRepeat) {
-			super.buildPlayableMenu(a, b, pi, false);
-
-			BrowsableItemPrefs p = pi.getParent().getPrefs();
-			MediaEngine eng = a.getMediaSessionCallback().getEngine();
-			if (eng == null) return;
-
-			boolean stream = (pi.isStream());
-			eng.contributeToMenu(b);
-
-			if (!stream && !pi.isExternal()) {
-				if (pi.isRepeatItemEnabled() || p.getRepeatPref()) {
-					b.addItem(R.id.repeat, R.drawable.repeat_filled, R.string.repeat)
-							.setSubmenu(s -> {
-								buildRepeatMenu(s);
-								s.addItem(R.id.repeat_disable_all, R.string.repeat_disable);
-							});
-				} else {
-					b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat).setSubmenu(this::buildRepeatMenu);
-				}
-
-				if (p.getShufflePref()) {
-					b.addItem(R.id.shuffle_disable, R.drawable.shuffle_filled, R.string.shuffle_disable);
-				} else {
-					b.addItem(R.id.shuffle_enable, R.drawable.shuffle, R.string.shuffle);
-				}
-			}
-
-			if (eng.getAudioEffects() != null) {
-				b.addItem(R.id.audio_effects_fragment, R.drawable.equalizer, R.string.audio_effects);
-			}
-
-			if (!stream) {
-				b.addItem(R.id.speed, R.drawable.speed, R.string.speed)
-						.setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
-			}
-
-			b.addItem(R.id.timer, R.drawable.timer, R.string.timer).setSubmenu(s -> new TimerMenuHandler(a).build(s));
+		protected boolean addVideoMenu() {
+			return !engine.hasVideoMenu();
 		}
 
 		@Override
-		protected void buildVideoMenu(OverlayMenu.Builder b) {
-			super.buildVideoMenu(b);
-
-			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
-			if (eng == null) return;
-			PlayableItem pi = (PlayableItem) getItem();
-
-			if (pi.isVideo()) {
-				if (eng.getAudioStreamInfo().size() > 1) {
-					b.addItem(R.id.select_audio_stream, R.string.select_audio_stream)
-							.setSubmenu(this::buildAudioStreamMenu);
-				}
-				if (!eng.getSubtitleStreamInfo().isEmpty()) {
-					b.addItem(R.id.select_subtitles, R.string.select_subtitles)
-							.setSubmenu(this::buildSubtitleStreamMenu);
-				}
-			}
+		protected boolean addAudioMenu() {
+			PlayableItem pi = engine.getSource();
+			return (pi != null) && pi.isVideo() && (engine.getAudioStreamInfo().size() > 1);
 		}
 
-		private void buildRepeatMenu(OverlayMenu.Builder b) {
-			b.setSelectionHandler(this);
-			b.addItem(R.id.repeat_track, R.string.current_track);
-			b.addItem(R.id.repeat_folder, R.string.current_folder);
+		@Override
+		protected void buildAudioMenu(OverlayMenu.Builder b) {
+			b.addItem(R.id.select_audio_stream, R.string.select_audio_stream)
+					.setSubmenu(this::buildAudioStreamMenu);
+			super.buildAudioMenu(b);
 		}
 
 		private void buildAudioStreamMenu(OverlayMenu.Builder b) {
@@ -689,34 +632,95 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 			return true;
 		}
 
-		private void buildSubtitleStreamMenu(OverlayMenu.Builder b) {
-			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
-			if (eng == null) return;
-			SubtitleStreamInfo si = eng.getCurrentSubtitleStreamInfo();
-			List<SubtitleStreamInfo> streams = eng.getSubtitleStreamInfo();
-			b.setSelectionHandler(this::subtitleStreamSelected);
+		@Override
+		protected boolean addSubtitlesMenu() {
+			return engine.isSubtitlesSupported();
+		}
 
-			for (int i = 0; i < streams.size(); i++) {
-				SubtitleStreamInfo s = streams.get(i);
-				b.addItem(UiUtils.getArrayItemId(i), s.toString()).setData(s).setChecked(s.equals(si));
-			}
+		@Override
+		protected void buildSubtitlesMenu(OverlayMenu.Builder b) {
+			b.addItem(R.id.select_subtitles, R.string.select_subtitles)
+					.setFutureSubmenu(this::buildSubtitleStreamMenu);
+			super.buildSubtitlesMenu(b);
+		}
+
+		private FutureSupplier<Void> buildSubtitleStreamMenu(OverlayMenu.Builder b) {
+			b.setSelectionHandler(this::subtitleStreamSelected);
+			return engine.getSubtitleStreamInfo().main().map(streams -> {
+				SubtitleStreamInfo si = engine.getCurrentSubtitleStreamInfo();
+				for (int i = 0; i < streams.size(); i++) {
+					SubtitleStreamInfo s = streams.get(i);
+					b.addItem(UiUtils.getArrayItemId(i), s.toString()).setData(s).setChecked(s.equals(si));
+				}
+				return null;
+			});
 		}
 
 		private boolean subtitleStreamSelected(OverlayMenuItem i) {
-			MediaEngine eng = getActivity().getMediaSessionCallback().getEngine();
-			if (eng != null) {
-				SubtitleStreamInfo si = i.getData();
-				PlayableItem pi = (PlayableItem) getItem();
+			if (getActivity().getMediaSessionCallback().getEngine() != engine) return true;
 
-				if (si.equals(eng.getCurrentSubtitleStreamInfo())) {
-					pi.getPrefs().setSubIdPref(null);
-					eng.setCurrentSubtitleStream(null);
+			SubtitleStreamInfo si = i.getData();
+			PlayableItem pi = (PlayableItem) getItem();
+
+			if (si.equals(engine.getCurrentSubtitleStreamInfo())) {
+				pi.getPrefs().setSubIdPref(null);
+				engine.setCurrentSubtitleStream(null);
+			} else {
+				engine.setCurrentSubtitleStream(si);
+				pi.getPrefs().setSubIdPref(si.getId());
+			}
+
+			return true;
+		}
+
+		@Override
+		protected void buildPlayableMenu(MainActivityDelegate a, OverlayMenu.Builder b,
+																		 PlayableItem pi,
+																		 boolean initRepeat) {
+			super.buildPlayableMenu(a, b, pi, false);
+
+			BrowsableItemPrefs p = pi.getParent().getPrefs();
+			MediaEngine eng = a.getMediaSessionCallback().getEngine();
+			if (eng == null) return;
+
+			boolean stream = (pi.isStream());
+			eng.contributeToMenu(b);
+
+			if (!stream && !pi.isExternal()) {
+				if (pi.isRepeatItemEnabled() || p.getRepeatPref()) {
+					b.addItem(R.id.repeat, R.drawable.repeat_filled, R.string.repeat).setSubmenu(s -> {
+						buildRepeatMenu(s);
+						s.addItem(R.id.repeat_disable_all, R.string.repeat_disable);
+					});
 				} else {
-					eng.setCurrentSubtitleStream(si);
-					pi.getPrefs().setSubIdPref(si.getId());
+					b.addItem(R.id.repeat_enable, R.drawable.repeat, R.string.repeat)
+							.setSubmenu(this::buildRepeatMenu);
+				}
+
+				if (p.getShufflePref()) {
+					b.addItem(R.id.shuffle_disable, R.drawable.shuffle_filled, R.string.shuffle_disable);
+				} else {
+					b.addItem(R.id.shuffle_enable, R.drawable.shuffle, R.string.shuffle);
 				}
 			}
-			return true;
+
+			if (eng.getAudioEffects() != null) {
+				b.addItem(R.id.audio_effects_fragment, R.drawable.equalizer, R.string.audio_effects);
+			}
+
+			if (!stream) {
+				b.addItem(R.id.speed, R.drawable.speed, R.string.speed)
+						.setSubmenu(s -> new SpeedMenuHandler().build(s, getItem()));
+			}
+
+			b.addItem(R.id.timer, R.drawable.timer, R.string.timer)
+					.setSubmenu(s -> new TimerMenuHandler(a).build(s));
+		}
+
+		private void buildRepeatMenu(OverlayMenu.Builder b) {
+			b.setSelectionHandler(this);
+			b.addItem(R.id.repeat_track, R.string.current_track);
+			b.addItem(R.id.repeat_folder, R.string.current_folder);
 		}
 
 		@Override
@@ -730,7 +734,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 				if ((eng != null) && (eng.getAudioEffects() != null))
 					getActivity().showFragment(R.id.audio_effects_fragment);
 				return true;
-			} else if (id == R.id.repeat_track || id == R.id.repeat_folder || id == R.id.repeat_disable_all) {
+			} else if (id == R.id.repeat_track || id == R.id.repeat_folder ||
+					id == R.id.repeat_disable_all) {
 				pi = (PlayableItem) getItem();
 				pi.setRepeatItemEnabled(id == R.id.repeat_track);
 				pi.getParent().getPrefs().setRepeatPref(id == R.id.repeat_folder);
@@ -783,7 +788,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		private class PrefStore extends BasicPreferenceStore {
 			final Pref<BooleanSupplier> TRACK = Pref.b("TRACK", false);
 			final Pref<BooleanSupplier> FOLDER = Pref.b("FOLDER", false);
-			private final MediaSessionCallback cb = getActivity().getMediaServiceBinder().getMediaSessionCallback();
+			private final MediaSessionCallback cb =
+					getActivity().getMediaServiceBinder().getMediaSessionCallback();
 			private final Item item;
 
 			PrefStore(Item item) {
@@ -818,8 +824,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 						edit.setBooleanPref(FOLDER, false);
 					}
 
-					if (!set)
-						edit.setFloatPref(MediaPrefs.SPEED, cb.getPlaybackControlPrefs().getFloatPref(MediaPrefs.SPEED));
+					if (!set) edit.setFloatPref(MediaPrefs.SPEED,
+							cb.getPlaybackControlPrefs().getFloatPref(MediaPrefs.SPEED));
 				}
 			}
 
@@ -844,12 +850,14 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 				}
 
 				if (!set) {
-					cb.getPlaybackControlPrefs().applyFloatPref(MediaPrefs.SPEED, getFloatPref(MediaPrefs.SPEED));
+					cb.getPlaybackControlPrefs()
+							.applyFloatPref(MediaPrefs.SPEED, getFloatPref(MediaPrefs.SPEED));
 				}
 			}
 
 			@Override
-			public void applyFloatPref(boolean removeDefault, Pref<? extends DoubleSupplier> pref, float value) {
+			public void applyFloatPref(boolean removeDefault, Pref<? extends DoubleSupplier> pref,
+																 float value) {
 				if (value == 0.0f) value = 0.1f;
 				super.applyFloatPref(removeDefault, pref, value);
 				if (cb.isPlaying()) cb.onSetPlaybackSpeed(value);
@@ -857,7 +865,8 @@ public class ControlPanelView extends ConstraintLayout implements MainActivityLi
 		}
 	}
 
-	private final class TimerMenuHandler extends BasicPreferenceStore implements OverlayMenu.CloseHandler {
+	private final class TimerMenuHandler extends BasicPreferenceStore
+			implements OverlayMenu.CloseHandler {
 		private final Pref<IntSupplier> H = Pref.i("H", 0);
 		private final Pref<IntSupplier> M = Pref.i("M", 0);
 		private final MainActivityDelegate activity;

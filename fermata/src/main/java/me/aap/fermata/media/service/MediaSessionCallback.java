@@ -103,6 +103,7 @@ import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MediaEngineProvider;
+import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Favorites;
@@ -1033,6 +1034,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	@Override
+	public void onSubtitleStreamChanged(MediaEngine engine, @Nullable SubtitleStreamInfo info) {
+		fireBroadcastEvent(l -> l.onSubtitleStreamChanged(this, info));
+	}
+
+	@Override
 	public void onEngineError(MediaEngine engine, Throwable ex) {
 		String msg;
 		PlayableItem i = engine.getSource();
@@ -1397,7 +1403,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback implements
 	}
 
 	public interface Listener {
-		void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state);
+		default void onPlaybackStateChanged(MediaSessionCallback cb, PlaybackStateCompat state) {}
+
+		default void onSubtitleStreamChanged(MediaSessionCallback cb,
+																				 @Nullable SubtitleStreamInfo info) {}
 	}
 
 	private static final class Prioritized<T> implements Comparable<Prioritized<T>> {

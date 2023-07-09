@@ -61,8 +61,7 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 
 	@Override
 	public void prepare(PlayableItem src) {
-		if (src instanceof ArchiveItem) {
-			ArchiveItem a = (ArchiveItem) src;
+		if (src instanceof ArchiveItem a) {
 			setSource(src, a.getStartTime(), a.getEndTime());
 			listener.onEnginePrepared(this);
 		} else {
@@ -352,8 +351,8 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 		return eng.getAudioEffects();
 	}
 
-	public boolean isMediaStreamInfoSupported() {
-		return eng.isMediaStreamInfoSupported();
+	public boolean isSubtitlesSupported() {
+		return eng.isSubtitlesSupported();
 	}
 
 	@Override
@@ -362,27 +361,29 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	}
 
 	@Override
-	public List<SubtitleStreamInfo> getSubtitleStreamInfo() {
+	public FutureSupplier<List<SubtitleStreamInfo>> getSubtitleStreamInfo() {
 		return eng.getSubtitleStreamInfo();
 	}
 
+	@Nullable
 	@Override
 	public AudioStreamInfo getCurrentAudioStreamInfo() {
 		return eng.getCurrentAudioStreamInfo();
 	}
 
 	@Override
-	public void setCurrentAudioStream(AudioStreamInfo i) {
+	public void setCurrentAudioStream(@Nullable AudioStreamInfo i) {
 		eng.setCurrentAudioStream(i);
 	}
 
+	@Nullable
 	@Override
 	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
 		return eng.getCurrentSubtitleStreamInfo();
 	}
 
 	@Override
-	public void setCurrentSubtitleStream(SubtitleStreamInfo i) {
+	public void setCurrentSubtitleStream(@Nullable SubtitleStreamInfo i) {
 		eng.setCurrentSubtitleStream(i);
 	}
 
@@ -399,11 +400,6 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	@Override
 	public void setAudioDelay(int milliseconds) {
 		eng.setAudioDelay(milliseconds);
-	}
-
-	@Override
-	public boolean isSubtitleDelaySupported() {
-		return eng.isSubtitleDelaySupported();
 	}
 
 	@Override

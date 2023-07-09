@@ -103,7 +103,8 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 				: (mode == MODE_REVERSE) ? Word::getRevProgress : Word::getProgress;
 	}
 
-	public static FutureSupplier<DictTutor> create(MainActivityDelegate activity, Dict dict, byte mode) {
+	public static FutureSupplier<DictTutor> create(MainActivityDelegate activity, Dict dict,
+																								 byte mode) {
 		Context ctx = activity.getContext();
 		return MainActivityDelegate.getActivityDelegate(ctx).then(a ->
 				activity.isCarActivity() ? completed(true) : a.getAppActivity()
@@ -135,6 +136,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 			v.setOnLongClickListener(this);
 			setState(STATE_RUNNING);
 			requestAudioFocus();
+			activity.keepScreenOn(true);
 			speak();
 		});
 	}
@@ -143,6 +145,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 	public void close() {
 		current = null;
 		releaseAudioFocus();
+		activity.keepScreenOn(false);
 		setState(STATE_CLOSED);
 		IoUtils.close(dirTts, revTts, dirStt, revStt);
 	}
