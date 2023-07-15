@@ -225,7 +225,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	}
 
 	public boolean isItemViewSwipeEnabled() {
-		return filter == null;
+		return false;
 	}
 
 	@Override

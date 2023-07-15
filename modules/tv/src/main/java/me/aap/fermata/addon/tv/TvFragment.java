@@ -184,10 +184,6 @@ public class TvFragment extends MediaLibFragment {
 			return isRootItem();
 		}
 
-		public boolean isItemViewSwipeEnabled() {
-			return isRootItem();
-		}
-
 		@Override
 		protected void onItemDismiss(int position) {
 			BrowsableItem i = getAdapter().getParent();

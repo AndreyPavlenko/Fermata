@@ -279,10 +279,6 @@ public class FoldersFragment extends MediaLibFragment {
 			return isRootFolder();
 		}
 
-		public boolean isItemViewSwipeEnabled() {
-			return isRootFolder();
-		}
-
 		@Override
 		protected void onItemDismiss(int position) {
 			BrowsableItem i = getAdapter().getParent();
