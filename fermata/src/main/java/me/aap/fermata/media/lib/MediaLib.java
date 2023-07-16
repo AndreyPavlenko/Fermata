@@ -117,8 +117,6 @@ public interface MediaLib {
 
 	long getLastPlayedPosition(PlayableItem i);
 
-	void setLastPlayed(PlayableItem i, long position);
-
 	void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result);
 
 	default void getChildren(String parentMediaId, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {

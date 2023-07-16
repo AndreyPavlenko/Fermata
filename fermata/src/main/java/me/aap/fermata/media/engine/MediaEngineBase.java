@@ -351,7 +351,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 				if (restart) {
 					sub.stop(false);
 					sub.start(position, getSubtitleDelay(), speed);
-					if (state == STATE_PAUSED) sub.stop(true);
+					if (!isPlaying()) sub.stop(true);
 				} else {
 					sub.sync(position, getSubtitleDelay(), speed);
 				}

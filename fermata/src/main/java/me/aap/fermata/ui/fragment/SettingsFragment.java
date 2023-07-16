@@ -9,8 +9,6 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
-import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_DE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
@@ -20,7 +18,6 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_M;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
 
 import android.app.Activity;
@@ -53,6 +50,8 @@ import java.util.zip.ZipOutputStream;
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.action.Action;
+import me.aap.fermata.action.Key;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
@@ -97,8 +96,11 @@ public class SettingsFragment extends MainActivityFragment
 	@Override
 	public CharSequence getTitle() {
 		if (adapter != null) {
-			PreferenceSet set = adapter.getPreferenceSet();
-			if (set.getParent() != null) return getResources().getString(set.get().title);
+			var set = adapter.getPreferenceSet();
+			if (set.getParent() != null) {
+				var o = set.get();
+				return (o.ctitle != null) ? o.ctitle : getResources().getString(o.title);
+			}
 		}
 		return getResources().getString(R.string.settings);
 	}
@@ -283,6 +285,47 @@ public class SettingsFragment extends MainActivityFragment
 			o.removeDefault = false;
 		});
 
+		sub1 = set.subSet(o -> o.title = R.string.key_bindings);
+		var actions = Action.getAll();
+		var actionNames = new int[actions.size()];
+		var actionOrdinals = new int[actions.size()];
+		for (var action : actions) {
+			actionNames[action.ordinal()] = action.getName();
+			actionOrdinals[action.ordinal()] = action.ordinal();
+		}
+
+		for (var k : Key.getAll()) {
+			sub2 = sub1.subSet(o -> o.ctitle = k.name());
+			sub2.addListPref(o -> {
+				o.store = Key.getPrefs();
+				o.pref = k.getActionPref();
+				o.title = R.string.key_on_click;
+				o.subtitle = R.string.string_format;
+				o.values = actionNames;
+				o.valuesMap = actionOrdinals;
+				o.formatSubtitle = true;
+			});
+			sub2.addListPref(o -> {
+				o.store = Key.getPrefs();
+				o.pref = k.getLongActionPref();
+				o.title = R.string.key_on_long_click;
+				o.subtitle = R.string.string_format;
+				o.values = actionNames;
+				o.valuesMap = actionOrdinals;
+				o.formatSubtitle = true;
+			});
+			sub2.addListPref(o -> {
+				o.store = Key.getPrefs();
+				o.pref = k.getDblActionPref();
+				o.title = R.string.key_on_dbl_click;
+				o.subtitle = R.string.string_format;
+				o.values = actionNames;
+				o.valuesMap = actionOrdinals;
+				o.formatSubtitle = true;
+			});
+		}
+
+
 		sub1 = set.subSet(o -> o.title = R.string.playback_settings);
 		sub1.addBooleanPref(o -> {
 			o.store = mediaPrefs;
@@ -386,27 +429,6 @@ public class SettingsFragment extends MainActivityFragment
 				o.subtitle = R.string.voice_control_sub_long;
 				o.pref = VOICE_CONTROl_FB;
 				o.store = a.getPrefs();
-				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
-			});
-			sub1.addBooleanPref(o -> {
-				o.title = R.string.voice_control_menu;
-				o.subtitle = R.string.voice_control_sub_long;
-				o.pref = VOICE_CONTROl_M;
-				o.store = a.getPrefs();
-				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
-			});
-			sub1.addBooleanPref(o -> {
-				o.title = R.string.voice_control_next;
-				o.subtitle = R.string.voice_control_sub_double;
-				o.pref = NEXT_VOICE_CONTROl;
-				o.store = a.getPlaybackControlPrefs();
-				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
-			});
-			sub1.addBooleanPref(o -> {
-				o.title = R.string.voice_control_prev;
-				o.subtitle = R.string.voice_control_sub_double;
-				o.pref = PREV_VOICE_CONTROl;
-				o.store = a.getPlaybackControlPrefs();
 				o.visibility = PrefCondition.create(a.getPrefs(), VOICE_CONTROl_ENABLED);
 			});
 			sub1.addStringPref(o -> {
@@ -549,10 +571,7 @@ public class SettingsFragment extends MainActivityFragment
 			o.seekScale = 5;
 		});
 
-		sub1 = set.subSet(o -> {
-			o.title = R.string.subtitles;
-			o.visibility = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
-		});
+		sub1 = set.subSet(o -> o.title = R.string.subtitles);
 		addSubtitlePrefs(sub1, mediaPrefs, isCar);
 
 		addAddons(set);

@@ -35,6 +35,28 @@
     <string name="control_panel_size">Размер панели управления</string>
     <string name="text_icon_size">Размер текста и иконок</string>
 
+    <string name="key_bindings">Привязки клавиш</string>
+    <string name="key_on_click">При нажатии</string>
+    <string name="key_on_long_click">При двойном нажатии</string>
+    <string name="key_on_dbl_click">При долгом нажатии</string>
+    <string name="action_stop">Стоп</string>
+    <string name="action_play">Воспроизведение</string>
+    <string name="action_pause">Пауза</string>
+    <string name="action_play_pause">Воспроизведение/Пауза</string>
+    <string name="action_prev">Воспроизвести предыдущий</string>
+    <string name="action_next">Воспроизвести следующий</string>
+    <string name="action_rw">Перемотка назад</string>
+    <string name="action_ff">Перемотка вперед</string>
+    <string name="action_vol_up">Увелечить громкость</string>
+    <string name="action_vol_down">Уменьшить громкость</string>
+    <string name="action_vol_mute_unmute">Включить/Выключить звук</string>
+    <string name="action_activate_voice_ctrl">Активировать голосовое управление</string>
+    <string name="action_menu">Меню</string>
+    <string name="action_cp_menu">Панель управления</string>
+    <string name="action_back_or_exit">Назад или выход</string>
+    <string name="action_exit">Выход</string>
+    <string name="action_none">Ничего</string>
+
     <string name="play_next_on_completion">Воспроизводить следующий трек</string>
 
     <string name="rw_ff_click">Назад/Вперед - нажатие</string>
@@ -69,11 +91,7 @@
     <string name="voice_search">Голосовой поиск</string>
     <string name="voice_control">Голосовое управление</string>
     <string name="voice_control_fb">Плавающая кнопка</string>
-    <string name="voice_control_menu">Кнопка \'Меню\' или \'M\'</string>
     <string name="voice_control_sub_long">Активировать голосовое управление, при долгом нажатии</string>
-    <string name="voice_control_next">Медиа кнопка \'Вперед\'</string>
-    <string name="voice_control_prev">Медиа кнопка \'Назад\'</string>
-    <string name="voice_control_sub_double">Активировать голосовое управление, при двойном нажатии</string>
     <string name="voice_control_subst">Замена слов</string>
     <string name="voice_control_subst_sub">Заменять слово другим словом или фразой</string>
     <string name="voice_control_subst_hint" translatable="false">включить: играть\nвыключить: пауза\nскучно: найти в браузере ближайши бар</string>

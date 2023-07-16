@@ -68,11 +68,7 @@
     <string name="voice_search">Ricerca vocale</string>
     <string name="voice_control">Controllo vocale</string>
     <string name="voice_control_fb">Pulsante fluttuante</string>
-    <string name="voice_control_menu">Pulsante \'Menù\' o \'M\'</string>
-    <string name="voice_control_next">Pulsante multimediale \'Successivo\'</string>
-    <string name="voice_control_prev">Pulsante multimediale \'Precedente\'</string>
     <string name="voice_control_sub_long">Attiva controllo vocale con clic lungo</string>
-    <string name="voice_control_sub_double">Attiva controllo vocale con doppio clic</string>
     <string name="voice_control_subst">Sostituzione comandi</string>
     <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
 

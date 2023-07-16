@@ -1,5 +1,8 @@
 package me.aap.fermata.addon.cast;
 
+import static android.media.AudioManager.ADJUST_LOWER;
+import static android.media.AudioManager.ADJUST_RAISE;
+import static android.media.AudioManager.ADJUST_TOGGLE_MUTE;
 import static com.google.android.gms.cast.MediaInfo.STREAM_TYPE_BUFFERED;
 import static com.google.android.gms.cast.MediaMetadata.KEY_SUBTITLE;
 import static com.google.android.gms.cast.MediaMetadata.KEY_TITLE;
@@ -16,7 +19,6 @@ import static me.aap.utils.collection.CollectionUtils.unboxed;
 import android.annotation.SuppressLint;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -62,6 +64,7 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 	MediaEngine.Listener listener;
 	private PlayableItem source;
 	private float speed;
+	private double volume;
 
 	public CastMediaEngine(CastServer server, CastSession session, RemoteMediaClient client,
 												 Listener listener) {
@@ -82,8 +85,7 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 		this.source = source;
 		VirtualResource src;
 
-		if (source instanceof MediaLib.ArchiveItem) {
-			MediaLib.ArchiveItem a = (MediaLib.ArchiveItem) source;
+		if (source instanceof MediaLib.ArchiveItem a) {
 			long start = a.getStartTime();
 			Uri uri = a.getParent().getLocation(start, a.getEndTime() - start);
 			src = GenericFileSystem.getInstance().getResource(Rid.create(uri)).getOrThrow();
@@ -274,14 +276,33 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 	}
 
 	@Override
-	public boolean adjustVolume(KeyEvent event) {
+	public boolean adjustVolume(int direction) {
 		try {
-			double diff = (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP) ? 0.025 : -0.025;
-			session.setVolume(session.getVolume() + diff);
+			double vol = session.getVolume();
+			switch (direction) {
+				case ADJUST_LOWER:
+					vol -= 0.025;
+					break;
+				case ADJUST_RAISE:
+					vol += 0.025;
+					break;
+				case ADJUST_TOGGLE_MUTE:
+					if (vol > 0) {
+						volume = vol;
+						vol = 0;
+					} else {
+						vol = volume;
+					}
+					break;
+				default:
+					return false;
+			}
+			session.setVolume(vol);
+			return true;
 		} catch (IOException ex) {
 			Log.e(ex);
 		}
-		return true;
+		return false;
 	}
 
 	@Override

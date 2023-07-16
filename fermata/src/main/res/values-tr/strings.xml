@@ -252,10 +252,6 @@
     <string name="virtualizer">Sanallaştırıcı</string>
     <string name="voice_control">Sesli kontrol</string>
     <string name="voice_control_fb">Kayan düğme</string>
-    <string name="voice_control_menu">"'Menü' veya 'M' butonu"</string>
-    <string name="voice_control_next">"'Skip to next' media button"</string>
-    <string name="voice_control_prev">"'Skip to previous' media button"</string>
-    <string name="voice_control_sub_double">Çift tıklamayla ses kontrolünü etkinleştir</string>
     <string name="voice_control_sub_long">Uzun dokununca ses kontrolünü etkinleştir</string>
     <string name="voice_control_subst">Kelime değiştirme</string>
     <string name="voice_control_subst_hint">on: play\noff: pause\nmerde: find in browser nearest bar</string>

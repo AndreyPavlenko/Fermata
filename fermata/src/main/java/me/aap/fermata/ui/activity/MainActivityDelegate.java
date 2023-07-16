@@ -12,8 +12,6 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static me.aap.fermata.BuildConfig.AUTO;
-import static me.aap.fermata.media.pref.PlaybackControlPrefs.NEXT_VOICE_CONTROl;
-import static me.aap.fermata.media.pref.PlaybackControlPrefs.PREV_VOICE_CONTROl;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
@@ -21,7 +19,6 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_M;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
@@ -60,7 +57,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
@@ -83,12 +79,14 @@ import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.action.Action;
+import me.aap.fermata.action.Key;
+import me.aap.fermata.action.KeyEventHandler;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataActivityAddon;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
 import me.aap.fermata.addon.MediaLibAddon;
-import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.AtvInterface;
 import me.aap.fermata.media.lib.DefaultMediaLib;
@@ -122,12 +120,9 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.event.ListenerLeakDetector;
-import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Cancellable;
-import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.Function;
 import me.aap.utils.function.IntObjectFunction;
-import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.misc.MiscUtils;
@@ -154,6 +149,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	private final HandlerExecutor handler = new HandlerExecutor(App.get().getHandler().getLooper());
 	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private final FermataServiceUiBinder mediaServiceBinder;
+	private final KeyEventHandler keyHandler;
 	private ToolBarView toolBar;
 	private NavBarView navBar;
 	private BodyLayout body;
@@ -163,7 +159,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FutureSupplier<?> contentLoading;
 	private boolean barsHidden;
 	private boolean videoMode;
-	private boolean exitPressed;
 	private int brightness = 255;
 	private SpeechListener speechListener;
 	private VoiceCommandHandler voiceCommandHandler;
@@ -171,6 +166,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
 		mediaServiceBinder = binder;
+		keyHandler = new KeyEventHandler(this);
 	}
 
 	@NonNull
@@ -404,6 +400,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			boolean leaks = ListenerLeakDetector.hasLeaks((b, l) -> {
 				if (l instanceof ExportedItem.ListenerWrapper)
 					l = ((ExportedItem.ListenerWrapper) l).getListener();
+				if (l instanceof Key.PrefsListener) return false;
 				if (l instanceof FermataAddon) return false;
 				if (l instanceof AtvInterface) return false;
 				if ((l instanceof DefaultMediaLib) && (b instanceof DefaultMediaLib)) return false;
@@ -994,29 +991,14 @@ public class MainActivityDelegate extends ActivityDelegate
 			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
 		} else if (prefs.contains(VOICE_CONTROl_ENABLED)) {
 			if (!getPrefs().getVoiceControlEnabledPref()) {
-				try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
-					e.setBooleanPref(VOICE_CONTROl_FB, false);
-					e.setBooleanPref(VOICE_CONTROl_M, false);
-				}
-				try (PreferenceStore.Edit e = getPlaybackControlPrefs().editPreferenceStore()) {
-					e.setBooleanPref(NEXT_VOICE_CONTROl, false);
-					e.setBooleanPref(PREV_VOICE_CONTROl, false);
-				}
+				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
 				return;
 			}
 			getAppActivity().checkPermissions(permission.RECORD_AUDIO).onCompletion((r, err) -> {
 				if ((err == null) && (r[0] == PERMISSION_GRANTED)) return;
 				if (err != null) Log.e(err, "Failed to request RECORD_AUDIO permission");
 				showAlert(getContext(), R.string.err_no_audio_record_perm);
-				try (PreferenceStore.Edit e = getPrefs().editPreferenceStore()) {
-					e.setBooleanPref(VOICE_CONTROl_ENABLED, false);
-					e.setBooleanPref(VOICE_CONTROl_FB, false);
-					e.setBooleanPref(VOICE_CONTROl_M, false);
-				}
-				try (PreferenceStore.Edit e = getPlaybackControlPrefs().editPreferenceStore()) {
-					e.setBooleanPref(NEXT_VOICE_CONTROl, false);
-					e.setBooleanPref(PREV_VOICE_CONTROl, false);
-				}
+				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
 			});
 		} else if (prefs.contains(VOICE_CONTROL_SUBST)) {
 			if (voiceCommandHandler != null) voiceCommandHandler.updateWordSubst();
@@ -1029,73 +1011,18 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public boolean onKeyDown(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
-		switch (code) {
-			case KeyEvent.KEYCODE_BACK:
-			case KeyEvent.KEYCODE_ESCAPE:
-				onBackPressed();
-				return true;
-			case KeyEvent.KEYCODE_M:
-				if (getCurrentFocus() instanceof EditText) return super.onKeyDown(code, event, next);
-			case KeyEvent.KEYCODE_MENU:
-				if (getPrefs().getVoiceControlMenuPref()) event.startTracking();
-				return true;
-			case KeyEvent.KEYCODE_P:
-				getMediaServiceBinder().onPlayPauseButtonClick();
-				if (isVideoMode()) getControlPanel().onVideoSeek();
-				return true;
-			case KeyEvent.KEYCODE_S:
-			case KeyEvent.KEYCODE_DEL:
-				getMediaServiceBinder().getMediaSessionCallback().onStop();
-				return true;
-			case KeyEvent.KEYCODE_X:
-				if (exitPressed) {
-					finish();
-				} else {
-					exitPressed = true;
-					Toast.makeText(getContext(), R.string.press_x_again, Toast.LENGTH_SHORT).show();
-					FermataApplication.get().getHandler().postDelayed(() -> exitPressed = false, 2000);
-				}
-				return true;
-			case KeyEvent.KEYCODE_VOLUME_UP:
-			case KeyEvent.KEYCODE_VOLUME_DOWN:
-				MediaEngine eng = getMediaServiceBinder().getCurrentEngine();
-				if ((eng != null) && eng.adjustVolume(event)) return true;
-		}
-
-		return super.onKeyDown(code, event, next);
+		return keyHandler.handle(event, next);
 	}
 
 	@Override
 	public boolean onKeyUp(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
-		if ((event.getFlags() & KeyEvent.FLAG_CANCELED_LONG_PRESS) == 0) {
-			switch (code) {
-				case KeyEvent.KEYCODE_M:
-					if (getCurrentFocus() instanceof EditText) return super.onKeyUp(code, event, next);
-				case KeyEvent.KEYCODE_MENU:
-					if (event.isShiftPressed()) {
-						getNavBarMediator().showMenu(this);
-					} else {
-						ControlPanelView cp = getControlPanel();
-						if (cp.isActive()) cp.showMenu();
-						else getNavBarMediator().showMenu(this);
-					}
-					return true;
-			}
-		}
-
-		return super.onKeyUp(code, event, next);
+		return keyHandler.handle(event, next);
 	}
 
 	@Override
 	public boolean onKeyLongPress(int code, KeyEvent event,
 																IntObjectFunction<KeyEvent, Boolean> next) {
-		switch (code) {
-			case KeyEvent.KEYCODE_M, KeyEvent.KEYCODE_MENU -> {
-				if (getPrefs().getVoiceControlMenuPref()) startVoiceAssistant();
-				return true;
-			}
-		}
-		return super.onKeyLongPress(code, event, next);
+		return keyHandler.handle(event, next);
 	}
 
 	public HandlerExecutor getHandler() {
@@ -1132,13 +1059,14 @@ public class MainActivityDelegate extends ActivityDelegate
 
 		private Prefs() {
 			// Rename old prefs
-			Pref<IntSupplier> oldTheme = Pref.i("THEME", THEME_DARK);
-			Pref<DoubleSupplier> oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);
-			Pref<IntSupplier> fbLongPress = Pref.i("FB_LONG_PRESS", 0);
-			Pref<IntSupplier> fbLongPressAA = Pref.i("FB_LONG_PRESS_AA", 0);
-			Pref<BooleanSupplier> showClock = Pref.b("SHOW_CLOCK", false);
-			int theme = getIntPref(oldTheme);
-			float scale = getFloatPref(oldScale);
+			var oldTheme = Pref.i("THEME", THEME_DARK);
+			var oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);
+			var fbLongPress = Pref.i("FB_LONG_PRESS", 0);
+			var fbLongPressAA = Pref.i("FB_LONG_PRESS_AA", 0);
+			var showClock = Pref.b("SHOW_CLOCK", false);
+			var voiceCtrlM = Pref.b("VOICE_CONTROl_M", false);
+			var theme = getIntPref(oldTheme);
+			var scale = getFloatPref(oldScale);
 
 			if ((theme != THEME_DARK) || (scale != 1f)) {
 				try (PreferenceStore.Edit e = editPreferenceStore()) {
@@ -1167,6 +1095,14 @@ public class MainActivityDelegate extends ActivityDelegate
 					e.removePref(showClock);
 					e.setIntPref(CLOCK_POS, CLOCK_POS_RIGHT);
 				}
+			}
+
+			if (getBooleanPref(voiceCtrlM)) {
+				removePref(voiceCtrlM);
+				var kp = Key.getPrefs();
+				var o = Action.ACTIVATE_VOICE_CTRL.ordinal();
+				kp.applyIntPref(Key.M.getLongActionPref(), o);
+				kp.applyIntPref(Key.MENU.getLongActionPref(), o);
 			}
 		}
 

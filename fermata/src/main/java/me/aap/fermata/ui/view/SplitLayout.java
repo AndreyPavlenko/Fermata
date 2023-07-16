@@ -30,7 +30,8 @@ public abstract class SplitLayout extends ConstraintLayout implements View.OnTou
 		inflate(ctx, getLayout(portrait), this);
 		getSplitLine().setOnTouchListener(this);
 		getSplitHandle().setOnTouchListener(this);
-		setSplitPercent(getActivity().getPrefs().getFloatPref(getSplitPercentPref(portrait)));
+		MainActivityDelegate.getActivityDelegate(ctx)
+				.onSuccess(a -> a.getPrefs().getFloatPref(getSplitPercentPref(portrait)));
 	}
 
 	@LayoutRes

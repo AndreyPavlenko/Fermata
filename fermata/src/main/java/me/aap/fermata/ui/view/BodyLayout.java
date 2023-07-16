@@ -42,18 +42,19 @@ public class BodyLayout extends SplitLayout
 	public BodyLayout(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
 
-		MainActivityDelegate a = getActivity();
 		SwipeRefreshLayout srl = getSwipeRefresh();
 		srl.setId(R.id.swiperefresh);
 		srl.setOnRefreshListener(this);
 		srl.setOnChildScrollUpCallback(this);
 		setMode(Mode.FRAME);
 
-		FermataServiceUiBinder b = a.getMediaServiceBinder();
-		b.addBroadcastListener(this);
-		a.addBroadcastListener(this, FRAGMENT_CHANGED | ACTIVITY_DESTROY);
-		b.getMediaSessionCallback().addBroadcastListener(this);
-		onPlayableChanged(null, b.getCurrentItem());
+		MainActivityDelegate.getActivityDelegate(ctx).onSuccess(a -> {
+			FermataServiceUiBinder b = a.getMediaServiceBinder();
+			b.addBroadcastListener(this);
+			a.addBroadcastListener(this, FRAGMENT_CHANGED | ACTIVITY_DESTROY);
+			b.getMediaSessionCallback().addBroadcastListener(this);
+			onPlayableChanged(null, b.getCurrentItem());
+		});
 	}
 
 	@Override
@@ -143,7 +144,7 @@ public class BodyLayout extends SplitLayout
 		if (handleActivityDestroyEvent(a, e)) {
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			b.removeBroadcastListener(this);
-			b.getMediaSessionCallback().addBroadcastListener(this);
+			b.getMediaSessionCallback().removeBroadcastListener(this);
 		} else if (e == FRAGMENT_CHANGED) {
 			if (a.getActiveMediaLibFragment() == null) {
 				setMode(Mode.FRAME);

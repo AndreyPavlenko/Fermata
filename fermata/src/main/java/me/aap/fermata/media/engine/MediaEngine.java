@@ -7,7 +7,6 @@ import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.text.TextUtils.isBlank;
 
 import android.media.AudioManager;
-import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
 import androidx.media.AudioFocusRequestCompat;
@@ -250,7 +249,7 @@ public interface MediaEngine extends Closeable {
 
 	default void contributeToMenu(OverlayMenu.Builder b) {}
 
-	default boolean adjustVolume(KeyEvent event) {
+	default boolean adjustVolume(int direction) {
 		return false;
 	}
 

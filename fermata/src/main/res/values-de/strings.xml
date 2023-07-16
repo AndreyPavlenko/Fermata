@@ -68,11 +68,7 @@
     <string name="voice_search">Sprachsuche</string>
     <string name="voice_control">Sprachsteuerung</string>
     <string name="voice_control_fb">Schwebender Button</string>
-    <string name="voice_control_menu">\'Menu\' oder \'M\' Button</string>
-    <string name="voice_control_next">\'zum nächsten Titel\' Button</string>
-    <string name="voice_control_prev">\'zum vorhergehenden Titel\' Button</string>
     <string name="voice_control_sub_long">Aktivieren der Sprachsteuerung durch langes Drücken</string>
-    <string name="voice_control_sub_double">Aktivieren der Sprachsteuerung durch Doppel-Drücken</string>
     <string name="voice_control_subst">Wortersetzung</string>
     <string name="voice_control_subst_sub">Ersetzen Sie ein Wort durch ein anderes Wort oder einen Satz</string>
 

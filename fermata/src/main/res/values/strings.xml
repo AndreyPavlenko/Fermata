@@ -57,6 +57,29 @@
     <string name="control_panel_size">Control panel size</string>
     <string name="text_icon_size">Text and icons size</string>
 
+    <string name="key_bindings">Key bindings</string>
+    <string name="key_on_click">On click</string>
+    <string name="key_on_long_click">On long click</string>
+    <string name="key_on_dbl_click">On double click</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_play_pause">Play/Pause</string>
+    <string name="action_prev">Play previous</string>
+    <string name="action_next">Play next</string>
+    <string name="action_rw">Rewind</string>
+    <string name="action_ff">Fast forward</string>
+    <string name="action_vol_up">Volume up</string>
+    <string name="action_vol_down">Volume down</string>
+    <string name="action_vol_mute_unmute">Mute/Unmute</string>
+    <string name="action_activate_voice_ctrl">Activate voice control</string>
+    <string name="action_menu">Menu</string>
+    <string name="action_cp_menu">Control panel menu</string>
+    <string name="action_back_or_exit">Back or exit</string>
+    <string name="action_exit">Exit</string>
+    <string name="action_default">Default</string>
+    <string name="action_none">None</string>
+
     <string name="play_next_on_completion">Play next on completion</string>
 
     <string name="rw_ff_click">RW/FF - click</string>
@@ -91,11 +114,7 @@
     <string name="voice_search">Voice search</string>
     <string name="voice_control">Voice control</string>
     <string name="voice_control_fb">Floating button</string>
-    <string name="voice_control_menu">\'Menu\' or \'M\' button</string>
-    <string name="voice_control_next">\'Skip to next\' media button</string>
-    <string name="voice_control_prev">\'Skip to previous\' media button</string>
     <string name="voice_control_sub_long">Activate voice control on long press</string>
-    <string name="voice_control_sub_double">Activate voice control on double click</string>
     <string name="voice_control_subst">Word substitution</string>
     <string name="voice_control_subst_sub">Replace a word with an another word or a phrase</string>
     <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>

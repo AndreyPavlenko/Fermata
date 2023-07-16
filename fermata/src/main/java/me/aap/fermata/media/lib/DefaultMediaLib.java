@@ -182,8 +182,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			getLastPlayedItem().then(i -> (i == null) ? completedNull() : i.asMediaItem())
 					.onSuccess(i -> {
 						if (i != null) items.add(i);
-					})
-					.then(v -> getFolders().asMediaItem()).onSuccess(items::add)
+					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
 					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
 					.onCompletion((r, f) -> result.sendResult(items, null)).onFailure(this::log);
@@ -205,9 +204,7 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 	@Override
 	public void getItem(String itemId, MediaLibResult<MediaItem> result) {
 		result.detach();
-		getItem(itemId)
-				.then(Item::asMediaItem)
-				.onFailure(this::log)
+		getItem(itemId).then(Item::asMediaItem).onFailure(this::log)
 				.onCompletion((i, f) -> result.sendResult(i, null));
 	}
 
@@ -217,9 +214,8 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			if (id != null) {
 				getItem(id).onCompletion((i, err1) -> {
 					if (i == null) result.sendResult(Collections.emptyList(), null);
-					else i.asMediaItem().onCompletion((mi, err2) ->
-							result.sendResult((mi == null) ? Collections.emptyList()
-									: Collections.singletonList(mi), null));
+					else i.asMediaItem().onCompletion((mi, err2) -> result.sendResult(
+							(mi == null) ? Collections.emptyList() : Collections.singletonList(mi), null));
 				});
 			} else {
 				result.sendResult(Collections.emptyList(), null);
@@ -241,62 +237,11 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 
 	@Override
 	public long getLastPlayedPosition(PlayableItem i) {
-		if (i.isVideo()) return i.getPrefs().getPositionPref();
+		long pos = i.getPrefs().getPositionPref();
+		if ((pos != 0) || i.isVideo()) return pos;
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		String id = p.getLastPlayedItemPref();
 		return ((id != null) && id.equals(i.getId())) ? p.getLastPlayedPosPref() : 0;
-	}
-
-	@Override
-	public void setLastPlayed(PlayableItem i, long position) {
-		if ((position < 0) || i.isExternal()) return;
-
-		i.getDuration().main().onSuccess(dur -> {
-			String id;
-			BrowsableItemPrefs p;
-
-			if (i.isStream() || (dur <= 0)) {
-				id = i.getId();
-				p = i.getParent().getPrefs();
-				setLastPlayedItemPref(id);
-				setLastPlayedPosPref(0);
-				p.setLastPlayedItemPref(id);
-				p.setLastPlayedPosPref(0);
-				return;
-			}
-
-			if ((dur - position) <= 1000) {
-				i.getNextPlayable().onCompletion((next, fail) -> {
-					if (next == null) next = i;
-
-					String nextId = next.getId();
-					BrowsableItemPrefs nextPrefs = next.getParent().getPrefs();
-					setLastPlayedItemPref(nextId);
-					setLastPlayedPosPref(0);
-					nextPrefs.setLastPlayedItemPref(nextId);
-					nextPrefs.setLastPlayedPosPref(0);
-				});
-
-				return;
-			} else {
-				id = i.getId();
-				p = i.getParent().getPrefs();
-			}
-
-			if (i.isVideo()) {
-				PlayableItemPrefs prefs = i.getPrefs();
-				float th = prefs.getWatchedThresholdPref() / 100F;
-				if (th > 0) {
-					if (position > (dur * th)) prefs.setWatchedPref(true);
-					else prefs.setPositionPref(position);
-				}
-			}
-
-			setLastPlayedItemPref(id);
-			setLastPlayedPosPref(position);
-			p.setLastPlayedItemPref(id);
-			p.setLastPlayedPosPref(position);
-		});
 	}
 
 	@NonNull
@@ -362,8 +307,9 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 			clearRefs(itemCache, itemRefQueue);
 			String id = i.getId();
 			if (BuildConfig.D && itemCache.containsKey(id)) {
-				throw new AssertionError("Unable to add item " + i +
-						". Item with id=" + id + "already exists: " + itemCache.get(id));
+				throw new AssertionError(
+						"Unable to add item " + i + ". Item with id=" + id + "already exists: " +
+								itemCache.get(id));
 			}
 			itemCache.put(id, new WeakRef<>(id, i, itemRefQueue));
 		}

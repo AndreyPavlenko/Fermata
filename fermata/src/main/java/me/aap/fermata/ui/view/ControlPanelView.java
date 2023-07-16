@@ -2,8 +2,6 @@ package me.aap.fermata.ui.view;
 
 import static android.media.AudioManager.ADJUST_LOWER;
 import static android.media.AudioManager.ADJUST_RAISE;
-import static android.media.AudioManager.FLAG_SHOW_UI;
-import static android.media.AudioManager.STREAM_MUSIC;
 import static android.util.TypedValue.COMPLEX_UNIT_PX;
 import static androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
 import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
@@ -12,7 +10,6 @@ import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -356,10 +353,8 @@ public class ControlPanelView extends ConstraintLayout
 			br = (distanceY > 0) ? Math.min(255, br + 10) : Math.max(0, br - 10);
 			a.setBrightness(br);
 		} else {
-			AudioManager amgr = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-			if (amgr == null) return false;
-			amgr.adjustStreamVolume(STREAM_MUSIC, (distanceY > 0) ? ADJUST_RAISE : ADJUST_LOWER,
-					FLAG_SHOW_UI);
+			MediaEngine eng = getActivity().getMediaServiceBinder().getCurrentEngine();
+			return (eng != null) && eng.adjustVolume((distanceY > 0) ? ADJUST_RAISE : ADJUST_LOWER);
 		}
 
 		return true;

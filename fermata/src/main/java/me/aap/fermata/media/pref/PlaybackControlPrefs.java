@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
 
+import me.aap.fermata.action.Action;
+import me.aap.fermata.action.Key;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
@@ -21,14 +23,13 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 	Pref<IntSupplier> RW_FF_LONG_TIME = Pref.i("RW_FF_LONG_TIME", 20);
 	Pref<IntSupplier> RW_FF_LONG_TIME_UNIT = Pref.i("RW_FF_LONG_TIME_UNIT", TIME_UNIT_SECOND);
 	Pref<IntSupplier> PREV_NEXT_LONG_TIME = Pref.i("PREV_NEXT_LONG_TIME", 5);
-	Pref<IntSupplier> PREV_NEXT_LONG_TIME_UNIT = Pref.i("PREV_NEXT_LONG_TIME_UNIT", TIME_UNIT_PERCENT);
+	Pref<IntSupplier> PREV_NEXT_LONG_TIME_UNIT =
+			Pref.i("PREV_NEXT_LONG_TIME_UNIT", TIME_UNIT_PERCENT);
 	Pref<BooleanSupplier> PLAY_PAUSE_STOP = Pref.b("PLAY_PAUSE_STOP", true);
 	Pref<IntSupplier> VIDEO_CONTROL_START_DELAY = Pref.i("VIDEO_CONTROL_START_DELAY", 0);
 	Pref<IntSupplier> VIDEO_CONTROL_TOUCH_DELAY = Pref.i("VIDEO_CONTROL_TOUCH_DELAY", 5);
 	Pref<IntSupplier> VIDEO_CONTROL_SEEK_DELAY = Pref.i("VIDEO_CONTROL_SEEK_DELAY", 3);
 	Pref<BooleanSupplier> VIDEO_AA_SHOW_STATUS = Pref.b("VIDEO_AA_SHOW_STATUS", false);
-	Pref<BooleanSupplier> PREV_VOICE_CONTROl = Pref.b("PREV_VOICE_CONTROl", false);
-	Pref<BooleanSupplier> NEXT_VOICE_CONTROl = Pref.b("NEXT_VOICE_CONTROl", false);
 
 	default int getRwFfTimePref() {
 		return getIntPref(RW_FF_TIME);
@@ -74,28 +75,36 @@ public interface PlaybackControlPrefs extends SharedPreferenceStore {
 		return getBooleanPref(VIDEO_AA_SHOW_STATUS);
 	}
 
-	default boolean getPrevVoiceControlPref() {
-		return getBooleanPref(PREV_VOICE_CONTROl);
-	}
-
-	default boolean getNextVoiceControlPref() {
-		return getBooleanPref(NEXT_VOICE_CONTROl);
-	}
-
 	static long getTimeMillis(long dur, int time, int unit) {
-		switch (unit) {
-			case PlaybackControlPrefs.TIME_UNIT_SECOND:
-				return time * 1000;
-			case PlaybackControlPrefs.TIME_UNIT_MINUTE:
-				return time * 60000;
-			default:
-				return (long) (dur * ((float) time / 100));
-		}
+		return switch (unit) {
+			case PlaybackControlPrefs.TIME_UNIT_SECOND -> time * 1000L;
+			case PlaybackControlPrefs.TIME_UNIT_MINUTE -> time * 60000L;
+			default -> (long) (dur * ((float) time / 100));
+		};
 	}
 
 	static PlaybackControlPrefs create(SharedPreferences prefs) {
-		class ControlPrefs extends BasicEventBroadcaster<Listener>
-				implements PlaybackControlPrefs {
+		// Old prefs migration
+		var prevVoiceCtrl = "PREV_VOICE_CONTROl";
+		var nextVoiceCtrl = "NEXT_VOICE_CONTROl";
+
+		if (prefs.contains(prevVoiceCtrl)) {
+			if (prefs.getBoolean(prevVoiceCtrl, false)) {
+				Key.getPrefs().applyIntPref(Key.MEDIA_PREVIOUS.getDblActionPref(),
+						Action.ACTIVATE_VOICE_CTRL.ordinal());
+			}
+			prefs.edit().remove(prevVoiceCtrl).apply();
+		}
+		if (prefs.contains(nextVoiceCtrl)) {
+			if (prefs.getBoolean(nextVoiceCtrl, false)) {
+				Key.getPrefs()
+						.applyIntPref(Key.MEDIA_NEXT.getDblActionPref(), Action.ACTIVATE_VOICE_CTRL.ordinal());
+			}
+			prefs.edit().remove(nextVoiceCtrl).apply();
+		}
+
+
+		class ControlPrefs extends BasicEventBroadcaster<Listener> implements PlaybackControlPrefs {
 
 			@NonNull
 			@Override

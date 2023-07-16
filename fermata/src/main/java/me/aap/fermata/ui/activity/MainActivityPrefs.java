@@ -2,9 +2,6 @@ package me.aap.fermata.ui.activity;
 
 import static me.aap.fermata.BuildConfig.AUTO;
 
-import android.content.Context;
-import android.content.res.Configuration;
-
 import androidx.annotation.Nullable;
 
 import java.util.List;
@@ -22,7 +19,8 @@ import me.aap.utils.ui.view.NavBarView;
 /**
  * @author Andrey Pavlenko
  */
-public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcaster<PreferenceStore.Listener> {
+public interface MainActivityPrefs
+		extends SharedPreferenceStore, EventBroadcaster<PreferenceStore.Listener> {
 	int THEME_DARK = 0;
 	int THEME_LIGHT = 1;
 	int THEME_DAY_NIGHT = 2;
@@ -59,31 +57,24 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	Pref<IntSupplier> BRIGHTNESS = Pref.i("BRIGHTNESS", 255);
 	Pref<BooleanSupplier> VOICE_CONTROl_ENABLED = Pref.b("VOICE_CONTROl_ENABLED", false);
 	Pref<BooleanSupplier> VOICE_CONTROl_FB = Pref.b("VOICE_CONTROl_FB", false);
-	Pref<BooleanSupplier> VOICE_CONTROl_M = Pref.b("VOICE_CONTROl_M", false);
 	Pref<Supplier<String>> VOICE_CONTROL_SUBST = Pref.s("VOICE_CONTROL_SUBST", "");
-	Pref<Supplier<String>> VOICE_CONTROL_LANG = Pref.s("VOICE_CONTROL_LANG",
-			() -> Locale.getDefault().toLanguageTag());
+	Pref<Supplier<String>> VOICE_CONTROL_LANG =
+			Pref.s("VOICE_CONTROL_LANG", () -> Locale.getDefault().toLanguageTag());
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
-	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", () -> {
-		switch (Locale.getDefault().getLanguage()) {
-			case "ru":
-				return LOCALE_RU;
-			case "it":
-				return LOCALE_IT;
-			case "tr":
-				return LOCALE_TR;
-			case "de":
-				return LOCALE_DE;
-			default:
-				return LOCALE_EN;
-		}
+	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", () -> switch (Locale.getDefault().getLanguage()) {
+		case "ru" -> LOCALE_RU;
+		case "it" -> LOCALE_IT;
+		case "tr" -> LOCALE_TR;
+		case "de" -> LOCALE_DE;
+		default -> LOCALE_EN;
 	});
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
 	Pref<BooleanSupplier> FULLSCREEN_AA = AUTO ? Pref.b("FULLSCREEN_AA", false) : null;
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN_AA = AUTO ? Pref.b("SHOW_PG_UP_DOWN_AA", true) : null;
-	Pref<IntSupplier> NAV_BAR_POS_AA = AUTO ? Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_BOTTOM) : null;
+	Pref<IntSupplier> NAV_BAR_POS_AA =
+			AUTO ? Pref.i("NAV_BAR_POS_AA", NavBarView.POSITION_BOTTOM) : null;
 	Pref<DoubleSupplier> NAV_BAR_SIZE_AA = AUTO ? Pref.f("NAV_BAR_SIZE_AA", 1f) : null;
 	Pref<DoubleSupplier> TOOL_BAR_SIZE_AA = AUTO ? Pref.f("TOOL_BAR_SIZE_AA", 1f) : null;
 	Pref<DoubleSupplier> CONTROL_PANEL_SIZE_AA = AUTO ? Pref.f("CONTROL_PANEL_SIZE_AA", 1f) : null;
@@ -232,10 +223,6 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 		return getBooleanPref(VOICE_CONTROl_FB);
 	}
 
-	default boolean getVoiceControlMenuPref() {
-		return getBooleanPref(VOICE_CONTROl_M);
-	}
-
 	default String getVoiceControlLang(MainActivityDelegate a) {
 		return a.getPrefs().getStringPref(VOICE_CONTROL_LANG);
 	}
@@ -245,17 +232,12 @@ public interface MainActivityPrefs extends SharedPreferenceStore, EventBroadcast
 	}
 
 	default Locale getLocalePref() {
-		switch (getIntPref(LOCALE)) {
-			case LOCALE_RU:
-				return new Locale("ru");
-			case LOCALE_IT:
-				return Locale.ITALIAN;
-			case LOCALE_TR:
-				return new Locale("tr");
-			case LOCALE_DE:
-				return new Locale("de");
-			default:
-				return Locale.ENGLISH;
-		}
+		return switch (getIntPref(LOCALE)) {
+			case LOCALE_RU -> new Locale("ru");
+			case LOCALE_IT -> Locale.ITALIAN;
+			case LOCALE_TR -> new Locale("tr");
+			case LOCALE_DE -> new Locale("de");
+			default -> Locale.ENGLISH;
+		};
 	}
 }
