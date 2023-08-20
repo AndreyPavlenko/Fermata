@@ -119,6 +119,8 @@ public class KeyEventHandler {
 
 				if (diff < LONG_CLICK_INTERVAL) {
 					sched(LONG_CLICK_INTERVAL - diff);
+				} else if (diff > 60000) { // Key UP not received?
+					worker = null;
 				} else {
 					longClickTime = time;
 					handle(longClickHandler);

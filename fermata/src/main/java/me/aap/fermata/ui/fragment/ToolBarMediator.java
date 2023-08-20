@@ -125,14 +125,19 @@ public class ToolBarMediator implements ToolBarView.Mediator.BackTitleFilter {
 		BrowsableItem b = a.getParent();
 
 		if ((b == null) || (b == b.getRoot()) || (b instanceof StreamItem)) {
-			tb.findViewById(R.id.tool_view).setVisibility(GONE);
-			tb.findViewById(R.id.tool_sort).setVisibility(GONE);
-			tb.findViewById(R.id.tool_grid).setVisibility((b instanceof StreamItem) ? GONE : VISIBLE);
+			setButtonVisibility(tb, R.id.tool_view, GONE);
+			setButtonVisibility(tb, R.id.tool_sort, GONE);
+			setButtonVisibility(tb, R.id.tool_grid, (b instanceof StreamItem) ? GONE : VISIBLE);
 		} else {
-			tb.findViewById(R.id.tool_view).setVisibility(VISIBLE);
-			tb.findViewById(R.id.tool_grid).setVisibility(VISIBLE);
-			tb.findViewById(R.id.tool_sort).setVisibility(b.sortChildrenEnabled() ? VISIBLE : GONE);
+			setButtonVisibility(tb, R.id.tool_view, VISIBLE);
+			setButtonVisibility(tb, R.id.tool_grid, VISIBLE);
+			setButtonVisibility(tb, R.id.tool_sort, b.sortChildrenEnabled() ? VISIBLE : GONE);
 		}
+	}
+
+	private static void setButtonVisibility(ToolBarView tb, @IdRes int id, int visibility) {
+		View v = tb.findViewById(id);
+		if (v != null) v.setVisibility(visibility);
 	}
 
 	private static void onViewButtonClick(View v) {
