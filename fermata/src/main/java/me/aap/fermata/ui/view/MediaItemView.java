@@ -65,10 +65,11 @@ import me.aap.utils.ui.menu.OverlayMenu;
 /**
  * @author Andrey Pavlenko
  */
-public class MediaItemView extends ConstraintLayout implements OnLongClickListener,
-		OnCheckedChangeListener, Item.ChangeListener {
-	private static final RotateAnimation rotate = new RotateAnimation(0, 360,
-			Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+public class MediaItemView extends ConstraintLayout
+		implements OnLongClickListener, OnCheckedChangeListener, Item.ChangeListener {
+	private static final RotateAnimation rotate =
+			new RotateAnimation(0, 360, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
+					0.5f);
 	private static Drawable loadingDrawable;
 	@ColorInt
 	private static int iconColor;
@@ -90,8 +91,9 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 
 	public MediaItemView(Context ctx, AttributeSet attrs) {
 		super(ctx, attrs, R.attr.appMediaItemStyle);
-		TypedArray ta = ctx.obtainStyledAttributes(attrs, R.styleable.MediaItemView,
-				R.attr.appMediaItemStyle, R.style.AppTheme_MediaItemStyle);
+		TypedArray ta =
+				ctx.obtainStyledAttributes(attrs, R.styleable.MediaItemView, R.attr.appMediaItemStyle,
+						R.style.AppTheme_MediaItemStyle);
 		iconColor = ta.getColor(R.styleable.MediaItemView_iconColor, 0);
 		hintColor = ta.getColor(R.styleable.MediaItemView_hintColor, 0);
 		titleTextAppearance = ta.getResourceId(R.styleable.MediaItemView_titleTextAppearance, 0);
@@ -119,7 +121,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		setTextAppearance(ctx, getTitle(), titleTextAppearance, size);
 		setTextAppearance(ctx, getSubtitle(), subtitleTextAppearance, size);
 		if (!grid) {
-			int iconSize = (int) (getTitle().getTextSize() + getSubtitle().getTextSize() + toPx(ctx, 10));
+			int iconSize = (int) (getTitle().getTextSize() + getSubtitle().getTextSize() + toPx(ctx,
+					10));
 			ImageView i = getIcon();
 			ViewGroup.LayoutParams lp = i.getLayoutParams();
 			lp.height = iconSize;
@@ -128,8 +131,7 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		}
 	}
 
-	private void setTextAppearance(Context ctx, TextView v, @StyleRes int res,
-																 float scale) {
+	private void setTextAppearance(Context ctx, TextView v, @StyleRes int res, float scale) {
 		v.setTextAppearance(res);
 		v.setTextSize(COMPLEX_UNIT_PX, getTextAppearanceSize(ctx, res) * scale);
 		v.setTextColor(textTint);
@@ -198,8 +200,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			setProgress(i, 0, 0);
 		}
 
-		FutureSupplier<MediaDescriptionCompat> load = loading = i.getMediaDescription().main()
-				.addConsumer((md, fail, p, total) -> {
+		FutureSupplier<MediaDescriptionCompat> load =
+				loading = i.getMediaDescription().main().addConsumer((md, fail, p, total) -> {
 					if (getItemWrapper() != w) return;
 
 					if (fail != null) {
@@ -217,28 +219,30 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 					}
 					if ((p == PROGRESS_DONE) || (p == 3)) {
 						Bundle b = md.getExtras();
-						if (b != null) setProgress(i, b.getLong(STREAM_START_TIME), b.getLong(STREAM_END_TIME));
+						if (b != null) setProgress(i, b.getLong(STREAM_START_TIME),
+								b.getLong(STREAM_END_TIME));
 					}
 					if ((p == PROGRESS_DONE) || (p == 4)) {
 						Uri uri = md.getIconUri();
 
 						if (uri != null) {
-							FutureSupplier<Bitmap> loadIcon = i.getLib().getBitmap(uri.toString(), true, true)
-									.main().onCompletion((bm, err) -> {
-										if (getItemWrapper() != w) return;
+							FutureSupplier<Bitmap> loadIcon =
+									i.getLib().getBitmap(uri.toString(), true, true).main()
+											.onCompletion((bm, err) -> {
+												if (getItemWrapper() != w) return;
 
-										ImageView icon = getIcon();
-										icon.clearAnimation();
-										cancelLoading();
+												ImageView icon = getIcon();
+												icon.clearAnimation();
+												cancelLoading();
 
-										if (bm != null) {
-											icon.setImageTintList(null);
-											icon.setImageBitmap(bm);
-										} else {
-											icon.setImageTintList(iconTint);
-											icon.setImageResource(i.getIcon());
-										}
-									});
+												if (bm != null) {
+													icon.setImageTintList(null);
+													icon.setImageBitmap(bm);
+												} else {
+													icon.setImageTintList(iconTint);
+													icon.setImageResource(i.getIcon());
+												}
+											});
 
 							if (!loadIcon.isDone()) {
 								ImageView icon = getIcon();
@@ -353,7 +357,8 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 		if ((item instanceof ArchiveItem) && !((ArchiveItem) item).isExpired()) {
 			d = archiveLabelDrawable;
 			if (d == null) {
-				d = archiveLabelDrawable = VectorDrawableCompat.create(getResources(), R.drawable.archive_label, null);
+				d = archiveLabelDrawable =
+						VectorDrawableCompat.create(getResources(), R.drawable.archive_label, null);
 				if (d == null) return;
 				d.setTint(hintColor);
 			}
@@ -367,14 +372,16 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 			if (prefs.getWatchedPref()) {
 				d = watchedVideoDrawable;
 				if (d == null) {
-					d = watchedVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.done, null);
+					d = watchedVideoDrawable =
+							VectorDrawableCompat.create(getResources(), R.drawable.done, null);
 					if (d == null) return;
 					d.setTint(hintColor);
 				}
 			} else if (prefs.getPositionPref() > 0) {
 				d = watchingVideoDrawable;
 				if (d == null) {
-					d = watchingVideoDrawable = VectorDrawableCompat.create(getResources(), R.drawable.watching, null);
+					d = watchingVideoDrawable =
+							VectorDrawableCompat.create(getResources(), R.drawable.watching, null);
 					if (d == null) return;
 					d.setTint(hintColor);
 				}
@@ -497,9 +504,12 @@ public class MediaItemView extends ConstraintLayout implements OnLongClickListen
 	}
 
 	@Override
-	protected void onFocusChanged(boolean gainFocus, int direction, @Nullable Rect previouslyFocusedRect) {
+	protected void onFocusChanged(boolean gainFocus, int direction,
+																@Nullable Rect previouslyFocusedRect) {
 		super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
 		if (!BuildConfig.AUTO || !gainFocus) return;
+		MainActivityDelegate d = getMainActivity();
+		if (!d.getPrefs().useDpadCursor(d)) return;
 
 		// The next item in the list must always be visible for rotary input scrolling
 		MediaItemListView lv = getListView();

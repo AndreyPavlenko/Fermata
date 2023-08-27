@@ -30,6 +30,7 @@
     <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
     <string name="fullscreen_mode">Полноэкранный режим</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
+    <string name="use_dpad_cursor">Использовать курсор для D-pad навигации</string>
     <string name="nav_bar_size">Размер панели навигации</string>
     <string name="tool_bar_size">Размер панели инструментов</string>
     <string name="control_panel_size">Размер панели управления</string>

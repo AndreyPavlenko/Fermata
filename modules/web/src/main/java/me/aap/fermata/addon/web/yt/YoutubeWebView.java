@@ -18,6 +18,7 @@ import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataJsInterface;
 import me.aap.fermata.addon.web.FermataWebView;
+import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
@@ -56,6 +57,13 @@ public class YoutubeWebView extends FermataWebView {
 	public void loadUrl(@NonNull String url) {
 		Log.d("Loading URL: " + url);
 		super.loadUrl(url);
+	}
+
+	@Override
+	public void goBack() {
+		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
+		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
+		super.goBack();
 	}
 
 	@Override

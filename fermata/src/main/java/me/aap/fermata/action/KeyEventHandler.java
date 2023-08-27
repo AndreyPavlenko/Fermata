@@ -76,6 +76,13 @@ public class KeyEventHandler {
 		if (clickHandler == null) return defaultHandler.apply(code, event);
 		var longClickHandler = k.getLongClickHandler();
 		if (longClickHandler == null) return defaultHandler.apply(code, event);
+
+		if ((dblClickHandler == Action.NONE.getHandler()) &&
+				(longClickHandler == Action.NONE.getHandler())) {
+			clickHandler.handle(cb, activity, uptimeMillis());
+			return true;
+		}
+
 		worker = new Worker(event, clickHandler, dblClickHandler, longClickHandler);
 		return false;
 	}
@@ -137,6 +144,9 @@ public class KeyEventHandler {
 					if (dblClickHandler == clickHandler) {
 						longClickTime = uptimeMillis();
 						handle(longClickHandler);
+					} else {
+						worker = null;
+						handle(clickHandler);
 					}
 					return true;
 				}

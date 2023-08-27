@@ -117,6 +117,7 @@ public class FermataChromeClient extends WebChromeClient {
 		customView = view;
 		customViewCallback = callback;
 		addCustomView(view);
+		getWebView().setVisibility(GONE);
 		MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 		setFullScreen(a, true);
 
@@ -135,6 +136,7 @@ public class FermataChromeClient extends WebChromeClient {
 		touchStamp = 0;
 		MainActivityDelegate a = MainActivityDelegate.get(customView.getContext());
 		removeCustomView(customView);
+		getWebView().setVisibility(VISIBLE);
 		setFullScreen(a, false);
 		customViewCallback.onCustomViewHidden();
 		customView = null;

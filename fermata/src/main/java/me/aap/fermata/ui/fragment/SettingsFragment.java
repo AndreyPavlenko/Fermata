@@ -653,6 +653,13 @@ public class SettingsFragment extends MainActivityFragment
 			o.pref = pgUpDown;
 			o.title = R.string.show_pg_up_down;
 		});
+		if (BuildConfig.AUTO) {
+			ps.addBooleanPref(o -> {
+				o.store = a.getPrefs();
+				o.pref = MainActivityPrefs.USE_DPAD_CURSOR;
+				o.title = R.string.use_dpad_cursor;
+			});
+		}
 		ps.addListPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = nbPos;

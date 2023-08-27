@@ -130,4 +130,6 @@
 
     <item name="auto" type="id" />
 
+    <item name="cursor" type="id" />
+
 </resources>

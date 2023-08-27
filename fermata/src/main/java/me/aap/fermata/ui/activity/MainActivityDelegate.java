@@ -746,6 +746,11 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	@Override
+	protected boolean exitOnBackPressed() {
+		return !isCarActivity();
+	}
+
+	@Override
 	public OverlayMenu createMenu(View anchor) {
 		return findViewById(R.id.context_menu);
 	}

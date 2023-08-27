@@ -190,6 +190,13 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 		ActivityFragment f = MainActivityDelegate.get(ctx).getActiveFragment();
 		if (f instanceof MediaLibFragment) {
 			MediaItemListView lv = ((MediaLibFragment) f).getListView();
+			LinearLayoutManager lm = (LinearLayoutManager) lv.getLayoutManager();
+			if (lm != null) {
+				int pos = lm.findFirstVisibleItemPosition();
+				if (pos != RecyclerView.NO_POSITION) {
+					return lv.getAdapter().getList().get(pos).getView();
+				}
+			}
 			View first = lv.getChildAt(0);
 			return (first != null) ? first : lv.focusEmpty();
 		}

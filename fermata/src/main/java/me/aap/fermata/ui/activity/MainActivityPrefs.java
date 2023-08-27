@@ -39,6 +39,7 @@ public interface MainActivityPrefs
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
 	Pref<BooleanSupplier> SHOW_PG_UP_DOWN = Pref.b("SHOW_PG_UP_DOWN", true);
+	Pref<BooleanSupplier> USE_DPAD_CURSOR = AUTO ? Pref.b("USE_DPAD_CURSOR", true) : null;
 	Pref<IntSupplier> NAV_BAR_POS = Pref.i("NAV_BAR_POS", NavBarView.POSITION_BOTTOM);
 	Pref<DoubleSupplier> NAV_BAR_SIZE = Pref.f("NAV_BAR_SIZE", 1f);
 	Pref<DoubleSupplier> TOOL_BAR_SIZE = Pref.f("TOOL_BAR_SIZE", 1f);
@@ -130,6 +131,10 @@ public interface MainActivityPrefs
 	default boolean getShowPgUpDownPref(MainActivityDelegate a) {
 		if (AUTO && a.isCarActivity()) return getBooleanPref(SHOW_PG_UP_DOWN_AA);
 		return getBooleanPref(SHOW_PG_UP_DOWN);
+	}
+
+	default boolean useDpadCursor(MainActivityDelegate a) {
+		return AUTO && a.isCarActivity() && getBooleanPref(USE_DPAD_CURSOR);
 	}
 
 	static boolean hasNavBarPosPref(MainActivityDelegate a, List<Pref<?>> prefs) {
