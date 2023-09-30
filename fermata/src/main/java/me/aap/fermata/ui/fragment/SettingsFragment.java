@@ -262,7 +262,7 @@ public class SettingsFragment extends MainActivityFragment
 				addAAInterface(a, sub1.subSet(o -> o.title = R.string.interface_prefs_aa));
 			}
 			addInterface(a, sub1, MainActivityPrefs.THEME_MAIN, MainActivityPrefs.HIDE_BARS,
-					MainActivityPrefs.FULLSCREEN, MainActivityPrefs.SHOW_PG_UP_DOWN,
+					MainActivityPrefs.FULLSCREEN, MainActivityPrefs.SHOW_PG_UP_DOWN, null,
 					MainActivityPrefs.NAV_BAR_POS, MainActivityPrefs.NAV_BAR_SIZE,
 					MainActivityPrefs.TOOL_BAR_SIZE, MainActivityPrefs.CONTROL_PANEL_SIZE,
 					MainActivityPrefs.TEXT_ICON_SIZE);
@@ -617,17 +617,18 @@ public class SettingsFragment extends MainActivityFragment
 		if (BuildConfig.AUTO) {
 			addInterface(a, ps, MainActivityPrefs.THEME_AA, MainActivityPrefs.HIDE_BARS_AA,
 					MainActivityPrefs.FULLSCREEN_AA, MainActivityPrefs.SHOW_PG_UP_DOWN_AA,
-					MainActivityPrefs.NAV_BAR_POS_AA, MainActivityPrefs.NAV_BAR_SIZE_AA,
-					MainActivityPrefs.TOOL_BAR_SIZE_AA, MainActivityPrefs.CONTROL_PANEL_SIZE_AA,
-					MainActivityPrefs.TEXT_ICON_SIZE_AA);
+					MainActivityPrefs.USE_DPAD_CURSOR, MainActivityPrefs.NAV_BAR_POS_AA,
+					MainActivityPrefs.NAV_BAR_SIZE_AA, MainActivityPrefs.TOOL_BAR_SIZE_AA,
+					MainActivityPrefs.CONTROL_PANEL_SIZE_AA, MainActivityPrefs.TEXT_ICON_SIZE_AA);
 		}
 	}
 
 	private void addInterface(MainActivityDelegate a, PreferenceSet ps, Pref<IntSupplier> theme,
 														Pref<BooleanSupplier> hideBars, Pref<BooleanSupplier> fullScreen,
-														Pref<BooleanSupplier> pgUpDown, Pref<IntSupplier> nbPos,
-														Pref<DoubleSupplier> nbSize, Pref<DoubleSupplier> tbSize,
-														Pref<DoubleSupplier> cpSize, Pref<DoubleSupplier> textIconSize) {
+														Pref<BooleanSupplier> pgUpDown, Pref<BooleanSupplier> dpadCursor,
+														Pref<IntSupplier> nbPos, Pref<DoubleSupplier> nbSize,
+														Pref<DoubleSupplier> tbSize, Pref<DoubleSupplier> cpSize,
+														Pref<DoubleSupplier> textIconSize) {
 		ps.addListPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = theme;
@@ -653,10 +654,10 @@ public class SettingsFragment extends MainActivityFragment
 			o.pref = pgUpDown;
 			o.title = R.string.show_pg_up_down;
 		});
-		if (BuildConfig.AUTO) {
+		if (dpadCursor != null) {
 			ps.addBooleanPref(o -> {
 				o.store = a.getPrefs();
-				o.pref = MainActivityPrefs.USE_DPAD_CURSOR;
+				o.pref = dpadCursor;
 				o.title = R.string.use_dpad_cursor;
 			});
 		}

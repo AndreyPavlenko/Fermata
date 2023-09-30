@@ -10,7 +10,6 @@ import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_LEFT;
 import static android.view.KeyEvent.KEYCODE_DPAD_UP_RIGHT;
-import static android.view.View.VISIBLE;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.ui.UiUtils.showAlert;
@@ -243,6 +242,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public boolean onKeyUp(int keyCode, KeyEvent keyEvent) {
+		Log.i(keyEvent);
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyUp(keyCode, keyEvent);
 
@@ -250,10 +250,16 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			switch (keyCode) {
 				case KEYCODE_DPAD_UP, KEYCODE_DPAD_DOWN, KEYCODE_DPAD_RIGHT, KEYCODE_DPAD_LEFT,
 						KEYCODE_DPAD_UP_RIGHT, KEYCODE_DPAD_DOWN_LEFT, KEYCODE_DPAD_DOWN_RIGHT -> {
+					Cursor c = (Cursor) findViewById(R.id.cursor);
+					if (c != null) c.delayedHide();
 					return true;
 				}
 				case KEYCODE_BACK -> {
-					if (findViewById(R.id.cursor) != null) return true;
+					Cursor c = (Cursor) findViewById(R.id.cursor);
+					if ((c != null) && c.ignoreBack) {
+						c.ignoreBack = false;
+						return true;
+					}
 				}
 				case KEYCODE_DPAD_CENTER -> {
 					Cursor c = (Cursor) findViewById(R.id.cursor);
@@ -262,11 +268,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			}
 		}
 
-		return d.onKeyDown(keyCode, keyEvent, super::onKeyDown);
+		return d.onKeyUp(keyCode, keyEvent, super::onKeyDown);
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent keyEvent) {
+		Log.i(keyEvent);
 		MainActivityDelegate d = delegate.peek();
 		if (d == null) return super.onKeyDown(keyCode, keyEvent);
 		if (!d.getPrefs().useDpadCursor(d)) return d.onKeyDown(keyCode, keyEvent, super::onKeyDown);
@@ -322,6 +329,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				cursor = screen.findViewById(R.id.cursor);
 				if ((cursor == null) || cursor.isFocused())
 					return d.onKeyDown(keyCode, keyEvent, super::onKeyDown);
+				cursor.ignoreBack = true;
 			}
 			case KEYCODE_DPAD_CENTER -> {
 				screen = findViewById(R.id.main_activity);
@@ -338,22 +346,16 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 		int w = screen.getWidth();
 		int h = screen.getHeight();
-		int cursorSize = (int) (Math.min(w, h) * 0.05f);
 
 		if (cursor == null) {
 			cursor = new Cursor(d, (int) (Math.min(w, h) * 0.05f));
 			((ViewGroup) screen).addView(cursor);
-			cursor.move(w / 2f, h / 2f, keyCode);
+			cursor.show(w / 2f, h / 2f);
 		} else if (!cursor.isVisible()) {
-			cursor.setVisibility(VISIBLE);
-			cursor.move(cursor.getX(), cursor.getY(), keyCode);
+			cursor.show(cursor.getX(), cursor.getY());
 		} else {
-			float step = cursorSize / 3f;
-			float cursorX = cursor.getX() + (step * x * cursor.accel);
-			float cursorY = cursor.getY() + (step * y * cursor.accel);
-			cursorX = Math.max(0, Math.min(w - step, cursorX));
-			cursorY = Math.max(0, Math.min(h - step, cursorY));
-			cursor.move(cursorX, cursorY, keyCode);
+			int cursorSize = (int) (Math.min(w, h) * 0.05f);
+			cursor.move(w, h, x, y, cursorSize / 3f, keyCode);
 		}
 
 		return true;
@@ -369,8 +371,10 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	private static final class Cursor extends AppCompatImageView
 			implements View.OnClickListener, View.OnLongClickListener {
 		private final MainActivityDelegate activity;
+		private Cancellable move = Cancellable.CANCELED;
 		private Cancellable hide = Cancellable.CANCELED;
 		private Cancellable resetAccel = Cancellable.CANCELED;
+		boolean ignoreBack;
 		int accel = 1;
 
 		Cursor(MainActivityDelegate d, int size) {
@@ -483,7 +487,9 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			}
 		}
 
-		private void delayedHide() {
+		void delayedHide() {
+			move.cancel();
+			move = Cancellable.CANCELED;
 			hide.cancel();
 			hide = activity.postDelayed(() -> {
 				hide = Cancellable.CANCELED;
@@ -493,8 +499,19 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 			}, 5000);
 		}
 
-		void move(float cursorX, float cursorY, int keyCode) {
-			delayedHide();
+		void show(float cursorX, float cursorY) {
+			setVisibility(VISIBLE);
+			animate().x(cursorX).y(cursorY).setDuration(0).start();
+		}
+
+		void move(int w, int h, float dx, float dy, float step, int keyCode) {
+			move.cancel();
+			move = activity.postDelayed(() -> move(w, h, dx, dy, step, keyCode), 50);
+
+			float cursorX = getX() + (step * dx * accel);
+			float cursorY = getY() + (step * dy * accel);
+			cursorX = Math.max(0, Math.min(w - step, cursorX));
+			cursorY = Math.max(0, Math.min(h - step, cursorY));
 
 			if (resetAccel.cancel()) accel += 1;
 			resetAccel = activity.postDelayed(() -> {

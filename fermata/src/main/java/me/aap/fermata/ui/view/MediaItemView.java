@@ -509,7 +509,10 @@ public class MediaItemView extends ConstraintLayout
 		super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
 		if (!BuildConfig.AUTO || !gainFocus) return;
 		MainActivityDelegate d = getMainActivity();
-		if (!d.getPrefs().useDpadCursor(d)) return;
+		if (d.getPrefs().useDpadCursor(d)) {
+			View c = d.findViewById(R.id.cursor);
+			if ((c != null) && (c.getVisibility() == VISIBLE)) return;
+		}
 
 		// The next item in the list must always be visible for rotary input scrolling
 		MediaItemListView lv = getListView();
