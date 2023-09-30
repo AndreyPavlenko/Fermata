@@ -15,6 +15,7 @@ import static me.aap.fermata.vfs.m3u.M3uFile.NAME;
 import static me.aap.fermata.vfs.m3u.M3uFile.URL;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
+import static me.aap.utils.net.http.HttpFileDownloader.RESP_TIMEOUT;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +27,7 @@ import me.aap.fermata.vfs.m3u.M3uFile;
 import me.aap.fermata.vfs.m3u.M3uFileSystemProvider;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.net.http.HttpFileDownloader;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -65,6 +67,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			e.setStringPref(CATCHUP_QUERY, f.getCatchupQuery());
 			e.setStringPref(LOGO_URL, f.getLogoUrl());
 			e.setStringPref(AGENT, f.getUserAgent());
+			e.setIntPref(RESP_TIMEOUT, f.getResponseTimeout());
 		}
 
 		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).map(ok -> {
@@ -170,6 +173,11 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.title = me.aap.fermata.R.string.m3u_playlist_agent;
 			o.stringHint = "Fermata/" + BuildConfig.VERSION_NAME;
 		});
+		sub.addIntPref(o -> {
+			o.store = ps;
+			o.pref = RESP_TIMEOUT;
+			o.title = me.aap.fermata.R.string.m3u_playlist_timeout;
+		});
 
 		return requestPrefs(a, prefs, ps);
 	}
@@ -206,6 +214,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		f.setLogoUrl(ps.getStringPref(LOGO_URL));
 		f.setPreferEpgLogo(ps.getBooleanPref(LOGO_PREFER_EPG));
 		f.setEpgMaxAge(EPG_FILE_AGE);
+		f.setResponseTimeout(ps.getIntPref(RESP_TIMEOUT));
 	}
 
 	public static void removeSource(TvM3uFile f) {

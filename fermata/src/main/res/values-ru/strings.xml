@@ -229,7 +229,6 @@
     <string name="m3u_playlist_name">Название</string>
     <string name="m3u_playlist_location">Расположение</string>
     <string name="m3u_playlist_location_hint">Файл или http(s) URL</string>
-    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_video">Видео плейлист</string>
 
     <string name="eq_manual">Ручные</string>

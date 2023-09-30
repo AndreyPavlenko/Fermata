@@ -5,6 +5,7 @@ import static me.aap.utils.net.http.HttpFileDownloader.AGENT;
 import static me.aap.utils.net.http.HttpFileDownloader.CHARSET;
 import static me.aap.utils.net.http.HttpFileDownloader.ENCODING;
 import static me.aap.utils.net.http.HttpFileDownloader.MAX_AGE;
+import static me.aap.utils.net.http.HttpFileDownloader.RESP_TIMEOUT;
 import static me.aap.utils.text.TextUtils.isInt;
 import static me.aap.utils.text.TextUtils.trim;
 
@@ -101,6 +102,14 @@ public class M3uFile implements VirtualFile {
 
 	public void setUserAgent(String agent) {
 		getPrefs().applyStringPref(AGENT, trim(agent));
+	}
+
+	public int getResponseTimeout() {
+		return getPrefs().getIntPref(RESP_TIMEOUT);
+	}
+
+	public void setResponseTimeout(int timeout) {
+		getPrefs().applyIntPref(RESP_TIMEOUT, timeout);
 	}
 
 	@NonNull

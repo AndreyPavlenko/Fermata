@@ -111,7 +111,6 @@
     <string name="lang">Diller</string>
     <string name="loading">Yükleniyor…</string>
     <string name="m3u_playlist">M3U oynatma listesi</string>
-    <string name="m3u_playlist_agent">User-Agent</string>
     <string name="m3u_playlist_location">Konum</string>
     <string name="m3u_playlist_location_hint">"Dosya veya Http URL'si"</string>
     <string name="m3u_playlist_name">Adı</string>
