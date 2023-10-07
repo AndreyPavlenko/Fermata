@@ -25,13 +25,11 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
-import org.videolan.libvlc.MediaPlayer.TrackDescription;
+import org.videolan.libvlc.interfaces.ILibVLC;
 import org.videolan.libvlc.interfaces.IMedia;
-import org.videolan.libvlc.interfaces.IMedia.AudioTrack;
-import org.videolan.libvlc.interfaces.IMedia.SubtitleTrack;
+import org.videolan.libvlc.interfaces.IMedia.Track;
 import org.videolan.libvlc.interfaces.IMedia.VideoTrack;
 import org.videolan.libvlc.interfaces.IVLCVout;
 
@@ -45,6 +43,7 @@ import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
 import me.aap.fermata.media.engine.MediaEngineException;
+import me.aap.fermata.media.engine.MediaStreamInfo;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -52,7 +51,6 @@ import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
 
@@ -63,7 +61,7 @@ public class VlcEngine extends MediaEngineBase
 		implements MediaPlayer.EventListener, IVLCVout.OnNewVideoLayoutListener {
 	@SuppressWarnings({"FieldCanBeLocal", "unused"}) // Hold reference to prevent garbage collection
 	private final VlcEngineProvider provider;
-	private final LibVLC vlc;
+	private final ILibVLC vlc;
 	private final MediaPlayer player;
 	private final AudioEffects effects;
 	@NonNull
@@ -72,7 +70,7 @@ public class VlcEngine extends MediaEngineBase
 
 	public VlcEngine(VlcEngineProvider provider, Listener listener) {
 		super(listener);
-		LibVLC vlc = provider.getVlc();
+		ILibVLC vlc = provider.getVlc();
 		int sessionId = provider.getAudioSessionId();
 		effects = (sessionId != AudioManager.ERROR) ? AudioEffects.create(0, sessionId) : null;
 		this.provider = provider;
@@ -263,7 +261,7 @@ public class VlcEngine extends MediaEngineBase
 	public float getVideoWidth() {
 		float w = source.getVideoWidth();
 		if ((int) w == 0) {
-			VideoTrack t = player.getCurrentVideoTrack();
+			VideoTrack t = getCurrentVideoTrack();
 			if (t != null) return t.width;
 		}
 		return w;
@@ -273,7 +271,7 @@ public class VlcEngine extends MediaEngineBase
 	public float getVideoHeight() {
 		float h = source.getVideoHeight();
 		if ((int) h == 0) {
-			VideoTrack t = player.getCurrentVideoTrack();
+			VideoTrack t = getCurrentVideoTrack();
 			if (t != null) return t.height;
 		}
 		return h;
@@ -287,17 +285,15 @@ public class VlcEngine extends MediaEngineBase
 	@Override
 	public List<AudioStreamInfo> getAudioStreamInfo() {
 		if (source == Source.NULL) return emptyList();
-		TrackDescription[] tracks = player.getAudioTracks();
+		Track[] tracks = player.getTracks(Track.Type.Audio);
 		if ((tracks == null) || (tracks.length == 0)) return emptyList();
 		IMedia m = player.getMedia();
 		if (m == null) return emptyList();
 		try {
 			List<AudioStreamInfo> streams = new ArrayList<>(tracks.length);
-			for (TrackDescription td : tracks) {
-				if (td.id == -1) continue;
-				IMedia.Track t = m.getTrack(td.id);
-				if (!(t instanceof AudioTrack a)) continue;
-				streams.add(new AudioStreamInfo(a.id, a.language, td.name));
+			for (int i = 0; i < tracks.length; i++) {
+				Track t = tracks[i];
+				streams.add(new AudioStreamInfo(i, t.language, t.name));
 			}
 			return streams;
 		} finally {
@@ -308,13 +304,35 @@ public class VlcEngine extends MediaEngineBase
 	@Nullable
 	@Override
 	public AudioStreamInfo getCurrentAudioStreamInfo() {
-		int id = player.getAudioTrack();
-		return CollectionUtils.find(getAudioStreamInfo(), s -> s.getId() == id);
+		Track t = player.getSelectedTrack(Track.Type.Audio);
+		if (t == null) return null;
+		Track[] tracks = player.getTracks(Track.Type.Audio);
+		if (tracks == null) return null;
+		for (int i = 0; i < tracks.length; i++) {
+			if (t.id.equals(tracks[i].id)) return new AudioStreamInfo(i, t.language, t.name);
+		}
+		return null;
+
 	}
 
 	@Override
 	public void setCurrentAudioStream(@Nullable AudioStreamInfo i) {
-		player.setAudioTrack((i != null) ? (int) i.getId() : -1);
+		selectTrack(i, Track.Type.Audio);
+	}
+
+	private void selectTrack(@Nullable MediaStreamInfo i, int type) {
+		String id = null;
+
+		if (i != null) {
+			int idx = (int) i.getId();
+			if (idx >= 0) {
+				Track[] tracks = player.getTracks(type);
+				if ((tracks != null) && (idx < tracks.length)) id = tracks[idx].id;
+			}
+		}
+
+		if (id != null) player.selectTrack(id);
+		else player.unselectTrackType(type);
 	}
 
 	@Override
@@ -335,7 +353,7 @@ public class VlcEngine extends MediaEngineBase
 	@Override
 	public boolean isSubtitlesSupported() {
 		if (super.isSubtitlesSupported()) return true;
-		TrackDescription[] tracks = player.getSpuTracks();
+		Track[] tracks = player.getTracks(Track.Type.Text);
 		return (tracks != null) && (tracks.length != 0);
 	}
 
@@ -344,18 +362,16 @@ public class VlcEngine extends MediaEngineBase
 		if (source == Source.NULL) return completedEmptyList();
 
 		return super.getSubtitleStreamInfo().map(subFiles -> {
-			TrackDescription[] tracks = player.getSpuTracks();
+			Track[] tracks = player.getTracks(Track.Type.Text);
 			if ((tracks == null) || (tracks.length == 0)) return subFiles;
 			IMedia m = player.getMedia();
 			if (m == null) return subFiles;
 			try {
 				List<SubtitleStreamInfo> streams = new ArrayList<>(subFiles.size() + tracks.length);
 				streams.addAll(subFiles);
-				for (TrackDescription td : tracks) {
-					if (td.id == -1) continue;
-					IMedia.Track t = m.getTrack(td.id);
-					if (!(t instanceof SubtitleTrack s)) continue;
-					streams.add(new SubtitleStreamInfo(s.id, s.language, td.name));
+				for (int i = 0; i < tracks.length; i++) {
+					Track t = tracks[i];
+					streams.add(new SubtitleStreamInfo(i, t.language, t.name));
 				}
 				return streams;
 			} finally {
@@ -367,36 +383,31 @@ public class VlcEngine extends MediaEngineBase
 	@Nullable
 	@Override
 	public SubtitleStreamInfo getCurrentSubtitleStreamInfo() {
-		var i = super.getCurrentSubtitleStreamInfo();
-		if (i != null) return i;
+		var info = super.getCurrentSubtitleStreamInfo();
+		if (info != null) return info;
 
 		IMedia m = player.getMedia();
 		if (m == null) return null;
-		int id = player.getSpuTrack();
-		if (id == -1) return null;
-		TrackDescription[] tracks = player.getSpuTracks();
-		if ((tracks == null) || (tracks.length == 0)) return null;
-
-		for (TrackDescription td : tracks) {
-			if (td.id != id) continue;
-			IMedia.Track t = m.getTrack(id);
-			if (!(t instanceof SubtitleTrack s)) return null;
-			return new SubtitleStreamInfo(id, s.language, td.name);
+		Track t = player.getSelectedTrack(Track.Type.Text);
+		if (t == null) return null;
+		Track[] tracks = player.getTracks(Track.Type.Text);
+		if (tracks == null) return null;
+		for (int i = 0; i < tracks.length; i++) {
+			if (t.id.equals(tracks[i].id)) new SubtitleStreamInfo(i, t.language, t.name);
 		}
-
 		return null;
 	}
 
 	@Override
 	public void setCurrentSubtitleStream(@Nullable SubtitleStreamInfo i) {
 		if (i == null) {
-			player.setSpuTrack(-1);
+			selectTrack(null, Track.Type.Text);
 			super.setCurrentSubtitleStream(null);
 		} else if (i.getFiles().isEmpty()) {
-			player.setSpuTrack((int) i.getId());
+			selectTrack(i, Track.Type.Text);
 			super.setCurrentSubtitleStream(null);
 		} else {
-			player.setSpuTrack(-1);
+			selectTrack(null, Track.Type.Text);
 			super.setCurrentSubtitleStream(i);
 		}
 	}
@@ -428,7 +439,7 @@ public class VlcEngine extends MediaEngineBase
 					PlayableItemPrefs prefs = vs.getItem().getPrefs();
 					MediaEngine.selectMediaStream(prefs::getAudioIdPref, prefs::getAudioLangPref,
 							prefs::getAudioKeyPref, () -> completed(getAudioStreamInfo()),
-							ai -> player.setAudioTrack((int) ai.getId()));
+							ai -> selectTrack(ai, Track.Type.Audio));
 
 					if (BuildConfig.AUTO && (videoView != null)) {
 						MainActivityDelegate.getActivityDelegate(videoView.getContext()).onSuccess(a -> {
@@ -448,7 +459,7 @@ public class VlcEngine extends MediaEngineBase
 					pendingPosition = -1;
 				}
 
-				if (!isPaused()) player.setSpuTrack(-1);
+				if (!isPaused()) selectTrack(null, Track.Type.Text);
 				started();
 				listener.onEngineStarted(this);
 			}
@@ -509,6 +520,14 @@ public class VlcEngine extends MediaEngineBase
 		player.getVLCVout().setWindowSize(sw, sh);
 
 		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
+			IMedia.VideoTrack t = getCurrentVideoTrack();
+			if (t != null) {
+				src.videoWidth = src.visibleVideoWidth = t.width;
+				src.videoHeight = src.visibleVideoHeight = t.height;
+			}
+		}
+
+		if ((src.videoWidth == 0) || (src.videoHeight == 0)) {
 			setPlayerLayout(sw, sh, scaleType);
 			setSurfaceLayout(view, MATCH_PARENT, MATCH_PARENT);
 			return;
@@ -537,29 +556,28 @@ public class VlcEngine extends MediaEngineBase
 		double dar = dw / dh;
 
 		switch (scaleType) {
-			default:
-			case SCALE_BEST:
+			case SCALE_BEST -> {
 				if (dar < ar) dh = dw / ar;
 				else dw = dh * ar;
-				break;
-			case SCALE_FILL:
+			}
+			case SCALE_FILL -> {
 				if (dar >= ar) dh = dw / ar;
 				else dw = dh * ar;
-				break;
-			case SCALE_ORIGINAL:
+			}
+			case SCALE_ORIGINAL -> {
 				dh = src.videoHeight;
 				dw = vw;
-				break;
-			case SCALE_4_3:
+			}
+			case SCALE_4_3 -> {
 				ar = 4.0 / 3.0;
 				if (dar < ar) dh = dw / ar;
 				else dw = dh * ar;
-				break;
-			case SCALE_16_9:
+			}
+			case SCALE_16_9 -> {
 				ar = 16.0 / 9.0;
 				if (dar < ar) dh = dw / ar;
 				else dw = dh * ar;
-				break;
+			}
 		}
 
 		sw = (int) Math.ceil(dw * src.videoWidth / src.visibleVideoWidth);
@@ -574,7 +592,7 @@ public class VlcEngine extends MediaEngineBase
 				player.setAspectRatio(null);
 			}
 			case SCALE_FILL -> {
-				VideoTrack t = player.getCurrentVideoTrack();
+				VideoTrack t = getCurrentVideoTrack();
 				if (t == null) {
 					player.setScale(0);
 					player.setAspectRatio(null);
@@ -642,6 +660,10 @@ public class VlcEngine extends MediaEngineBase
 	@Override
 	public void unmute(Context ctx) {
 		player.setVolume(100);
+	}
+
+	private VideoTrack getCurrentVideoTrack() {
+		return (VideoTrack) player.getSelectedTrack(Track.Type.Video);
 	}
 
 	private static class Source implements Closeable {

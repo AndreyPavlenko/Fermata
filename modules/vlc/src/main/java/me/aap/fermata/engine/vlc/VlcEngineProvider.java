@@ -1,5 +1,12 @@
 package me.aap.fermata.engine.vlc;
 
+import static org.videolan.libvlc.interfaces.IMedia.Parse.DoInteract;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
+import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseNetwork;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.media.AudioManager;
@@ -7,8 +14,10 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.media.MediaMetadataCompat;
 
-import org.videolan.libvlc.LibVLC;
+import org.videolan.libvlc.FactoryManager;
 import org.videolan.libvlc.Media;
+import org.videolan.libvlc.interfaces.ILibVLC;
+import org.videolan.libvlc.interfaces.ILibVLCFactory;
 import org.videolan.libvlc.interfaces.IMedia;
 
 import java.io.File;
@@ -25,18 +34,11 @@ import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.security.SecurityUtils;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.videolan.libvlc.interfaces.IMedia.Parse.DoInteract;
-import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchLocal;
-import static org.videolan.libvlc.interfaces.IMedia.Parse.FetchNetwork;
-import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseLocal;
-import static org.videolan.libvlc.interfaces.IMedia.Parse.ParseNetwork;
-
 /**
  * @author Andrey Pavlenko
  */
 public class VlcEngineProvider implements MediaEngineProvider {
-	private LibVLC vlc;
+	private ILibVLC vlc;
 	private int audioSessionId;
 	private String artUri;
 
@@ -61,7 +63,6 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		opts.add("--audio-resampler");
 		opts.add("soxr");
 		opts.add("--subsdec-encoding=UTF8");
-		opts.add("--freetype-rel-fontsize=16");
 		opts.add("--freetype-color=16777215");
 		opts.add("--freetype-opacity=255");
 		opts.add("--freetype-background-opacity=0");
@@ -76,7 +77,8 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		opts.add("--no-lua");
 		opts.add("--no-stats");
 
-		vlc = new LibVLC(ctx, opts);
+		ILibVLCFactory f = (ILibVLCFactory) FactoryManager.getFactory(ILibVLCFactory.factoryId);
+		vlc = f.getFromOptions(ctx, opts);
 	}
 
 	@Override
@@ -159,7 +161,7 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		}
 	}
 
-	public LibVLC getVlc() {
+	public ILibVLC getVlc() {
 		return vlc;
 	}
 
