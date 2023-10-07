@@ -16,7 +16,7 @@ import me.aap.utils.vfs.generic.GenericFileSystem;
  * @author Andrey Pavlenko
  */
 public class IntentPlayable extends PlayableItemBase {
-	private boolean video;
+	private final boolean video;
 
 	public IntentPlayable(MainActivityDelegate a, Uri u) {
 		super("intent://" + md5(u.toString()), new ExtRoot("intent_root", null) {
@@ -27,7 +27,7 @@ public class IntentPlayable extends PlayableItemBase {
 			}
 		}, GenericFileSystem.getInstance().create(Rid.create(u)));
 		String mime = a.getContext().getContentResolver().getType(u);
-		video = (mime != null) && mime.startsWith("video/");
+		video = (mime == null) || mime.startsWith("video/");
 	}
 
 	@NonNull

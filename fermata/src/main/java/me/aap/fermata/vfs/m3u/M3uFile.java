@@ -11,6 +11,7 @@ import static me.aap.utils.text.TextUtils.trim;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -135,6 +136,12 @@ public class M3uFile implements VirtualFile {
 
 	@Override
 	public AsyncInputStream getInputStream() throws IOException {
+		String url = getUrl();
+
+		if (url.startsWith("content://")) {
+			return AsyncInputStream.from(App.get().getContentResolver().openInputStream(Uri.parse(url)));
+		}
+
 		return LocalFileSystem.getInstance().getFile(getLocalFile()).getInputStream();
 	}
 
@@ -167,12 +174,8 @@ public class M3uFile implements VirtualFile {
 	@NonNull
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + " {" +
-				"rid=" + rid +
-				", name='" + getName() + '\'' +
-				", url='" + getUrl() + '\'' +
-				", localFile=" + getLocalFile() +
-				'}';
+		return getClass().getSimpleName() + " {" + "rid=" + rid + ", name='" + getName() + '\'' +
+				", url='" + getUrl() + '\'' + ", localFile=" + getLocalFile() + '}';
 	}
 
 	@NonNull

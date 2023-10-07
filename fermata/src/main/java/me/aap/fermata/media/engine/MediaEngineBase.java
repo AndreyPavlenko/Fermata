@@ -347,14 +347,12 @@ public abstract class MediaEngineBase implements MediaEngine {
 		}
 
 		void sync(long position, float speed, boolean restart) {
-			if (sub != null) {
-				if (restart) {
-					sub.stop(false);
-					sub.start(position, getSubtitleDelay(), speed);
-					if (!isPlaying()) sub.stop(true);
-				} else {
-					sub.sync(position, getSubtitleDelay(), speed);
-				}
+			if (sub == null) return;
+			if (restart) {
+				sub.stop(false);
+				sub.start(position, getSubtitleDelay(), speed);
+			} else {
+				sub.sync(position, getSubtitleDelay(), speed);
 			}
 		}
 

@@ -1,5 +1,7 @@
 package me.aap.fermata.media.sub;
 
+import static me.aap.utils.function.Cancellable.CANCELED;
+
 import java.util.ArrayList;
 
 import me.aap.fermata.media.sub.SubGrid.Position;
@@ -42,12 +44,13 @@ public class SubScheduler {
 		if (started) return;
 		started = true;
 		sync(time, delay, speed);
-		for (var w : workers) w.run();
+		assert started;
 	}
 
 	public void stop(boolean pause) {
 		started = false;
 		for (var w : workers) w.stop(pause);
+		assert !started;
 	}
 
 	public boolean isStarted() {
@@ -55,15 +58,19 @@ public class SubScheduler {
 	}
 
 	public void sync(long time, int delay, float speed) {
+		if (!started) return;
 		this.time = time + delay;
 		this.speed = speed;
 		syncTime = System.currentTimeMillis();
+		for (var w : workers) {
+			if (!w.isStarted()) w.start();
+		}
 	}
 
 	private final class Worker implements Runnable {
 		private final Position pos;
 		private final Subtitles subtitles;
-		private Cancellable sched = Cancellable.CANCELED;
+		private Cancellable sched = CANCELED;
 
 
 		Worker(Position pos, Subtitles subtitles) {
@@ -73,6 +80,7 @@ public class SubScheduler {
 
 		@Override
 		public void run() {
+			assert started;
 			assert !sched.cancel();
 			long time = time();
 			Subtitles.Text text = subtitles.getNext(time);
@@ -86,25 +94,38 @@ public class SubScheduler {
 
 			if (delay > 500) {
 				consumer.accept(pos, null);
-				sched = executor.schedule(this, delay(delay));
+				sched(delay);
 			} else {
 				consumer.accept(pos, text);
-				sched = executor.schedule(this, delay(text.getDuration() + delay));
+				sched(text.getDuration() + delay);
 			}
+		}
+
+		void start() {
+			assert !sched.cancel();
+			sched = executor.submit(this);
 		}
 
 		void stop(boolean pause) {
 			if (!pause) consumer.accept(pos, null);
 			sched.cancel();
-			sched = Cancellable.CANCELED;
+			sched = CANCELED;
+		}
+
+		boolean isStarted() {
+			return sched != CANCELED;
 		}
 
 		private long time() {
 			return time + (long) (speed * (System.currentTimeMillis() - syncTime));
 		}
 
-		private long delay(long delay) {
-			return (long) (delay / speed);
+
+		private void sched(long delay) {
+			if (!started) return;
+			delay /= speed;
+			if (delay > 0) sched = executor.schedule(this, delay);
+			else sched = CANCELED;
 		}
 	}
 }

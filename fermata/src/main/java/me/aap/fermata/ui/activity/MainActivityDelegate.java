@@ -12,6 +12,7 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static me.aap.fermata.BuildConfig.AUTO;
+import static me.aap.fermata.action.KeyEventHandler.handleKeyEvent;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CHANGE_BRIGHTNESS;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.CLOCK_POS;
@@ -71,6 +72,7 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.textview.MaterialTextView;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -81,7 +83,6 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.action.Action;
 import me.aap.fermata.action.Key;
-import me.aap.fermata.action.KeyEventHandler;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataActivityAddon;
 import me.aap.fermata.addon.FermataAddon;
@@ -149,7 +150,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	private final HandlerExecutor handler = new HandlerExecutor(App.get().getHandler().getLooper());
 	private final NavBarMediator navBarMediator = new NavBarMediator();
 	private final FermataServiceUiBinder mediaServiceBinder;
-	private final KeyEventHandler keyHandler;
 	private ToolBarView toolBar;
 	private NavBarView navBar;
 	private BodyLayout body;
@@ -166,7 +166,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	public MainActivityDelegate(AppActivity activity, FermataServiceUiBinder binder) {
 		super(activity);
 		mediaServiceBinder = binder;
-		keyHandler = new KeyEventHandler(this);
 	}
 
 	@NonNull
@@ -956,18 +955,23 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private static String[] getRequiredPermissions() {
-		if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
-			return new String[]{permission.READ_MEDIA_AUDIO, permission.READ_MEDIA_VIDEO,
-					permission.FOREGROUND_SERVICE, permission.ACCESS_MEDIA_LOCATION,
-					permission.USE_FULL_SCREEN_INTENT};
-		} else if (VERSION.SDK_INT >= VERSION_CODES.Q) {
-			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE,
-					permission.ACCESS_MEDIA_LOCATION, permission.USE_FULL_SCREEN_INTENT};
-		} else if (VERSION.SDK_INT == VERSION_CODES.P) {
-			return new String[]{permission.READ_EXTERNAL_STORAGE, permission.FOREGROUND_SERVICE};
-		} else {
-			return new String[]{permission.READ_EXTERNAL_STORAGE};
+		List<String> perms = new ArrayList<>();
+		perms.add(permission.READ_EXTERNAL_STORAGE);
+		if (VERSION.SDK_INT >= VERSION_CODES.P) {
+			perms.add(permission.FOREGROUND_SERVICE);
 		}
+		if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+			perms.add(permission.ACCESS_MEDIA_LOCATION);
+			perms.add(permission.USE_FULL_SCREEN_INTENT);
+		}
+		if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
+			perms.add(permission.USE_FULL_SCREEN_INTENT);
+			perms.add(permission.POST_NOTIFICATIONS);
+		}
+		if (VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) {
+			perms.add(permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK);
+		}
+		return perms.toArray(new String[0]);
 	}
 
 	@Override
@@ -1016,18 +1020,18 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	public boolean onKeyDown(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
-		return keyHandler.handle(event, next);
+		return handleKeyEvent(this, event, next);
 	}
 
 	@Override
 	public boolean onKeyUp(int code, KeyEvent event, IntObjectFunction<KeyEvent, Boolean> next) {
-		return keyHandler.handle(event, next);
+		return handleKeyEvent(this, event, next);
 	}
 
 	@Override
 	public boolean onKeyLongPress(int code, KeyEvent event,
 																IntObjectFunction<KeyEvent, Boolean> next) {
-		return keyHandler.handle(event, next);
+		return handleKeyEvent(this, event, next);
 	}
 
 	public HandlerExecutor getHandler() {
@@ -1063,6 +1067,10 @@ public class MainActivityDelegate extends ActivityDelegate
 		private final SharedPreferences prefs = FermataApplication.get().getDefaultSharedPreferences();
 
 		private Prefs() {
+			App.get().getHandler().post(this::migratePrefs);
+		}
+
+		private void migratePrefs() {
 			// Rename old prefs
 			var oldTheme = Pref.i("THEME", THEME_DARK);
 			var oldScale = Pref.f("MEDIA_ITEM_SCALE", 1f);

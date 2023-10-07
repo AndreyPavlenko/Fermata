@@ -625,6 +625,14 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		private void onClick(PlayableItem i) {
 			MainActivityDelegate a = getMainActivity();
+
+			if (i.isVideo() && !a.getBody().getVideoView().isSurfaceCreated() &&
+					!a.getMediaSessionCallback().hasCustomEngineProvider()) {
+				a.getBody().setMode(BodyLayout.Mode.VIDEO);
+				a.getBody().getVideoView().onSurfaceCreated(() -> onClick(i));
+				return;
+			}
+
 			FermataServiceUiBinder b = a.getMediaServiceBinder();
 			PlayableItem cur = b.getCurrentItem();
 			b.playItem(i);

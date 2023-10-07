@@ -1,6 +1,5 @@
 package me.aap.fermata.util;
 
-import static android.content.pm.PackageManager.FEATURE_LEANBACK;
 import static android.os.Build.VERSION.SDK_INT;
 
 import android.content.ActivityNotFoundException;
@@ -25,6 +24,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
+import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.net.http.HttpFileDownloader;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.notif.HttpDownloadStatusListener;
@@ -70,10 +70,7 @@ public class Utils {
 
 	public static boolean isSafSupported(@Nullable MainActivityDelegate a) {
 		if ((a != null) && a.isCarActivity()) return false;
-		Context ctx = (a == null) ? App.get() : a.getContext();
-		if (ctx.getPackageManager().hasSystemFeature(FEATURE_LEANBACK)) return false;
-		Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-		return i.resolveActivity(ctx.getPackageManager()) != null;
+		return MiscUtils.isSafSupported();
 	}
 
 	public static boolean isExternalStorageManager() {

@@ -138,7 +138,7 @@ public class CastAddon
 	@Override
 	public void onSessionEnding(@NonNull CastSession castSession) {
 		if ((cb == null) || (engProvider == null)) return;
-		cb.removeEngineProvider(engProvider);
+		cb.removeCustomEngineProvider(engProvider);
 	}
 
 	@Override
@@ -172,13 +172,13 @@ public class CastAddon
 		if (client == null) return;
 		IoUtils.close(engProvider);
 		engProvider = new CastMediaEngineProvider(session, client, cb.getMediaLib());
-		cb.setEngineProvider(engProvider);
+		cb.setCustomEngineProvider(engProvider);
 	}
 
 	private void disconnected() {
 		IoUtils.close(engProvider);
 		if ((cb == null) || (engProvider == null)) return;
-		cb.removeEngineProvider(engProvider);
+		cb.removeCustomEngineProvider(engProvider);
 		this.engProvider = null;
 	}
 }

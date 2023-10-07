@@ -82,7 +82,7 @@ public class M3uFileSystem implements VirtualFileSystem {
 			return completedNull();
 		}
 
-		if (url.startsWith("/")) {
+		if (url.startsWith("/") || url.startsWith("content://")) {
 			p.complete(file);
 			return p;
 		}

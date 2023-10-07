@@ -70,11 +70,15 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		setVlcPlayer(true);
 	}
 
-	public void setEngineProvider(@NonNull MediaEngineProvider engineProvider) {
+	public boolean hasCustomEngineProvider() {
+		return engineProvider != null;
+	}
+
+	public void setCustomEngineProvider(@NonNull MediaEngineProvider engineProvider) {
 		this.engineProvider = engineProvider;
 	}
 
-	public boolean removeEngineProvider(MediaEngineProvider engineProvider) {
+	public boolean removeCustomEngineProvider(MediaEngineProvider engineProvider) {
 		if (this.engineProvider != engineProvider) return false;
 		this.engineProvider = null;
 		return true;

@@ -88,6 +88,7 @@ public class M3uFileSystemProvider extends VfsProviderBase {
 		String u = ps.getStringPref(URL);
 		if (u.startsWith("http://")) return u.length() > 7;
 		if (u.startsWith("https://")) return u.length() > 8;
+		if (u.startsWith("content://")) return u.length() > 10;
 		if (u.startsWith("/")) return new File(u).isFile();
 		return false;
 	}

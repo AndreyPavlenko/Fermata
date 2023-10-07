@@ -1,6 +1,7 @@
 package me.aap.fermata.ui.fragment;
 
 import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
+import static android.os.Build.VERSION.SDK_INT;
 import static me.aap.fermata.BuildConfig.ENABLE_GS;
 import static me.aap.fermata.util.Utils.isSafSupported;
 import static me.aap.fermata.vfs.FermataVfsManager.GDRIVE_ID;
@@ -10,9 +11,11 @@ import static me.aap.fermata.vfs.FermataVfsManager.SMB_ID;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
+import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -127,8 +130,15 @@ public class FoldersFragment extends MediaLibFragment {
 		menu.show(b -> {
 			b.setTitle(R.string.add_folder);
 			b.setSelectionHandler(this::addFolder);
-			b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
-			if (isSafSupported(a)) b.addItem(R.id.vfs_content, R.string.vfs_content);
+			if (isSafSupported(a)) {
+				if ((SDK_INT < Build.VERSION_CODES.TIRAMISU) ||
+						App.get().hasManifestPermission(Manifest.permission.MANAGE_EXTERNAL_STORAGE)) {
+					b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
+				}
+				b.addItem(R.id.vfs_content, R.string.vfs_content);
+			} else {
+				b.addItem(R.id.vfs_file_system, R.string.vfs_file_system);
+			}
 			b.addItem(R.id.vfs_sftp, R.string.vfs_sftp);
 			b.addItem(R.id.vfs_smb, R.string.vfs_smb);
 			if (ENABLE_GS) b.addItem(R.id.vfs_gdrive, R.string.vfs_gdrive);
@@ -168,8 +178,8 @@ public class FoldersFragment extends MediaLibFragment {
 					.onSuccess(this::addFolderResult);
 		} catch (ActivityNotFoundException ex) {
 			String msg = ex.getLocalizedMessage();
-			UiUtils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
-					(msg != null) ? msg : ex.toString()));
+			UiUtils.showAlert(getContext(),
+					getString(R.string.err_failed_add_folder, (msg != null) ? msg : ex.toString()));
 		}
 	}
 
@@ -191,11 +201,8 @@ public class FoldersFragment extends MediaLibFragment {
 
 	private void addFolderVfs(String provId, @StringRes int name) {
 		FermataVfsManager mgr = getLib().getVfsManager();
-		mgr.getProvider(provId)
-				.then(p -> p.select(getMainActivity(), mgr.getFileSystems(provId)))
-				.main()
-				.onFailure(fail -> failedToLoadModule(name, fail))
-				.onSuccess(this::addFolderResult);
+		mgr.getProvider(provId).then(p -> p.select(getMainActivity(), mgr.getFileSystems(provId)))
+				.main().onFailure(fail -> failedToLoadModule(name, fail)).onSuccess(this::addFolderResult);
 	}
 
 	private void failedToLoadModule(@StringRes int name, Throwable ex) {
@@ -210,8 +217,8 @@ public class FoldersFragment extends MediaLibFragment {
 				UiUtils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
 			} else {
 				String msg = ex.getLocalizedMessage();
-				UiUtils.showAlert(getContext(), getString(R.string.err_failed_add_folder,
-						(msg != null) ? msg : ex.toString()));
+				UiUtils.showAlert(getContext(),
+						getString(R.string.err_failed_add_folder, (msg != null) ? msg : ex.toString()));
 			}
 		});
 	}
@@ -301,7 +308,8 @@ public class FoldersFragment extends MediaLibFragment {
 
 				FloatingButton fb = getMainActivity().getFloatingButton();
 				fb.requestFocus();
-				Animation shake = AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
+				Animation shake =
+						AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
 				fb.startAnimation(shake);
 			});
 		}

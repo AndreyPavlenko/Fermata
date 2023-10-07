@@ -18,6 +18,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
+import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 
@@ -70,6 +71,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
@@ -83,7 +85,7 @@ public class VideoView extends FrameLayout
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(
 			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.SUB_DELAY));
 	private SubDrawer subDrawer;
-	private boolean surfaceCreated;
+	private FutureSupplier<?> createSurface = new Promise<>();
 
 	public VideoView(Context context) {
 		this(context, null);
@@ -183,22 +185,15 @@ public class VideoView extends FrameLayout
 	}
 
 	public void showVideo(boolean hideTitle) {
-		if (surfaceCreated) {
+		createSurface.onSuccess(v -> {
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
 			MediaSessionCallback cb = a.getMediaSessionCallback();
 			MediaEngine eng = cb.getEngine();
-			if (eng == null) return;
-
-			PlayableItem i = eng.getSource();
-			if ((i == null) || !i.isVideo()) return;
-
-			setSurfaceSize(eng);
-			cb.addVideoView(this, a.isCarActivity() ? 0 : 1);
-
+			if (eng != null) setSurfaceSize(eng);
 			VideoInfoView info = getVideoInfoView();
 			if (hideTitle && (info != null)) info.setVisibility(GONE);
-		}
+		});
 	}
 
 	public void prepareSubDrawer(boolean dbl) {
@@ -221,18 +216,19 @@ public class VideoView extends FrameLayout
 	public void accept(SubGrid.Position position, @Nullable Subtitles.Text text) {
 		if (subDrawer == null) return;
 		if (!subDrawer.setText(position, text)) return;
-		if (!surfaceCreated) return;
-		SurfaceView sv = getSubtitleSurface();
-		if (sv == null) return;
+		createSurface.onSuccess(v -> {
+			SurfaceView sv = getSubtitleSurface();
+			if (sv == null) return;
 
-		var h = sv.getHolder();
-		var c = h.lockCanvas();
-		try {
-			subDrawer.clr(c);
-			subDrawer.draw(c);
-		} finally {
-			h.unlockCanvasAndPost(c);
-		}
+			var h = sv.getHolder();
+			var c = h.lockCanvas();
+			try {
+				subDrawer.clr(c);
+				subDrawer.draw(c);
+			} finally {
+				h.unlockCanvasAndPost(c);
+			}
+		});
 	}
 
 	public void setSurfaceSize(MediaEngine eng) {
@@ -298,9 +294,7 @@ public class VideoView extends FrameLayout
 	@Override
 	public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
 														 int oldTop, int oldRight, int oldBottom) {
-		FermataApplication.get().getHandler().post(() -> {
-			if (!surfaceCreated) return;
-
+		FermataApplication.get().getHandler().post(() -> createSurface.onSuccess(s -> {
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
 			MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
@@ -308,7 +302,7 @@ public class VideoView extends FrameLayout
 
 			PlayableItem i = eng.getSource();
 			if ((i != null) && i.isVideo()) setSurfaceSize(eng);
-		});
+		}));
 	}
 
 	@Override
@@ -316,14 +310,26 @@ public class VideoView extends FrameLayout
 		if (!getVideoSurface().getHolder().getSurface().isValid()) return;
 		SurfaceView s = getSubtitleSurface();
 		if ((s != null) && !s.getHolder().getSurface().isValid()) return;
-		surfaceCreated = true;
-		showVideo(true);
+		getActivity().onSuccess(
+				a -> a.getMediaSessionCallback().addVideoView(this, a.isCarActivity() ? 0 : 1));
+		if (createSurface instanceof Promise<?> p) {
+			createSurface = completedNull();
+			p.complete(null);
+		}
 	}
 
 	@Override
 	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-		surfaceCreated = false;
+		createSurface = new Promise<>();
 		getActivity().onSuccess(a -> a.getMediaSessionCallback().removeVideoView(this));
+	}
+
+	public boolean isSurfaceCreated() {
+		return createSurface.isDone();
+	}
+
+	public void onSurfaceCreated(Runnable run) {
+		createSurface.onSuccess(v -> run.run());
 	}
 
 	@Override
@@ -403,7 +409,7 @@ public class VideoView extends FrameLayout
 
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
-		if (surfaceCreated && !Collections.disjoint(prefChange, prefs)) {
+		if (createSurface.isDone() && !Collections.disjoint(prefChange, prefs)) {
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
 			MediaEngine eng = a.getMediaSessionCallback().getEngine();

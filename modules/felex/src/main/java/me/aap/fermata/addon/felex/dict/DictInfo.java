@@ -39,7 +39,7 @@ public class DictInfo {
 		String srcLang = null;
 		String targetLang = null;
 
-		for (int i = r.readLine(sb); i != -1; sb.setLength(1024), i = r.readLine(sb)) {
+		for (int i = r.readLine(sb, 1024); i != -1; sb.setLength(0), i = r.readLine(sb)) {
 			if ((sb.length() == 0) || sb.charAt(0) != '#') break;
 			if (TextUtils.startsWith(sb, TAG_NAME))
 				name = sb.substring(TAG_NAME.length()).trim();

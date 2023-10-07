@@ -33,6 +33,7 @@ import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_REWINDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS;
+import static me.aap.fermata.action.KeyEventHandler.handleKeyEvent;
 import static me.aap.fermata.media.engine.MediaEngine.NO_SUBTITLES;
 import static me.aap.fermata.media.pref.MediaPrefs.AE_ENABLED;
 import static me.aap.fermata.media.pref.MediaPrefs.BASS_ENABLED;
@@ -96,7 +97,6 @@ import java.util.Queue;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.action.KeyEventHandler;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
@@ -144,7 +144,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final MediaSessionCompat session;
 	private final PlaybackControlPrefs playbackControlPrefs;
 	private final Handler handler;
-	private final KeyEventHandler keyHandler;
 	private final AudioManager audioManager;
 	private final AudioFocusRequestCompat audioFocusReq;
 	private final PlaybackStateCompat.CustomAction customRewind;
@@ -175,7 +174,6 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		this.session = session;
 		this.playbackControlPrefs = playbackControlPrefs;
 		this.handler = handler;
-		keyHandler = new KeyEventHandler(this);
 		Context ctx = lib.getContext();
 
 		customRewind = new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_RW,
@@ -331,16 +329,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return (w == null) ? this : w.obj;
 	}
 
-	public void setEngineProvider(@NonNull MediaEngineProvider engineProvider) {
-		getEngineManager().setEngineProvider(engineProvider);
+	public boolean hasCustomEngineProvider() {
+		return getEngineManager().hasCustomEngineProvider();
+	}
+
+	public void setCustomEngineProvider(@NonNull MediaEngineProvider engineProvider) {
+		getEngineManager().setCustomEngineProvider(engineProvider);
 		if (getEngine() != null) {
 			if (isPlaying()) onStop(true).onSuccess(v -> handler.post(this::play));
 			else onStop();
 		}
 	}
 
-	public void removeEngineProvider(MediaEngineProvider engineProvider) {
-		if (getEngineManager().removeEngineProvider(engineProvider)) {
+	public void removeCustomEngineProvider(MediaEngineProvider engineProvider) {
+		if (getEngineManager().removeCustomEngineProvider(engineProvider)) {
 			if (isPlaying()) onStop(true).onSuccess(v -> handler.post(this::play));
 			else onStop();
 		}
@@ -377,7 +379,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
 		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
-		return keyHandler.handle(e, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
+		return handleKeyEvent(this, e, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
 	}
 
 	public void close() {
@@ -959,10 +961,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		playerTask = engineEnded(engine);
 	}
 
-	private FutureSupplier<Void> engineEnded(MediaEngine engine) {
+	private FutureSupplier<?> engineEnded(MediaEngine engine) {
 		PlayableItem i = engine.getSource();
 
 		if (i != null) {
+			if (i instanceof StreamItem) {
+				Log.w("Failed to play stream? Retrying ", i);
+				playItem(i, 0);
+				return playerTask;
+			}
+
 			if (i.isVideo()) i.getPrefs().setWatchedPref(true);
 
 			if (!i.getParent().getPrefs().getPlayNextPref()) {

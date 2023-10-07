@@ -47,18 +47,15 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		audioSessionId = (am != null) ? am.generateAudioSessionId() : AudioManager.ERROR;
 
 		if (BuildConfig.D) opts.add("-vvv");
-		if (audioSessionId != AudioManager.ERROR)
-			opts.add("--audiotrack-session-id=" + audioSessionId);
-
-		opts.add("--avcodec-skiploopfilter");
-		opts.add("1");
-		opts.add("--avcodec-skip-frame");
-		opts.add("0");
+		if (audioSessionId != AudioManager.ERROR) opts.add("--audiotrack-session-id=" + audioSessionId);
 		opts.add("--avcodec-skip-idct");
 		opts.add("0");
-		opts.add("--no-stats");
+		opts.add("--avcodec-skip-frame");
+		opts.add("0");
+		opts.add("--avcodec-skiploopfilter");
+		opts.add("1");
 		opts.add("--android-display-chroma");
-		opts.add("RV16");
+		opts.add("RV24");
 		opts.add("--sout-keep");
 		opts.add("--audio-time-stretch");
 		opts.add("--audio-resampler");
@@ -66,16 +63,18 @@ public class VlcEngineProvider implements MediaEngineProvider {
 		opts.add("--subsdec-encoding=UTF8");
 		opts.add("--freetype-rel-fontsize=16");
 		opts.add("--freetype-color=16777215");
+		opts.add("--freetype-opacity=255");
 		opts.add("--freetype-background-opacity=0");
-		opts.add("--no-sout-chromecast-audio-passthrough");
-		opts.add("--sout-chromecast-conversion-quality=2");
+		opts.add("--freetype-shadow-color=0");
+		opts.add("--freetype-shadow-opacity=128");
+		opts.add("--freetype-outline-thickness=4");
+		opts.add("--freetype-outline-color=0");
+		opts.add("--freetype-outline-opacity=255");
+		opts.add("--freetype-outline-opacity=255");
+		opts.add("--freetype-rel-fontsize=16");
 		opts.add("--network-caching=60000");
-		opts.add("--android-display-chroma");
-		opts.add("--audio-resampler");
-		opts.add("soxr");
-//		opts.add("--aout=opensles,android_audiotrack");
-//		opts.add("--vout=android_display");
-//		opts.add("--vout=opengles2");
+		opts.add("--no-lua");
+		opts.add("--no-stats");
 
 		vlc = new LibVLC(ctx, opts);
 	}
@@ -96,7 +95,8 @@ public class VlcEngineProvider implements MediaEngineProvider {
 			if ("content".equals(uri.getScheme())) {
 				ContentResolver cr = getVlc().getAppContext().getContentResolver();
 				fd = cr.openFileDescriptor(uri, "r");
-				media = (fd != null) ? new Media(getVlc(), fd.getFileDescriptor()) : new Media(getVlc(), uri);
+				media =
+						(fd != null) ? new Media(getVlc(), fd.getFileDescriptor()) : new Media(getVlc(), uri);
 			} else {
 				media = new Media(getVlc(), uri);
 			}

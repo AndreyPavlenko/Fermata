@@ -27,12 +27,13 @@ public enum Key {
 	MEDIA_NEXT(KeyEvent.KEYCODE_MEDIA_NEXT, Action.NEXT),
 	MEDIA_REWIND(KeyEvent.KEYCODE_MEDIA_REWIND, Action.RW, Action.RW, Action.RW),
 	MEDIA_FAST_FORWARD(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, Action.FF, Action.FF, Action.FF),
-	VOLUME_UP(KeyEvent.KEYCODE_VOLUME_UP, Action.VOLUME_UP),
-	VOLUME_DOWN(KeyEvent.KEYCODE_VOLUME_DOWN, Action.VOLUME_DOWN),
-	HEADSETHOOK(KeyEvent.KEYCODE_HEADSETHOOK, Action.PLAY_PAUSE, Action.NEXT,
+	VOLUME_UP(KeyEvent.KEYCODE_VOLUME_UP, Action.VOLUME_UP, Action.VOLUME_UP, Action.VOLUME_UP),
+	VOLUME_DOWN(KeyEvent.KEYCODE_VOLUME_DOWN, Action.VOLUME_DOWN, Action.VOLUME_DOWN,
+			Action.VOLUME_DOWN),
+	HEADSETHOOK(KeyEvent.KEYCODE_HEADSETHOOK, Action.PLAY_PAUSE, Action.STOP,
 			Action.ACTIVATE_VOICE_CTRL),
 	SEARCH(KeyEvent.KEYCODE_SEARCH, Action.ACTIVATE_VOICE_CTRL),
-	BACK(KeyEvent.KEYCODE_BACK, Action.BACK_OR_EXIT, Action.NONE, Action.NONE),
+	BACK(KeyEvent.KEYCODE_BACK, Action.BACK_OR_EXIT),
 	ESCAPE(KeyEvent.KEYCODE_ESCAPE, Action.BACK_OR_EXIT),
 	DEL(KeyEvent.KEYCODE_DEL, Action.STOP),
 	MENU(KeyEvent.KEYCODE_MENU, Action.MENU, Action.CP_MENU, Action.CP_MENU),
@@ -57,25 +58,25 @@ public enum Key {
 	private final PreferenceStore.Pref<IntSupplier> dblActionPref;
 	private final PreferenceStore.Pref<IntSupplier> longActionPref;
 	@Nullable
-	private Action.Handler clickHandler;
+	private Action clickAction;
 	@Nullable
-	private Action.Handler dblClickHandler;
+	private Action dblClickAction;
 	@Nullable
-	private Action.Handler longClickHandler;
+	private Action longClickAction;
 
 	Key(int code, Action action) {
-		this(code, action, action, action);
+		this(code, action, Action.NONE, Action.NONE);
 	}
 
-	Key(int code, Action action, Action dblAction, Action longAction) {
+	Key(int code, Action clickAction, Action dblClickAction, Action longClickAction) {
 		this.code = code;
 		var name = name();
 		media = name.startsWith("MEDIA_") || name.startsWith("VOLUME_");
 		actionPref =
-				PreferenceStore.Pref.i("KEY_ACTION_" + name, action.ordinal()).withInheritance(false);
-		dblActionPref = PreferenceStore.Pref.i("KEY_ACTION_DBL_" + name, dblAction.ordinal())
+				PreferenceStore.Pref.i("KEY_ACTION_" + name, clickAction.ordinal()).withInheritance(false);
+		dblActionPref = PreferenceStore.Pref.i("KEY_ACTION_DBL_" + name, dblClickAction.ordinal())
 				.withInheritance(false);
-		longActionPref = PreferenceStore.Pref.i("KEY_ACTION_LONG_" + name, longAction.ordinal())
+		longActionPref = PreferenceStore.Pref.i("KEY_ACTION_LONG_" + name, longClickAction.ordinal())
 				.withInheritance(false);
 	}
 
@@ -105,24 +106,25 @@ public enum Key {
 	}
 
 	@Nullable
-	public Action.Handler getClickHandler() {
-		if (clickHandler != null) return clickHandler;
-		var a = Action.get(getPrefs().getIntPref(actionPref));
-		return (a == null) ? null : (clickHandler = a.getHandler());
+	public Action getClickAction() {
+		if (clickAction != null) return clickAction;
+		return Action.get(getPrefs().getIntPref(actionPref));
 	}
 
 	@Nullable
-	public Action.Handler getDblClickHandler() {
-		if (dblClickHandler != null) return dblClickHandler;
-		var a = Action.get(getPrefs().getIntPref(dblActionPref));
-		return (a == null) ? null : (dblClickHandler = a.getHandler());
+	public Action getDblClickAction() {
+		if (dblClickAction != null) return dblClickAction;
+		return Action.get(getPrefs().getIntPref(dblActionPref));
 	}
 
 	@Nullable
-	public Action.Handler getLongClickHandler() {
-		if (longClickHandler != null) return longClickHandler;
-		var a = Action.get(getPrefs().getIntPref(longActionPref));
-		return (a == null) ? null : (longClickHandler = a.getHandler());
+	public Action getLongClickAction() {
+		if (longClickAction != null) return longClickAction;
+		return Action.get(getPrefs().getIntPref(longActionPref));
+	}
+
+	public int getCode() {
+		return code;
 	}
 
 	public boolean isMedia() {
@@ -136,9 +138,9 @@ public enum Key {
 			for (var p : prefs) {
 				if (p.getName().startsWith("KEY_ACTION_")) {
 					for (var k : Key.all) {
-						k.clickHandler = null;
-						k.dblClickHandler = null;
-						k.longClickHandler = null;
+						k.clickAction = null;
+						k.dblClickAction = null;
+						k.longClickAction = null;
 					}
 					return;
 				}

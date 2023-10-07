@@ -85,8 +85,11 @@ public class WebBrowserFragment extends MainActivityFragment
 	public void onRefresh(BooleanConsumer refreshing) {
 		FermataWebView v = getWebView();
 		if (v != null) {
-			v.getWebViewClient().loading = refreshing;
-			v.reload();
+			FermataWebClient c = v.getWebViewClient();
+			if (c != null) {
+				c.loading = refreshing;
+				v.reload();
+			}
 		}
 	}
 

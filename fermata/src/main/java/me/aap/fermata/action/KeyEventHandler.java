@@ -5,7 +5,6 @@ import static android.view.KeyEvent.ACTION_DOWN;
 import static android.view.KeyEvent.ACTION_MULTIPLE;
 import static android.view.KeyEvent.ACTION_UP;
 
-import android.os.Handler;
 import android.view.KeyEvent;
 import android.widget.EditText;
 
@@ -22,25 +21,22 @@ import me.aap.utils.log.Log;
 public class KeyEventHandler {
 	private static final int DBL_CLICK_INTERVAL = 500;
 	private static final int LONG_CLICK_INTERVAL = 1000;
-	private final Handler handler;
-	private final MediaSessionCallback cb;
-	@Nullable
-	private final MainActivityDelegate activity;
-	private Worker worker;
 
-	public KeyEventHandler(MediaSessionCallback cb) {
-		this.cb = cb;
-		this.activity = null;
-		this.handler = cb.getHandler();
+	private static Worker worker;
+
+	public static boolean handleKeyEvent(MediaSessionCallback cb, KeyEvent event,
+																			 IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
+		return handleKeyEvent(cb, null, event, defaultHandler);
 	}
 
-	public KeyEventHandler(MainActivityDelegate activity) {
-		this.cb = activity.getMediaSessionCallback();
-		this.activity = activity;
-		this.handler = activity.getHandler();
+	public static boolean handleKeyEvent(MainActivityDelegate activity, KeyEvent event,
+																			 IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
+		return handleKeyEvent(activity.getMediaSessionCallback(), activity, event, defaultHandler);
 	}
 
-	public boolean handle(KeyEvent event, IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
+	private static boolean handleKeyEvent(MediaSessionCallback cb,
+																				@Nullable MainActivityDelegate activity, KeyEvent event,
+																				IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
 		Log.i((activity == null) ? "Media: " : "Activity: ", event);
 
 		if (event.isCanceled()) {
@@ -62,47 +58,61 @@ public class KeyEventHandler {
 			return defaultHandler.apply(code, event);
 		}
 
-		var dblClickHandler = k.getDblClickHandler();
-		if (dblClickHandler == null) return defaultHandler.apply(code, event);
+		var dblClickAction = k.getDblClickAction();
+		if (dblClickAction == null) return defaultHandler.apply(code, event);
 
 		var action = event.getAction();
 		if (action == ACTION_MULTIPLE) {
-			dblClickHandler.handle(cb, activity, uptimeMillis());
+			Log.i(k, " key double click");
+			performAction(dblClickAction, cb, activity, uptimeMillis());
 			return true;
 		}
 		if (action != ACTION_DOWN) return defaultHandler.apply(code, event);
 
-		var clickHandler = k.getClickHandler();
-		if (clickHandler == null) return defaultHandler.apply(code, event);
-		var longClickHandler = k.getLongClickHandler();
-		if (longClickHandler == null) return defaultHandler.apply(code, event);
+		var clickAction = k.getClickAction();
+		if (clickAction == null) return defaultHandler.apply(code, event);
+		var longClickAction = k.getLongClickAction();
+		if (longClickAction == null) return defaultHandler.apply(code, event);
 
-		if ((dblClickHandler == Action.NONE.getHandler()) &&
-				(longClickHandler == Action.NONE.getHandler())) {
-			clickHandler.handle(cb, activity, uptimeMillis());
+		if (((clickAction == dblClickAction) && (clickAction == longClickAction)) ||
+				((dblClickAction == Action.NONE) && (longClickAction == Action.NONE))) {
+			Log.i(k, " key click");
+			performAction(clickAction, cb, activity, uptimeMillis());
 			return true;
 		}
 
-		worker = new Worker(event, clickHandler, dblClickHandler, longClickHandler);
-		return false;
+		worker = new Worker(cb, activity, k, clickAction, dblClickAction, longClickAction);
+		return true;
 	}
 
-	private final class Worker implements Runnable {
-		private final KeyEvent event;
-		private final Action.Handler clickHandler;
-		private final Action.Handler dblClickHandler;
-		private final Action.Handler longClickHandler;
+	private static void performAction(Action action, MediaSessionCallback cb,
+																		@Nullable MainActivityDelegate activity, long timestamp) {
+		worker = null;
+		Log.i("Performing action ", action);
+		action.getHandler().handle(cb, activity, timestamp);
+	}
+
+	private static final class Worker implements Runnable {
+		private final MediaSessionCallback cb;
+		@Nullable
+		private final MainActivityDelegate activity;
+		private final Key key;
+		private final Action clickAction;
+		private final Action dblClickAction;
+		private final Action longClickAction;
 		private final long time;
 		private long longClickTime;
 		private boolean up;
 
 
-		Worker(KeyEvent event, Action.Handler clickHandler, Action.Handler dblClickHandler,
-					 Action.Handler longClickHandler) {
-			this.event = event;
-			this.clickHandler = clickHandler;
-			this.dblClickHandler = dblClickHandler;
-			this.longClickHandler = longClickHandler;
+		Worker(MediaSessionCallback cb, @Nullable MainActivityDelegate activity, Key key,
+					 Action clickAction, Action dblClickAction, Action longClickAction) {
+			this.cb = cb;
+			this.activity = activity;
+			this.key = key;
+			this.clickAction = clickAction;
+			this.dblClickAction = dblClickAction;
+			this.longClickAction = longClickAction;
 			time = longClickTime = uptimeMillis();
 			sched(DBL_CLICK_INTERVAL);
 		}
@@ -110,43 +120,38 @@ public class KeyEventHandler {
 		@Override
 		public void run() {
 			if (worker != this) return;
+			if (up) {
+				Log.i(key, " key click");
+				handle(clickAction);
+				return;
+			}
 
 			long now = uptimeMillis();
-			long diff = now - time;
+			long diff = now - longClickTime;
 
 			if (diff < LONG_CLICK_INTERVAL) {
-				if (up) {
-					worker = null;
-					handle(clickHandler);
-				} else {
-					sched(LONG_CLICK_INTERVAL - (now - longClickTime));
-				}
+				sched(LONG_CLICK_INTERVAL - diff);
+			} else if (diff > 15000) { // Key UP not received?
+				worker = null;
 			} else {
-				diff = now - longClickTime;
-
-				if (diff < LONG_CLICK_INTERVAL) {
-					sched(LONG_CLICK_INTERVAL - diff);
-				} else if (diff > 60000) { // Key UP not received?
-					worker = null;
-				} else {
-					longClickTime = time;
-					handle(longClickHandler);
-					sched(LONG_CLICK_INTERVAL);
-				}
+				longClickTime = time;
+				Log.i(key, " key long click");
+				handle(longClickAction);
+				worker = this;
+				sched(LONG_CLICK_INTERVAL);
 			}
 		}
 
 		boolean handle(KeyEvent e) {
-			if (e.getKeyCode() != event.getKeyCode()) return false;
+			if (e.getKeyCode() != key.getCode()) return false;
 
 			switch (e.getAction()) {
 				case ACTION_DOWN -> {
-					if (dblClickHandler == clickHandler) {
-						longClickTime = uptimeMillis();
-						handle(longClickHandler);
-					} else {
-						worker = null;
-						handle(clickHandler);
+					if (!up) {
+						if ((longClickAction == clickAction) || (longClickAction == Action.NONE)) {
+							Log.i(key, " key click");
+							handle(clickAction);
+						}
 					}
 					return true;
 				}
@@ -155,11 +160,11 @@ public class KeyEventHandler {
 
 					if (holdTime <= DBL_CLICK_INTERVAL) {
 						if (up) {
-							worker = null;
-							handle(dblClickHandler);
-						} else if (dblClickHandler == clickHandler) {
-							worker = null;
-							handle(clickHandler);
+							Log.i(key, " key double click");
+							handle(dblClickAction);
+						} else if (dblClickAction == clickAction) {
+							Log.i(key, " key click");
+							handle(clickAction);
 						} else {
 							up = true;
 						}
@@ -167,25 +172,29 @@ public class KeyEventHandler {
 						worker = null;
 					} else {
 						worker = null;
-						if (longClickTime == time) handle(clickHandler);
+						if (longClickTime == time) {
+							Log.i(key, " key click");
+							handle(clickAction);
+						}
 					}
 
 					return true;
 				}
 				case ACTION_MULTIPLE -> {
-					worker = null;
-					handle(dblClickHandler);
+					Log.i(key, " key double click");
+					handle(dblClickAction);
 					return true;
 				}
 			}
 			return false;
 		}
 
-		private void handle(Action.Handler h) {
-			h.handle(cb, activity, time);
+		private void handle(Action action) {
+			performAction(action, cb, activity, time);
 		}
 
 		private void sched(long delay) {
+			var handler = (activity == null) ? cb.getHandler() : activity.getHandler();
 			handler.postDelayed(this, delay);
 		}
 	}

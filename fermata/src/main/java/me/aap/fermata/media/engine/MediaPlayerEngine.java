@@ -86,8 +86,8 @@ public class MediaPlayerEngine extends MediaEngineBase
 	@Override
 	public void start() {
 		player.start();
-		listener.onEngineStarted(this);
 		started();
+		listener.onEngineStarted(this);
 	}
 
 	@Override
