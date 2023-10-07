@@ -18,14 +18,22 @@ public interface MediaPrefs extends PreferenceStore {
 	int MEDIA_ENG_VLC = 2;
 	int MEDIA_ENG_YT = 3;
 	int MEDIA_ENG_CAST = 4;
+
 	int SCALE_BEST = 0;
 	int SCALE_FILL = 1;
 	int SCALE_ORIGINAL = 2;
 	int SCALE_4_3 = 3;
 	int SCALE_16_9 = 4;
+
 	int MEDIA_SCANNER_DEFAULT = 0;
 	int MEDIA_SCANNER_SYSTEM = 1;
 	int MEDIA_SCANNER_VLC = 2;
+
+	int HW_ACCEL_AUTO = 0;
+	int HW_ACCEL_FULL = 1;
+	int HW_ACCEL_DECODING = 2;
+	int HW_ACCEL_DISABLED = 3;
+
 	Pref<IntSupplier> AUDIO_ENGINE = Pref.i("AUDIO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_ENGINE = Pref.i("VIDEO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_SCALE = Pref.i("VIDEO_SCALE", SCALE_BEST);
@@ -54,6 +62,9 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<Supplier<String>> AUDIO_LANG = Pref.s("AUDIO_LANG", "");
 	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
 	Pref<IntSupplier> WATCHED_THRESHOLD = Pref.i("WATCHED_THRESHOLD", 95);
+	Pref<IntSupplier> HW_ACCEL = Pref.i("HW_ACCEL", HW_ACCEL_DECODING);
+
+
 
 	default int getAudioEnginePref() {
 		return getIntPref(AUDIO_ENGINE);
@@ -83,6 +94,14 @@ public interface MediaPrefs extends PreferenceStore {
 		try (Edit e = editPreferenceStore(false)) {
 			e.setIntPref(VIDEO_SCALE, scale);
 		}
+	}
+
+	default int getHwAccelPref() {
+		return getIntPref(HW_ACCEL);
+	}
+
+	default void setHwAccelPref(int accel) {
+		applyIntPref(HW_ACCEL, accel);
 	}
 
 	default int getMediaScannerPref() {

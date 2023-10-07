@@ -118,6 +118,11 @@
     <string name="video">Видео</string>
     <string name="video_settings">Настройки видео</string>
     <string name="video_scaling">Масштабирование видео</string>
+    <string name="hw_accel">Аппаратное ускорение</string>
+    <string name="hw_accel_auto">Автоматически</string>
+    <string name="hw_accel_full">Полное</string>
+    <string name="hw_accel_decoding">Декодирование</string>
+    <string name="hw_accel_disabled">Выключено</string>
     <string name="video_scaling_best">Наиболее подходящее</string>
     <string name="video_scaling_fill">Заполнить экран</string>
     <string name="video_scaling_orig">Оригинальный размер</string>

@@ -71,6 +71,10 @@
     <item name="video_scaling_orig" type="id" />
     <item name="video_scaling_4" type="id" />
     <item name="video_scaling_16" type="id" />
+    <item name="hw_accel_auto" type="id" />
+    <item name="hw_accel_full" type="id" />
+    <item name="hw_accel_decoding" type="id" />
+    <item name="hw_accel_disabled" type="id" />
     <item name="preferred_media_engine" type="id" />
     <item name="preferred_video_engine" type="id" />
     <item name="preferred_audio_engine" type="id" />

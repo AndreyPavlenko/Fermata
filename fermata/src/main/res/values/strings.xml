@@ -141,6 +141,11 @@
     <string name="video">Video</string>
     <string name="video_settings">Video settings</string>
     <string name="video_scaling">Video scaling</string>
+    <string name="hw_accel">Hardware acceleration</string>
+    <string name="hw_accel_auto">Auto</string>
+    <string name="hw_accel_full">Full</string>
+    <string name="hw_accel_decoding">Decoding</string>
+    <string name="hw_accel_disabled">Disabled</string>
     <string name="video_scaling_best">Best fit</string>
     <string name="video_scaling_fill">Fill screen</string>
     <string name="video_scaling_orig">Original size</string>

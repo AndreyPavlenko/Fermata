@@ -521,6 +521,16 @@ public class SettingsFragment extends MainActivityFragment
 					R.string.video_scaling_orig, R.string.video_scaling_4, R.string.video_scaling_16};
 		});
 		sub1.addListPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = MediaLibPrefs.HW_ACCEL;
+			o.title = R.string.hw_accel;
+			o.subtitle = R.string.string_format;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.hw_accel_auto, R.string.hw_accel_full,
+					R.string.hw_accel_decoding, R.string.hw_accel_disabled};
+			o.visibility = vlcCond;
+		});
+		sub1.addListPref(o -> {
 			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.CLOCK_POS;
 			o.title = R.string.clock_pos;
@@ -557,7 +567,7 @@ public class SettingsFragment extends MainActivityFragment
 
 		sub2 = sub1.subSet(o -> {
 			o.title = R.string.audio;
-			o.visibility = PrefCondition.create(mediaPrefs, MediaLibPrefs.VLC_ENABLED);
+			o.visibility = vlcCond;
 		});
 		addAudioPrefs(sub2, mediaPrefs, isCar);
 

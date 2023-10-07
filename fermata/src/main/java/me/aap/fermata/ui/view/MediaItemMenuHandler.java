@@ -1,6 +1,10 @@
 package me.aap.fermata.ui.view;
 
 import static java.util.Objects.requireNonNull;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_AUTO;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_DECODING;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_DISABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_FULL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
@@ -202,6 +206,10 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 		b.addItem(R.id.video_scaling, R.string.video_scaling).setSubmenu(this::buildVideoScalingMenu);
 
+		if (getMainActivity().getMediaSessionCallback().getEngineManager().isVlcPlayerSupported()) {
+			b.addItem(R.id.video_scaling, R.string.hw_accel).setSubmenu(this::buildHwAccelMenu);
+		}
+
 		if (!item.isExternal()) {
 			b.addItem(R.id.watched_threshold, R.string.watched_threshold)
 					.setSubmenu(this::buildWatchedThresholdMenu);
@@ -287,6 +295,12 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 					sb.addItem(R.id.audio_prefs, R.string.audio).setSubmenu(this::buildAudioPrefsMenu);
 					sb.addItem(R.id.video_scaling, R.string.video_scaling)
 							.setSubmenu(this::buildVideoScalingMenu);
+
+					if (a.getMediaSessionCallback().getEngineManager().isVlcPlayerSupported()) {
+						sb.addItem(R.id.video_scaling, R.string.hw_accel)
+								.setSubmenu(this::buildHwAccelMenu);
+					}
+
 					sb.addItem(R.id.watched_threshold, R.string.watched_threshold)
 							.setSubmenu(this::buildWatchedThresholdMenu);
 				});
@@ -438,6 +452,19 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		b.setSelectionHandler(this);
 	}
 
+	private void buildHwAccelMenu(OverlayMenu.Builder b) {
+		int accel = item.getPrefs().getHwAccelPref();
+		b.addItem(R.id.hw_accel_auto, null, R.string.hw_accel_auto)
+				.setChecked(accel == HW_ACCEL_AUTO, true);
+		b.addItem(R.id.hw_accel_full, null, R.string.hw_accel_full)
+				.setChecked(accel == HW_ACCEL_FULL, true);
+		b.addItem(R.id.hw_accel_decoding, null, R.string.hw_accel_decoding)
+				.setChecked(accel == HW_ACCEL_DECODING, true);
+		b.addItem(R.id.hw_accel_disabled, null, R.string.hw_accel_disabled)
+				.setChecked(accel == HW_ACCEL_DISABLED, true);
+		b.setSelectionHandler(this);
+	}
+
 	private void buildAudioPrefsMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
 		addAudioPrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivity());
@@ -562,6 +589,14 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 			item.getPrefs().setVideoScalePref(SCALE_4_3);
 		} else if (id == R.id.video_scaling_16) {
 			item.getPrefs().setVideoScalePref(SCALE_16_9);
+		} else if (id == R.id.hw_accel_auto) {
+			item.getPrefs().setHwAccelPref(HW_ACCEL_AUTO);
+		} else if (id == R.id.hw_accel_full) {
+			item.getPrefs().setHwAccelPref(HW_ACCEL_FULL);
+		} else if (id == R.id.hw_accel_decoding) {
+			item.getPrefs().setHwAccelPref(HW_ACCEL_DECODING);
+		} else if (id == R.id.hw_accel_disabled) {
+			item.getPrefs().setHwAccelPref(HW_ACCEL_DISABLED);
 		} else if (id == R.id.delete) {
 			UiUtils.showQuestion(getContext(), R.string.delete_file_title, R.string.delete_file_question,
 					R.drawable.delete).onSuccess(v -> {

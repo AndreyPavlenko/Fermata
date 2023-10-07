@@ -2,6 +2,9 @@ package me.aap.fermata.engine.vlc;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static java.util.Collections.emptyList;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_DECODING;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_DISABLED;
+import static me.aap.fermata.media.pref.MediaPrefs.HW_ACCEL_FULL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_16_9;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
@@ -105,12 +108,19 @@ public class VlcEngine extends MediaEngineBase
 				}
 			}
 
+			media.addOption(":input-fast-seek");
+			switch (source.getPrefs().getHwAccelPref()) {
+				case HW_ACCEL_DECODING -> {
+					media.setHWDecoderEnabled(true, true);
+					media.addOption(":no-mediacodec-dr");
+					media.addOption(":no-omxil-dr");
+				}
+				case HW_ACCEL_FULL -> media.setHWDecoderEnabled(true, true);
+				case HW_ACCEL_DISABLED -> media.setHWDecoderEnabled(false, false);
+			}
+
 			PendingSource pending = new PendingSource(source, media, fd);
 			this.source = pending;
-			media.setHWDecoderEnabled(true, true);
-			media.addOption(":no-omxil-dr");
-			media.addOption(":no-mediacodec-dr");
-			media.addOption(":input-fast-seek");
 
 			if (media.isParsed()) {
 				prepared(pending);
