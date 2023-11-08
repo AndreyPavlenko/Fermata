@@ -137,15 +137,33 @@ public class YoutubeWebView extends FermataWebView {
 		FermataChromeClient chrome = getWebChromeClient();
 		if (chrome == null) return;
 
-		chrome.exitFullScreen().thenRun(() -> loadUrl("javascript:\n" +
-				"var c = document.getElementsByClassName('player-controls-middle center');\n" +
-				"if (c.length != 0) c = c[0].querySelectorAll('button');\n" +
-				"if (c.length >= 5) c[" + idx + "].click();  \n" +
-				"else {\n" +
-				"  c = document.getElementsByClassName('playlist-controls-primary');\n" +
-				"  if ((c.length != 0) && (c[0].children.length >= 2)) c[0].children[" + plIdx + "].children[0].click();\n" +
-				"  else " + JS_EVENT + "(" + JS_ERR + ", 'Button not found: playlist-controls-primary');\n" +
-				"}"));
+		chrome.exitFullScreen().thenRun(() -> loadUrl("""
+			javascript:
+			if (document.getElementsByTagName('ytm-playlist-engagement-panel').length > 0) {
+				if (document.body.getAttribute('engagement-panel-open') === null) {
+					setTimeout(() => {document.querySelector('[aria-label="Show playlist videos"]').click();}, 600);
+				}
+				
+				setTimeout(() => {
+					""" + (plIdx == 0 ? """
+					var prevSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').previousSibling;
+					if (prevSong !== null) prevSong.getElementsByTagName('a')[0].click();
+					""" : """
+					var nextSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').nextSibling;
+					if (nextSong !== null) nextSong.getElementsByTagName('a')[0].click();
+					""") + """
+				}, 600);
+			} else {
+				var playerControls = document.getElementsByClassName('player-controls-middle-core-buttons');
+				if (playerControls.length > 0) {
+				""" + (plIdx == 0 ? """
+					playerControls[0].querySelector('[aria-label="Previous video"]').click();
+				""" : """
+					playerControls[0].querySelector('[aria-label="Next video"]').click();
+				""") + """
+				}
+			}
+		"""));
 	}
 
 	FutureSupplier<Long> getDuration() {
