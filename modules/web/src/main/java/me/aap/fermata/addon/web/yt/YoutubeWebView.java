@@ -126,14 +126,14 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void prev() {
-		prevNext(0, 0);
+		prevNext(0);
 	}
 
 	void next() {
-		prevNext(4, 1);
+		prevNext(1);
 	}
 
-	private void prevNext(int idx, int plIdx) {
+	private void prevNext(int plIdx) {
 		FermataChromeClient chrome = getWebChromeClient();
 		if (chrome == null) return;
 
