@@ -139,20 +139,23 @@ public class YoutubeWebView extends FermataWebView {
 
 		chrome.exitFullScreen().thenRun(() -> loadUrl("""
 			javascript:
+			function changeSong() {
+				""" + (plIdx == 0 ? """
+				var prevSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').previousSibling;
+				if (prevSong !== null) prevSong.getElementsByTagName('a')[0].click();
+				""" : """
+				var nextSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').nextSibling;
+				if (nextSong !== null) nextSong.getElementsByTagName('a')[0].click();
+				""") + """
+			}
+			
 			if (document.getElementsByTagName('ytm-playlist-engagement-panel').length > 0) {
 				if (document.body.getAttribute('engagement-panel-open') === null) {
 					setTimeout(() => {document.querySelector('[aria-label="Show playlist videos"]').click();}, 600);
+					setTimeout(() => { changeSong(); }, 600);
 				}
 				
-				setTimeout(() => {
-					""" + (plIdx == 0 ? """
-					var prevSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').previousSibling;
-					if (prevSong !== null) prevSong.getElementsByTagName('a')[0].click();
-					""" : """
-					var nextSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').nextSibling;
-					if (nextSong !== null) nextSong.getElementsByTagName('a')[0].click();
-					""") + """
-				}, 600);
+				changeSong();
 			} else {
 				var playerControls = document.getElementsByClassName('player-controls-middle-core-buttons');
 				if (playerControls.length > 0) {
