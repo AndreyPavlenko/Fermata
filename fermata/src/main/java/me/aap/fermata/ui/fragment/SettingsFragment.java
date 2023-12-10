@@ -12,6 +12,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_DE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_PT;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_RU;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_TR;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
@@ -279,8 +280,8 @@ public class SettingsFragment extends MainActivityFragment
 			o.title = R.string.lang;
 			o.subtitle = R.string.string_format;
 			o.values = new int[]{R.string.lang_en, R.string.lang_de, R.string.lang_it, R.string.lang_ru,
-					R.string.lang_tr};
-			o.valuesMap = new int[]{LOCALE_EN, LOCALE_DE, LOCALE_IT, LOCALE_RU, LOCALE_TR};
+					R.string.lang_tr, R.string.lang_pt};
+			o.valuesMap = new int[]{LOCALE_EN, LOCALE_DE, LOCALE_IT, LOCALE_RU, LOCALE_TR, LOCALE_PT};
 			o.formatSubtitle = true;
 			o.removeDefault = false;
 		});
