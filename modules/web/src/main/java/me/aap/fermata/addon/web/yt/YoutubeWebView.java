@@ -137,16 +137,31 @@ public class YoutubeWebView extends FermataWebView {
 		FermataChromeClient chrome = getWebChromeClient();
 		if (chrome == null) return;
 
+		String url = chrome.getWebView().getUrl();
 		chrome.exitFullScreen().thenRun(() -> loadUrl("""
 			javascript:
 			function changeSong() {
-				""" + (plIdx == 0 ? """
-				var prevSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').previousSibling;
-				if (prevSong !== null) prevSong.getElementsByTagName('a')[0].click();
-				""" : """
-				var nextSong = document.querySelector('.ytm-playlist-panel-video-renderer-v2--selected').nextSibling;
-				if (nextSong !== null) nextSong.getElementsByTagName('a')[0].click();
-				""") + """
+				var currentURL ='""" + url + """
+				';var videoID = currentURL.substring(currentURL.indexOf("v=") + 2, currentURL.indexOf("&"));
+					
+				var playlist = document.getElementsByClassName('ytm-playlist-panel-video-renderer-v2');
+				var currentlySelected;
+				for (song of playlist) {
+					if (song.querySelector(`a[href*='${videoID}']`)) {
+						currentlySelected = song;
+						break;
+					}
+				}
+				
+				if (currentlySelected) {
+					""" + (plIdx == 0 ? """
+					var prevSong = currentlySelected.previousSibling;
+					if (prevSong !== null) prevSong.getElementsByTagName('a')[0].click();
+					""" : """
+					var nextSong = currentlySelected.nextSibling;
+					if (nextSong !== null) nextSong.getElementsByTagName('a')[0].click();
+					""") + """
+				}
 			}
 			
 			if (document.getElementsByTagName('ytm-playlist-engagement-panel').length > 0) {
