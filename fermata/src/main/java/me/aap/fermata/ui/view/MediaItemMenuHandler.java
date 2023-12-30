@@ -221,6 +221,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 	}
 
 	protected void buildAudioMenu(OverlayMenu.Builder b) {
+		if (!getMainActivity().getMediaSessionCallback().getEngineManager().isVlcPlayerSupported())
+			return;
 		PreferenceSet prefSet = new PreferenceSet();
 		addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.AUDIO_DELAY, R.string.audio_delay, null);
 		prefSet.addToMenu(b, true);

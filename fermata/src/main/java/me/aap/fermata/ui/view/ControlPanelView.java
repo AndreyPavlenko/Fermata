@@ -587,13 +587,16 @@ public class ControlPanelView extends ConstraintLayout
 		@Override
 		protected boolean addAudioMenu() {
 			PlayableItem pi = engine.getSource();
-			return (pi != null) && pi.isVideo() && (engine.getAudioStreamInfo().size() > 1);
+			return (pi != null) && pi.isVideo() && ((engine.getAudioStreamInfo().size() > 1) ||
+					getActivity().getMediaSessionCallback().getEngineManager().isVlcPlayerSupported());
 		}
 
 		@Override
 		protected void buildAudioMenu(OverlayMenu.Builder b) {
-			b.addItem(R.id.select_audio_stream, R.string.select_audio_stream)
-					.setSubmenu(this::buildAudioStreamMenu);
+			if (engine.getAudioStreamInfo().size() > 1) {
+				b.addItem(R.id.select_audio_stream, R.string.select_audio_stream)
+						.setSubmenu(this::buildAudioStreamMenu);
+			}
 			super.buildAudioMenu(b);
 		}
 
