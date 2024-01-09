@@ -38,6 +38,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -45,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -69,7 +73,6 @@ import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
-import me.aap.utils.holder.BooleanHolder;
 import me.aap.utils.log.Log;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PrefCondition;
@@ -81,6 +84,7 @@ import me.aap.utils.pref.PreferenceView;
 import me.aap.utils.pref.PreferenceViewAdapter;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.FilePickerFragment;
+import me.aap.utils.vfs.local.LocalFileSystem;
 
 /**
  * @author Andrey Pavlenko
@@ -531,8 +535,9 @@ public class SettingsFragment extends MainActivityFragment
 			o.title = R.string.hw_accel;
 			o.subtitle = R.string.string_format;
 			o.formatSubtitle = true;
-			o.values = new int[]{R.string.hw_accel_auto, R.string.hw_accel_full,
-					R.string.hw_accel_decoding, R.string.hw_accel_disabled};
+			o.values =
+					new int[]{R.string.hw_accel_auto, R.string.hw_accel_full, R.string.hw_accel_decoding,
+							R.string.hw_accel_disabled};
 			o.visibility = vlcCond;
 		});
 		sub1.addListPref(o -> {
@@ -592,8 +597,7 @@ public class SettingsFragment extends MainActivityFragment
 		addAddons(set);
 
 		sub1 = set.subSet(o -> o.title = R.string.other);
-		if (!a.isCarActivity() && Utils.isSafSupported(a)) {
-			BooleanHolder reqPerm = new BooleanHolder(true);
+		if (!a.isCarActivity()) {
 			sub1.addButton(o -> {
 				o.title = R.string.export_prefs;
 				o.subtitle = R.string.export_prefs_sub;
@@ -602,13 +606,7 @@ public class SettingsFragment extends MainActivityFragment
 			sub1.addButton(o -> {
 				o.title = R.string.import_prefs;
 				o.subtitle = R.string.import_prefs_sub;
-				o.onClick = () -> {
-					if (reqPerm.value) {
-						reqPerm.value = false;
-						if (FilePickerFragment.requestManageAllFilesPerm(a.getContext())) return;
-					}
-					importPrefs(a);
-				};
+				o.onClick = () -> importPrefs(a);
 			});
 		}
 		if (BuildConfig.AUTO) {
@@ -732,100 +730,169 @@ public class SettingsFragment extends MainActivityFragment
 	}
 
 	private void exportPrefs(MainActivityDelegate a) {
-		a.startActivityForResult(() -> new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
-				.onCompletion((d, err) -> {
+		SimpleDateFormat fmt = new SimpleDateFormat("ddMMyy", Locale.getDefault());
+		String pattern = "Fermata_prefs_" + fmt.format(new Date());
+
+		if (Utils.isSafSupported(a)) {
+			a.startActivityForResult(() -> new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
+					.onCompletion((d, err) -> {
+						Context ctx = a.getContext();
+
+						if (err != null) {
+							UiUtils.showAlert(ctx, ctx.getString(R.string.export_prefs_failed, err));
+							return;
+						}
+
+						if (d == null) return;
+						Uri uri = d.getData();
+						if (uri == null) return;
+
+						try {
+							DocumentFile dir = DocumentFile.fromTreeUri(ctx, uri);
+							if (dir == null) return;
+
+							File prefsDir = PrefUtils.getSharedPrefsFile(ctx, "fermata").getParentFile();
+							File[] files = (prefsDir == null) ? null :
+									prefsDir.listFiles(n -> !n.getName().equals("image-cache.xml"));
+
+							if ((files == null) || (files.length == 0)) {
+								UiUtils.showAlert(ctx, R.string.prefs_not_found);
+								return;
+							}
+
+							String name = pattern + ".zip";
+							for (int i = 1; dir.findFile(name) != null; i++) name = pattern + '_' + i + ".zip";
+							DocumentFile f = dir.createFile("application/zip", name);
+
+							if (f == null) {
+								UiUtils.showAlert(ctx,
+										ctx.getString(R.string.export_prefs_failed, "Failed to create file"));
+							} else {
+								try (OutputStream os = ctx.getContentResolver().openOutputStream(f.getUri())) {
+									exportPrefs(a, os, name);
+								}
+							}
+						} catch (Exception ex) {
+							Log.e(ex, "Failed to export preferences");
+							UiUtils.showAlert(ctx, ctx.getString(R.string.export_prefs_failed, ex));
+						}
+					});
+		} else {
+			FilePickerFragment pick = a.showFragment(me.aap.utils.R.id.file_picker);
+			pick.setMode((byte) (FilePickerFragment.FOLDER | FilePickerFragment.WRITABLE));
+			pick.setFileSystem(LocalFileSystem.getInstance());
+			pick.setFileConsumer(res -> {
+				a.showFragment(R.id.settings_fragment);
+				if (res == null) return;
+				File dir = res.getLocalFile();
+				if (dir == null) return;
+				try {
+					String name = pattern + ".zip";
+					File f = new File(dir, name);
+					for (int i = 1; f.exists(); i++) {
+						name = pattern + '_' + i + ".zip";
+						f = new File(dir, name);
+					}
+					try (OutputStream os = new FileOutputStream(f)) {
+						exportPrefs(a, os, name);
+					}
+				} catch (Exception ex) {
 					Context ctx = a.getContext();
+					Log.e(ex, "Failed to export preferences");
+					UiUtils.showAlert(ctx, ctx.getString(R.string.export_prefs_failed, ex));
+				}
+			});
+		}
+	}
 
-					if (err != null) {
-						UiUtils.showAlert(ctx, ctx.getString(R.string.export_prefs_failed, err));
-						return;
-					}
+	private void exportPrefs(MainActivityDelegate a, OutputStream os, String fileName)
+			throws IOException {
+		Context ctx = a.getContext();
+		File prefsDir = PrefUtils.getSharedPrefsFile(ctx, "fermata").getParentFile();
+		File[] files = (prefsDir == null) ? null :
+				prefsDir.listFiles(n -> !n.getName().equals("image-cache" + ".xml"));
 
-					if (d == null) return;
-					Uri uri = d.getData();
-					if (uri == null) return;
+		if ((files == null) || (files.length == 0)) {
+			UiUtils.showAlert(ctx, R.string.prefs_not_found);
+			return;
+		}
 
-					try {
-						DocumentFile dir = DocumentFile.fromTreeUri(ctx, uri);
-						if (dir == null) return;
+		List<String> names = new ArrayList<>(files.length);
 
-						File prefsDir = PrefUtils.getSharedPrefsFile(ctx, "fermata").getParentFile();
-						File[] files = (prefsDir == null) ? null :
-								prefsDir.listFiles(n -> !n.getName().equals("image-cache.xml"));
+		for (File pf : files) {
+			String n = pf.getName();
+			if (n.endsWith(".xml")) names.add(n.substring(0, n.length() - 4));
+		}
 
-						if ((files == null) || (files.length == 0)) {
-							UiUtils.showAlert(ctx, R.string.prefs_not_found);
-							return;
-						}
-
-						SimpleDateFormat fmt = new SimpleDateFormat("ddMMyy", Locale.getDefault());
-						String pattern = "Fermata_prefs_" + fmt.format(new Date());
-						String name = pattern + ".zip";
-						for (int i = 1; dir.findFile(name) != null; i++) name = pattern + '_' + i + ".zip";
-						DocumentFile f = dir.createFile("application/zip", name);
-
-						if (f == null) {
-							UiUtils.showAlert(ctx,
-									ctx.getString(R.string.export_prefs_failed, "Failed to create file"));
-							return;
-						}
-
-						List<String> names = new ArrayList<>(files.length);
-
-						for (File pf : files) {
-							String n = pf.getName();
-							if (n.endsWith(".xml")) names.add(n.substring(0, n.length() - 4));
-						}
-
-						try (OutputStream os = ctx.getContentResolver().openOutputStream(f.getUri());
-								 ZipOutputStream zos = (SDK_INT >= N) ? new ZipOutputStream(os, UTF_8) :
-										 new ZipOutputStream(os)) {
-							PrefUtils.exportSharedPrefs(ctx, names, zos);
-						}
-
-						UiUtils.showInfo(ctx, ctx.getString(R.string.export_prefs_ok, f.getName()));
-					} catch (Exception ex) {
-						Log.e(ex, "Failed to export preferences");
-						UiUtils.showAlert(ctx, ctx.getString(R.string.export_prefs_failed, ex));
-					}
-				});
+		try (ZipOutputStream zos = (SDK_INT >= N) ? new ZipOutputStream(os, UTF_8) :
+				new ZipOutputStream(os)) {
+			PrefUtils.exportSharedPrefs(ctx, names, zos);
+			UiUtils.showInfo(ctx, ctx.getString(R.string.export_prefs_ok, fileName));
+		}
 	}
 
 	private void importPrefs(MainActivityDelegate a) {
-		a.startActivityForResult(
-						() -> new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/zip"))
-				.onCompletion((d, err) -> {
-					Context ctx = a.getContext();
+		if (Utils.isSafSupported(a)) {
+			a.startActivityForResult(
+							() -> new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/zip"))
+					.onCompletion((d, err) -> {
+						Context ctx = a.getContext();
 
-					if (err != null) {
-						UiUtils.showAlert(ctx, ctx.getString(R.string.import_prefs_failed, err));
-						return;
-					}
-
-					if (d == null) return;
-					Uri uri = d.getData();
-					if (uri == null) return;
-
-					try {
-						DocumentFile f = DocumentFile.fromSingleUri(ctx, uri);
-						if (f == null) return;
-
-						try (InputStream is = ctx.getContentResolver().openInputStream(f.getUri());
-								 ZipInputStream zis = (SDK_INT >= N) ? new ZipInputStream(is, UTF_8) :
-										 new ZipInputStream(is)) {
-							PrefUtils.importSharedPrefs(ctx, zis);
+						if (err != null) {
+							UiUtils.showAlert(ctx, ctx.getString(R.string.import_prefs_failed, err));
+							return;
 						}
 
-						UiUtils.showInfo(ctx, ctx.getString(R.string.import_prefs_ok)).thenRun(() -> {
-							App.get().getHandler().postDelayed(() -> System.exit(0), 1000);
-							if (ctx instanceof Activity) ((Activity) ctx).finishAffinity();
-							else System.exit(0);
-						});
-					} catch (Exception ex) {
-						Log.e(ex, "Failed to export preferences");
-						UiUtils.showAlert(ctx, ctx.getString(R.string.import_prefs_failed, ex));
-					}
-				});
+						if (d == null) return;
+						Uri uri = d.getData();
+						if (uri == null) return;
+
+						try {
+							DocumentFile f = DocumentFile.fromSingleUri(ctx, uri);
+							if (f == null) return;
+
+							try (InputStream is = ctx.getContentResolver().openInputStream(f.getUri())) {
+								importPrefs(a, is);
+							}
+						} catch (Exception ex) {
+							Log.e(ex, "Failed to import preferences");
+							UiUtils.showAlert(ctx, ctx.getString(R.string.import_prefs_failed, ex));
+						}
+					});
+		} else {
+			FilePickerFragment pick = a.showFragment(me.aap.utils.R.id.file_picker);
+			pick.setMode(FilePickerFragment.FILE);
+			pick.setPattern(Pattern.compile(".+\\.zip"));
+			pick.setFileSystem(LocalFileSystem.getInstance());
+			pick.setFileConsumer(res -> {
+				a.showFragment(R.id.settings_fragment);
+				if (res == null) return;
+				File f = res.getLocalFile();
+				if (f == null) return;
+				try (InputStream is = new FileInputStream(f)) {
+					importPrefs(a, is);
+				} catch (Exception ex) {
+					Context ctx = a.getContext();
+					Log.e(ex, "Failed to import preferences");
+					UiUtils.showAlert(ctx, ctx.getString(R.string.import_prefs_failed, ex));
+				}
+			});
+		}
+	}
+
+	private void importPrefs(MainActivityDelegate a, InputStream is) throws IOException {
+		Context ctx = a.getContext();
+
+		try (ZipInputStream zis = (SDK_INT >= N) ? new ZipInputStream(is, UTF_8) :
+				new ZipInputStream(is)) {
+			PrefUtils.importSharedPrefs(ctx, zis);
+		}
+
+		UiUtils.showInfo(ctx, ctx.getString(R.string.import_prefs_ok)).thenRun(() -> {
+			App.get().getHandler().postDelayed(() -> System.exit(0), 1000);
+			if (ctx instanceof Activity) ((Activity) ctx).finishAffinity();
+			else System.exit(0);
+		});
 	}
 
 	private static final class AddonPrefsBuilder
