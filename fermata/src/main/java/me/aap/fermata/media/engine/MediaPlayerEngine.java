@@ -241,6 +241,16 @@ public class MediaPlayerEngine extends MediaEngineBase
 	}
 
 	@Override
+	public void mute(Context ctx) {
+		player.setVolume(0f, 0f);
+	}
+
+	@Override
+	public void unmute(Context ctx) {
+		player.setVolume(1f, 1f);
+	}
+
+	@Override
 	public void onPrepared(MediaPlayer mp) {
 		if (source == null) return;
 		long off = source.getOffset();
@@ -265,19 +275,14 @@ public class MediaPlayerEngine extends MediaEngineBase
 		MediaEngineException err;
 
 		switch (extra) {
-			case MediaPlayer.MEDIA_ERROR_IO:
-				err = new MediaEngineException("MEDIA_ERROR_IO");
-				break;
-			case MediaPlayer.MEDIA_ERROR_MALFORMED:
-				err = new MediaEngineException("MEDIA_ERROR_MALFORMED");
-				break;
-			case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
-				err = new MediaEngineException("MEDIA_ERROR_UNSUPPORTED");
-				break;
-			case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
-				err = new MediaEngineException("MEDIA_ERROR_TIMED_OUT");
-				break;
-			default:
+			case MediaPlayer.MEDIA_ERROR_IO -> err = new MediaEngineException("MEDIA_ERROR_IO");
+			case MediaPlayer.MEDIA_ERROR_MALFORMED ->
+					err = new MediaEngineException("MEDIA_ERROR_MALFORMED");
+			case MediaPlayer.MEDIA_ERROR_UNSUPPORTED ->
+					err = new MediaEngineException("MEDIA_ERROR_UNSUPPORTED");
+			case MediaPlayer.MEDIA_ERROR_TIMED_OUT ->
+					err = new MediaEngineException("MEDIA_ERROR_TIMED_OUT");
+			default -> {
 				if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
 					err = new MediaEngineException("MEDIA_ERROR_SERVER_DIED");
 				} else if ((what == MediaPlayer.MEDIA_ERROR_UNKNOWN) || !player.isPlaying()) {
@@ -285,6 +290,7 @@ public class MediaPlayerEngine extends MediaEngineBase
 				} else {
 					return true;
 				}
+			}
 		}
 
 		listener.onEngineError(this, err);

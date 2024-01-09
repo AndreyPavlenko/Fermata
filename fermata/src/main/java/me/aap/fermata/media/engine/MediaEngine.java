@@ -1,11 +1,16 @@
 package me.aap.fermata.media.engine;
 
+import static android.media.AudioManager.ADJUST_MUTE;
+import static android.media.AudioManager.ADJUST_UNMUTE;
 import static android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+import static android.media.AudioManager.FLAG_SHOW_UI;
+import static android.media.AudioManager.STREAM_MUSIC;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.text.TextUtils.isBlank;
 
+import android.content.Context;
 import android.media.AudioManager;
 
 import androidx.annotation.Nullable;
@@ -251,6 +256,16 @@ public interface MediaEngine extends Closeable {
 
 	default boolean adjustVolume(int direction) {
 		return false;
+	}
+
+	default void mute(Context ctx) {
+		var amgr = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+		if (amgr != null) amgr.adjustStreamVolume(STREAM_MUSIC, ADJUST_MUTE, FLAG_SHOW_UI);
+	}
+
+	default void unmute(Context ctx) {
+		var amgr = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+		if (amgr != null) amgr.adjustStreamVolume(STREAM_MUSIC, ADJUST_UNMUTE, FLAG_SHOW_UI);
 	}
 
 	interface Listener {

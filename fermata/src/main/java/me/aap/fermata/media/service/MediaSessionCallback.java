@@ -1,6 +1,9 @@
 package me.aap.fermata.media.service;
 
 import static android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY;
+import static android.media.AudioManager.AUDIOFOCUS_GAIN;
+import static android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT;
+import static android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE;
@@ -95,6 +98,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.AudioEffects;
@@ -123,6 +127,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.net.NetServer;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.UiUtils;
+import me.aap.utils.ui.activity.ActivityDelegate;
 
 /**
  * @author Andrey Pavlenko
@@ -158,6 +163,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private MediaEngine engine;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
+	private boolean isMuted;
 	private boolean tryAnotherEngine;
 	@NonNull
 	private PlaybackStateCompat currentState;
@@ -227,7 +233,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	public Context getContext() {
-		return getMediaLib().getContext();
+		var ctx = getMediaLib().getContext();
+		if (BuildConfig.AUTO) {
+			var f = ActivityDelegate.getContextToDelegate();
+			if (f != null) {
+				var d = f.apply(ctx);
+				if (d != null) ctx = d.getContext();
+			}
+		}
+		return ctx;
 	}
 
 	public MediaLib getMediaLib() {
@@ -1043,16 +1057,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		Log.i("Audio focus event received: ", focusChange);
 
 		switch (focusChange) {
-			case AudioManager.AUDIOFOCUS_GAIN:
+			case AUDIOFOCUS_GAIN:
 				if (playOnAudioFocus) {
 					playOnAudioFocus = false;
 					onPlay();
+				} else if (isMuted) {
+					isMuted = false;
+					var eng = getEngine();
+					if (eng != null) eng.unmute(getContext());
 				}
-
 				break;
-			case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-				// onPause();
+			case AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
 				break;
+			case AUDIOFOCUS_LOSS_TRANSIENT:
+				if (!isPlaying()) return;
+				var eng = getEngine();
+				if ((eng != null) && !eng.canPause()) {
+					isMuted = true;
+					eng.mute(getContext());
+					return;
+				}
 			default:
 				if (isPlaying()) {
 					playOnAudioFocus = true;

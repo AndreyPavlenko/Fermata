@@ -1147,10 +1147,15 @@ public class MainActivityDelegate extends ActivityDelegate
 		}
 
 		void start(Intent i) {
-			MediaSessionCallback cb = getMediaSessionCallback();
+			var cb = getMediaSessionCallback();
 			if (cb.isPlaying()) {
-				cb.onPause();
-				playbackState = cb.getPlaybackState();
+				var eng = cb.getEngine();
+				if ((eng != null) && eng.canPause()) {
+					cb.onPause();
+					playbackState = cb.getPlaybackState();
+				} else {
+					playbackState = null;
+				}
 			} else {
 				playbackState = null;
 			}

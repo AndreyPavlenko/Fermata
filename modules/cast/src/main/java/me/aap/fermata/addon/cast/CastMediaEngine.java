@@ -17,6 +17,7 @@ import static me.aap.utils.collection.CollectionUtils.contains;
 import static me.aap.utils.collection.CollectionUtils.unboxed;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 
@@ -303,6 +304,14 @@ public class CastMediaEngine extends RemoteMediaClient.Callback implements Media
 			Log.e(ex);
 		}
 		return false;
+	}
+
+	@Override
+	public void mute(Context ctx) {
+	}
+
+	@Override
+	public void unmute(Context ctx) {
 	}
 
 	@Override

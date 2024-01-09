@@ -193,6 +193,16 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
+	public void mute(Context ctx) {
+		player.setVolume(0f);
+	}
+
+	@Override
+	public void unmute(Context ctx) {
+		player.setVolume(1f);
+	}
+
+	@Override
 	public void onPlaybackStateChanged(int playbackState) {
 		if (playbackState == Player.STATE_BUFFERING) {
 			buffering = true;

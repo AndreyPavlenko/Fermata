@@ -14,6 +14,7 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -632,6 +633,16 @@ public class VlcEngine extends MediaEngineBase
 				surface.setLayoutParams(lp);
 			}
 		}
+	}
+
+	@Override
+	public void mute(Context ctx) {
+		player.setVolume(0);
+	}
+
+	@Override
+	public void unmute(Context ctx) {
+		player.setVolume(100);
 	}
 
 	private static class Source implements Closeable {

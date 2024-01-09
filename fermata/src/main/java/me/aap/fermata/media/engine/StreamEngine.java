@@ -9,6 +9,7 @@ import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_END_TIME;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
 import static me.aap.utils.async.Completed.completed;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -427,6 +428,16 @@ public class StreamEngine implements MediaEngine, MediaEngine.Listener {
 	public void releaseAudioFocus(@Nullable AudioManager audioManager,
 																@Nullable AudioFocusRequestCompat audioFocusReq) {
 		eng.releaseAudioFocus(audioManager, audioFocusReq);
+	}
+
+	@Override
+	public void mute(Context ctx) {
+		eng.mute(ctx);
+	}
+
+	@Override
+	public void unmute(Context ctx) {
+		eng.unmute(ctx);
 	}
 
 	@Override
