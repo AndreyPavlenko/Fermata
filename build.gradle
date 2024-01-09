@@ -5,11 +5,11 @@ ext {
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
     SDK_COMPILE_VERSION = 34
-    BUILD_TOOLS_VERSION = "33.0.1"
+    BUILD_TOOLS_VERSION = "34.0.0"
     ABI_FILTERS = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']
     localProps = gradle.ext.localProps
 
-    ANDROID_MATERIAL_VERSION = '1.10.0'
+    ANDROID_MATERIAL_VERSION = '1.11.0'
     ANDROID_PLAY_CORE_VERSION = '1.10.3'
     ANDROIDX_CORE_VERSION = '1.12.0'
     ANDROIDX_MEDIA_VERSION = '1.7.0'
@@ -27,7 +27,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.4'
+        classpath 'com.android.tools.build:gradle:8.2.1'
         classpath 'com.google.gms:google-services:4.4.0'
     }
 }
@@ -60,6 +60,7 @@ subprojects {
     android {
         compileSdkVersion SDK_COMPILE_VERSION
         buildToolsVersion BUILD_TOOLS_VERSION
+        ndkVersion = "25.2.9519653"
 
         defaultConfig {
             minSdkVersion SDK_MIN_VERSION
@@ -94,6 +95,7 @@ subprojects {
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
+            if (name == "exoplayer") coreLibraryDesugaringEnabled true
         }
 
         testOptions {
@@ -105,6 +107,7 @@ subprojects {
         testImplementation 'junit:junit:4.13.2'
         androidTestImplementation 'androidx.test.ext:junit:1.1.5'
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+        if (name == "exoplayer") coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     }
 }
 
