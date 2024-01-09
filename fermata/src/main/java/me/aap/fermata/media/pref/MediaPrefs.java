@@ -59,6 +59,7 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<Supplier<String>> SUB_LANG = Pref.s("SUB_LANG", "");
 	Pref<Supplier<String>> SUB_KEY = Pref.s("SUB_KEY", "");
 	Pref<IntSupplier> AUDIO_DELAY = Pref.i("AUDIO_DELAY", 0);
+	Pref<IntSupplier> AUDIO_DELAY_AA = Pref.i("AUDIO_DELAY_AA", 0);
 	Pref<Supplier<String>> AUDIO_LANG = Pref.s("AUDIO_LANG", "");
 	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
 	Pref<IntSupplier> WATCHED_THRESHOLD = Pref.i("WATCHED_THRESHOLD", 95);
@@ -124,8 +125,9 @@ public interface MediaPrefs extends PreferenceStore {
 		return getStringPref(SUB_KEY);
 	}
 
-	default int getAudioDelayPref() {
-		return getIntPref(AUDIO_DELAY);
+	default int getAudioDelayPref(boolean isCar) {
+		return (isCar && hasPref(AUDIO_DELAY_AA)) ? getIntPref(AUDIO_DELAY_AA) :
+				getIntPref(AUDIO_DELAY);
 	}
 
 	default String getAudioLangPref() {

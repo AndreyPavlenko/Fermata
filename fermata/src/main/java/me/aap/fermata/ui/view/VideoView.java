@@ -83,7 +83,8 @@ public class VideoView extends FrameLayout
 		implements SurfaceHolder.Callback, View.OnLayoutChangeListener, PreferenceStore.Listener,
 		MainActivityListener, BiConsumer<SubGrid.Position, Subtitles.Text> {
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(
-			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.SUB_DELAY));
+			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.AUDIO_DELAY_AA,
+					MediaPrefs.SUB_DELAY));
 	private SubDrawer subDrawer;
 	private FutureSupplier<?> createSurface = new Promise<>();
 
@@ -419,8 +420,10 @@ public class VideoView extends FrameLayout
 
 			if (prefs.contains(MediaPrefs.VIDEO_SCALE)) {
 				setSurfaceSize(eng);
-			} else if (prefs.contains(MediaPrefs.AUDIO_DELAY)) {
-				eng.setAudioDelay(i.getPrefs().getAudioDelayPref());
+			} else if (prefs.contains(MediaPrefs.AUDIO_DELAY) ||
+					prefs.contains(MediaPrefs.AUDIO_DELAY_AA)) {
+				eng.setAudioDelay(
+						i.getPrefs().getAudioDelayPref(prefs.contains(MediaPrefs.AUDIO_DELAY_AA)));
 			} else if (prefs.contains(MediaPrefs.SUB_DELAY)) {
 				eng.setSubtitleDelay(i.getPrefs().getSubDelayPref());
 			}

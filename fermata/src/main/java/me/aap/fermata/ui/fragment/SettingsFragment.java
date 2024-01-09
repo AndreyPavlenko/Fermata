@@ -198,6 +198,10 @@ public class SettingsFragment extends MainActivityFragment
 	public static void addAudioPrefs(PreferenceSet set, PreferenceStore store, boolean isCar) {
 		addDelayPrefs(set, store, MediaLibPrefs.AUDIO_DELAY, R.string.audio_delay, null);
 
+		if (BuildConfig.AUTO) {
+			addDelayPrefs(set, store, MediaLibPrefs.AUDIO_DELAY_AA, R.string.audio_delay_aa, null);
+		}
+
 		if (!isCar) {
 			set.addStringPref(o -> {
 				Locale locale = Locale.getDefault();

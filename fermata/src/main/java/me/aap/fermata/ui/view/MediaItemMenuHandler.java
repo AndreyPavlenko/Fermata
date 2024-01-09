@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
@@ -224,7 +225,9 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		if (!getMainActivity().getMediaSessionCallback().getEngineManager().isVlcPlayerSupported())
 			return;
 		PreferenceSet prefSet = new PreferenceSet();
-		addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.AUDIO_DELAY, R.string.audio_delay, null);
+		Pref<IntSupplier> pref = FermataApplication.get().isConnectedToAuto()
+				? MediaLibPrefs.AUDIO_DELAY_AA : MediaLibPrefs.AUDIO_DELAY;
+		addDelayPrefs(prefSet, item.getPrefs(), pref, R.string.audio_delay, null);
 		prefSet.addToMenu(b, true);
 	}
 

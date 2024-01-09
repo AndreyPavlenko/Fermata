@@ -8,11 +8,13 @@ import java.io.File;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.engine.BitmapCache;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.app.NetSplitCompatApp;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
+import me.aap.utils.ui.activity.ActivityDelegate;
 
 /**
  * @author Andrey Pavlenko
@@ -32,6 +34,10 @@ public class FermataApplication extends NetSplitCompatApp {
 		super.onCreate();
 		vfsManager = new FermataVfsManager();
 		bitmapCache = new BitmapCache();
+	}
+
+	public boolean isConnectedToAuto() {
+		return BuildConfig.AUTO && ActivityDelegate.getContextToDelegate() != null;
 	}
 
 	public FermataVfsManager getVfsManager() {

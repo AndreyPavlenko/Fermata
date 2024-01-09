@@ -129,6 +129,7 @@
 
     <string name="audio">Аудио</string>
     <string name="audio_delay">Задержка аудио</string>
+    <string name="audio_delay_aa">Задержка аудио - Android Auto</string>
     <string name="preferred_audio_lang">Предпочитаемые языки аудио</string>
     <string name="preferred_audio_key">Предпочитать аудио дорожку с ключевыми словами</string>
     <string name="select_audio_stream">Выбрать аудио дорожку</string>

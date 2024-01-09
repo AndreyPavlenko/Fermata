@@ -13,6 +13,7 @@
     <string name="artist">Sanatçı</string>
     <string name="audio">Ses</string>
     <string name="audio_delay">Ses gecikmesi</string>
+    <string name="audio_delay_aa">Ses gecikmesi - Android Auto</string>
     <string name="audio_effects">Ses efekti</string>
     <string name="auto">Otomatik</string>
     <string name="bass_boost">Bass güçlendirme</string>

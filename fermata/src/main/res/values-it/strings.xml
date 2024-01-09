@@ -98,6 +98,7 @@
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Ritardo audio</string>
+    <string name="audio_delay_aa">Ritardo audio - Android Auto</string>
     <string name="preferred_audio_lang">Lingue preferite per l\'audio</string>
     <string name="preferred_audio_key">Preferisci il flusso audio con parole chiave</string>
     <string name="select_audio_stream">Seleziona lingua audio</string>

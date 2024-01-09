@@ -38,6 +38,7 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.AudioStreamInfo;
 import me.aap.fermata.media.engine.MediaEngine;
@@ -47,6 +48,7 @@ import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
+import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
@@ -423,11 +425,19 @@ public class VlcEngine extends MediaEngineBase
 			case MediaPlayer.Event.Playing -> {
 				if (this.source instanceof VideoSource vs) {
 					PlayableItemPrefs prefs = vs.getItem().getPrefs();
-					int delay = prefs.getAudioDelayPref();
 					MediaEngine.selectMediaStream(prefs::getAudioIdPref, prefs::getAudioLangPref,
 							prefs::getAudioKeyPref, () -> completed(getAudioStreamInfo()),
 							ai -> player.setAudioTrack((int) ai.getId()));
-					if (delay != 0) player.setAudioDelay(delay * 1000L);
+
+					if (BuildConfig.AUTO && (videoView != null)) {
+						MainActivityDelegate.getActivityDelegate(videoView.getContext()).onSuccess(a -> {
+							int delay = prefs.getAudioDelayPref(a.isCarActivity());
+							if (delay != 0) player.setAudioDelay(delay * 1000L);
+						});
+					} else {
+						int delay = prefs.getAudioDelayPref(false);
+						if (delay != 0) player.setAudioDelay(delay * 1000L);
+					}
 				} else {
 					player.setAudioDelay(0);
 				}

@@ -155,6 +155,7 @@
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Atraso do áudio</string>
+    <string name="audio_delay_aa">Atraso do áudio - Android Auto</string>
     <string name="preferred_audio_lang">Idiomas preferidos da faixa de áudio</string>
     <string name="preferred_audio_key">Preferir faixa de áudio com palavras-chave</string>
     <string name="select_audio_stream">Selecionar faixa de áudio</string>
