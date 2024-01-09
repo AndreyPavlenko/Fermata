@@ -47,6 +47,12 @@ public class YoutubeChromeClient extends FermataChromeClient {
 	}
 
 	@Override
+	public void onShowCustomView(View view, CustomViewCallback callback) {
+		getWebView().setVisibility(GONE);
+		super.onShowCustomView(view, callback);
+	}
+
+	@Override
 	public boolean canEnterFullScreen() {
 		MainActivityDelegate a = MainActivityDelegate.get(getWebView().getContext());
 		MediaSessionCallback cb = a.getMediaSessionCallback();

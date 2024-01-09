@@ -101,8 +101,7 @@ public class FermataChromeClient extends WebChromeClient {
 
 	@Override
 	public void onShowCustomView(View view, CustomViewCallback callback) {
-		if (view instanceof ViewGroup) {
-			ViewGroup g = (ViewGroup) view;
+		if (view instanceof ViewGroup g) {
 			View focus = g.getFocusedChild();
 
 			if (focus != null) {
@@ -117,7 +116,6 @@ public class FermataChromeClient extends WebChromeClient {
 		customView = view;
 		customViewCallback = callback;
 		addCustomView(view);
-		getWebView().setVisibility(GONE);
 		MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 		setFullScreen(a, true);
 
@@ -263,15 +261,13 @@ public class FermataChromeClient extends WebChromeClient {
 
 		for (String p : resources) {
 			switch (p) {
-				case PermissionRequest.RESOURCE_AUDIO_CAPTURE:
-					perms.put(Manifest.permission.RECORD_AUDIO, p);
-					break;
-				case PermissionRequest.RESOURCE_VIDEO_CAPTURE:
-					perms.put(Manifest.permission.CAMERA, p);
-					break;
-				case PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID:
+				case PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
+						perms.put(Manifest.permission.RECORD_AUDIO, p);
+				case PermissionRequest.RESOURCE_VIDEO_CAPTURE -> perms.put(Manifest.permission.CAMERA, p);
+				case PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID -> {
 					request.grant(resources);
 					return;
+				}
 			}
 		}
 
