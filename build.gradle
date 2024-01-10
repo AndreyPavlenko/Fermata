@@ -1,7 +1,7 @@
 ext {
     def abi = project.properties['ABI']
-    VERSION_CODE = 234
-    VERSION_NAME = "1.9.6"
+    VERSION_CODE = 235
+    VERSION_NAME = "1.9.7"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
     SDK_COMPILE_VERSION = 34
@@ -95,7 +95,6 @@ subprojects {
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
-            if (name == "exoplayer") coreLibraryDesugaringEnabled true
         }
 
         testOptions {
@@ -107,7 +106,6 @@ subprojects {
         testImplementation 'junit:junit:4.13.2'
         androidTestImplementation 'androidx.test.ext:junit:1.1.5'
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-        if (name == "exoplayer") coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     }
 }
 

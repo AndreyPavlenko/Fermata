@@ -1,28 +1,39 @@
 package me.aap.fermata.engine.exoplayer;
 
-import static com.google.android.exoplayer2.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
 import static me.aap.utils.async.Completed.completed;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.Uri;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.Format;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.util.Util;
-import com.google.android.exoplayer2.video.VideoSize;
+import androidx.annotation.NonNull;
+import androidx.media3.common.C;
+import androidx.media3.common.Format;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.common.util.Util;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.cronet.CronetDataSource;
+import androidx.media3.datasource.cronet.CronetUtil;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.exoplayer.source.MediaSource;
+
+import org.chromium.net.CronetEngine;
+
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.util.concurrent.Executors;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.media.engine.AudioEffects;
 import me.aap.fermata.media.engine.MediaEngineBase;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -33,13 +44,25 @@ import me.aap.utils.async.FutureSupplier;
 /**
  * @author Andrey Pavlenko
  */
+@UnstableApi
 public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener {
-	private final Context ctx;
+	private static final DataSource.Factory httpDsFactory;
+
+	static {
+		CronetEngine cre = CronetUtil.buildCronetEngine(FermataApplication.get(),
+				"Fermata/" + BuildConfig.VERSION_NAME, true);
+		if (cre != null) {
+			httpDsFactory = new CronetDataSource.Factory(cre, Executors.newSingleThreadExecutor());
+		} else {
+			CookieManager cookieManager = new CookieManager();
+			cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
+			CookieHandler.setDefault(cookieManager);
+			httpDsFactory = new DefaultHttpDataSource.Factory();
+		}
+	}
+
 	private final ExoPlayer player;
 	private final AudioEffects audioEffects;
-	private final DataSource.Factory dsFactory;
-	private ProgressiveMediaSource.Factory progressive;
-	private HlsMediaSource.Factory hls;
 	private PlayableItem source;
 	private boolean preparing;
 	private boolean buffering;
@@ -47,12 +70,12 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 	public ExoPlayerEngine(Context ctx, Listener listener) {
 		super(listener);
-		this.ctx = ctx;
-		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx).setExtensionRendererMode(
-				EXTENSION_RENDERER_MODE_PREFER)).build();
+		DefaultDataSource.Factory dsFactory = new DefaultDataSource.Factory(ctx, httpDsFactory);
+		MediaSource.Factory msFactory =
+				new DefaultMediaSourceFactory(ctx).setDataSourceFactory(dsFactory);
+		player = new ExoPlayer.Builder(ctx).setMediaSourceFactory(msFactory).build();
 		player.addListener(this);
 		audioEffects = AudioEffects.create(0, player.getAudioSessionId());
-		dsFactory = new DefaultDataSourceFactory(ctx, "Fermata/" + BuildConfig.VERSION_NAME);
 	}
 
 	@Override
@@ -70,30 +93,9 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 
 		Uri uri = source.getLocation();
 		MediaItem m = MediaItem.fromUri(uri);
-		int type = Util.inferContentType(uri, null);
-
-		switch (type) {
-			case C.TYPE_HLS -> {
-				if (hls == null) hls = new HlsMediaSource.Factory(getDsFactory(source));
-				isHls = true;
-				player.setMediaSource(hls.createMediaSource(m), true);
-			}
-			case C.TYPE_OTHER -> {
-				if (progressive == null)
-					progressive = new ProgressiveMediaSource.Factory(getDsFactory(source));
-				isHls = false;
-				player.setMediaSource(progressive.createMediaSource(m), true);
-			}
-			default ->
-					listener.onEngineError(this, new IllegalArgumentException("Unsupported type: " + type));
-		}
-
+		isHls = Util.inferContentType(uri) == C.CONTENT_TYPE_HLS;
+		player.setMediaItem(m);
 		player.prepare();
-	}
-
-	private DataSource.Factory getDsFactory(PlayableItem source) {
-		String agent = source.getUserAgent();
-		return (agent == null) ? dsFactory : new DefaultDataSourceFactory(ctx, agent);
 	}
 
 	@Override
@@ -230,7 +232,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
-	public void onPlayerError(PlaybackException error) {
+	public void onPlayerError(@NonNull PlaybackException error) {
 		listener.onEngineError(this, error);
 	}
 }

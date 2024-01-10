@@ -4,7 +4,6 @@ gradle.ext.localProps = new Properties()
 gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
         && file('fermata/google-services.json').isFile()
 def localPropsFile = file('local.properties')
-def exoRoot = file('depends/ExoPlayer')
 
 if (localPropsFile.isFile()) {
     gradle.ext.localProps.load(localPropsFile.newDataInputStream())
@@ -15,12 +14,6 @@ if (localPropsFile.isFile()) {
     gradle.ext.localProps.setProperty('storePassword', 'fermata')
 }
 
-if (exoRoot.isDirectory()) {
-    gradle.ext.exoplayerRoot = exoRoot
-    gradle.ext.exoplayerModulePrefix = 'exoplayer-'
-    apply from: new File(exoRoot, 'core_settings.gradle')
-}
-
 rootProject.name = 'Fermata Music Player'
 include ':fermata'
 include ':control'
@@ -29,7 +22,6 @@ project(':utils').projectDir = file('depends/utils')
 
 file('modules').eachDir {
     def name = ':' + it.name
-    if ((':exoplayer' == name) && !exoRoot.isDirectory()) return
     if ((':gdrive' == name) && !gradle.ext.enableGoogleServices) return
     gradle.ext.modules.add(name)
     include name

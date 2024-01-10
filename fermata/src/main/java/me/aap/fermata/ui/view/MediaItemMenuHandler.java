@@ -181,7 +181,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 		if (addMediaEngMenu()) {
 			b.addItem(R.id.preferred_media_engine, R.drawable.media_engine,
-					R.string.preferred_media_engine).setSubmenu(this::buildVideoEngMenu);
+							R.string.preferred_media_engine)
+					.setSubmenu(pi.isVideo() ? this::buildVideoEngMenu : this::buildAudioEngMenu);
 		}
 	}
 
