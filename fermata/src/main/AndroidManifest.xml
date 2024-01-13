@@ -62,7 +62,8 @@
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Dark"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        tools:targetApi="UPSIDE_DOWN_CAKE">
 
         <meta-data
             android:name="com.google.android.gms.car.application"
@@ -81,7 +82,8 @@
             android:name="me.aap.fermata.ui.activity.MainActivity"
             android:configChanges="colorMode|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:exported="true"
-            android:launchMode="singleTop">
+            android:launchMode="singleTop"
+            android:resizeableActivity="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -813,40 +815,40 @@
                 <data android:pathPattern=".*.XM" />
             </intent-filter>
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="file"/>
-                <data android:scheme="content"/>
-                <data android:scheme="http"/>
-                <data android:scheme="https"/>
-                <data android:mimeType="video/*"/>
-                <data android:mimeType="audio/*"/>
-                <data android:mimeType="*/rmvb"/>
-                <data android:mimeType="*/avi"/>
-                <data android:mimeType="*/mkv"/>
-                <data android:mimeType="application/3gpp*"/>
-                <data android:mimeType="application/mp4"/>
-                <data android:mimeType="application/mpeg*"/>
-                <data android:mimeType="application/ogg"/>
-                <data android:mimeType="application/sdp"/>
-                <data android:mimeType="application/vnd.3gp*"/>
-                <data android:mimeType="application/vnd.apple.mpegurl"/>
-                <data android:mimeType="application/vnd.dvd*"/>
-                <data android:mimeType="application/vnd.dolby*"/>
-                <data android:mimeType="application/vnd.rn-realmedia*"/>
-                <data android:mimeType="application/x-iso9660-image"/>
-                <data android:mimeType="application/x-extension-mp4"/>
-                <data android:mimeType="application/x-flac"/>
-                <data android:mimeType="application/x-matroska"/>
-                <data android:mimeType="application/x-mpegURL"/>
-                <data android:mimeType="application/x-ogg"/>
-                <data android:mimeType="application/x-quicktimeplayer"/>
-                <data android:mimeType="application/x-shockwave-flash"/>
-                <data android:mimeType="application/xspf+xml"/>
-                <data android:mimeType="misc/ultravox"/>
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="*/rmvb" />
+                <data android:mimeType="*/avi" />
+                <data android:mimeType="*/mkv" />
+                <data android:mimeType="application/3gpp*" />
+                <data android:mimeType="application/mp4" />
+                <data android:mimeType="application/mpeg*" />
+                <data android:mimeType="application/ogg" />
+                <data android:mimeType="application/sdp" />
+                <data android:mimeType="application/vnd.3gp*" />
+                <data android:mimeType="application/vnd.apple.mpegurl" />
+                <data android:mimeType="application/vnd.dvd*" />
+                <data android:mimeType="application/vnd.dolby*" />
+                <data android:mimeType="application/vnd.rn-realmedia*" />
+                <data android:mimeType="application/x-iso9660-image" />
+                <data android:mimeType="application/x-extension-mp4" />
+                <data android:mimeType="application/x-flac" />
+                <data android:mimeType="application/x-matroska" />
+                <data android:mimeType="application/x-mpegURL" />
+                <data android:mimeType="application/x-ogg" />
+                <data android:mimeType="application/x-quicktimeplayer" />
+                <data android:mimeType="application/x-shockwave-flash" />
+                <data android:mimeType="application/xspf+xml" />
+                <data android:mimeType="misc/ultravox" />
             </intent-filter>
         </activity>
 

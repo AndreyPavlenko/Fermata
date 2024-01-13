@@ -69,7 +69,7 @@ public class Utils {
 	}
 
 	public static boolean isSafSupported(@Nullable MainActivityDelegate a) {
-		if ((a != null) && a.isCarActivity()) return false;
+		if ((a != null) && a.isCarActivityNotMirror()) return false;
 		return MiscUtils.isSafSupported();
 	}
 
@@ -102,7 +102,7 @@ public class Utils {
 		MainActivityDelegate a = MainActivityDelegate.get(ctx);
 		boolean gmap = url.contains("google.") && url.contains("/map");
 
-		if (!gmap && a.isCarActivity()) return openUrlInBrowserFragment(ctx, url);
+		if (!gmap && a.isCarActivityNotMirror()) return openUrlInBrowserFragment(ctx, url);
 
 		Uri u = Uri.parse(url);
 		Intent intent = new Intent(Intent.ACTION_VIEW, u);

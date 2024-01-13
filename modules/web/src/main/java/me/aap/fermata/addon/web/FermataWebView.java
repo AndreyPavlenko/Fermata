@@ -52,8 +52,9 @@ import me.aap.utils.ui.view.ToolBarView;
 /**
  * @author Andrey Pavlenko
  */
-public class FermataWebView extends WebView implements TextChangedListener,
-		TextView.OnEditorActionListener, PreferenceStore.Listener, MainActivityListener {
+public class FermataWebView extends WebView
+		implements TextChangedListener, TextView.OnEditorActionListener, PreferenceStore.Listener,
+		MainActivityListener {
 	private final boolean isCar;
 	private WebBrowserAddon addon;
 	private FermataWebClient webClient;
@@ -65,16 +66,17 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 	public FermataWebView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivity();
+		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivityNotMirror();
 	}
 
 	public FermataWebView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivity();
+		isCar = BuildConfig.AUTO && MainActivityDelegate.get(context).isCarActivityNotMirror();
 	}
 
 	@SuppressLint("SetJavaScriptEnabled")
-	public void init(WebBrowserAddon addon, FermataWebClient webClient, FermataChromeClient chromeClient) {
+	public void init(WebBrowserAddon addon, FermataWebClient webClient,
+									 FermataChromeClient chromeClient) {
 		this.addon = addon;
 		this.webClient = webClient;
 		setWebViewClient(webClient);
@@ -162,7 +164,8 @@ public class FermataWebView extends WebView implements TextChangedListener,
 
 	@SuppressWarnings("deprecation")
 	private void setForceDark(WebBrowserAddon a, boolean reload) {
-		if ((VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) && (WebViewFeature.isFeatureSupported(ALGORITHMIC_DARKENING))) {
+		if ((VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) &&
+				(WebViewFeature.isFeatureSupported(ALGORITHMIC_DARKENING))) {
 			boolean dark = a.isForceDark() || (isDarkPhoneTheme() && a.isAutoDark());
 			WebSettingsCompat.setAlgorithmicDarkeningAllowed(getSettings(), dark);
 			if (reload) reload();
@@ -253,52 +256,37 @@ public class FermataWebView extends WebView implements TextChangedListener,
 		if (!BuildConfig.AUTO || isKeyboardActive()) return;
 
 		Log.d("checkTextInput");
-		loadUrl("javascript:\n" +
-				"function checkInput() {\n" +
-				"  var e =  document.activeElement;\n" +
-				"  if (e == null) return;\n" +
-				"  if (e instanceof HTMLInputElement) {\n" +
-				"    " + JS_EVENT + '(' + JS_EDIT + ", e.value);\n" +
-				"  } else if(e.getAttribute('contenteditable') == 'true') {\n" +
-				"    " + JS_EVENT + '(' + JS_EDIT + ", e.innerText);\n" +
-				"  }\n" +
-				"}\n" +
-				"setTimeout(checkInput, 500);");
+		loadUrl("javascript:\n" + "function checkInput() {\n" + "  var e =  document.activeElement;" +
+				"\n" + "  if (e == null) return;\n" + "  if (e instanceof HTMLInputElement) {\n" + "    " +
+				JS_EVENT + '(' + JS_EDIT + ", e.value);\n" +
+				"  } else if(e.getAttribute('contenteditable') == 'true') {\n" + "    " + JS_EVENT + '(' +
+				JS_EDIT + ", e.innerText);\n" + "  }\n" + "}\n" + "setTimeout(checkInput, 500);");
 	}
 
 	private void setTextInput(CharSequence text) {
 		if (!BuildConfig.AUTO) return;
 
 		Log.d(text);
-		loadUrl("javascript:\n" +
-				"var e =  document.activeElement;\n" +
-				"var text = '" + text + "';\n" +
-				"if (e.isContentEditable) e.innerText = text;\n" +
-				"else e.value = text;\n" +
-				"e.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));\n" +
-				"e.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));\n" +
-				"e.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));\n" +
-				"e.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));\n" +
-				"e.dispatchEvent(new Event('change', { bubbles: true }));"
-		);
+		loadUrl(
+				"javascript:\n" + "var e =  document.activeElement;\n" + "var text = '" + text + "';\n" +
+						"if (e.isContentEditable) e.innerText = text;\n" + "else e.value = text;\n" +
+						"e.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));\n" +
+						"e.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));\n" +
+						"e.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: " +
+						"'insertText' }));\n" +
+						"e.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));\n" +
+						"e.dispatchEvent(new Event('change', { bubbles: true }));");
 	}
 
 
 	protected void submitForm() {
 		if (!BuildConfig.AUTO) return;
-		loadUrl("javascript:\n" +
-				"var ae = document.activeElement;\n" +
-				"if (ae.form != null) {\n" +
-				"  ae.form.submit();\n" +
-				"} else {\n" +
-				"  var e = new KeyboardEvent('keydown',\n" +
+		loadUrl("javascript:\n" + "var ae = document.activeElement;\n" + "if (ae.form != null) {\n" +
+				"  ae.form.submit();\n" + "} else {\n" + "  var e = new KeyboardEvent('keydown',\n" +
 				"  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
-				"  ae.dispatchEvent(e);\n" +
-				"  e = new KeyboardEvent('keyup',\n" +
+				"  ae.dispatchEvent(e);\n" + "  e = new KeyboardEvent('keyup',\n" +
 				"  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
-				"  ae.dispatchEvent(e);\n" +
-				"}"
-		);
+				"  ae.dispatchEvent(e);\n" + "}");
 	}
 
 	public void showKeyboard(String text) {
@@ -374,7 +362,8 @@ public class FermataWebView extends WebView implements TextChangedListener,
 	}
 
 	static final class UserAgent {
-		private static final Pattern pattern = Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
+		private static final Pattern pattern =
+				Pattern.compile(".+ AppleWebKit/(\\S+) .+ Chrome/(\\S+) .+");
 		static String ua;
 		static String uaDesktop;
 
@@ -390,8 +379,7 @@ public class FermataWebView extends WebView implements TextChangedListener,
 				else av = VERSION.RELEASE;
 				String wv = m.group(1);
 				String cv = m.group(2);
-				UserAgent.ua = a.getUserAgent()
-						.replace("{ANDROID_VERSION}", av)
+				UserAgent.ua = a.getUserAgent().replace("{ANDROID_VERSION}", av)
 						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
 						.replace("{CHROME_VERSION}", requireNonNull(cv));
 				UserAgent.ua = normalize(UserAgent.ua);
@@ -413,16 +401,14 @@ public class FermataWebView extends WebView implements TextChangedListener,
 			if (m.matches()) {
 				String wv = m.group(1);
 				String cv = m.group(2);
-				uaDesktop = a.getUserAgentDesktop()
-						.replace("{WEBKIT_VERSION}", requireNonNull(wv))
+				uaDesktop = a.getUserAgentDesktop().replace("{WEBKIT_VERSION}", requireNonNull(wv))
 						.replace("{CHROME_VERSION}", requireNonNull(cv));
 			} else {
 				Log.w("User-Agent does not match the pattern ", pattern, ": " + ua);
 				int i1 = ua.indexOf('(') + 1;
 				int i2 = ua.indexOf(')', i1);
-				uaDesktop = ua.substring(0, i1) + "X11; Linux x86_64" + ua.substring(i2)
-						.replace(" Mobile ", " ")
-						.replaceFirst(" Version/\\d+\\.\\d+ ", " ");
+				uaDesktop = ua.substring(0, i1) + "X11; Linux x86_64" +
+						ua.substring(i2).replace(" Mobile ", " ").replaceFirst(" Version/\\d+\\.\\d+ ", " ");
 			}
 
 			return uaDesktop = normalize(uaDesktop);

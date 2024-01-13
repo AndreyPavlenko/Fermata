@@ -11,6 +11,7 @@ import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.LongSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.SharedPreferenceStore;
@@ -54,6 +55,7 @@ public interface MainActivityPrefs
 	Pref<DoubleSupplier> L_SPLIT_PERCENT_SUB = Pref.f("L_SPLIT_PERCENT_SUB", 0.5f);
 	Pref<Supplier<String>> SHOW_ADDON_ON_START = Pref.s("SHOW_ADDON_ON_START", (String) null);
 	Pref<BooleanSupplier> CHECK_UPDATES = Pref.b("CHECK_UPDATES", true);
+	Pref<LongSupplier> CHECK_UPDATES_STAMP = Pref.l("CHECK_UPDATES_STAMP", 0);
 	Pref<BooleanSupplier> SYS_BARS_ON_VIDEO_TOUCH = Pref.b("SYS_BARS_ON_VIDEO_TOUCH", false);
 	Pref<BooleanSupplier> LANDSCAPE_VIDEO = Pref.b("LANDSCAPE_VIDEO", false);
 	Pref<BooleanSupplier> CHANGE_BRIGHTNESS = Pref.b("CHANGE_BRIGHTNESS", false);
@@ -109,7 +111,12 @@ public interface MainActivityPrefs
 	}
 
 	default boolean getCheckUpdatesPref() {
-		return getBooleanPref(CHECK_UPDATES);
+		if (!getBooleanPref(CHECK_UPDATES)) return false;
+		var now = System.currentTimeMillis();
+		var stamp = getLongPref(CHECK_UPDATES_STAMP);
+		if ((now - stamp) < (24L * 3600000L)) return false;
+		applyLongPref(CHECK_UPDATES_STAMP, now);
+		return true;
 	}
 
 	static boolean hasFullscreenPref(MainActivityDelegate a, List<Pref<?>> prefs) {

@@ -107,7 +107,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 																								 byte mode) {
 		Context ctx = activity.getContext();
 		return MainActivityDelegate.getActivityDelegate(ctx).then(a ->
-				activity.isCarActivity() ? completed(true) : a.getAppActivity()
+				activity.isCarActivityNotMirror() ? completed(true) : a.getAppActivity()
 						.checkPermissions(RECORD_AUDIO).map(r -> {
 							if (r[0] == PERMISSION_GRANTED) return true;
 							showAlert(ctx, me.aap.fermata.R.string.err_no_audio_record_perm);

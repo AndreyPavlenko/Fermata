@@ -2,6 +2,7 @@ package me.aap.fermata.ui.activity;
 
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.util.Base64.URL_SAFE;
@@ -146,6 +147,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	public static final String INTENT_ACTION_OPEN = "open";
 	public static final String INTENT_ACTION_PLAY = "play";
 	public static final String INTENT_ACTION_UPDATE = "update";
+	public static final String INTENT_ACTION_FINISH = "finish";
 	private static final String INTENT_SCHEME = "fermata";
 	private final HandlerExecutor handler = new HandlerExecutor(App.get().getHandler().getLooper());
 	private final NavBarMediator navBarMediator = new NavBarMediator();
@@ -228,7 +230,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		Context ctx = a.getContext();
 		b.getMediaSessionCallback().getSession().setSessionActivity(
 				PendingIntent.getActivity(ctx, 0, new Intent(ctx, a.getClass()), FLAG_IMMUTABLE));
-		b.getMediaSessionCallback().addAssistant(this, isCarActivity() ? 0 : 1);
+		b.getMediaSessionCallback().addAssistant(this, isCarActivityNotMirror() ? 0 : 1);
 		if (b.getCurrentItem() == null) b.getMediaSessionCallback().onPrepare();
 		init();
 
@@ -240,7 +242,7 @@ public class MainActivityDelegate extends ActivityDelegate
 		String[] perms = getRequiredPermissions();
 		a.checkPermissions(perms).onCompletion((result, fail) -> {
 			if (fail != null) {
-				if (!isCarActivity()) Log.e(fail);
+				if (!isCarActivityNotMirror()) Log.e(fail);
 			} else {
 				Log.d("Requested permissions: ", Arrays.toString(perms),
 						". Result: " + Arrays.toString(result));
@@ -272,6 +274,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
+		if (INTENT_ACTION_FINISH.equals(intent.getAction())) {
+			finish();
+			MainActivity.restoreAccelRotation();
+			return completed(true);
+		}
+
 		for (FermataAddon a : AddonManager.get().getAddons()) {
 			if (a.handleIntent(this, intent)) return completed(true);
 		}
@@ -360,13 +368,14 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void recreate() {
-		if (AUTO && isCarActivity()) showAlert(getContext(), R.string.please_restart_app);
+		if (AUTO && isCarActivityNotMirror()) showAlert(getContext(), R.string.please_restart_app);
 		else getHandler().post(super::recreate);
 	}
 
 	@Override
 	public void onActivityResume() {
 		super.onActivityResume();
+		checkMirroringMode();
 		for (FermataAddon addon : AddonManager.get().getAddons()) {
 			if (addon instanceof FermataActivityAddon)
 				((FermataActivityAddon) addon).onActivityResume(this);
@@ -407,7 +416,7 @@ public class MainActivityDelegate extends ActivityDelegate
 				return (!(l instanceof AddonManager)) ||
 						(b != FermataApplication.get().getPreferenceStore());
 			});
-			if (leaks) throw new IllegalStateException("Listener leaks detected!");
+			if (leaks) Log.e(new IllegalStateException("Listener leaks detected!"));
 		}
 	}
 
@@ -425,6 +434,10 @@ public class MainActivityDelegate extends ActivityDelegate
 		return AUTO && getAppActivity().isCarActivity();
 	}
 
+	public boolean isCarActivityNotMirror() {
+		return isCarActivity() && !FermataApplication.get().isMirroringMode();
+	}
+
 	@NonNull
 	public MainActivityPrefs getPrefs() {
 		return Prefs.instance;
@@ -436,16 +449,16 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	@SuppressWarnings("deprecation")
-	public static void setTheme(FermataActivity a) {
-		switch (Prefs.instance.getThemePref(a.isCarActivity())) {
-			case MainActivityPrefs.THEME_DARK -> a.setTheme(R.style.AppTheme_Dark);
-			case MainActivityPrefs.THEME_LIGHT -> a.setTheme(R.style.AppTheme_Light);
+	public static void setTheme(Context ctx, boolean auto) {
+		switch (Prefs.instance.getThemePref(auto)) {
+			case MainActivityPrefs.THEME_DARK -> ctx.setTheme(R.style.AppTheme_Dark);
+			case MainActivityPrefs.THEME_LIGHT -> ctx.setTheme(R.style.AppTheme_Light);
 			case MainActivityPrefs.THEME_DAY_NIGHT -> {
 				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_TIME);
-				a.setTheme(R.style.AppTheme_DayNight);
+				ctx.setTheme(R.style.AppTheme_DayNight);
 			}
-			case MainActivityPrefs.THEME_BLACK -> a.setTheme(R.style.AppTheme_Black);
-			case MainActivityPrefs.THEME_STAR_WARS -> a.setTheme(R.style.AppTheme_BlackStarWars);
+			case MainActivityPrefs.THEME_BLACK -> ctx.setTheme(R.style.AppTheme_Black);
+			case MainActivityPrefs.THEME_STAR_WARS -> ctx.setTheme(R.style.AppTheme_BlackStarWars);
 		}
 	}
 
@@ -466,7 +479,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public boolean isFullScreen() {
 		if (videoMode || getPrefs().getFullscreenPref(this)) {
-			if (isCarActivity()) {
+			if (isCarActivityNotMirror()) {
 				FermataServiceUiBinder b = getMediaServiceBinder();
 				return !b.getMediaSessionCallback().getPlaybackControlPrefs().getVideoAaShowStatusPref();
 			} else {
@@ -576,25 +589,38 @@ public class MainActivityDelegate extends ActivityDelegate
 			if (cp != null) cp.disableVideoMode();
 		}
 
-		MainActivityPrefs p = getPrefs();
+		if (!checkMirroringMode()) {
+			MainActivityPrefs p = getPrefs();
 
-		if (p.getChangeBrightnessPref()) {
-			if (videoMode) {
-				brightness = getBrightness();
-				setBrightness(p.getBrightnessPref());
-			} else {
-				setBrightness(brightness);
+			if (p.getChangeBrightnessPref()) {
+				if (videoMode) {
+					brightness = getBrightness();
+					setBrightness(p.getBrightnessPref());
+				} else {
+					setBrightness(brightness);
+				}
 			}
-		}
-		if (p.getLandscapeVideoPref()) {
-			if (videoMode) {
-				getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-			} else {
-				getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+			if (p.getLandscapeVideoPref()) {
+				if (videoMode) {
+					getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+				} else {
+					getAppActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+				}
 			}
 		}
 
 		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
+	}
+
+	private boolean checkMirroringMode() {
+		var app = FermataApplication.get();
+		if (!app.isMirroringMode()) return false;
+		keepScreenOn(true);
+		setFullScreen(true);
+		getAppActivity().setRequestedOrientation(
+				app.isMirroringLandscape() ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE :
+						SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+		return true;
 	}
 
 	public void keepScreenOn(boolean on) {
@@ -746,7 +772,7 @@ public class MainActivityDelegate extends ActivityDelegate
 
 	@Override
 	protected boolean exitOnBackPressed() {
-		return !isCarActivity();
+		return !isCarActivityNotMirror();
 	}
 
 	@Override
@@ -788,8 +814,9 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public FutureSupplier<List<String>> startSpeechRecognizer(String locale, boolean textInput) {
-		FutureSupplier<int[]> check = isCarActivity() ? completed(new int[]{PERMISSION_GRANTED}) :
-				getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
+		FutureSupplier<int[]> check =
+				isCarActivityNotMirror() ? completed(new int[]{PERMISSION_GRANTED}) :
+						getAppActivity().checkPermissions(Manifest.permission.RECORD_AUDIO);
 		return check.then(r -> {
 			if (r[0] == PERMISSION_GRANTED) return completedVoid();
 			else return failed(new IllegalStateException("Audio recording permission is not granted"));

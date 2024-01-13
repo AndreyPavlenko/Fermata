@@ -86,12 +86,9 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		MainActivityDelegate.setTheme(this);
+		MainActivityDelegate.setTheme(this, true);
 		super.onCreate(savedInstanceState);
-		setIgnoreConfigChanges(0xFFFFFFFF);
-		CarUiController ctrl = getCarUiController();
-		ctrl.getStatusBarController().hideAppHeader();
-		ctrl.getMenuController().hideMenuButton();
+		initCarActivity(this);
 		FermataMediaServiceConnection s = service;
 
 		if ((s != null) && s.isConnected()) {
@@ -103,6 +100,13 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 						return onCreate(savedInstanceState, c);
 					});
 		}
+	}
+
+	static void initCarActivity(CarActivity a) {
+		a.setIgnoreConfigChanges(0xFFFFFFFF);
+		CarUiController ctrl = a.getCarUiController();
+		ctrl.getStatusBarController().hideAppHeader();
+		ctrl.getMenuController().hideMenuButton();
 	}
 
 	private MainActivityDelegate onCreate(Bundle state, FermataMediaServiceConnection s) {
@@ -453,9 +457,11 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 				setVisibility(GONE);
 			}
 			v.dispatchTouchEvent(down);
+			down.recycle();
 			activity.postDelayed(() -> {
 				MotionEvent up = MotionEvent.obtain(time, time + 100, MotionEvent.ACTION_UP, x, y, 0);
 				v.dispatchTouchEvent(up);
+				up.recycle();
 				if (!clearFocus) activity.post(this::requestFocus);
 			}, 100);
 		}

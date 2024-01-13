@@ -279,7 +279,7 @@ public class FermataChromeClient extends WebChromeClient {
 
 		MainActivityDelegate a = MainActivityDelegate.get(getWebView().getContext());
 
-		if (BuildConfig.AUTO && a.isCarActivity()) {
+		if (BuildConfig.AUTO && a.isCarActivityNotMirror()) {
 			// Activity.checkPermissions() is not supported by AA
 			Log.d("Granted permissions: ", perms.values());
 			request.grant(perms.values().toArray(new String[0]));

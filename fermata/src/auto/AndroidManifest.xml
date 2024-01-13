@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
+    <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
     <uses-feature
         android:name="android.hardware.type.automotive"
@@ -29,21 +34,13 @@
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposedscope" />
-
-
-        <service
-            android:name="me.aap.fermata.media.service.FermataMediaService"
-            android:exported="true"
-            android:foregroundServiceType="mediaPlayback">
-            <intent-filter>
-                <action android:name="me.aap.fermata.action.CarMediaService" />
-                <action android:name="me.aap.fermata.action.ControlService" />
-            </intent-filter>
-        </service>
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="5"
+            tools:ignore="MetadataTagInsideApplicationTag" />
 
         <service
             android:name="me.aap.fermata.auto.CarService"
-            android:enabled="true"
             android:exported="true"
             android:label="@string/app_name"
             tools:ignore="ExportedService">
@@ -55,6 +52,58 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name="me.aap.fermata.auto.MirrorService"
+            android:exported="true"
+            android:icon="@drawable/mirror"
+            android:label="@string/mirror_service_name"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="com.google.android.gms.car.category.CATEGORY_PROJECTION" />
+                <category android:name="com.google.android.gms.car.category.CATEGORY_PROJECTION_OEM" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="me.aap.fermata.auto.MirrorServiceFS"
+            android:exported="true"
+            android:icon="@drawable/mirror_fs"
+            android:label="@string/mirror_fs_service_name"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.NAVIGATION" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name="me.aap.fermata.auto.ProjectionActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance" />
+
+        <service
+            android:name="me.aap.fermata.auto.ProjectionService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <service android:exported="true"
+            android:name="me.aap.fermata.auto.AccessibilityEventDispatcherService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility" />
+        </service>
+
+        <service
+            android:name="me.aap.fermata.auto.XposedEventDispatcherService"
+            android:exported="true" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.FileProvider"
@@ -64,5 +113,16 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
         </provider>
+
+        <service
+            android:name="me.aap.fermata.media.service.FermataMediaService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="me.aap.fermata.action.CarMediaService" />
+                <action android:name="me.aap.fermata.action.ControlService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

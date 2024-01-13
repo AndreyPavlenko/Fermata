@@ -5,3 +5,4 @@
 -keep class me.aap.fermata.vfs.sftp.** { *; }
 -keep class me.aap.fermata.vfs.smb.** { *; }
 -keep class me.aap.fermata.vfs.gdrive.** { *; }
+-keep class androidx.car.app.** { *; }

@@ -7,8 +7,6 @@
     <string name="addon_name_youtube">Youtube</string>
     <string name="addons">Eklentiler</string>
     <string name="album">Albüm</string>
-    <string name="app_name_auto">Fermata Auto</string>
-    <string name="app_name_mobile">Fermata</string>
     <string name="apply_to">Uygula</string>
     <string name="artist">Sanatçı</string>
     <string name="audio">Ses</string>
@@ -254,7 +252,6 @@
     <string name="voice_control_fb">Kayan düğme</string>
     <string name="voice_control_sub_long">Uzun dokununca ses kontrolünü etkinleştir</string>
     <string name="voice_control_subst">Kelime değiştirme</string>
-    <string name="voice_control_subst_hint">on: play\noff: pause\nmerde: find in browser nearest bar</string>
     <string name="voice_control_subst_sub">Bir kelimeyi başka bir kelime veya kelime öbeği ile değiştirin</string>
     <string name="voice_search">Sesli arama</string>
     <string name="vol_boost">Ses artırma</string>

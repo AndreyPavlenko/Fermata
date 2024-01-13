@@ -95,7 +95,7 @@
     <string name="voice_control_sub_long">Активировать голосовое управление, при долгом нажатии</string>
     <string name="voice_control_subst">Замена слов</string>
     <string name="voice_control_subst_sub">Заменять слово другим словом или фразой</string>
-    <string name="voice_control_subst_hint" translatable="false">включить: играть\nвыключить: пауза\nскучно: найти в браузере ближайши бар</string>
+    <string name="voice_control_subst_hint">включить: играть\nвыключить: пауза\nскучно: найти в браузере ближайши бар</string>
 
     <string name="module_installation">Установка модуля: %1$s</string>
     <string name="install_pending">Ожидание инсталляции: %1$s</string>

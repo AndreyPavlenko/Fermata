@@ -473,14 +473,14 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	private void buildAudioPrefsMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
-		addAudioPrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivity());
+		addAudioPrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivityNotMirror());
 		b.setTitle(R.string.audio);
 		prefSet.addToMenu(b, true);
 	}
 
 	private void buildSubtitlePrefsMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
-		addSubtitlePrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivity());
+		addSubtitlePrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivityNotMirror());
 		b.setTitle(R.string.subtitles);
 		prefSet.addToMenu(b, true);
 	}

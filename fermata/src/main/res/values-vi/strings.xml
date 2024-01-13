@@ -1,25 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile" translatable="false">Fermata</string>
-    <string name="app_name_auto" translatable="false">Fermata Auto</string>
-    <string name="media_service_name" translatable="false">Fermata</string>
-    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
-    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
-    <string name="engine_vlc_name" translatable="false">VLC</string>
-
-    <string name="module_name_gdrive" translatable="false">Google Drive</string>
-    <string name="module_name_sftp" translatable="false">SFTP</string>
-    <string name="module_name_smb" translatable="false">SMB</string>
-    <string name="module_name_web" translatable="false">Web</string>
-    <string name="module_name_tv" translatable="false">TV</string>
-
     <string name="addons">Tiện ích</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Trình duyệt</string>
-    <string name="addon_name_youtube" translatable="false">Youtube</string>
-    <string name="addon_name_felex" translatable="false">Felex</string>
-    <string name="addon_name_cast" translatable="false">Google Cast</string>
-    <string name="addon_name_chat" translatable="false">ChatGPT</string>
 
     <string name="interface_prefs">Giao diện</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -113,7 +96,6 @@
     <string name="voice_control_sub_long">Kích hoạt điều khiển bằng giọng nói khi nhấn giữ</string>
     <string name="voice_control_subst">Từ thay thế</string>
     <string name="voice_control_subst_sub">Thay thế một từ bằng một từ hoặc cụm từ khác</string>
-    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: tìm trong thanh trình duyệt gần nhất</string>
 
     <string name="module_installation">Cài đặt Module: %1$s</string>
     <string name="install_pending">Đang chờ cài đặt: %1$s</string>
@@ -161,7 +143,6 @@
     <string name="preferred_sub_key">Phụ đề theo từ khóa</string>
     <string name="select_subtitles">Chọn phụ đề</string>
 
-    <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -252,13 +233,9 @@
     <string name="vfs_content">Nội dung</string>
     <string name="vfs_file_system">Tệp tin hệ thống</string>
     <string name="vfs_gdrive">Google drive</string>
-    <string name="vfs_sftp" translatable="false">SFTP</string>
-    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">M3U playlist</string>
     <string name="m3u_playlist_name">Tên</string>
     <string name="m3u_playlist_location">Vị trí</string>
     <string name="m3u_playlist_location_hint">Tệp tin hoặc liên kết (https)</string>
-    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_timeout" translatable="false">Hết thời gian phản hồi</string>
     <string name="m3u_playlist_video">Danh sách phát video</string>
 

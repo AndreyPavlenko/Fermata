@@ -1,25 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile" translatable="false">Fermata</string>
-    <string name="app_name_auto" translatable="false">Fermata Auto</string>
-    <string name="media_service_name" translatable="false">Fermata</string>
-    <string name="engine_mp_name" translatable="false">Leitor de Multimédia</string>
-    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
-    <string name="engine_vlc_name" translatable="false">VLC</string>
-
-    <string name="module_name_gdrive" translatable="false">Google Drive</string>
-    <string name="module_name_sftp" translatable="false">SFTP</string>
-    <string name="module_name_smb" translatable="false">SMB</string>
-    <string name="module_name_web" translatable="false">Web</string>
-    <string name="module_name_tv" translatable="false">TV</string>
-
+    <string name="engine_mp_name">Leitor de Multimédia</string>
     <string name="addons">Extras</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Navegador</string>
-    <string name="addon_name_youtube" translatable="false">Youtube</string>
-    <string name="addon_name_felex" translatable="false">Felex</string>
-    <string name="addon_name_cast" translatable="false">Google Cast</string>
-    <string name="addon_name_chat" translatable="false">ChatGPT</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -33,7 +17,6 @@
     <string name="theme_dark">Escuro</string>
     <string name="theme_day_night">Dia/Noite</string>
     <string name="theme_black">Preto</string>
-    <string name="theme_star_wars" translatable="false">Star Wars</string>
 
     <string name="nav_bar_pos">Posição da Barra de Navegação</string>
     <string name="nav_bar_pos_sub">Posição Atual: %1$s</string>
@@ -43,12 +26,6 @@
 
     <string name="show_track_icons">Mostrar Icones da Faixa</string>
     <string name="lang">Idioma</string>
-    <string name="lang_en" translatable="false">Inglês</string>
-    <string name="lang_it" translatable="false">Italiano</string>
-    <string name="lang_ru" translatable="false">Russo</string>
-    <string name="lang_tr" translatable="false">Turco</string>
-    <string name="lang_de" translatable="false">Alemão</string>
-    <string name="lang_pt" translatable="false">Português</string>
     <string name="hide_bars">Escoder Barras</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
@@ -119,7 +96,6 @@
     <string name="voice_control_sub_long">Ativar o comando de voz ao pressionar continuo</string>
     <string name="voice_control_subst">Substituição de palavra</string>
     <string name="voice_control_subst_sub">Substituir uma palavra por outra palavra ou frase</string>
-    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
 
     <string name="module_installation">Instalação do módulo: %1$s</string>
     <string name="install_pending">Instalação pendente: %1$s</string>
@@ -150,8 +126,6 @@
     <string name="video_scaling_best">Melhor Ajuste</string>
     <string name="video_scaling_fill">Preencher Ecrã</string>
     <string name="video_scaling_orig">Tamanho Original</string>
-    <string name="video_scaling_4" translatable="false">4x3</string>
-    <string name="video_scaling_16" translatable="false">16x9</string>
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Atraso do áudio</string>
@@ -167,7 +141,6 @@
     <string name="preferred_sub_key">Preferir legendas com palavras-chave</string>
     <string name="select_subtitles">Selecionar legendas</string>
 
-    <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -258,14 +231,11 @@
     <string name="vfs_content">Conteúdo</string>
     <string name="vfs_file_system">Sistema de Ficheiros</string>
     <string name="vfs_gdrive">Google drive</string>
-    <string name="vfs_sftp" translatable="false">SFTP</string>
-    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">Lista M3U</string>
+    <string name="m3u_playlist">Lista M3U</string>
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Localização</string>
     <string name="m3u_playlist_location_hint">Ficheiro ou http(s) URL</string>
-    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
-    <string name="m3u_playlist_timeout" translatable="false">Tempo limite da resposta</string>
+    <string name="m3u_playlist_timeout">Tempo limite da resposta</string>
     <string name="m3u_playlist_video">Lista de reprodução de vídeo</string>
 
     <string name="eq_manual">Manual</string>

@@ -5,8 +5,11 @@ import static android.media.AudioManager.ADJUST_RAISE;
 import static android.media.AudioManager.FLAG_SHOW_UI;
 import static android.media.AudioManager.STREAM_MUSIC;
 import static android.os.Build.VERSION.SDK_INT;
+import static android.provider.Settings.System.ACCELEROMETER_ROTATION;
+import static android.provider.Settings.System.USER_ROTATION;
 import static android.view.InputDevice.SOURCE_CLASS_POINTER;
 import static android.view.MotionEvent.ACTION_SCROLL;
+import static android.view.Surface.ROTATION_90;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static me.aap.fermata.util.Utils.createDownloader;
@@ -23,9 +26,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.FileProvider;
 
@@ -62,6 +67,43 @@ import me.aap.utils.ui.activity.SplitCompatActivityBase;
 public class MainActivity extends SplitCompatActivityBase
 		implements FermataActivity, AddonManager.Listener {
 	private static FermataMediaServiceConnection service;
+	private static MainActivity activeInstance;
+	private static int accel = -1;
+
+	@Nullable
+	public static MainActivity getActiveInstance() {
+		return BuildConfig.AUTO ? activeInstance : null;
+	}
+
+	public static void disableAccelRotation() {
+		if (!BuildConfig.AUTO) return;
+		var app = FermataApplication.get();
+		if (!app.isMirroringLandscape()) return;
+		try {
+			app.getHandler().schedule(() -> {
+				var cr = FermataApplication.get().getContentResolver();
+				if (accel == -1) {
+					var a = Settings.System.getInt(cr, ACCELEROMETER_ROTATION, -1);
+					if (a != -1) accel = a;
+				}
+				Settings.System.putInt(cr, ACCELEROMETER_ROTATION, 0);
+				Settings.System.putInt(cr, USER_ROTATION, ROTATION_90);
+			}, 3000);
+		} catch (Exception err) {
+			Log.e(err);
+		}
+	}
+
+	public static void restoreAccelRotation() {
+		if (!BuildConfig.AUTO || accel == -1) return;
+		try {
+			Settings.System.putInt(FermataApplication.get().getContentResolver(), ACCELEROMETER_ROTATION,
+					accel);
+		} catch (Exception err) {
+			Log.e(err);
+		}
+		accel = -1;
+	}
 
 	@Override
 	protected FutureSupplier<MainActivityDelegate> createDelegate(AppActivity a) {
@@ -94,7 +136,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		MainActivityDelegate.setTheme(this);
+		MainActivityDelegate.setTheme(this, isCarActivity());
 		AddonManager.get().addBroadcastListener(this);
 		super.onCreate(savedInstanceState);
 	}
@@ -106,12 +148,27 @@ public class MainActivity extends SplitCompatActivityBase
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		if (BuildConfig.AUTO) activeInstance = this;
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (!BuildConfig.AUTO) return;
+		activeInstance = null;
+		disableAccelRotation();
+	}
+
+	@Override
 	public void onBackPressed() {
 		getActivityDelegate().onSuccess(MainActivityDelegate::onBackPressed);
 	}
 
 	@Override
 	public boolean isCarActivity() {
+		if (BuildConfig.AUTO) return FermataApplication.get().isMirroringMode();
 		return false;
 	}
 
@@ -121,7 +178,6 @@ public class MainActivity extends SplitCompatActivityBase
 	public FutureSupplier<MainActivityDelegate> getActivityDelegate() {
 		return (FutureSupplier<MainActivityDelegate>) super.getActivityDelegate();
 	}
-
 
 	@Override
 	public void onAddonChanged(AddonManager mgr, AddonInfo info, boolean installed) {
@@ -195,8 +251,8 @@ public class MainActivity extends SplitCompatActivityBase
 							String name = asset.getString("name");
 
 							if (name.endsWith(ext)) res[2] = asset.getString("browser_download_url");
-							else if (name.contains("-control-"))
-								res[1] = asset.getString("browser_download_url");
+							else if (name.contains("-control-")) res[1] = asset.getString(
+									"browser_download_url");
 						}
 
 						return (res[1] != null) && (res[2] != null) ? completed(res) : completedNull();
@@ -212,9 +268,8 @@ public class MainActivity extends SplitCompatActivityBase
 				if (res == null) return;
 				UiUtils.showQuestion(getContext(), getString(R.string.update),
 						getString(R.string.update_question, res[0]),
-						AppCompatResources.getDrawable(getContext(), R.drawable.notification))
-						.onSuccess(r -> update(res[1], ps, deletePref)
-								.onSuccess(v -> update(res[2], ps, deletePref)));
+						AppCompatResources.getDrawable(getContext(), R.drawable.notification)).onSuccess(
+						r -> update(res[1], ps, deletePref).onSuccess(v -> update(res[2], ps, deletePref)));
 			});
 
 			return completedVoid();
@@ -236,7 +291,9 @@ public class MainActivity extends SplitCompatActivityBase
 				//noinspection ResultOfMethodCallIgnored
 				dir.mkdirs();
 				if ((tmp = createTempFile(dir)) == null) {
-					App.get().run(() -> showAlert(this, "Update failed - unable to create a temporary file"));
+					App.get()
+							.run(() -> showAlert(this, "Update failed - unable to create a temporary " + "file"
+							));
 					return completedVoid();
 				}
 			}
@@ -251,9 +308,9 @@ public class MainActivity extends SplitCompatActivityBase
 
 			HttpFileDownloader d = createDownloader(getContext(), uri);
 			return d.download(uri, f).then(s -> {
-				Uri u = (SDK_INT >= Build.VERSION_CODES.N)
-						? FileProvider.getUriForFile(getApplicationContext(), getPackageName() + ".FileProvider", f)
-						: Uri.fromFile(f);
+				Uri u = (SDK_INT >= Build.VERSION_CODES.N) ?
+						FileProvider.getUriForFile(getApplicationContext(), getPackageName() + ".FileProvider",
+								f) : Uri.fromFile(f);
 
 				try {
 					installApk(u, true);

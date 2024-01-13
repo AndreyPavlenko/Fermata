@@ -312,7 +312,7 @@ public class VideoView extends FrameLayout
 		SurfaceView s = getSubtitleSurface();
 		if ((s != null) && !s.getHolder().getSurface().isValid()) return;
 		getActivity().onSuccess(
-				a -> a.getMediaSessionCallback().addVideoView(this, a.isCarActivity() ? 0 : 1));
+				a -> a.getMediaSessionCallback().addVideoView(this, a.isCarActivityNotMirror() ? 0 : 1));
 		if (createSurface instanceof Promise<?> p) {
 			createSurface = completedNull();
 			p.complete(null);

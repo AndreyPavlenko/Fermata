@@ -258,14 +258,14 @@ public class SettingsFragment extends MainActivityFragment
 		int[] timeUnits =
 				new int[]{R.string.time_unit_second, R.string.time_unit_minute,
 						R.string.time_unit_percent};
-		boolean isCar = a.isCarActivity();
+		boolean isCar = a.isCarActivityNotMirror();
 		PreferenceSet set = new PreferenceSet();
 		PreferenceSet sub1;
 		PreferenceSet sub2;
 
 		sub1 = set.subSet(o -> o.title = R.string.interface_prefs);
 
-		if (BuildConfig.AUTO && a.isCarActivity()) {
+		if (BuildConfig.AUTO && a.isCarActivityNotMirror()) {
 			addAAInterface(a, sub1);
 		} else {
 			if (BuildConfig.AUTO) {
@@ -428,7 +428,7 @@ public class SettingsFragment extends MainActivityFragment
 			});
 		}
 
-		if (!a.isCarActivity()) {
+		if (!a.isCarActivityNotMirror()) {
 			sub1 = set.subSet(o -> o.title = R.string.voice_control);
 			sub1.addBooleanPref(o -> {
 				o.title = R.string.enable;
@@ -599,7 +599,7 @@ public class SettingsFragment extends MainActivityFragment
 		addAddons(set);
 
 		sub1 = set.subSet(o -> o.title = R.string.other);
-		if (!a.isCarActivity()) {
+		if (!a.isCarActivityNotMirror()) {
 			sub1.addButton(o -> {
 				o.title = R.string.export_prefs;
 				o.subtitle = R.string.export_prefs_sub;

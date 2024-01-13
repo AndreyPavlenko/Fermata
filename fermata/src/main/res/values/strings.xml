@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile" translatable="false">Fermata</string>
-    <string name="app_name_auto" translatable="false">Fermata Auto</string>
+    <string name="app_name_mobile_release" translatable="false">Fermata</string>
+    <string name="app_name_auto_release" translatable="false">Fermata Auto</string>
+    <string name="app_name_mobile_debug" translatable="false">Debug Fermata</string>
+    <string name="app_name_auto_debug" translatable="false">Debug Fermata Auto</string>
+    <string name="mirror_service_name_release" translatable="false">Fermata Mirror</string>
+    <string name="mirror_service_name_debug" translatable="false">Debug Fermata Mirror</string>
+    <string name="mirror_fs_service_name_release" translatable="false">Fermata FS Mirror</string>
+    <string name="mirror_fs_service_name_debug" translatable="false">Debug Fermata FS Mirror</string>
     <string name="media_service_name" translatable="false">Fermata</string>
     <string name="engine_mp_name" translatable="false">MediaPlayer</string>
     <string name="engine_exo_name" translatable="false">ExoPlayer</string>
@@ -331,6 +337,9 @@
     <string name="import_prefs_ok">Preferences have been successfully imported.\nPlease, restart the application.</string>
     <string name="import_prefs_failed">Failed to import preferences: %1$s</string>
     <string name="prefs_not_found">No preferences found</string>
+    <string name="unlock_phone_and_grant">Unlock the phone and grant the requested permissions.</string>
+    <string name="screen_capture_rejected">Screen capture request rejected.</string>
+    <string name="accessibility_dsc">The accessibility service is used by Fermata Mirror to simulate touch screen events.</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

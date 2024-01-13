@@ -2,5 +2,7 @@
 <resources>
     <string-array name="xposedscope">
         <item>com.google.android.projection.gearhead</item>
+        <item>com.android.chrome</item>
+        <item>com.google.android.apps.maps</item>
     </string-array>
 </resources>
