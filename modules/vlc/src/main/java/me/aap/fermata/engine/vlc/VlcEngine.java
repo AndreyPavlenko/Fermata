@@ -443,13 +443,12 @@ public class VlcEngine extends MediaEngineBase
 					player.setAudioDelay(0);
 				}
 
-				player.setSpuTrack(-1);
-
 				if (pendingPosition != -1) {
 					player.setTime(pendingPosition);
 					pendingPosition = -1;
 				}
 
+				if (!isPaused()) player.setSpuTrack(-1);
 				started();
 				listener.onEngineStarted(this);
 			}
