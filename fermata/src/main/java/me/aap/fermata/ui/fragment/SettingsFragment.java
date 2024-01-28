@@ -21,11 +21,13 @@ import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_FB;
 import static me.aap.utils.ui.UiUtils.ID_NULL;
+import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +36,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -617,6 +620,12 @@ public class SettingsFragment extends MainActivityFragment
 				o.pref = MainActivityPrefs.CHECK_UPDATES;
 				o.title = R.string.check_updates;
 			});
+			if (!a.isCarActivityNotMirror()) {
+				sub1.addButton(o -> {
+					o.title = R.string.open_log;
+					o.onClick = () -> openLog(a);
+				});
+			}
 		}
 
 		return new PreferenceViewAdapter(set) {
@@ -897,6 +906,23 @@ public class SettingsFragment extends MainActivityFragment
 			if (ctx instanceof Activity) ((Activity) ctx).finishAffinity();
 			else System.exit(0);
 		});
+	}
+
+	private void openLog(MainActivityDelegate a) {
+		try {
+			var i = new Intent(Intent.ACTION_SEND);
+			var app = FermataApplication.get();
+			var f = app.getLogFile();
+			Uri u = (SDK_INT >= Build.VERSION_CODES.N) ?
+					FileProvider.getUriForFile(app, app.getPackageName() + ".FileProvider", f) :
+					Uri.fromFile(f);
+			i.setType("text/plain");
+			i.putExtra(Intent.EXTRA_STREAM, u);
+			a.startActivity(Intent.createChooser(i, app.getString(R.string.open_log)));
+		} catch (Exception err) {
+			Log.e(err);
+			showAlert(a.getContext(), err.getLocalizedMessage());
+		}
 	}
 
 	private static final class AddonPrefsBuilder

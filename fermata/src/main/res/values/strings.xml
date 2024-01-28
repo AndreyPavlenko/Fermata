@@ -340,6 +340,7 @@
     <string name="import_prefs_ok">Preferences have been successfully imported.\nPlease, restart the application.</string>
     <string name="import_prefs_failed">Failed to import preferences: %1$s</string>
     <string name="prefs_not_found">No preferences found</string>
+    <string name="open_log">Open log file</string>
     <string name="unlock_phone_and_grant">Unlock the phone and grant the requested permissions.</string>
     <string name="screen_capture_rejected">Screen capture request rejected.</string>
     <string name="accessibility_dsc">The accessibility service is used by Fermata Mirror to simulate touch screen events.</string>
