@@ -116,7 +116,6 @@
     <string name="m3u_playlist_video">Video oynatma listesi</string>
     <string name="mark_unwatched">İzlenmedi olarak işaretle</string>
     <string name="mark_watched">İzlendi olarak işaretle</string>
-    <string name="media_service_name">Fermata</string>
     <string name="menu">Menü</string>
     <string name="minutes">Dakika</string>
     <string name="module_installation">Modül kurulumu: %1$s</string>

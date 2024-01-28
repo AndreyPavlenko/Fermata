@@ -856,6 +856,8 @@
             android:name="me.aap.fermata.media.service.FermataMediaService"
             android:enabled="true"
             android:exported="true"
+            android:label="@string/media_service_name"
+            android:icon="@drawable/media_service_icon"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />

@@ -16,7 +16,6 @@ if (localPropsFile.isFile()) {
 
 rootProject.name = 'Fermata Music Player'
 include ':fermata'
-include ':control'
 include ':utils'
 project(':utils').projectDir = file('depends/utils')
 

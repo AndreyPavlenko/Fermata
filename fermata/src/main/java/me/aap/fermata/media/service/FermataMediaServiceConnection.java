@@ -1,6 +1,5 @@
 package me.aap.fermata.media.service;
 
-import static me.aap.fermata.media.service.FermataMediaService.ACTION_CAR_MEDIA_SERVICE;
 import static me.aap.fermata.media.service.FermataMediaService.ACTION_MEDIA_SERVICE;
 import static me.aap.fermata.media.service.FermataMediaService.DEFAULT_NOTIF_COLOR;
 import static me.aap.fermata.media.service.FermataMediaService.INTENT_ATTR_NOTIF_COLOR;
@@ -28,7 +27,7 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 	private Promise<FermataMediaServiceConnection> promise;
 	private FermataMediaService.ServiceBinder binder;
 
-	public static FutureSupplier<FermataMediaServiceConnection> connect(@Nullable AppActivity a, boolean isAuto) {
+	public static FutureSupplier<FermataMediaServiceConnection> connect(@Nullable AppActivity a) {
 		int notifColor = Color.parseColor(DEFAULT_NOTIF_COLOR);
 
 		if (a != null) {
@@ -41,7 +40,7 @@ public class FermataMediaServiceConnection implements ServiceConnection {
 		FermataMediaServiceConnection con = new FermataMediaServiceConnection();
 		Promise<FermataMediaServiceConnection> p = con.promise = new Promise<>();
 		Intent i = new Intent(ctx, FermataMediaService.class);
-		i.setAction(isAuto ? ACTION_CAR_MEDIA_SERVICE : ACTION_MEDIA_SERVICE);
+		i.setAction(ACTION_MEDIA_SERVICE);
 		i.putExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
 		Log.d("Binding service to context ", ctx);
 

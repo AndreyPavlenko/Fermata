@@ -17,10 +17,12 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.misc.MiscUtils.isPackageInstalled;
 import static me.aap.utils.pref.PreferenceStore.Pref.sa;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -113,7 +115,7 @@ public class MainActivity extends SplitCompatActivityBase
 			return completed(new MainActivityDelegate(a, service.createBinder()));
 		}
 
-		return FermataMediaServiceConnection.connect(a, false).map(c -> {
+		return FermataMediaServiceConnection.connect(a).map(c -> {
 			assert service == null;
 			service = c;
 			return new MainActivityDelegate(a, service.createBinder());
@@ -195,6 +197,19 @@ public class MainActivity extends SplitCompatActivityBase
 		}
 
 		return super.onGenericMotionEvent(event);
+	}
+
+	public FutureSupplier<?> uninstallControl() {
+		if (!BuildConfig.AUTO) return completedVoid();
+
+		var pkgName = "me.aap.fermata.auto.control.dear.google.why";
+		if (!isPackageInstalled(this, pkgName)) return completedVoid();
+
+		return startActivityForResult(() -> {
+			var i = new Intent(Intent.ACTION_UNINSTALL_PACKAGE, Uri.parse("package:" + pkgName));
+			i.putExtra(Intent.EXTRA_RETURN_RESULT, true);
+			return i;
+		});
 	}
 
 	public void checkUpdates() {
