@@ -94,7 +94,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 		if ((s != null) && s.isConnected()) {
 			onCreate(savedInstanceState, s);
 		} else {
-			delegate = FermataMediaServiceConnection.connect(this, true).main()
+			delegate = FermataMediaServiceConnection.connect(this).main()
 					.onFailure(err -> showAlert(getContext(), String.valueOf(err))).map(c -> {
 						service = c;
 						return onCreate(savedInstanceState, c);

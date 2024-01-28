@@ -20,7 +20,7 @@ public class AtvUpdateReceiver extends BroadcastReceiver {
 	public void onReceive(Context ctx, Intent i) {
 		if (!INTENT_ACTION_UPDATE.equals(intentUriToAction(i.getData()))) return;
 		Log.d("Intent received: ", intentUriToId(i.getData()));
-		FermataMediaServiceConnection.connect(null, false).onSuccess(b -> {
+		FermataMediaServiceConnection.connect(null).onSuccess(b -> {
 			b.getMediaSessionCallback().getMediaLib().getAtvInterface(a -> a.update(i));
 			b.disconnect();
 		});

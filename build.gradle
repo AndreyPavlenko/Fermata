@@ -1,7 +1,7 @@
 ext {
     def abi = project.properties['ABI']
-    VERSION_CODE = 236
-    VERSION_NAME = "1.9.8"
+    VERSION_CODE = 237
+    VERSION_NAME = "1.9.9"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
     SDK_COMPILE_VERSION = 34
@@ -43,18 +43,13 @@ allprojects {
 subprojects {
     def isDynFeature = false
 
-    switch (name) {
-        case 'fermata':
-        case 'control':
-            apply plugin: 'com.android.application'
-            break
-        default:
-            if (gradle.ext.modules.contains(':' + name)) {
-                isDynFeature = true
-                apply plugin: 'com.android.dynamic-feature'
-            } else {
-                apply plugin: 'com.android.library'
-            }
+    if ('fermata'.equals(name)) {
+        apply plugin: 'com.android.application'
+    } else if (gradle.ext.modules.contains(':' + name)) {
+        isDynFeature = true
+        apply plugin: 'com.android.dynamic-feature'
+    } else {
+        apply plugin: 'com.android.library'
     }
 
     android {

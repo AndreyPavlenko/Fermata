@@ -347,9 +347,10 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private void checkUpdates() {
-		if (!AUTO || !getPrefs().getCheckUpdatesPref()) return;
-		FermataActivity a = getAppActivity();
-		if (a instanceof MainActivity) ((MainActivity) a).checkUpdates();
+		if (!AUTO) return;
+		if (getAppActivity() instanceof MainActivity a) a.uninstallControl().thenRun(() -> {
+			if (getPrefs().getCheckUpdatesPref()) a.checkUpdates();
+		});
 	}
 
 	@Override

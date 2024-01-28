@@ -20,19 +20,14 @@ android {
         }
     }
 
-    sourceSets {
-        main {
-            java.srcDirs = ['src/main/java', 'src/share/java']
-            res.srcDirs = ['src/main/res', 'src/share/res']
-        }
-    }
-
     buildTypes {
         release {
             debuggable false
             minifyEnabled true
             resValue "string", "app_name_auto", "@string/app_name_auto_release"
             resValue "string", "app_name_mobile", "@string/app_name_mobile_release"
+            resValue "string", "media_service_name_auto", "@string/media_service_name_auto_release"
+            resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_release"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_release"
             resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_release"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
@@ -46,6 +41,8 @@ android {
             applicationIdSuffix '.debug'
             resValue "string", "app_name_auto", "@string/app_name_auto_debug"
             resValue "string", "app_name_mobile", "@string/app_name_mobile_debug"
+            resValue "string", "media_service_name_auto", "@string/media_service_name_auto_debug"
+            resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_debug"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_debug"
             resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_debug"
             signingConfig signingConfigs.release
@@ -59,6 +56,8 @@ android {
         mobile {
             dimension "version"
             resValue "string", "app_name", "@string/app_name_mobile"
+            resValue "string", "media_service_name", "@string/media_service_name_mobile"
+            resValue "drawable", "media_service_icon", "@drawable/launcher"
             buildConfigField "boolean", 'AUTO', 'false'
             buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
         }
@@ -67,6 +66,8 @@ android {
             dimension "version"
             applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
             resValue "string", "app_name", "@string/app_name_auto"
+            resValue "string", "media_service_name", "@string/media_service_name_auto"
+            resValue "drawable", "media_service_icon", "@drawable/media_service"
             buildConfigField "boolean", 'AUTO', 'true'
             buildConfigField "boolean", 'ENABLE_GS', "${gradle.ext.enableGoogleServices}"
 

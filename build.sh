@@ -39,8 +39,5 @@ build_apk() {
     mv $path "$DEST_DIR/${name%auto-release-universal.apk}auto-universal-$sfx.apk"
 }
 
-./gradlew control:assembleRelease -PAPP_ID_SFX=$APP_ID_SFX
-mv ./control/build/outputs/apk/release/fermata-auto-control-*-release.apk "$DEST_DIR"
-
 build_apk 'arm'
 build_apk 'arm64'
