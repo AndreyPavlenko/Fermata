@@ -257,7 +257,8 @@ public class NavBarMediator extends PrefNavBarMediator
 			return true;
 		} else if (itemId == R.id.nav_about) {
 			MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
-			GenericFragment f = a.showFragment(me.aap.utils.R.id.generic_fragment);
+			if (!(a.showFragment(me.aap.utils.R.id.generic_fragment) instanceof GenericFragment f))
+				return false;
 			f.setTitle(item.getContext().getString(R.string.about));
 			f.setContentProvider(g -> {
 				Context ctx = g.getContext();

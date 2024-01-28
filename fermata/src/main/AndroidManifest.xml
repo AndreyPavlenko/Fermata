@@ -15,12 +15,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission
-        android:name="android.permission.READ_PHONE_STATE"
-        tools:node="remove" />
 
     <uses-feature
         android:name="android.software.leanback"
@@ -30,6 +28,9 @@
         android:required="false" />
     <uses-feature
         android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.wifi"
         android:required="false" />
 
     <queries>
@@ -54,6 +55,7 @@
         android:name="me.aap.fermata.FermataApplication"
         android:allowBackup="true"
         android:banner="@drawable/banner"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@drawable/launcher"
@@ -102,12 +104,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
 
-                <data
-                    android:host="open"
-                    android:scheme="fermata" />
-                <data
-                    android:host="play"
-                    android:scheme="fermata" />
+                <data android:scheme="fermata" />
+                <data android:host="open" />
+                <data android:host="play" />
             </intent-filter>
 
             <intent-filter>
@@ -116,23 +115,11 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
 
-                <data
-                    android:mimeType="text/plain"
-                    android:pathSuffix=".fxd"
-                    android:scheme="file" />
-                <data
-                    android:mimeType="text/plain"
-                    android:pathSuffix=".fxd"
-                    android:scheme="content" />
-
-                <data
-                    android:mimeType="application/octet-stream"
-                    android:pathSuffix=".fxd"
-                    android:scheme="file" />
-                <data
-                    android:mimeType="application/octet-stream"
-                    android:pathSuffix=".fxd"
-                    android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:pathSuffix=".fxd" />
             </intent-filter>
 
             <intent-filter>
@@ -843,7 +830,7 @@
                 <data android:mimeType="application/x-extension-mp4" />
                 <data android:mimeType="application/x-flac" />
                 <data android:mimeType="application/x-matroska" />
-                <data android:mimeType="application/x-mpegURL" />
+                <data android:mimeType="application/x-mpegurl" />
                 <data android:mimeType="application/x-ogg" />
                 <data android:mimeType="application/x-quicktimeplayer" />
                 <data android:mimeType="application/x-shockwave-flash" />
@@ -856,9 +843,10 @@
             android:name="me.aap.fermata.media.service.FermataMediaService"
             android:enabled="true"
             android:exported="true"
-            android:label="@string/media_service_name"
+            android:foregroundServiceType="mediaPlayback"
             android:icon="@drawable/media_service_icon"
-            android:foregroundServiceType="mediaPlayback">
+            android:label="@string/media_service_name"
+            tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
@@ -884,7 +872,8 @@
             android:name="me.aap.fermata.provider.FermataContentProvider"
             android:authorities="${applicationId}"
             android:exported="true"
-            android:grantUriPermissions="true" />
+            android:grantUriPermissions="true"
+            tools:ignore="ExportedContentProvider" />
     </application>
 
 </manifest>

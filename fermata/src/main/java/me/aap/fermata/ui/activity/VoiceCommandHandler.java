@@ -27,7 +27,6 @@ import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
-import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.fragment.FavoritesFragment;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
@@ -110,6 +109,7 @@ class VoiceCommandHandler {
 		cChat = PatternCompat.compile(res.getString(R.string.vcmd_chat));
 		nums = res.getString(R.string.vcmd_nums).split(" ");
 		updateWordSubst();
+		this.lang = lang;
 	}
 
 	public boolean handle(List<String> cmd) {
@@ -124,8 +124,8 @@ class VoiceCommandHandler {
 
 		if (amgr.hasAddon(R.id.chat_addon)) {
 			Matcher m = cChat.matcher(cmd);
-			if (m.matches()) {
-				MainActivityFragment f = activity.showFragment(R.id.chat_addon);
+			if (m.matches() &&
+					(activity.showFragment(R.id.chat_addon) instanceof MainActivityFragment f)) {
 				f.voiceCommand(new VoiceCommand(cChat.group(m, QUERY), ACTION_CHAT));
 				return true;
 			}

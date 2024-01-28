@@ -53,8 +53,7 @@ public abstract class VfsProviderBase implements VfsProvider {
 		return getRoots.main().then(roots -> {
 			if (roots.isEmpty() && addRemoveSupported()) {
 				return addFolder(a, f).then(r -> {
-					if (r instanceof VirtualFolder) {
-						VirtualFolder folder = (VirtualFolder) r;
+					if (r instanceof VirtualFolder folder) {
 						return folder.getChildren().main().then(c -> pickFolder(a, f, folder, c));
 					} else {
 						return cancelled();
@@ -69,8 +68,9 @@ public abstract class VfsProviderBase implements VfsProvider {
 	protected FutureSupplier<VirtualResource> pickFolder(
 			MainActivityDelegate a, VirtualFileSystem fs, VirtualResource parent,
 			List<? extends VirtualResource> children) {
+		if (!(a.showFragment(me.aap.utils.R.id.file_picker) instanceof FilePickerFragment f))
+			return cancelled();
 		Promise<VirtualResource> p = new Promise<>();
-		FilePickerFragment f = a.showFragment(me.aap.utils.R.id.file_picker);
 		f.setMode(FilePickerFragment.FOLDER);
 		f.setResources(parent, children);
 		f.setFileConsumer(p::complete);
@@ -132,8 +132,10 @@ public abstract class VfsProviderBase implements VfsProvider {
 
 	protected FutureSupplier<Boolean> requestPrefs(
 			MainActivityDelegate a, PreferenceSet prefs, PreferenceStore ps) {
+		if (!(a.showFragment(
+				me.aap.utils.R.id.generic_dialog_fragment) instanceof GenericDialogFragment f))
+			return cancelled();
 		Promise<Boolean> promise = new Promise<>();
-		GenericDialogFragment f = a.showFragment(me.aap.utils.R.id.generic_dialog_fragment);
 		PreferenceViewAdapter adapter = new PreferenceViewAdapter(prefs) {
 			@Override
 			public void setPreferenceSet(PreferenceSet set) {

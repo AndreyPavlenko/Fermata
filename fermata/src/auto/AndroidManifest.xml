@@ -5,10 +5,12 @@
     <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
     <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
 
     <uses-feature
         android:name="android.hardware.type.automotive"
@@ -21,8 +23,7 @@
     </queries>
 
 
-    <application>
-
+    <application android:icon="@drawable/launcher">
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
@@ -90,8 +91,9 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
-        <service android:exported="true"
+        <service
             android:name="me.aap.fermata.auto.AccessibilityEventDispatcherService"
+            android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -103,7 +105,8 @@
 
         <service
             android:name="me.aap.fermata.auto.XposedEventDispatcherService"
-            android:exported="true" />
+            android:exported="true"
+            tools:ignore="ExportedService" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

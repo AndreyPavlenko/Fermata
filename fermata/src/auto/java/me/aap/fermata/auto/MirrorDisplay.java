@@ -94,9 +94,7 @@ public class MirrorDisplay {
 		var br = Settings.System.getInt(app.getContentResolver(), SCREEN_BRIGHTNESS, -1);
 		if (br > 0) {
 			brightness = br;
-			if (Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) {
-				setBrightness(app, 1);
-			} else setBrightness(app, 0);
+			setBrightness(app, Build.MANUFACTURER.equalsIgnoreCase("Xiaomi") ? 1 : 0);
 		}
 
 		var pmg = (PowerManager) app.getSystemService(POWER_SERVICE);

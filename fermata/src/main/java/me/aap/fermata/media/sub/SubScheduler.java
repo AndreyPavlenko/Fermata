@@ -58,6 +58,7 @@ public class SubScheduler {
 	}
 
 	public void sync(long time, int delay, float speed) {
+		assert speed > 0;
 		if (!started) return;
 		this.time = time + delay;
 		this.speed = speed;

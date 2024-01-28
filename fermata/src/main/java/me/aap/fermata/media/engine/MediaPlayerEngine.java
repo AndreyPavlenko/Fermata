@@ -140,7 +140,8 @@ public class MediaPlayerEngine extends MediaEngineBase
 
 	private float speed() {
 		try {
-			return player.getPlaybackParams().getSpeed();
+			var speed = player.getPlaybackParams().getSpeed();
+			return (speed <= 0f) ? 1f : speed;
 		} catch (IllegalStateException ex) {
 			Log.d(ex);
 			return 1f;

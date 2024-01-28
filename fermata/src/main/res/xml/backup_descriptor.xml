@@ -15,4 +15,10 @@
     <exclude
         domain="sharedpref"
         path="WebViewChromiumPrefs.xml" />
+    <exclude
+        domain="sharedpref"
+        path="tvm3u.xml" />
+    <exclude
+        domain="sharedpref"
+        path="web.xml" />
 </full-backup-content>

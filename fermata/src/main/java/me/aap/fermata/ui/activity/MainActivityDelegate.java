@@ -320,6 +320,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private void defaultIntent() {
+		if (getActiveFragment() != null) return;
 		String showAddon = getPrefs().getShowAddonOnStartPref();
 
 		if (showAddon != null) {
@@ -651,17 +652,18 @@ public class MainActivityDelegate extends ActivityDelegate
 			this.contentLoading = null;
 		}
 
+		progressBar.hide();
 		if (contentLoading.isDone()) return;
+		progressBar.show();
 
-		this.contentLoading = contentLoading;
-		contentLoading.onCompletion((r, f) -> App.get().run(() -> {
+		var cl = this.contentLoading = contentLoading.main();
+		cl.onCompletion((r, f) -> {
 			if ((f != null) && !isCancellation(f)) Log.d(f);
-			if (this.contentLoading == contentLoading) {
+			if (this.contentLoading == cl) {
 				this.contentLoading = null;
 				progressBar.hide();
 			}
-		}));
-		progressBar.show();
+		});
 	}
 
 	public void backToNavFragment() {
@@ -674,8 +676,9 @@ public class MainActivityDelegate extends ActivityDelegate
 		return R.id.frame_layout;
 	}
 
+	@Nullable
 	@Override
-	public <F extends ActivityFragment> F showFragment(int id, Object input) {
+	public ActivityFragment showFragment(int id, Object input) {
 		BodyLayout b = getBody();
 		if (b.isVideoMode()) b.setMode(BodyLayout.Mode.BOTH);
 		return super.showFragment(id, input);

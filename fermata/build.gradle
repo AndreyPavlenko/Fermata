@@ -6,7 +6,14 @@ android {
         applicationId project.getProperties().getOrDefault('APP_ID', 'me.aap.fermata')
         versionCode VERSION_CODE
         versionName VERSION_NAME
-        setProperty("archivesBaseName", "fermata-$versionName")
+        base.archivesName = "fermata-$versionName"
+
+        ndk {
+            def abi = project.properties['ABI']
+            abi = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']
+            //noinspection ChromeOsAbiSupport
+            abiFilters = abi
+        }
     }
 
     if (localProps['storeFile'] != null) {
@@ -50,7 +57,7 @@ android {
         }
     }
 
-    flavorDimensions "version"
+    flavorDimensions += "version"
 
     productFlavors {
         mobile {

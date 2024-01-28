@@ -202,7 +202,7 @@ public class BodyLayout extends SplitLayout
 		} else if (f instanceof SubtitlesFragment) {
 			((SubtitlesFragment) f).restart();
 		} else {
-			a.post(() -> a.showFragment(subtitles_fragment));
+			a.showFragment(subtitles_fragment);
 		}
 	}
 

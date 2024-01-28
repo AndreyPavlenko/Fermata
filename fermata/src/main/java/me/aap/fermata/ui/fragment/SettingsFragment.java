@@ -780,7 +780,8 @@ public class SettingsFragment extends MainActivityFragment
 						}
 					});
 		} else {
-			FilePickerFragment pick = a.showFragment(me.aap.utils.R.id.file_picker);
+			if (!(a.showFragment(me.aap.utils.R.id.file_picker) instanceof FilePickerFragment pick))
+				return;
 			pick.setMode((byte) (FilePickerFragment.FOLDER | FilePickerFragment.WRITABLE));
 			pick.setFileSystem(LocalFileSystem.getInstance());
 			pick.setFileConsumer(res -> {
@@ -862,7 +863,8 @@ public class SettingsFragment extends MainActivityFragment
 						}
 					});
 		} else {
-			FilePickerFragment pick = a.showFragment(me.aap.utils.R.id.file_picker);
+			if (!(a.showFragment(me.aap.utils.R.id.file_picker) instanceof FilePickerFragment pick))
+				return;
 			pick.setMode(FilePickerFragment.FILE);
 			pick.setPattern(Pattern.compile(".+\\.zip"));
 			pick.setFileSystem(LocalFileSystem.getInstance());
