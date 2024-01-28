@@ -36,6 +36,7 @@ public interface MainActivityPrefs
 	int LOCALE_TR = 3;
 	int LOCALE_DE = 4;
 	int LOCALE_PT = 5;
+	int LOCALE_VI = 6;
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -69,6 +70,7 @@ public interface MainActivityPrefs
 		case "tr" -> LOCALE_TR;
 		case "de" -> LOCALE_DE;
 		case "pt" -> LOCALE_PT;
+		case "vi" -> LOCALE_VI;
 		default -> LOCALE_EN;
 	});
 
@@ -245,6 +247,7 @@ public interface MainActivityPrefs
 			case LOCALE_TR -> new Locale("tr");
 			case LOCALE_DE -> new Locale("de");
 			case LOCALE_PT -> new Locale("pt");
+			case LOCALE_VI -> new Locale("vi");
 			default -> Locale.ENGLISH;
 		};
 	}

@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_mobile" translatable="false">Fermata</string>
+    <string name="app_name_auto" translatable="false">Fermata Auto</string>
+    <string name="media_service_name" translatable="false">Fermata</string>
+    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
+    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
+    <string name="engine_vlc_name" translatable="false">VLC</string>
+
+    <string name="module_name_gdrive" translatable="false">Google Drive</string>
+    <string name="module_name_sftp" translatable="false">SFTP</string>
+    <string name="module_name_smb" translatable="false">SMB</string>
+    <string name="module_name_web" translatable="false">Web</string>
+    <string name="module_name_tv" translatable="false">TV</string>
+
+    <string name="addons">Tiện ích</string>
+    <string name="addon_name_tv">TV</string>
+    <string name="addon_name_web_browser">Trình duyệt</string>
+    <string name="addon_name_youtube" translatable="false">Youtube</string>
+    <string name="addon_name_felex" translatable="false">Felex</string>
+    <string name="addon_name_cast" translatable="false">Google Cast</string>
+    <string name="addon_name_chat" translatable="false">ChatGPT</string>
+
+    <string name="interface_prefs">Giao diện</string>
+    <string name="interface_prefs_aa">Android Auto</string>
+    <string name="playback_settings">Cài đặt phát lại</string>
+    <string name="playback_control">Điều khiển phát lại</string>
+    <string name="engine_prefs">Media engine</string>
+
+    <string name="theme">Chủ đề</string>
+    <string name="theme_sub">Chủ đề hiện tại: %1$s</string>
+    <string name="theme_light">Sáng</string>
+    <string name="theme_dark">tối</string>
+    <string name="theme_day_night">Theo hệ thống</string>
+    <string name="theme_black">Đen</string>
+    <string name="theme_star_wars" translatable="false">Star Wars</string>
+
+    <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
+    <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>
+    <string name="nav_bar_pos_bottom">Bên dưới</string>
+    <string name="nav_bar_pos_left">Bên trái</string>
+    <string name="nav_bar_pos_right">Bên phải</string>
+
+    <string name="show_track_icons">Hiển thị biểu tượng bản nhạc</string>
+    <string name="lang">Ngôn Ngữ</string>
+    <string name="hide_bars">Ẩn thanh điều hướng</string>
+    <string name="hide_bars_sub">Ẩn thanh điều hướng trên và dưới khi bảng điều khiển xuất hiện</string>
+    <string name="show_pg_up_down">Hiển thị nút lên/xuống trang</string>
+    <string name="use_dpad_cursor">Sử dụng con trỏ để điều hướng D-pad</string>
+    <string name="fullscreen_mode">Chế độ toàn màn hình</string>
+    <string name="nav_bar_size">Kích thước thanh điều hướng</string>
+    <string name="tool_bar_size">Kích thước thanh công cụ</string>
+    <string name="control_panel_size">Kích thước bảng điều khiển</string>
+    <string name="text_icon_size">Kích thước văn bản và biểu tượng</string>
+
+    <string name="key_bindings">Tổ hợp phím</string>
+    <string name="key_on_click">Khi nhấn</string>
+    <string name="key_on_long_click">Khi nhấn giữ</string>
+    <string name="key_on_dbl_click">Khi nhấn 2 lần</string>
+    <string name="action_stop">Dừng</string>
+    <string name="action_play">Chạy</string>
+    <string name="action_pause">Tạm dừng</string>
+    <string name="action_play_pause">Chạy/Tạm dừng</string>
+    <string name="action_prev">Bài trước đó</string>
+    <string name="action_next">Bài kế tiếp</string>
+    <string name="action_rw">Tua lại</string>
+    <string name="action_ff">Chuyển nhanh</string>
+    <string name="action_vol_up">Tăng âm lượng</string>
+    <string name="action_vol_down">Giảm âm lượng</string>
+    <string name="action_vol_mute_unmute">Tắt tiếng/Bật tiếng</string>
+    <string name="action_activate_voice_ctrl">Kích hoạt điều khiển bằng giọng nói</string>
+    <string name="action_menu">Menu</string>
+    <string name="action_cp_menu">Control panel menu</string>
+    <string name="action_back_or_exit">Quay lại hoặc thoát</string>
+    <string name="action_exit">Thoát</string>
+    <string name="action_default">Mặc định</string>
+    <string name="action_none">Trống</string>
+
+    <string name="play_next_on_completion">Phát tiếp khi hoàn thành</string>
+
+    <string name="rw_ff_click">RW/FF - nhấn</string>
+    <string name="rw_ff_long_click">RW/FF - nhấn giữ</string>
+    <string name="prev_next_long_click">Prev/Next - nhấn giữ</string>
+    <string name="play_pause_stop">Dừng hoặc Chạy/Tạm dừng - nhấn giữ</string>
+
+    <string name="time">Thời gian</string>
+    <string name="time_unit">Đơn vị thời gian</string>
+    <string name="time_unit_sub">Thời gian hiện tại: %1$s</string>
+    <string name="time_unit_second">Giây</string>
+    <string name="time_unit_minute">Phút</string>
+    <string name="time_unit_percent">Phần trăm</string>
+
+    <string name="video_control">Điều khiển video</string>
+    <string name="video_control_start_delay">Hiển thị khi bắt đầu</string>
+    <string name="video_control_touch_delay">Hiển thị khi chạm</string>
+    <string name="video_control_seek_delay">Hiển thị khi tìm kiếm</string>
+    <string name="video_aa_show_status">Hiển thị thanh trạng thái trong Android Auto</string>
+
+    <string name="enable_exoplayer">Cho phép ExoPlayer</string>
+    <string name="enable_vlcplayer">Cho phép VLC</string>
+    <string name="preferred_audio_engine">Mã nguồn âm thanh được ưa thích</string>
+    <string name="preferred_video_engine">Mã nguồn video được ưa thích</string>
+    <string name="engine_installed">Cài đặt mã nguồn Media: %1$s</string>
+    <string name="engine_uninstalled">Gỡ mã nguồn Media: %1$s</string>
+
+    <string name="preferred_media_scanner">Quét media ưa thích</string>
+    <string name="preferred_media_scanner_default">Mặc định</string>
+    <string name="preferred_media_scanner_system">Theo hệ thống</string>
+
+    <string name="voice_search">Tìm kiếm bằng giọng nói</string>
+    <string name="voice_control">Điều khiển bằng giọng nói</string>
+    <string name="voice_control_fb">Nút nhấn</string>
+    <string name="voice_control_sub_long">Kích hoạt điều khiển bằng giọng nói khi nhấn giữ</string>
+    <string name="voice_control_subst">Từ thay thế</string>
+    <string name="voice_control_subst_sub">Thay thế một từ bằng một từ hoặc cụm từ khác</string>
+    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: tìm trong thanh trình duyệt gần nhất</string>
+
+    <string name="module_installation">Cài đặt Module: %1$s</string>
+    <string name="install_pending">Đang chờ cài đặt: %1$s</string>
+    <string name="downloading">Đang tải xuống %1$s</string>
+    <string name="installing">Đang cài đặt %1$s</string>
+
+    <string name="speed">Tốc độ</string>
+    <string name="audio_effects">Hiệu ứng âm thanh</string>
+    <string name="equalier">Equalizer</string>
+    <string name="preset_name">Preset name</string>
+    <string name="virtualizer">Trình ảo hóa</string>
+    <string name="auto">Tự động</string>
+    <string name="binaural">Binaural</string>
+    <string name="transaural">Transaural</string>
+    <string name="bass_boost">Tăng cường âm trầm</string>
+    <string name="vol_boost">Tăng cường âm lượng</string>
+    <string name="strength">Strength</string>
+    <string name="apply_to">Áp dụng cho</string>
+
+    <string name="video">Video</string>
+    <string name="video_settings">Cài đặt video</string>
+    <string name="video_scaling">Chia tỷ lệ video</string>
+    <string name="hw_accel">Tăng tốc phần cứng</string>
+    <string name="hw_accel_auto">Tự động</string>
+    <string name="hw_accel_full">Toàn màn hình</string>
+    <string name="hw_accel_decoding">Giải mã</string>
+    <string name="hw_accel_disabled">Tắt</string>
+    <string name="video_scaling_best">Phù hợp nhất</string>
+    <string name="video_scaling_fill">Lấp đầy màn hình</string>
+    <string name="video_scaling_orig">Giữ nguyên kích thước</string>
+    <string name="video_scaling_4" translatable="false">Tỷ lệ 4x3</string>
+    <string name="video_scaling_16" translatable="false">Tỷ lệ 16x9</string>
+
+    <string name="audio">Âm thanh</string>
+    <string name="audio_delay">Độ trễ âm thanh</string>
+    <string name="audio_delay_aa">Độ trễ âm thanh trong Android Auto</string>
+    <string name="preferred_audio_lang">Luồng âm thanh theo ngôn ngữ ưa thích</string>
+    <string name="preferred_audio_key">Ưu tiên luồng âm thanh theo từ khóa</string>
+    <string name="select_audio_stream">Chọn luồng âm thanh</string>
+
+    <string name="subtitles">Phụ đề</string>
+    <string name="subtitle_delay">Độ trễ của phụ đề</string>
+    <string name="display_subtitles">Hiển thị phụ đề</string>
+    <string name="preferred_sub_lang">Phụ đề theo ngôn ngữ ưa thích</string>
+    <string name="preferred_sub_key">Phụ đề theo từ khóa</string>
+    <string name="select_subtitles">Chọn phụ đề</string>
+
+    <string name="string_format" translatable="false">%1$s</string>
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">Bài hát hiện tại</string>
+    <string name="current_folder">Thư mục hiện tại</string>
+
+    <string name="folders">Thư mục</string>
+    <string name="favorites">Yêu thích</string>
+    <string name="playlists">Danh sách phát</string>
+    <string name="search">Tìm kiếm</string>
+    <string name="filter">Lọc</string>
+    <string name="settings">Cài đặt</string>
+    <string name="menu">Menu</string>
+    <string name="exit">Thoát</string>
+    <string name="cancel">Hủy bỏ</string>
+    <string name="got_to_current">Bài hát hiện tại</string>
+
+    <string name="view">Lượt xem gần nhất</string>
+    <string name="title">Tiêu đề</string>
+    <string name="subtitle">Phụ đề</string>
+    <string name="seq_num">STT</string>
+    <string name="track_name">Tên</string>
+    <string name="file_name">Tên tệp</string>
+    <string name="date">Ngày</string>
+    <string name="random">Ngẫu nghiên</string>
+    <string name="descending">Thứ tự giảm dần</string>
+    <string name="album">Album</string>
+    <string name="artist">Nghệ sĩ</string>
+    <string name="duration">Khoảng thời gian</string>
+
+    <string name="sort_by">Sắp xếp theo</string>
+    <string name="do_not_sort">Không sắp xếp</string>
+
+    <string name="play">Phát</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="stop">Dừng</string>
+    <string name="prev">Prev</string>
+    <string name="next">Next</string>
+    <string name="rewind">Tua lại</string>
+    <string name="fast_forward">Fast forward</string>
+    <string name="repeat">Lặp lại</string>
+    <string name="repeat_disable">Không lặp lại</string>
+    <string name="shuffle">Trộn bài</string>
+    <string name="shuffle_disable">Không trộn bài</string>
+    <string name="programme_guide">Hướng dẫn sử dụng</string>
+    <string name="favorites_add">Thêm vào yêu thích</string>
+    <string name="favorites_remove">Xóa khỏi yêu thích</string>
+    <string name="mark_watched">Đánh dấu đã xem</string>
+    <string name="mark_unwatched">Bỏ đánh dấu đã xem</string>
+    <string name="preferred_media_engine">Mã nguồn media yêu thích</string>
+    <string name="by_default">Mặc định</string>
+
+    <string name="playlist_add">Thêm vào danh sách phát</string>
+    <string name="playlist_remove_item">Xóa khỏi danh sách phát</string>
+    <string name="playlist_create">Tạo danh sách phát</string>
+    <string name="playlist_remove">Xóa danh sách phát</string>
+    <string name="playlist_name">Tên danh sách phát</string>
+
+    <string name="bookmarks">Dấu trang</string>
+    <string name="create_bookmark">Tạo dấu trang</string>
+    <string name="remove_bookmark">Xóa dấu trang</string>
+    <string name="remove_all_bookmarks">Xóa toàn bộ dấu trang</string>
+    <string name="bookmark_name">Tên</string>
+    <string name="bookmark_time">Thời gian</string>
+
+    <string name="folder_subtitle">Tệp: %1$d. Thư mục: %2$d.</string>
+    <string name="browsable_subtitle">Bài hát: %1$d.</string>
+    <string name="add_folder">Thêm vào thư mục</string>
+    <string name="remove_folder">Xóa khỏi thư mục</string>
+    <string name="select">Chọn</string>
+    <string name="select_all">Chọn tất cả</string>
+    <string name="unselect_all">Bỏ chọn tất cả</string>
+    <string name="refresh">Làm mới</string>
+    <string name="rescan">Quét lại</string>
+    <string name="share">Chia sẻ</string>
+    <string name="edit">Sửa</string>
+    <string name="delete">Xóa</string>
+    <string name="delete_confirm">Xác nhận xóa %1$s?</string>
+    <string name="delete_file_title">Xóa tệp tin</string>
+    <string name="delete_file_question">Bạn có chắc chắn muốn xóa tập tin?</string>
+    <string name="delete_file_failed">Không thể xóa tập tin %1$s</string>
+    <string name="loading">Đang tải…</string>
+    <string name="press_back_again">Nhấn nút quay lại lần nữa để thoát.</string>
+    <string name="press_x_again">Nhấn phím X lần nữa để thoát.</string>
+    <string name="please_restart_app">Vui lòng khởi động lại ứng dụng.</string>
+    <string name="use_phone_to_grant_perm">Vui lòng sử dụng điện thoại của bạn để cấp các quyền cần thiết.</string>
+
+    <string name="vfs_content">Nội dung</string>
+    <string name="vfs_file_system">Tệp tin hệ thống</string>
+    <string name="vfs_gdrive">Google drive</string>
+    <string name="vfs_sftp" translatable="false">SFTP</string>
+    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
+    <string name="m3u_playlist" translatable="false">M3U playlist</string>
+    <string name="m3u_playlist_name">Tên</string>
+    <string name="m3u_playlist_location">Vị trí</string>
+    <string name="m3u_playlist_location_hint">Tệp tin hoặc liên kết (https)</string>
+    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
+    <string name="m3u_playlist_timeout" translatable="false">Hết thời gian phản hồi</string>
+    <string name="m3u_playlist_video">Danh sách phát video</string>
+
+    <string name="eq_manual">Thủ công</string>
+    <string name="eq_normal">Bình thường</string>
+    <string name="eq_classical">cổ điển</string>
+    <string name="eq_dance">Dance</string>
+    <string name="eq_flat">Flat</string>
+    <string name="eq_folk">Folk</string>
+    <string name="eq_heavy_metal">Heavy Metal</string>
+    <string name="eq_hip_hop">Hip Hop</string>
+    <string name="eq_jazz">Jazz</string>
+    <string name="eq_pop">Pop</string>
+    <string name="eq_rock">Rock</string>
+
+    <string name="host">Host</string>
+    <string name="port">port</string>
+    <string name="path">Path</string>
+    <string name="share_name">Share name</string>
+    <string name="domain">Domain</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="private_key">Private key</string>
+    <string name="private_key_pass">Private key password</string>
+
+    <string name="donate">Ủng hộ nhà phát triển</string>
+    <string name="donate_text">Nếu bạn thích ứng dụng này, vui lòng ủng hộ chúng thôi.</string>
+    <string name="use_phone_for_donation">Vui lòng sử dụng điện thoại của bạn để ủng hộ.</string>
+
+    <string name="timer">Hẹn giờ</string>
+    <string name="hours">Giờ</string>
+    <string name="minutes">Phút</string>
+
+    <string name="enable">Cho phép</string>
+    <string name="move_left">Di chuyển sang trái</string>
+    <string name="move_right">Di chuyển sang phải</string>
+    <string name="move_up">Di chuyển sang lên trên</string>
+    <string name="move_down">Di chuyển sang xuống dưới</string>
+
+    <string name="sys_bars_on_video_touch">Hiện thanh hệ thống khi chạm vào video</string>
+    <string name="play_video_landscape">Phát video ở chế độ ngang</string>
+    <string name="clock_pos">Vị trí đồng hồ</string>
+    <string name="clock_pos_none">Trống</string>
+    <string name="clock_pos_left">Trái</string>
+    <string name="clock_pos_right">Phải</string>
+    <string name="clock_pos_center">Giữa</string>
+    <string name="change_brightness">Thay đổi độ sáng khi phát video</string>
+    <string name="video_brightness">Độ sáng video</string>
+    <string name="change_brightness_sub">Độ sáng cũng có thể được thay đổi bằng cách cuộn bằng hai ngón tay</string>
+    <string name="watched_threshold">Ngưỡng thời gian đã xem</string>
+    <string name="watched_threshold_sub">Đã đánh dấu video là đã xem nếu nhiều hơn số phần trăm này được xem</string>
+
+    <string name="other">Khác</string>
+    <string name="check_updates">Kiểm tra cập khi khởi động ứng dụng</string>
+    <string name="update">Cập nhật</string>
+    <string name="update_question">Phiên bản mới %1$s khả dụng.\nBạn có muốn cập nhật ứng dụng không?</string>
+    <string name="export_prefs">Xuất cấu hình cài đặt ra tệp tin</string>
+    <string name="export_prefs_sub">Xuất cấu hình cài đặt, thư mục, danh sách phát, v.v. sang tệp</string>
+    <string name="export_prefs_ok">Cấu hình cài đặt đã được lưu trong tệp tin %1$s.</string>
+    <string name="export_prefs_failed">Không xuất được cấu hình cài đặt: %1$s</string>
+    <string name="import_prefs">Nhập cấu hình cài đặt từ tệp tin</string>
+    <string name="import_prefs_sub">Nhập cấu hình cài đặt đã xuất trước đó từ tệp</string>
+    <string name="import_prefs_ok">Cấu hình cài đặt đã được nhập thành công.\nXin vui lòng khởi động lại ứng dụng.</string>
+    <string name="import_prefs_failed">Không thể nhập tệp tin cấu hình cài đặt: %1$s</string>
+    <string name="prefs_not_found">Không tìm thấy tệp tin cấu hình cài đặt</string>
+
+    <string name="about">About</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player is a free, open source audio and video player with a simple and
+        intuitive interface.</p>
+        <p><b>Author:</b> Andrey Pavlenko</p>
+        <p><b>Version:</b> %1$s (%2$d)</p>
+        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
+
+    <string name="err_failed_to_play">Lỗi phát nhạc %s</string>
+    <string name="err_failed_to_play_cause">Không phát được %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">Không hỗ trợ loại nguồn: %s</string>
+    <string name="err_playlist_exists">Danh sách phát đã tồn tại: %1$s</string>
+    <string name="err_invalid_playlist_name">Tên danh sách phát không hợp lệ: %1$s</string>
+    <string name="err_failed_add_folder">Không thêm được thư mục: %1$s</string>
+    <string name="err_failed_open_url">Không mở được URL: %1$s</string>
+    <string name="err_failed_install_module">Không cài đặt được mô-đun: %1$s</string>
+    <string name="err_failed_to_download">Không thể tải xuống %1$s</string>
+    <string name="err_no_audio_record_perm">Không được cấp quyền ghi âm</string>
+</resources>

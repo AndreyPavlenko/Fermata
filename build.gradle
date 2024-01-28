@@ -67,7 +67,7 @@ subprojects {
             targetSdkVersion SDK_TARGET_VERSION
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt'
+            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi'
 
             ndk {
                 abiFilters = ABI_FILTERS

@@ -49,6 +49,7 @@
     <string name="lang_tr" translatable="false">Türkçe</string>
     <string name="lang_de" translatable="false">German</string>
     <string name="lang_pt" translatable="false">Portuguese</string>
+    <string name="lang_vi" translatable="false">Việt Nam</string>
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
