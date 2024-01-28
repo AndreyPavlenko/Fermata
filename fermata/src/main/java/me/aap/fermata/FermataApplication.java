@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.IBinder;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.File;
@@ -94,7 +95,7 @@ public class FermataApplication extends NetSplitCompatApp {
 		return 5;
 	}
 
-	@Nullable
+	@NonNull
 	@Override
 	public File getLogFile() {
 		File dir = getExternalFilesDir(null);
