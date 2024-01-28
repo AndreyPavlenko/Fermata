@@ -119,12 +119,10 @@ public class WebBrowserFragment extends MainActivityFragment
 		// Calling here onResume makes the video to not get freezed
 		// when you switch to another app and go back to Fermata
 		v.onResume();
-		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> {
-			a.post(() -> {
-				FermataChromeClient chrome = v.getWebChromeClient();
-				if (chrome != null) chrome.enterFullScreen();
-			});
-		});
+		MainActivityDelegate.getActivityDelegate(getContext()).onSuccess(a -> a.post(() -> {
+			FermataChromeClient chrome = v.getWebChromeClient();
+			if (chrome != null) chrome.enterFullScreen();
+		}));
 	}
 
 	protected void registerListeners(MainActivityDelegate a) {
@@ -160,8 +158,8 @@ public class WebBrowserFragment extends MainActivityFragment
 					AddonManager.get().hasAddon(me.aap.fermata.R.id.youtube_fragment)) {
 				String u = url;
 				MainActivityDelegate.getActivityDelegate(requireContext()).onSuccess(a -> {
-					YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
-					f.loadUrl(u);
+					if (a.showFragment(me.aap.fermata.R.id.youtube_fragment) instanceof YoutubeFragment f)
+						f.loadUrl(u);
 				});
 			} else {
 				v.loadUrl(url);

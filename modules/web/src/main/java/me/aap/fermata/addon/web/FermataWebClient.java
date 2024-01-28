@@ -60,7 +60,8 @@ public class FermataWebClient extends WebViewClientCompat {
 			try {
 				MainActivityDelegate a = MainActivityDelegate.getActivityDelegate(view.getContext()).peek();
 				if (a == null) return false;
-				YoutubeFragment f = a.showFragment(me.aap.fermata.R.id.youtube_fragment);
+				if (!(a.showFragment(me.aap.fermata.R.id.youtube_fragment) instanceof YoutubeFragment f))
+					return false;
 				f.loadUrl(request.getUrl().toString());
 				return true;
 			} catch (IllegalArgumentException ex) {

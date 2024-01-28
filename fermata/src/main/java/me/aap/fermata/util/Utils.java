@@ -124,8 +124,9 @@ public class Utils {
 
 	public static boolean openUrlInBrowserFragment(Context ctx, String url) {
 		try {
-			MainActivityDelegate a = MainActivityDelegate.get(ctx);
-			a.showFragment(R.id.web_browser_fragment).setInput(url);
+			var a = MainActivityDelegate.get(ctx);
+			var f = a.showFragment(R.id.web_browser_fragment);
+			if (f != null) f.setInput(url);
 			return true;
 		} catch (Exception ex) {
 			Log.d(ex);

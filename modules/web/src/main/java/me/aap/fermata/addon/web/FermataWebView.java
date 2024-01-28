@@ -228,8 +228,7 @@ public class FermataWebView extends WebView
 
 			ToolBarView.Mediator m = f.getToolBarMediator();
 
-			if (m instanceof WebToolBarMediator) {
-				WebToolBarMediator wm = (WebToolBarMediator) m;
+			if (m instanceof WebToolBarMediator wm) {
 				ToolBarView tb = a.getToolBar();
 				wm.setAddress(tb, uri);
 				wm.setButtonsVisibility(tb, canGoBack(), canGoForward());
@@ -281,12 +280,19 @@ public class FermataWebView extends WebView
 
 	protected void submitForm() {
 		if (!BuildConfig.AUTO) return;
-		loadUrl("javascript:\n" + "var ae = document.activeElement;\n" + "if (ae.form != null) {\n" +
-				"  ae.form.submit();\n" + "} else {\n" + "  var e = new KeyboardEvent('keydown',\n" +
-				"  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
-				"  ae.dispatchEvent(e);\n" + "  e = new KeyboardEvent('keyup',\n" +
-				"  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });\n" +
-				"  ae.dispatchEvent(e);\n" + "}");
+		loadUrl("""
+				javascript:
+				var ae = document.activeElement;
+				if (ae.form != null) {
+				  ae.form.submit();
+				} else {
+				  var e = new KeyboardEvent('keydown',
+				  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });
+				  ae.dispatchEvent(e);
+				  e = new KeyboardEvent('keyup',
+				  { code: 'Enter', key: 'Enter', keyCode: 13, view: window, bubbles: true });
+				  ae.dispatchEvent(e);
+				}""");
 	}
 
 	public void showKeyboard(String text) {
@@ -327,13 +333,11 @@ public class FermataWebView extends WebView
 		if (!BuildConfig.AUTO) return false;
 
 		switch (actionId) {
-			case EditorInfo.IME_ACTION_GO:
-			case EditorInfo.IME_ACTION_SEARCH:
-			case EditorInfo.IME_ACTION_SEND:
-			case EditorInfo.IME_ACTION_NEXT:
-			case EditorInfo.IME_ACTION_DONE:
+			case EditorInfo.IME_ACTION_GO, EditorInfo.IME_ACTION_SEARCH, EditorInfo.IME_ACTION_SEND,
+					EditorInfo.IME_ACTION_NEXT, EditorInfo.IME_ACTION_DONE -> {
 				submitForm();
 				hideKeyboard();
+			}
 		}
 
 		return false;

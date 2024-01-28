@@ -237,8 +237,9 @@ public class SubtitlesView extends SplitLayout
 			@Override
 			public void onClick(View v) {
 				if (index == -1) return;
-				var eng = getActivity().getMediaSessionCallback().getEngine();
-				if (eng != null) eng.setPosition(subtitles.get(index).getTime());
+				var cb = getActivity().getMediaSessionCallback();
+				cb.onSeekTo(subtitles.get(index).getTime());
+				cb.onPlay();
 			}
 		}
 	}

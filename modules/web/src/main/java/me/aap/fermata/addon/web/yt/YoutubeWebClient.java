@@ -21,7 +21,9 @@ public class YoutubeWebClient extends FermataWebClient {
 			MainActivityDelegate a = MainActivityDelegate.get(view.getContext());
 
 			try {
-				WebBrowserFragment f = a.showFragment(me.aap.fermata.R.id.web_browser_fragment);
+				if (!(a.showFragment(
+						me.aap.fermata.R.id.web_browser_fragment) instanceof WebBrowserFragment f))
+					return false;
 				f.loadUrl(request.getUrl().toString());
 				return true;
 			} catch (IllegalArgumentException ex) {

@@ -560,16 +560,17 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		@Override
 		public void onClick(View v) {
-			Item i = ((MediaItemView) v).getItem();
 			discardSelection();
 
-			if (i instanceof PlayableItem) {
-				if (!((PlayableItem) i).isVideo()) {
+			if (((MediaItemView) v).getItem() instanceof PlayableItem i) {
+				if (!i.isVideo()) {
 					MainActivityDelegate a = getActivityDelegate();
 					MediaEngine eng = a.getMediaSessionCallback().getEngine();
 					if ((eng != null) && (eng.getSource() == i) &&
 							(eng.getCurrentSubtitles() != NO_SUBTITLES)) {
 						a.showFragment(R.id.subtitles_fragment);
+						clicked = null;
+						onClick(i);
 						return;
 					}
 				}
@@ -583,15 +584,15 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 						App.get().getHandler().postDelayed(() -> {
 							boolean same = clicked == i;
 							clicked = null;
-							if (same) onClick((PlayableItem) i);
+							if (same) onClick(i);
 						}, 300);
 					}
 				} else if (i instanceof ArchiveItem) {
 					clicked = null;
-					if (!((ArchiveItem) i).isExpired()) onClick((PlayableItem) i);
+					if (!((ArchiveItem) i).isExpired()) onClick(i);
 				} else {
 					clicked = null;
-					onClick((PlayableItem) i);
+					onClick(i);
 				}
 			} else {
 				clicked = null;
@@ -606,8 +607,7 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 				int pos = 0;
 
 				for (MediaItemWrapper w : l) {
-					if (w.getItem() instanceof EpgItem) {
-						EpgItem e = (EpgItem) w.getItem();
+					if (w.getItem() instanceof EpgItem e) {
 						if ((e.getStartTime() <= time) && (e.getEndTime() > time)) {
 							scrollPosition = pos;
 							getMainActivityDelegate().onSuccess(a -> a.post(() -> {
