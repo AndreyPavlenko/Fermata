@@ -21,6 +21,7 @@ import android.graphics.Typeface;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
+import android.os.Build;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.Settings;
@@ -93,7 +94,9 @@ public class MirrorDisplay {
 		var br = Settings.System.getInt(app.getContentResolver(), SCREEN_BRIGHTNESS, -1);
 		if (br > 0) {
 			brightness = br;
-			setBrightness(app, 0);
+			if (Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) {
+				setBrightness(app, 1);
+			} else setBrightness(app, 0);
 		}
 
 		var pmg = (PowerManager) app.getSystemService(POWER_SERVICE);
