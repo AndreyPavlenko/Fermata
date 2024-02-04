@@ -28,12 +28,35 @@
     <string name="hide_bars">Nascondi barre</string>
     <string name="hide_bars_sub">Nascondi barre superiore ed inferiore con pannello di controllo</string>
     <string name="show_pg_up_down">Mostra pulsanti pagina su/giù</string>
+    <string name="use_dpad_cursor">Utilizza il cursore per la navigazione tramite D-pad</string>
     <string name="fullscreen_mode">Modalità schermo intero</string>
     <string name="nav_bar_size">Dimensione barra navigazione</string>
     <string name="tool_bar_size">Dimensione barra strumenti</string>
     <string name="control_panel_size">Dimensione pannello di controllo</string>
     <string name="text_icon_size">Dimensione testo ed icone</string>
 
+    <string name="key_bindings">Mappatura tasti</string>
+    <string name="key_on_click">Un click</string>
+    <string name="key_on_long_click">Un click prolungato</string>
+    <string name="key_on_dbl_click">Un doppio click</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_play">Riproduci</string>
+    <string name="action_pause">Pausa</string>
+    <string name="action_play_pause">Riproduci/Pausa</string>
+    <string name="action_prev">Riproduci precedente</string>
+    <string name="action_next">Riproduci successivo</string>
+    <string name="action_rw">Riavvolgi</string>
+    <string name="action_ff">Avanti veloce</string>
+    <string name="action_vol_up">Volume su</string>
+    <string name="action_vol_down">Volume giù</string>
+    <string name="action_vol_mute_unmute">Muto/noMuto</string>
+    <string name="action_activate_voice_ctrl">Attiva controllo vocale</string>
+    <string name="action_menu">Menu</string>
+    <string name="action_cp_menu">Pannello controllo menu</string>
+    <string name="action_back_or_exit">Indietro o esci</string>
+    <string name="action_exit">Esci</string>
+    <string name="action_default">Predefinito</string>
+    <string name="action_none">Nessuno</string>
     <string name="play_next_on_completion">Riproduci successivo al termine</string>
 
     <string name="rw_ff_click">RW/FF - clic</string>
@@ -86,12 +109,18 @@
     <string name="binaural">Binaurale</string>
     <string name="transaural">Transaurale</string>
     <string name="bass_boost">Potenziamento bassi</string>
+    <string name="vol_boost">Potenziamento volume</string>
     <string name="strength">Forza</string>
     <string name="apply_to">Applica a</string>
 
     <string name="video">Video</string>
     <string name="video_settings">Impostazioni video</string>
     <string name="video_scaling">Ridimensiona video</string>
+    <string name="hw_accel">Accelerazione Hardware</string>
+    <string name="hw_accel_auto">Automatico</string>
+    <string name="hw_accel_full">Completa</string>
+    <string name="hw_accel_decoding">Decodifica</string>
+    <string name="hw_accel_disabled">Disattivata</string>
     <string name="video_scaling_best">Adatta</string>
     <string name="video_scaling_fill">Ritaglia</string>
     <string name="video_scaling_orig">Originale</string>
@@ -184,6 +213,7 @@
     <string name="unselect_all">Deseleziona tutti</string>
     <string name="refresh">Aggiorna</string>
     <string name="rescan">Scansiona di nuovo</string>
+    <string name="share">Condividi</string>
     <string name="edit">Modifica</string>
     <string name="delete">Elimina</string>
     <string name="delete_confirm">Elimina %1$s?</string>
@@ -267,6 +297,9 @@
     <string name="import_prefs_failed">Importazione backup non riuscita: %1$s</string>
     <string name="prefs_not_found">Nessun backup trovato</string>
 
+    <string name="unlock_phone_and_grant">Sblocca il telefono e concedi le autorizzazioni richieste.</string>
+    <string name="screen_capture_rejected">Richiesta di acquisizione schermo respinta.</string>
+    <string name="accessibility_dsc">Il servizio di accessibilità viene utilizzato da Fermata Mirror per simulare eventi touch screen.</string>
     <string name="about">Info</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player è un riproduttore audio e video gratuito,
