@@ -13,6 +13,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.inputmethod.InputMethodManager;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import me.aap.fermata.FermataApplication;
@@ -26,13 +27,15 @@ abstract class EventDispatcher {
 		SuDispatcher.instance = completed(new SuDispatcher(su));
 	}
 
-	@Nullable
+	@NonNull
 	static EventDispatcher get() {
 		var ad = ActivityDispatcher.get();
 		return (ad.getActivity() == null) ? XposedDispatcher.get() : ad;
 	}
 
 	public abstract boolean back();
+
+	public abstract boolean home();
 
 	public abstract boolean motionEvent(MotionEvent e);
 
@@ -64,6 +67,11 @@ abstract class EventDispatcher {
 		public boolean back() {
 			return XposedEventDispatcherService.dispatchBackEvent() ||
 					AccessibilityDispatcher.get().back();
+		}
+
+		@Override
+		public boolean home() {
+			return AccessibilityDispatcher.get().home();
 		}
 
 		@Override
@@ -102,6 +110,11 @@ abstract class EventDispatcher {
 			if (a == null) return AccessibilityDispatcher.get().back();
 			a.onBackPressed();
 			return true;
+		}
+
+		@Override
+		public boolean home() {
+			return AccessibilityDispatcher.get().home();
 		}
 
 		@Override
@@ -144,8 +157,16 @@ abstract class EventDispatcher {
 
 		@Override
 		public boolean back() {
+			if (AccessibilityEventDispatcherService.dispatchBack()) return true;
 			var d = SuDispatcher.get();
 			return (d != null) && d.back();
+		}
+
+		@Override
+		public boolean home() {
+			if (AccessibilityEventDispatcherService.dispatchHome()) return true;
+			var d = SuDispatcher.get();
+			return (d != null) && d.home();
 		}
 
 		@Override
@@ -189,8 +210,17 @@ abstract class EventDispatcher {
 
 		@Override
 		public boolean back() {
+			return keyEvent(KeyEvent.KEYCODE_BACK);
+		}
+
+		@Override
+		public boolean home() {
+			return keyEvent(KeyEvent.KEYCODE_HOME);
+		}
+
+		private boolean keyEvent(int code) {
 			sb.setLength(0);
-			sb.append("cmd input keyevent ").append(KeyEvent.KEYCODE_BACK);
+			sb.append("cmd input keyevent ").append(code);
 			su.exec(sb.toString());
 			return true;
 		}

@@ -34,16 +34,19 @@ import me.aap.fermata.R;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.concurrent.HandlerExecutor;
+import me.aap.utils.concurrent.ReschedulableTask;
 
 /**
  * @author Andrey Pavlenko
  */
 public class MirrorActivity extends CarActivity implements SurfaceHolder.Callback {
+	private MirrorDisplay md;
 	private SurfaceContainer sc;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		md = MirrorDisplay.get();
 		MainActivityDelegate.setTheme(this, true);
 		var s = new SurfaceView(this);
 		var tb = new ToolBar(this);
@@ -51,9 +54,9 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			@SuppressLint("ClickableViewAccessibility")
 			@Override
 			public boolean onTouchEvent(MotionEvent e) {
-				if (sc != null) MirrorService.md.setSurface(sc);
+				if (sc != null) md.setSurface(sc);
 				tb.show();
-				return MirrorService.md.motionEvent(e);
+				return md.motionEvent(e);
 			}
 		};
 		s.setLayoutParams(new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
@@ -65,15 +68,22 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 	}
 
 	@Override
+	public void onDestroy() {
+		md.release();
+		md = null;
+		super.onDestroy();
+	}
+
+	@Override
 	public void onResume() {
 		super.onResume();
-		if (sc != null) MirrorService.md.setSurface(sc);
+		if (sc != null) md.setSurface(sc);
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
-		if (MirrorServiceFS.sc != null) MirrorService.md.setSurface(MirrorServiceFS.sc);
+		if (MirrorServiceFS.sc != null) md.setSurface(MirrorServiceFS.sc);
 	}
 
 	@Override
@@ -81,48 +91,31 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		var r = h.getSurfaceFrame();
 		sc = new SurfaceContainer(h.getSurface(), r.width(), r.height(),
 				getResources().getDisplayMetrics().densityDpi);
-		MirrorService.md.setSurface(sc);
+		md.setSurface(sc);
 	}
 
 	@Override
 	public void surfaceChanged(@NonNull SurfaceHolder h, int format, int width, int height) {
 		sc = new SurfaceContainer(h.getSurface(), width, height,
 				getResources().getDisplayMetrics().densityDpi);
-		MirrorService.md.setSurface(sc);
+		md.setSurface(sc);
 	}
 
 	@Override
 	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 		if (sc != null) {
-			MirrorService.md.releaseSurface(sc);
+			md.releaseSurface(sc);
 			sc = null;
 		}
 	}
 
-	static void onFermataButtonClick() {
+	static void onFermataButtonClick(MirrorDisplay md) {
 		if (MainActivity.getActiveInstance() == null) startFermata();
-		else homeScreen();
+		else homeScreen(md);
 	}
 
-	private static void startFermata() {
-		var ctx = FermataApplication.get();
-		Intent intent = new Intent(ctx, MainActivity.class);
-		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
-		ctx.startActivity(intent);
-	}
-
-	private static void homeScreen() {
-		var ctx = FermataApplication.get();
-		Intent intent = new Intent(Intent.ACTION_MAIN);
-		intent.addCategory(Intent.CATEGORY_HOME);
-		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
-		ctx.startActivity(intent);
-		rotateScreen();
-	}
-
-	private static void backButtonClick() {
+	static void onBackButtonClick(MirrorDisplay md) {
 		var d = EventDispatcher.get();
-		if (d == null) return;
 		if (!d.back()) {
 			var vm = (WindowManager) FermataApplication.get().getSystemService(WINDOW_SERVICE);
 			var size = new Point();
@@ -136,15 +129,39 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			d.motionEvent(time, time + 40, MotionEvent.ACTION_MOVE, size.x * 0.6f, y);
 			d.motionEvent(time, time + 50, MotionEvent.ACTION_UP, size.x * 0.5f, y);
 		}
-		rotateScreen();
+		rotateScreen(md);
 	}
 
-	private static void rotateScreen() {
-		MainActivity.disableAccelRotation();
+	private static void startFermata() {
+		var ctx = FermataApplication.get();
+		Intent intent = new Intent(ctx, MainActivity.class);
+		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
+		ctx.startActivity(intent);
 	}
 
-	private static final class ToolBar extends LinearLayout {
+	private static void homeScreen(MirrorDisplay md) {
+		if (EventDispatcher.get().home()) {
+			var ctx = FermataApplication.get();
+			Intent intent = new Intent(Intent.ACTION_MAIN);
+			intent.addCategory(Intent.CATEGORY_HOME);
+			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
+			ctx.startActivity(intent);
+		}
+		rotateScreen(md);
+	}
+
+	private static void rotateScreen(MirrorDisplay md) {
+		md.disableAccelRotation();
+	}
+
+	private final class ToolBar extends LinearLayout {
 		private final HandlerExecutor handler = FermataApplication.get().getHandler();
+		private final ReschedulableTask delayedHide = new ReschedulableTask() {
+			@Override
+			protected void perform() {
+				setVisibility(GONE);
+			}
+		};
 		private final float moveTolerance;
 		private final Animation animation;
 		private final AppCompatImageView fermataBtn;
@@ -158,7 +175,6 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		private final int size2;
 		private final int size3;
 		private boolean small;
-		private long showTime;
 		private long downTime;
 		private float downX, downY;
 		private View downButton;
@@ -197,27 +213,12 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			homeBtn = (AppCompatImageView) getChildAt(1);
 			backBtn = (AppCompatImageView) getChildAt(2);
 			setButtonsVisibility();
-			scheduleHide(5000);
+			delayedHide.schedule(5000);
 		}
 
 		void show() {
-			if (getVisibility() == VISIBLE) {
-				showTime = uptimeMillis();
-			} else {
-				showTime = uptimeMillis();
-				scheduleHide(5000);
-				setVisibility(VISIBLE);
-			}
-		}
-
-		private void scheduleHide(long delay) {
-			handler.postDelayed(() -> {
-				if (getVisibility() != VISIBLE) return;
-				var time = uptimeMillis();
-				var end = showTime + delay;
-				if (end > time) scheduleHide(end - time);
-				else setVisibility(GONE);
-			}, delay);
+			setVisibility(VISIBLE);
+			delayedHide.schedule(5000);
 		}
 
 		@SuppressLint("ClickableViewAccessibility")
@@ -276,8 +277,8 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		private void handleClick(float x) {
 			var v = getButtonAt(x);
 			if (v == fermataBtn) startFermata();
-			else if (v == homeBtn) homeScreen();
-			else if (v == backBtn) backButtonClick();
+			else if (v == homeBtn) homeScreen(md);
+			else if (v == backBtn) onBackButtonClick(md);
 			handler.postDelayed(this::setButtonsVisibility, 1000);
 		}
 

@@ -32,7 +32,19 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 	private Pointer[] pointers = new Pointer[]{new Pointer()};
 
 	static void autoClickOnButton(@Nullable String text) {
+		if (clickOnButton != null) Log.i("Disabled auto click on button with text: ", clickOnButton);
+		if (text != null) Log.i("Enabled auto click on button with text: ", text);
 		clickOnButton = text;
+	}
+
+	static boolean dispatchBack() {
+		var ds = instance;
+		return (ds != null) && ds.performGlobalAction(GLOBAL_ACTION_BACK);
+	}
+
+	static boolean dispatchHome() {
+		var ds = instance;
+		return (ds != null) && ds.performGlobalAction(GLOBAL_ACTION_HOME);
 	}
 
 	static boolean dispatchTap(float x, float y) {
@@ -207,11 +219,21 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 	public void onAccessibilityEvent(AccessibilityEvent event) {
 		if (clickOnButton == null) return;
 		if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+		Log.i("Event received: ", event);
 		var root = getRootInActiveWindow();
 		if (root == null) return;
-		var startButton = root.findAccessibilityNodeInfosByText(clickOnButton);
-		if (startButton.isEmpty()) return;
-		startButton.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+		Log.i("Finding button by text: ", clickOnButton);
+		var btn = root.findAccessibilityNodeInfosByText(clickOnButton);
+		if (btn.isEmpty()) {
+			Log.i("Button not found. Trying to find by id: android:id/button1.");
+			btn = root.findAccessibilityNodeInfosByViewId("android:id/button1");
+			if (btn.isEmpty()) {
+				Log.i("Button not found.");
+				return;
+			}
+		}
+		Log.i("Button '", btn.get(0).getText(), "' found. Performing click.");
+		btn.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
 	}
 
 	@Override

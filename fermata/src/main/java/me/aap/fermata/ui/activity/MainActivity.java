@@ -5,11 +5,8 @@ import static android.media.AudioManager.ADJUST_RAISE;
 import static android.media.AudioManager.FLAG_SHOW_UI;
 import static android.media.AudioManager.STREAM_MUSIC;
 import static android.os.Build.VERSION.SDK_INT;
-import static android.provider.Settings.System.ACCELEROMETER_ROTATION;
-import static android.provider.Settings.System.USER_ROTATION;
 import static android.view.InputDevice.SOURCE_CLASS_POINTER;
 import static android.view.MotionEvent.ACTION_SCROLL;
-import static android.view.Surface.ROTATION_90;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static me.aap.fermata.util.Utils.createDownloader;
@@ -28,7 +25,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.Settings;
 import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
@@ -70,41 +66,10 @@ public class MainActivity extends SplitCompatActivityBase
 		implements FermataActivity, AddonManager.Listener {
 	private static FermataMediaServiceConnection service;
 	private static MainActivity activeInstance;
-	private static int accel = -1;
 
 	@Nullable
 	public static MainActivity getActiveInstance() {
 		return BuildConfig.AUTO ? activeInstance : null;
-	}
-
-	public static void disableAccelRotation() {
-		if (!BuildConfig.AUTO) return;
-		var app = FermataApplication.get();
-		if (!app.isMirroringLandscape()) return;
-		try {
-			app.getHandler().schedule(() -> {
-				var cr = FermataApplication.get().getContentResolver();
-				if (accel == -1) {
-					var a = Settings.System.getInt(cr, ACCELEROMETER_ROTATION, -1);
-					if (a != -1) accel = a;
-				}
-				Settings.System.putInt(cr, ACCELEROMETER_ROTATION, 0);
-				Settings.System.putInt(cr, USER_ROTATION, ROTATION_90);
-			}, 3000);
-		} catch (Exception err) {
-			Log.e(err);
-		}
-	}
-
-	public static void restoreAccelRotation() {
-		if (!BuildConfig.AUTO || accel == -1) return;
-		try {
-			Settings.System.putInt(FermataApplication.get().getContentResolver(), ACCELEROMETER_ROTATION,
-					accel);
-		} catch (Exception err) {
-			Log.e(err);
-		}
-		accel = -1;
 	}
 
 	@Override
@@ -160,7 +125,6 @@ public class MainActivity extends SplitCompatActivityBase
 		super.onPause();
 		if (!BuildConfig.AUTO) return;
 		activeInstance = null;
-		disableAccelRotation();
 	}
 
 	@Override

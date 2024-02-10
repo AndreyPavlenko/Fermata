@@ -276,7 +276,6 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FutureSupplier<Boolean> handleIntent(Intent intent) {
 		if (INTENT_ACTION_FINISH.equals(intent.getAction())) {
 			finish();
-			MainActivity.restoreAccelRotation();
 			return completed(true);
 		}
 

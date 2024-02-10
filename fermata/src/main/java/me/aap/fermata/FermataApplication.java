@@ -14,7 +14,6 @@ import java.io.File;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.engine.BitmapCache;
-import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.app.NetSplitCompatApp;
@@ -122,7 +121,6 @@ public class FermataApplication extends NetSplitCompatApp {
 		this.mirroringMode = mirroringMode;
 
 		if (mirroringMode == 0) {
-			MainActivity.restoreAccelRotation();
 			if (eventService != null) {
 				unbindService(eventService);
 				eventService = null;

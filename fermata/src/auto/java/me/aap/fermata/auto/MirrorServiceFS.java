@@ -151,11 +151,15 @@ public class MirrorServiceFS extends CarAppService {
 		@NonNull
 		@Override
 		public Template onGetTemplate() {
-			var action = new Action.Builder().setIcon(
+			var fermataButton = new Action.Builder().setIcon(
 							new CarIcon.Builder(createWithResource(getCarContext(), R.drawable.fermata_s)).build())
-					.setEnabled(false).setOnClickListener(MirrorActivity::onFermataButtonClick).build();
+					.setEnabled(false).setOnClickListener(() -> MirrorActivity.onFermataButtonClick(md))
+					.build();
+			var backButton = new Action.Builder().setIcon(
+							new CarIcon.Builder(createWithResource(getCarContext(), R.drawable.back)).build())
+					.setEnabled(false).setOnClickListener(() -> MirrorActivity.onBackButtonClick(md)).build();
 			return new NavigationTemplate.Builder().setActionStrip(
-							new ActionStrip.Builder().addAction(action).build())
+							new ActionStrip.Builder().addAction(fermataButton).addAction(backButton).build())
 					.setMapActionStrip(new ActionStrip.Builder().addAction(Action.PAN).build()).build();
 		}
 

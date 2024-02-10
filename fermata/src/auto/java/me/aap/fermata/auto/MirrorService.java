@@ -7,7 +7,7 @@ import com.google.android.apps.auto.sdk.CarActivityService;
  * @author Andrey Pavlenko
  */
 public class MirrorService extends CarActivityService {
-	static MirrorDisplay md;
+	private MirrorDisplay md;
 
 	@Override
 	public void onCreate() {

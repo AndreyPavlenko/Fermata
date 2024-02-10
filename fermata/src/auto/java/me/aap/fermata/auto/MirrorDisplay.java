@@ -6,7 +6,10 @@ import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+import static android.os.Build.VERSION.SDK_INT;
+import static android.provider.Settings.System.ACCELEROMETER_ROTATION;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
+import static android.provider.Settings.System.USER_ROTATION;
 import static android.view.Surface.ROTATION_270;
 import static android.view.Surface.ROTATION_90;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
@@ -16,12 +19,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.Settings;
@@ -31,6 +36,7 @@ import android.text.TextUtils;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -46,6 +52,7 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.concurrent.ReschedulableTask;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
@@ -55,10 +62,12 @@ public class MirrorDisplay {
 	private final Display defaultDisplay;
 	private final float scaleDiff;
 	private WakeLock wakeLock;
+	private int accel = -1;
 	private int brightness = -1;
 	private int refCounter;
 	private FutureSupplier<VirtualDisplay> vd = Completed.cancelled();
 	private SurfaceContainer sc;
+	private Overlay overlay;
 	private Metrics lMetrics;
 	private Metrics pMetrics;
 	private float dx;
@@ -75,36 +84,11 @@ public class MirrorDisplay {
 
 	public static MirrorDisplay get() {
 		MirrorDisplay vd;
-		if ((ref == null) || ((vd = ref.get()) == null))
+		if ((ref == null) || ((vd = ref.get()) == null)) {
 			ref = new WeakReference<>(vd = new MirrorDisplay());
+		}
 		vd.refCounter++;
 		return vd;
-	}
-
-	private void started() {
-		if (sc == null) return;
-		var app = FermataApplication.get();
-		var mode = sc.getWidth() > sc.getHeight() ? 1 : 2;
-
-		if (app.isMirroringMode()) {
-			app.setMirroringMode(mode);
-			return;
-		}
-
-		var br = Settings.System.getInt(app.getContentResolver(), SCREEN_BRIGHTNESS, -1);
-		if (br > 0) {
-			brightness = br;
-			setBrightness(app, Build.MANUFACTURER.equalsIgnoreCase("Xiaomi") ? 1 : 0);
-		}
-
-		var pmg = (PowerManager) app.getSystemService(POWER_SERVICE);
-		if (pmg != null) {
-			//noinspection deprecation
-			wakeLock = pmg.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Fermata:ScreenLock");
-			if (wakeLock != null) wakeLock.acquire(24 * 3600000);
-		}
-
-		startFermata(app, mode);
 	}
 
 	public void release() {
@@ -191,12 +175,102 @@ public class MirrorDisplay {
 		return (d != null) && d.motionEvent(downTime, eventTime, action, dx, dy);
 	}
 
+	public void disableAccelRotation() {
+		var app = FermataApplication.get();
+		app.getHandler().postDelayed(() -> disableAccelRotation(app), 3000);
+	}
+
+	private void disableAccelRotation(Context ctx) {
+		try {
+			var cr = ctx.getContentResolver();
+			if (accel == -1) {
+				var a = Settings.System.getInt(cr, ACCELEROMETER_ROTATION, -1);
+				if (a != -1) accel = a;
+			}
+			Settings.System.putInt(cr, ACCELEROMETER_ROTATION, 0);
+			Settings.System.putInt(cr, USER_ROTATION, ROTATION_90);
+		} catch (Exception err) {
+			Log.e(err);
+		}
+	}
+
+	private void restoreAccelRotation(Context ctx) {
+		if (accel == -1) return;
+		try {
+			Settings.System.putInt(ctx.getContentResolver(), ACCELEROMETER_ROTATION, accel);
+		} catch (Exception err) {
+			Log.e(err);
+		}
+		accel = -1;
+	}
+
+	private void dimScreen(Context ctx) {
+		var br = Settings.System.getInt(ctx.getContentResolver(), SCREEN_BRIGHTNESS, -1);
+		if (br > 0) {
+			brightness = br;
+			setBrightness(ctx, Build.MANUFACTURER.equalsIgnoreCase("Xiaomi") ? 1 : 0);
+		}
+	}
+
+	private void restoreBrightness(Context ctx) {
+		if (brightness > 0) setBrightness(ctx, brightness);
+	}
+
 	@Override
 	protected void finalize() {
 		cleanUp();
 	}
 
+	private void started() {
+		if (sc == null) return;
+		var app = FermataApplication.get();
+		var mode = sc.getWidth() > sc.getHeight() ? 1 : 2;
+
+		if (app.isMirroringMode()) {
+			app.setMirroringMode(mode);
+			return;
+		}
+
+		dimScreen(app);
+		disableAccelRotation(app);
+
+		var pmg = (PowerManager) app.getSystemService(POWER_SERVICE);
+		if (pmg != null) {
+			//noinspection deprecation
+			wakeLock = pmg.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Fermata:ScreenLock");
+			if (wakeLock != null) wakeLock.acquire(24 * 3600000);
+		}
+
+		if ((overlay == null) && (SDK_INT >= VERSION_CODES.O)) {
+			try {
+				var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
+				var lp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
+						WindowManager.LayoutParams.MATCH_PARENT,
+						WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+						WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+								WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+								WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH |
+								WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, PixelFormat.TRANSPARENT);
+				var overlay = new Overlay(app);
+				wm.addView(overlay, lp);
+				this.overlay = overlay;
+			} catch (Exception err) {
+				Log.e(err, "Failed to add overlay");
+			}
+		}
+
+		startFermata(app, mode);
+	}
+
 	private void cleanUp() {
+		var app = FermataApplication.get();
+		var overlay = this.overlay;
+		if (overlay != null) {
+			this.overlay = null;
+			overlay.dimAndRotate.cancel();
+			var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
+			wm.removeView(overlay);
+		}
 		sc = null;
 		lMetrics = pMetrics = null;
 		if (vd.isDoneNotFailed()) vd.getOrThrow().release();
@@ -204,9 +278,9 @@ public class MirrorDisplay {
 		noVd();
 		if ((ref == null) || (ref.get() != this)) return;
 		ref = null;
-		var app = FermataApplication.get();
 		startFermata(app, 0);
-		if (brightness > 0) setBrightness(app, brightness);
+		restoreBrightness(app);
+		restoreAccelRotation(app);
 		if (wakeLock != null) wakeLock.release();
 		ProjectionService.stop();
 	}
@@ -313,7 +387,6 @@ public class MirrorDisplay {
 	@Nullable
 	private EventDispatcher translate(float x, float y) {
 		var d = EventDispatcher.get();
-		if (d == null) return null;
 		var a = d.getActivity();
 		var m = metrics(a);
 		if (m == null) return null;
@@ -353,7 +426,7 @@ public class MirrorDisplay {
 		return m;
 	}
 
-	private static void startFermata(FermataApplication app, int mirrorMode) {
+	private void startFermata(FermataApplication app, int mirrorMode) {
 		app.setMirroringMode(mirrorMode);
 		var intent = new Intent(app, MainActivity.class);
 		var flags = FLAG_ACTIVITY_NEW_TASK;
@@ -394,6 +467,33 @@ public class MirrorDisplay {
 				assert x >= 0f;
 			}
 			this.scale = scale;
+		}
+	}
+
+	private final class Overlay extends FrameLayout {
+		final ReschedulableTask dimAndRotate = new ReschedulableTask() {
+			@Override
+			protected void perform() {
+				var ctx = getContext();
+				dimScreen(ctx);
+				disableAccelRotation(ctx);
+			}
+		};
+
+		public Overlay(@NonNull Context context) {
+			super(context);
+		}
+
+		@SuppressLint("ClickableViewAccessibility")
+		@Override
+		public boolean onTouchEvent(MotionEvent event) {
+			if (event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER) {
+				dimAndRotate.schedule(30000);
+				var ctx = getContext();
+				restoreBrightness(ctx);
+				restoreAccelRotation(ctx);
+			}
+			return false;
 		}
 	}
 }
