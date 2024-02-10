@@ -266,6 +266,7 @@
     <string name="import_prefs_ok">Die Einstellungen wurden erfolgreich importiert.\nBitte starten Sie die Anwendung neu.</string>
     <string name="import_prefs_failed">Import der Einstellungen fehlgeschlagen: %1$s</string>
     <string name="prefs_not_found">Keine Einstellungen gefunden</string>
+    <string name="media_projection_action_text">Jetzt starten</string>
 
     <string name="about">Über Fermata</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

@@ -300,6 +300,8 @@
     <string name="unlock_phone_and_grant">Sblocca il telefono e concedi le autorizzazioni richieste.</string>
     <string name="screen_capture_rejected">Richiesta di acquisizione schermo respinta.</string>
     <string name="accessibility_dsc">Il servizio di accessibilità viene utilizzato da Fermata Mirror per simulare eventi touch screen.</string>
+    <string name="media_projection_action_text">Avvia adesso</string>
+
     <string name="about">Info</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
         <p>Fermata Media Player è un riproduttore audio e video gratuito,

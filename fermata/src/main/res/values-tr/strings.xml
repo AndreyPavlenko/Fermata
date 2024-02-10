@@ -164,6 +164,7 @@
     <string name="preferred_sub_lang">Tercih edilen altyazı dilleri</string>
     <string name="preferred_video_engine">Tercih edilen video motoru</string>
     <string name="prefs_not_found">Tercih bulunamadı</string>
+    <string name="media_projection_action_text">Şimdi başlat</string>
     <string name="preset_name">Ön ayar adı</string>
     <string name="press_back_again">Çıkmak için geri düğmesine tekrar basın.</string>
     <string name="press_x_again">Çıkmak için X düğmesine tekrar basın.</string>

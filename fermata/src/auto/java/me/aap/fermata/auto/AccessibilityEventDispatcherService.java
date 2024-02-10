@@ -15,7 +15,9 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.view.MotionEvent;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import java.util.Arrays;
@@ -23,10 +25,15 @@ import java.util.Arrays;
 import me.aap.utils.log.Log;
 
 public class AccessibilityEventDispatcherService extends AccessibilityService {
+	private static String clickOnButton;
 	private static AccessibilityEventDispatcherService instance;
 	private final Path path = new Path();
 	private GestureDescription.Builder gb;
 	private Pointer[] pointers = new Pointer[]{new Pointer()};
+
+	static void autoClickOnButton(@Nullable String text) {
+		clickOnButton = text;
+	}
 
 	static boolean dispatchTap(float x, float y) {
 		var ds = instance;
@@ -198,6 +205,13 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 
 	@Override
 	public void onAccessibilityEvent(AccessibilityEvent event) {
+		if (clickOnButton == null) return;
+		if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+		var root = getRootInActiveWindow();
+		if (root == null) return;
+		var startButton = root.findAccessibilityNodeInfosByText(clickOnButton);
+		if (startButton.isEmpty()) return;
+		startButton.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
 	}
 
 	@Override

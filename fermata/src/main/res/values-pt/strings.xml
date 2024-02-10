@@ -300,6 +300,7 @@
     <string name="import_prefs_ok">Preferências importadas com sucesso.\nPor favor restaure a aplicação.</string>
     <string name="import_prefs_failed">Falha na importação das preferências: %1$s</string>
     <string name="prefs_not_found">Não foram encontradas preferências</string>
+    <string name="media_projection_action_text">Iniciar agora</string>
 
     <string name="about">Sobre</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Leitor de Multimédia</H1>

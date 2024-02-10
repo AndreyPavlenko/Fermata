@@ -299,6 +299,7 @@
     <string name="import_prefs_ok">Настройки успешно импортированы.\nПожалуйста, перезапустите приложение.</string>
     <string name="import_prefs_failed">Не удалось импортировать настройки: %1$s</string>
     <string name="prefs_not_found">Настройки не найдены</string>
+    <string name="media_projection_action_text">Начать</string>
     <string name="open_log">Открыть лог файл</string>
 
     <string name="about">О приложении</string>

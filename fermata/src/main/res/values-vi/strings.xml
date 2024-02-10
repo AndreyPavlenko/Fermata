@@ -301,6 +301,7 @@
     <string name="import_prefs_ok">Cấu hình cài đặt đã được nhập thành công.\nXin vui lòng khởi động lại ứng dụng.</string>
     <string name="import_prefs_failed">Không thể nhập tệp tin cấu hình cài đặt: %1$s</string>
     <string name="prefs_not_found">Không tìm thấy tệp tin cấu hình cài đặt</string>
+    <string name="media_projection_action_text">Bắt đầu ngay</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

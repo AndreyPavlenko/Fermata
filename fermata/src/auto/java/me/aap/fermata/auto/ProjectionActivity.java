@@ -15,6 +15,7 @@ import android.os.Build;
 import android.provider.Settings;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.R;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -64,8 +65,9 @@ public class ProjectionActivity extends ActivityBase {
 		starting = true;
 		checkOverlayPermission().thenIgnoreResult(this::checkWriteSettingsPermission)
 				.thenIgnoreResult(this::checkAccessibilityPermission)
-				.thenIgnoreResult(() -> Su.get().onSuccess(EventDispatcher::useSu))
+				.thenIgnoreResult(this::requestRootPermission)
 				.thenIgnoreResult(this::requestScreenCapturePermission).onCompletion((i, err) -> {
+					AccessibilityEventDispatcherService.autoClickOnButton(null);
 					if (promise != p) return;
 					starting = false;
 					finish();
@@ -127,8 +129,17 @@ public class ProjectionActivity extends ActivityBase {
 		return false;
 	}
 
+	private FutureSupplier<?> requestRootPermission() {
+		return Su.get().onSuccess(su -> {
+			EventDispatcher.useSu(su);
+			su.exec("appops set " + getPackageName() + " PROJECT_MEDIA allow");
+		});
+	}
+
 	private FutureSupplier<Intent> requestScreenCapturePermission() {
 		Log.i("Requesting screen cast permission");
+		AccessibilityEventDispatcherService.autoClickOnButton(
+				getString(R.string.media_projection_action_text));
 		var mm = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
 		return startActivityForResult(mm::createScreenCaptureIntent);
 	}
