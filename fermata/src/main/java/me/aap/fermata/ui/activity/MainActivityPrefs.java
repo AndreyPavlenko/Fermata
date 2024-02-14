@@ -4,8 +4,10 @@ import static me.aap.fermata.BuildConfig.AUTO;
 
 import androidx.annotation.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.BooleanSupplier;
@@ -31,14 +33,7 @@ public interface MainActivityPrefs
 	int CLOCK_POS_LEFT = 1;
 	int CLOCK_POS_RIGHT = 2;
 	int CLOCK_POS_CENTER = 3;
-	int LOCALE_EN = 0;
-	int LOCALE_RU = 1;
-	int LOCALE_IT = 2;
-	int LOCALE_TR = 3;
-	int LOCALE_DE = 4;
-	int LOCALE_PT = 5;
-	int LOCALE_VI = 6;
-	int LOCALE_PL = 7;
+
 	Pref<IntSupplier> THEME_MAIN = Pref.i("THEME_MAIN", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS = Pref.b("HIDE_BARS", false);
 	Pref<BooleanSupplier> FULLSCREEN = Pref.b("FULLSCREEN", false);
@@ -67,16 +62,8 @@ public interface MainActivityPrefs
 	Pref<Supplier<String>> VOICE_CONTROL_LANG =
 			Pref.s("VOICE_CONTROL_LANG", () -> Locale.getDefault().toLanguageTag());
 	Pref<IntSupplier> CLOCK_POS = Pref.i("CLOCK_POS", CLOCK_POS_NONE);
-	Pref<IntSupplier> LOCALE = Pref.i("LOCALE", () -> switch (Locale.getDefault().getLanguage()) {
-		case "ru" -> LOCALE_RU;
-		case "it" -> LOCALE_IT;
-		case "tr" -> LOCALE_TR;
-		case "de" -> LOCALE_DE;
-		case "pt" -> LOCALE_PT;
-		case "vi" -> LOCALE_VI;
-		case "pl" -> LOCALE_PL;
-		default -> LOCALE_EN;
-	});
+	Pref<IntSupplier> LOCALE =
+			Pref.i("LOCALE", () -> Lang.get(Locale.getDefault().getLanguage()).ordinal());
 
 	Pref<IntSupplier> THEME_AA = Pref.i("THEME_AA", THEME_DARK);
 	Pref<BooleanSupplier> HIDE_BARS_AA = AUTO ? Pref.b("HIDE_BARS_AA", false) : null;
@@ -250,15 +237,34 @@ public interface MainActivityPrefs
 	}
 
 	default Locale getLocalePref() {
-		return switch (getIntPref(LOCALE)) {
-			case LOCALE_RU -> new Locale("ru");
-			case LOCALE_IT -> Locale.ITALIAN;
-			case LOCALE_TR -> new Locale("tr");
-			case LOCALE_DE -> new Locale("de");
-			case LOCALE_PT -> new Locale("pt");
-			case LOCALE_VI -> new Locale("vi");
-			case LOCALE_PL -> new Locale("pl");
-			default -> Locale.ENGLISH;
-		};
+		return Lang.get(getIntPref(LOCALE)).locale;
+	}
+
+	enum Lang {
+		EN, RU, IT, TR, DE, PT, VI, PL, HR,
+		;
+
+		private static final List<Lang> values = List.of(values());
+		private static final Map<String, Lang> nameToValue = new HashMap<>();
+		public final Locale locale = new Locale(name().toLowerCase());
+
+		static {
+			for (var v : values) {
+				nameToValue.put(v.locale.getLanguage(), v);
+			}
+		}
+
+		public static List<Lang> getValues() {
+			return values;
+		}
+
+		public static Lang get(int pref) {
+			return ((pref < 0) || (pref >= Lang.values.size())) ? Lang.EN : Lang.values.get(pref);
+		}
+
+		public static Lang get(String name) {
+			var value = nameToValue.get(name);
+			return (value == null) ? Lang.EN : value;
+		}
 	}
 }

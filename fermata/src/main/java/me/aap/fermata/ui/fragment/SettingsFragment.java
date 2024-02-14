@@ -9,14 +9,6 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_DE;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_EN;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_IT;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_PL;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_PT;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_RU;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_TR;
-import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE_VI;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
@@ -53,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -75,6 +66,7 @@ import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.app.App;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.DoubleSupplier;
@@ -289,36 +281,15 @@ public class SettingsFragment extends MainActivityFragment
 			o.title = R.string.show_track_icons;
 		});
 		sub1.addListPref(o -> {
-			// @formatter:off
-			// xclip -o | sort | grep -oE 'lang_..'| while read i; do echo "R.string.$i,"; done
-			o.values = new int[]{
-					R.string.lang_de,
-					R.string.lang_en,
-					R.string.lang_it,
-					R.string.lang_pl,
-					R.string.lang_pt,
-					R.string.lang_ru,
-					R.string.lang_tr,
-					R.string.lang_vi,
-			};
-			o.valuesMap = new int[]{
-							LOCALE_DE,
-							LOCALE_EN,
-							LOCALE_IT,
-							LOCALE_PL,
-							LOCALE_PT,
-							LOCALE_RU,
-							LOCALE_TR,
-							LOCALE_VI,
-					};
-			// @formatter:on
-
 			o.store = a.getPrefs();
 			o.pref = MainActivityPrefs.LOCALE;
 			o.title = R.string.lang;
 			o.subtitle = R.string.string_format;
 			o.formatSubtitle = true;
 			o.removeDefault = false;
+			o.cmp = String::compareTo;
+			o.stringValues = CollectionUtils.mapToArray(MainActivityPrefs.Lang.getValues(),
+					v -> v.locale.getDisplayName(), String[]::new);
 		});
 
 		sub1 = set.subSet(o -> o.title = R.string.key_bindings);

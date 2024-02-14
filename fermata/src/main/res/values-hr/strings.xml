@@ -163,7 +163,7 @@
     <string name="preferred_audio_key">Prefer audio stream with keywords</string>
     <string name="select_audio_stream">Select audio stream</string>
 
-    <string name="subtitles">Subtitles</string>
+    <string name="subtitles">Napisy</string>
     <string name="subtitle_delay">Subtitles delay</string>
     <string name="display_subtitles">Display subtitles</string>
     <string name="preferred_sub_lang">Preferred subtitles languages</string>
@@ -201,8 +201,8 @@
     <string name="artist">Artist</string>
     <string name="duration">Duration</string>
 
-    <string name="sort_by">Sort by</string>
-    <string name="do_not_sort">Do not sort</string>
+    <string name="sort_by">Sortuj według</string>
+    <string name="do_not_sort">Nie sortuj</string>
 
     <string name="play">Odtwórz</string>
     <string name="pause">Przerwa</string>
@@ -236,8 +236,8 @@
     <string name="bookmark_name">Nazwa</string>
     <string name="bookmark_time">Czas</string>
 
-    <string name="folder_subtitle">Files: %1$d. Foldery: %2$d.</string>
-    <string name="browsable_subtitle">Ścieżki: %1$d.</string>
+    <string name="folder_subtitle">Pliki: %1$d. Foldery: %2$d.</string>
+    <string name="browsable_subtitle">Utwory: %1$d.</string>
     <string name="add_folder">Dodaj folder</string>
     <string name="remove_folder">Usuń folder</string>
     <string name="select">Wybierz</string>
@@ -294,12 +294,12 @@
     <string name="private_key_pass">Private key password</string>
 
     <string name="donate">Kawa dla programisty</string>
-    <string name="donate_text">Jeśli aplikacja przypadła Ci do gustu, rozważ możliwość zakupu mi kawy.</string>
-    <string name="use_phone_for_donation">Aby kupić kawę, użyj telefonu.</string>
+    <string name="donate_text">Jeśli podoba Ci się aplikacja, rozważ możliwość zakupu mi kawy.</string>
+    <string name="use_phone_for_donation">Użyj telefonu, aby kupić kawe.</string>
 
     <string name="timer">Timer</string>
-    <string name="hours">Godziny</string>
-    <string name="minutes">Minuty</string>
+    <string name="hours">Hours</string>
+    <string name="minutes">Minutes</string>
 
     <string name="enable">Enable</string>
     <string name="move_left">Move left</string>
@@ -307,18 +307,18 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
 
-    <string name="sys_bars_on_video_touch">Show system bars on video touch</string>
-    <string name="play_video_landscape">Playing video in landscape mode</string>
-    <string name="clock_pos">Clock position</string>
-    <string name="clock_pos_none">None</string>
-    <string name="clock_pos_left">Left</string>
-    <string name="clock_pos_right">Right</string>
-    <string name="clock_pos_center">Center</string>
-    <string name="change_brightness">Change brightness while playing video</string>
-    <string name="video_brightness">Video brightness</string>
-    <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>
+    <string name="sys_bars_on_video_touch">Pokaż paski systemowe po dotknięciu ekranu</string>
+    <string name="play_video_landscape">Odtwarzanie wideo w trybie poziomym</string>
+    <string name="clock_pos">Pozycja zegara</string>
+    <string name="clock_pos_none">Brak</string>
+    <string name="clock_pos_left">Z lewej strony</string>
+    <string name="clock_pos_right">Z prawej strony</string>
+    <string name="clock_pos_center">W środku</string>
+    <string name="change_brightness">Zmień jasność podczas odtwarzania wideo</string>
+    <string name="video_brightness">Jasność wideo</string>
+    <string name="change_brightness_sub">Jasność można także zmieniać za pomocą przewijania dwoma palcami</string>
     <string name="watched_threshold">Watched threshold</string>
-    <string name="watched_threshold_sub">Marked video as watched, if more than this number of percentages has been watched</string>
+    <string name="watched_threshold_sub">Oznacz film jako obejrzany, jeśli obejrzano więcej niż podaną liczbę procentową</string>
 
     <string name="other">Inne</string>
     <string name="check_updates">Sprawdź dostępność aktualizacji podczas uruchamiania</string>
