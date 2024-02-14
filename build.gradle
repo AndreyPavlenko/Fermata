@@ -26,7 +26,7 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.2'
-        classpath 'com.google.gms:google-services:4.4.0'
+        classpath 'com.google.gms:google-services:4.4.1'
     }
 }
 
@@ -60,7 +60,7 @@ subprojects {
             targetSdkVersion SDK_TARGET_VERSION
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi'
+            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi', 'pl'
         }
 
         if (isDynFeature) {
