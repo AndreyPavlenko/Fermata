@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_mobile_release" translatable="false">Fermata</string>
+    <string name="app_name_auto_release" translatable="false">Fermata Auto</string>
+    <string name="app_name_mobile_debug" translatable="false">Debug Fermata</string>
+    <string name="app_name_auto_debug" translatable="false">Debug Fermata Auto</string>
+    <string name="mirror_service_name_release" translatable="false">Fermata Mirror</string>
+    <string name="mirror_service_name_debug" translatable="false">Debug Fermata Mirror</string>
+    <string name="mirror_fs_service_name_release" translatable="false">Fermata FS Mirror</string>
+    <string name="mirror_fs_service_name_debug" translatable="false">Debug Fermata FS Mirror</string>
+    <string name="media_service_name_mobile_release" translatable="false">@string/app_name_mobile_release</string>
+    <string name="media_service_name_auto_release" translatable="false">Fermata Media Service</string>
+    <string name="media_service_name_mobile_debug" translatable="false">@string/app_name_mobile_debug</string>
+    <string name="media_service_name_auto_debug" translatable="false">Debug Fermata Media Service</string>
+    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
+    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
+    <string name="engine_vlc_name" translatable="false">VLC</string>
+
+    <string name="module_name_gdrive" translatable="false">Google Drive</string>
+    <string name="module_name_sftp" translatable="false">SFTP</string>
+    <string name="module_name_smb" translatable="false">SMB</string>
+    <string name="module_name_web" translatable="false">Web</string>
+    <string name="module_name_tv" translatable="false">TV</string>
+
+    <string name="addons">Addons</string>
+    <string name="addon_name_tv">TV</string>
+    <string name="addon_name_web_browser">Web browser</string>
+    <string name="addon_name_youtube" translatable="false">Youtube</string>
+    <string name="addon_name_felex" translatable="false">Felex</string>
+    <string name="addon_name_cast" translatable="false">Google Cast</string>
+    <string name="addon_name_chat" translatable="false">ChatGPT</string>
+
+    <string name="interface_prefs">インターフェース</string>
+    <string name="interface_prefs_aa">Android Autoの設定</string>
+    <string name="playback_settings">再生設定</string>
+    <string name="playback_control">再生操作設定</string>
+    <string name="engine_prefs">メディアエンジン</string>
+
+    <string name="theme">アプリケーションテーマ</string>
+    <string name="theme_sub">現在のテーマ: %1$s</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="theme_day_night">昼間/夜間</string>
+    <string name="theme_black">黒</string>
+    <string name="theme_star_wars" translatable="false">Star Wars</string>
+
+    <string name="nav_bar_pos">ナビゲーションバーの位置</string>
+    <string name="nav_bar_pos_sub">現在の位置: %1$s</string>
+    <string name="nav_bar_pos_bottom">下側</string>
+    <string name="nav_bar_pos_left">左側</string>
+    <string name="nav_bar_pos_right">右側</string>
+
+    <string name="show_track_icons">トラックアイコンを表示</string>
+    <string name="lang">言語</string>
+    <string name="hide_bars">バーを隠す</string>
+    <string name="hide_bars_sub">コントロールパネルが表示されたときに上部と下部のバーを非表示にします</string>
+    <string name="show_pg_up_down">ページアップ/ページダウンボタンを表示</string>
+    <string name="use_dpad_cursor">D-pad(十字キー)ナビゲーションによるカーソルを使用する</string>
+    <string name="fullscreen_mode">フルスクリーンモード</string>
+    <string name="nav_bar_size">ナビゲーションバー サイズ</string>
+    <string name="tool_bar_size">ツールバー サイズ</string>
+    <string name="control_panel_size">コントロールパネル サイズ</string>
+    <string name="text_icon_size">テキスト・アイコン サイズ</string>
+
+    <string name="key_bindings">キーの割り当て</string>
+    <string name="key_on_click">クリック</string>
+    <string name="key_on_long_click">長押し</string>
+    <string name="key_on_dbl_click">ダブルクリック</string>
+    <string name="action_stop">停止</string>
+    <string name="action_play">再生</string>
+    <string name="action_pause">一時停止</string>
+    <string name="action_play_pause">再生/一時停止</string>
+    <string name="action_prev">前を再生</string>
+    <string name="action_next">次を再生</string>
+    <string name="action_rw">巻き戻し</string>
+    <string name="action_ff">早送り</string>
+    <string name="action_vol_up">ボリュームアップ</string>
+    <string name="action_vol_down">ボリュームダウン</string>
+    <string name="action_vol_mute_unmute">ミュート/ミュート解除</string>
+    <string name="action_activate_voice_ctrl">音声コントロールを起動</string>
+    <string name="action_menu">メニュー</string>
+    <string name="action_cp_menu">コントロールパネルメニュー</string>
+    <string name="action_back_or_exit">戻る・終了</string>
+    <string name="action_exit">終了</string>
+    <string name="action_default">デフォルト</string>
+    <string name="action_none">未割り当て</string>
+
+    <string name="play_next_on_completion">再生が終わり次第、次を再生</string>
+
+    <string name="rw_ff_click">巻き戻そ/早送り - クリック</string>
+    <string name="rw_ff_long_click">巻き戻そ/早送り - 長押し</string>
+    <string name="prev_next_long_click">前/次 - 長押し</string>
+    <string name="play_pause_stop">再生/一時停止ボタンを長押しした際、再生停止する</string>
+
+    <string name="time">時間</string>
+    <string name="time_unit">時間単位</string>
+    <string name="time_unit_sub">現在の設定: %1$s</string>
+    <string name="time_unit_second">秒</string>
+    <string name="time_unit_minute">分</string>
+    <string name="time_unit_percent">パーセント[%]</string>
+
+    <string name="video_control">動画再生中のインターフェース表示設定</string>
+    <string name="video_control_start_delay">再生時の表示時間</string>
+    <string name="video_control_touch_delay">タッチ時の表示時間</string>
+    <string name="video_control_seek_delay">シーク時の表示時間</string>
+    <string name="video_aa_show_status">Android Autoでステータスバーを表示する</string>
+
+    <string name="enable_exoplayer">ExoPlayerを有効</string>
+    <string name="enable_vlcplayer">VLCを有効</string>
+    <string name="preferred_audio_engine">優先するオーディオエンジン</string>
+    <string name="preferred_video_engine">優先するビデオエンジン</string>
+    <string name="engine_installed">インストールされたメディアエンジン: %1$s</string>
+    <string name="engine_uninstalled">アンインストールされたメディアエンジン: %1$s</string>
+
+    <string name="preferred_media_scanner">優先するメディアスキャナー</string>
+    <string name="preferred_media_scanner_default">デフォルト</string>
+    <string name="preferred_media_scanner_system">システム</string>
+
+    <string name="voice_search">音声検索</string>
+    <string name="voice_control">音声操作</string>
+    <string name="voice_control_fb">フローティングボタン</string>
+    <string name="voice_control_sub_long">長押しで音声コントロールを有効にする</string>
+    <string name="voice_control_subst">単語の置換</string>
+    <string name="voice_control_subst_sub">単語を別の単語またはフレーズに置き換えます</string>
+    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
+
+    <string name="module_installation">モジュールのインストール: %1$s</string>
+    <string name="install_pending">インストールの保留中: %1$s</string>
+    <string name="downloading">ダウンロード中 %1$s</string>
+    <string name="installing">インストール中 %1$s</string>
+
+    <string name="speed">スピード</string>
+    <string name="audio_effects">オーディオ効果</string>
+    <string name="equalier">イコライザー</string>
+    <string name="preset_name">プリセット名</string>
+    <string name="virtualizer">臨場感</string>
+    <string name="auto">自動</string>
+    <string name="binaural">バイノーラル</string>
+    <string name="transaural">トランスオーラル</string>
+    <string name="bass_boost">低音ブースト</string>
+    <string name="vol_boost">音量ブースト</string>
+    <string name="strength">強さ</string>
+    <string name="apply_to">適用先</string>
+
+    <string name="video">ビデオ</string>
+    <string name="video_settings">ビデオ設定</string>
+    <string name="video_scaling">ビデオスケーリング</string>
+    <string name="hw_accel">ハードウェアアクセラレーション</string>
+    <string name="hw_accel_auto">自動</string>
+    <string name="hw_accel_full">フル</string>
+    <string name="hw_accel_decoding">Decoding</string>
+    <string name="hw_accel_disabled">無効</string>
+    <string name="video_scaling_best">ベストフィット</string>
+    <string name="video_scaling_fill">フルスクリーン</string>
+    <string name="video_scaling_orig">オリジナルサイズ</string>
+    <string name="video_scaling_4" translatable="false">4x3</string>
+    <string name="video_scaling_16" translatable="false">16x9</string>
+
+    <string name="audio">オーディオ</string>
+    <string name="audio_delay">オーディオ遅延設定</string>
+    <string name="audio_delay_aa">オーディオ遅延設定 - Android Auto</string>
+    <string name="preferred_audio_lang">優先されるオーディオ ストリーム言語</string>
+    <string name="preferred_audio_key">キーワードを含むオーディオ ストリームを優先する</string>
+    <string name="select_audio_stream">オーディオストリームを選択</string>
+
+    <string name="subtitles">字幕</string>
+    <string name="subtitle_delay">字幕遅延設定</string>
+    <string name="display_subtitles">字幕を表示</string>
+    <string name="preferred_sub_lang">優先される字幕言語</string>
+    <string name="preferred_sub_key">キーワードを含む字幕を優先</string>
+    <string name="select_subtitles">字幕を選択</string>
+
+    <string name="string_format" translatable="false">%1$s</string>
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">現在のトラック</string>
+    <string name="current_folder">現在のフォルダー</string>
+
+    <string name="folders">フォルダー</string>
+    <string name="favorites">お気に入り</string>
+    <string name="playlists">プレイリスト</string>
+    <string name="search">検索</string>
+    <string name="filter">フィルター</string>
+    <string name="settings">設定</string>
+    <string name="menu">メニュー</string>
+    <string name="exit">終了</string>
+    <string name="cancel">キャンセル</string>
+    <string name="got_to_current">現在のトラック</string>
+
+    <string name="view">ビュー</string>
+    <string name="title">タイトル</string>
+    <string name="subtitle">字幕</string>
+    <string name="seq_num">シーケンス番号</string>
+    <string name="track_name">名前</string>
+    <string name="file_name">ファイル名</string>
+    <string name="date">日付</string>
+    <string name="random">ランダム</string>
+    <string name="descending">降順</string>
+    <string name="album">アルバム</string>
+    <string name="artist">アーティスト</string>
+    <string name="duration">間隔</string>
+
+    <string name="sort_by">並べ替え</string>
+    <string name="do_not_sort">並べ替えしない</string>
+
+    <string name="play">再生</string>
+    <string name="pause">一時停止</string>
+    <string name="stop">停止</string>
+    <string name="prev">前</string>
+    <string name="next">次</string>
+    <string name="rewind">巻き戻し</string>
+    <string name="fast_forward">早送り</string>
+    <string name="repeat">繰り返し</string>
+    <string name="repeat_disable">繰り返さない</string>
+    <string name="shuffle">シャッフル</string>
+    <string name="shuffle_disable">シャッフルしない</string>
+    <string name="programme_guide">番組案内</string>
+    <string name="favorites_add">お気に入りに追加</string>
+    <string name="favorites_remove">お気に入りから削除</string>
+    <string name="mark_watched">視聴済みとしてマーク</string>
+    <string name="mark_unwatched">未視聴としてマーク</string>
+    <string name="preferred_media_engine">優先されるメディア エンジン</string>
+    <string name="by_default">デフォルト</string>
+
+    <string name="playlist_add">プレイリストに追加</string>
+    <string name="playlist_remove_item">プレイリストから削除</string>
+    <string name="playlist_create">プレイリスト作成</string>
+    <string name="playlist_remove">プレイリスト削除</string>
+    <string name="playlist_name">プレイリスト名</string>
+
+    <string name="bookmarks">ブックマーク</string>
+    <string name="create_bookmark">ブックマーク作成</string>
+    <string name="remove_bookmark">ブックマーク削除</string>
+    <string name="remove_all_bookmarks">全てのブックマーク削除</string>
+    <string name="bookmark_name">名前</string>
+    <string name="bookmark_time">時間</string>
+
+    <string name="folder_subtitle">ファイル: %1$d. フォルダー: %2$d.</string>
+    <string name="browsable_subtitle">トラック: %1$d.</string>
+    <string name="add_folder">フォルダー追加</string>
+    <string name="remove_folder">フォルダー削除</string>
+    <string name="select">選択</string>
+    <string name="select_all">全選択</string>
+    <string name="unselect_all">全選択解除</string>
+    <string name="refresh">更新</string>
+    <string name="rescan">再スキャン</string>
+    <string name="share">共有</string>
+    <string name="edit">編集</string>
+    <string name="delete">削除</string>
+    <string name="delete_confirm">削除 %1$s?</string>
+    <string name="delete_file_title">ファイル削除</string>
+    <string name="delete_file_question">ファイルを削除してもよろしいですか?</string>
+    <string name="delete_file_failed">ファイルの削除に失敗しました %1$s</string>
+    <string name="loading">読み込み中…</string>
+    <string name="press_back_again">戻るボタンをもう一度押して終了します。</string>
+    <string name="press_x_again">もう一度Xボタンを押して終了します。</string>
+    <string name="please_restart_app">アプリケーションを再起動してください。</string>
+    <string name="use_phone_to_grant_perm">スマホ本体を使用して必要な権限を付与してください。</string>
+
+    <string name="vfs_content">コンテンツ</string>
+    <string name="vfs_file_system">ファイルシステム</string>
+    <string name="vfs_gdrive">Google drive</string>
+    <string name="vfs_sftp" translatable="false">SFTP</string>
+    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
+    <string name="m3u_playlist" translatable="false">M3U プレイリスト</string>
+    <string name="m3u_playlist_name">名前</string>
+    <string name="m3u_playlist_location">ロケーション</string>
+    <string name="m3u_playlist_location_hint">ファイル または http(s) URL</string>
+    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
+    <string name="m3u_playlist_timeout" translatable="false">Response timeout</string>
+    <string name="m3u_playlist_video">ビデオ プレイリスト</string>
+
+    <string name="eq_manual">マニュアル</string>
+    <string name="eq_normal">ノーマル</string>
+    <string name="eq_classical">クラシック</string>
+    <string name="eq_dance">ダンス</string>
+    <string name="eq_flat">フラット</string>
+    <string name="eq_folk">Folk</string>
+    <string name="eq_heavy_metal">Heavy Metal</string>
+    <string name="eq_hip_hop">Hip Hop</string>
+    <string name="eq_jazz">Jazz</string>
+    <string name="eq_pop">Pop</string>
+    <string name="eq_rock">Rock</string>
+
+    <string name="host">ホスト</string>
+    <string name="port">ポート</string>
+    <string name="path">Path</string>
+    <string name="share_name">Share name</string>
+    <string name="domain">ドメイン</string>
+    <string name="username">ユーザー名</string>
+    <string name="password">パスワード</string>
+    <string name="private_key">プライベートキー</string>
+    <string name="private_key_pass">プライベートキーパスワード</string>
+
+    <string name="donate">開発者にコーヒーを寄付</string>
+    <string name="donate_text">このアプリケーションが気に入っていただけましたら、私にコーヒーを奢って頂くことをご検討ください。</string>
+    <string name="use_phone_for_donation">コーヒーを購入していただく際は、スマートフォンをご使用ください。</string>
+
+    <string name="timer">タイマー</string>
+    <string name="hours">時</string>
+    <string name="minutes">分</string>
+
+    <string name="enable">有効</string>
+    <string name="move_left">左へ移動</string>
+    <string name="move_right">右へ移動</string>
+    <string name="move_up">上へ移動</string>
+    <string name="move_down">下へ移動</string>
+
+    <string name="sys_bars_on_video_touch">ビデオタッチでシステムバーを表示</string>
+    <string name="play_video_landscape">ラウンドスケープモードでビデオを再生する</string>
+    <string name="clock_pos">時計の位置</string>
+    <string name="clock_pos_none">無し</string>
+    <string name="clock_pos_left">左側</string>
+    <string name="clock_pos_right">右側</string>
+    <string name="clock_pos_center">中央</string>
+    <string name="change_brightness">動画再生中に明るさを変更する</string>
+    <string name="video_brightness">動画再生中の明るさ</string>
+    <string name="change_brightness_sub">2本指スクロールで明るさも変更可能</string>
+    <string name="watched_threshold">再生済みのしきい値</string>
+    <string name="watched_threshold_sub">この割合を超えて視聴された場合、ビデオを視聴済みとしてマークします</string>
+
+    <string name="other">その他</string>
+    <string name="check_updates">起動時にアップデートを確認する</string>
+    <string name="update">アップデート</string>
+    <string name="update_question">新しいバージョン %1$s が利用可能です。\nアプリを更新しますか？</string>
+    <string name="export_prefs">環境設定をファイルにエクスポートする</string>
+    <string name="export_prefs_sub">設定、フォルダー、プレイリストなどをファイルにエクスポート</string>
+    <string name="export_prefs_ok">設定がファイルに保存されました %1$s.</string>
+    <string name="export_prefs_failed">設定のエクスポートに失敗しました: %1$s</string>
+    <string name="import_prefs">ファイルから設定をインポートする</string>
+    <string name="import_prefs_sub">以前にエクスポートした環境設定をファイルからインポートする</string>
+    <string name="import_prefs_ok">設定は正常にインポートされました。\nアプリケーションを再起動してください。</string>
+    <string name="import_prefs_failed">環境設定のインポートに失敗しました: %1$s</string>
+    <string name="prefs_not_found">設定が見つかりません</string>
+    <string name="open_log">ログファイルを開く</string>
+    <string name="unlock_phone_and_grant">スマートフォンのロックを解除し、要求された権限を付与してください。</string>
+    <string name="screen_capture_rejected">画面キャプチャ要求が拒否されました。</string>
+    <string name="accessibility_dsc">アクセシビリティサービスは、Fermata Mirror によってタッチスクリーンをシミュレートするために使用されます。</string>
+
+    <string name="about">About</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player is a free, open source audio and video player with a simple and
+        intuitive interface.</p>
+        <p><b>Author:</b> Andrey Pavlenko</p>
+        <p><b>Version:</b> %1$s (%2$d)</p>
+        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
+
+    <string name="err_failed_to_play">再生に失敗しました %s</string>
+    <string name="err_failed_to_play_cause">再生に失敗しました %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">サポートされていないソースタイプです: %s</string>
+    <string name="err_playlist_exists">プレイリストはすでに存在します: %1$s</string>
+    <string name="err_invalid_playlist_name">無効なプレイリスト名です: %1$s</string>
+    <string name="err_failed_add_folder">フォルダーの追加に失敗しました: %1$s</string>
+    <string name="err_failed_open_url">URLを開けませんでした: %1$s</string>
+    <string name="err_failed_install_module">モジュールのインストールに失敗しました: %1$s</string>
+    <string name="err_failed_to_download">ダウンロードに失敗しました %1$s</string>
+    <string name="err_no_audio_record_perm">音声録音の許可が与えられていません</string>
+</resources>

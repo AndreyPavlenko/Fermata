@@ -241,8 +241,7 @@ public interface MainActivityPrefs
 	}
 
 	enum Lang {
-		EN, RU, IT, TR, DE, PT, VI, PL, HR,
-		;
+		EN, RU, IT, TR, DE, PT, VI, PL, HR, JA;
 
 		private static final List<Lang> values = List.of(values());
 		private static final Map<String, Lang> nameToValue = new HashMap<>();
