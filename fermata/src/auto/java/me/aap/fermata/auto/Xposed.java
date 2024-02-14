@@ -11,7 +11,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.InstallSourceInfo;
-import android.content.pm.PackageManager;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Handler;
@@ -49,18 +48,19 @@ public class Xposed implements IXposedHookLoadPackage {
 				findAndHookMethod(InstallSourceInfo.class, "getInitiatingPackageName",
 						new XC_MethodHook() {
 
-					@Override
-					protected void afterHookedMethod(MethodHookParam param) {
-						param.setResult(GPLAY_PKG);
-					}
-				});
+							@Override
+							protected void afterHookedMethod(MethodHookParam param) {
+								param.setResult(GPLAY_PKG);
+							}
+						});
 			} else {
-				findAndHookMethod(PackageManager.class, "getInstallerPackageName", new XC_MethodHook() {
-					@Override
-					protected void afterHookedMethod(MethodHookParam param) {
-						param.setResult(GPLAY_PKG);
-					}
-				});
+				findAndHookMethod("android.content.pm.IPackageManager.Stub.Proxy", lpparam.classLoader,
+						"getInstallerPackageName", String.class, new XC_MethodHook() {
+							@Override
+							protected void afterHookedMethod(MethodHookParam param) {
+								param.setResult(GPLAY_PKG);
+							}
+						});
 			}
 		} else {
 			findAndHookMethod(Activity.class, "onResume", new XC_MethodHook() {
