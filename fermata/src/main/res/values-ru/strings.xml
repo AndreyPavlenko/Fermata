@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="addons">Дополнения</string>
     <string name="addon_name_tv">ТВ</string>
     <string name="addon_name_web_browser">Веб браузер</string>
-
     <string name="interface_prefs">Интерфейс</string>
     <string name="interface_prefs_aa">Андроид Авто</string>
     <string name="playback_settings">Настройки воспроизведения</string>
@@ -28,9 +26,9 @@
     <string name="lang">Язык</string>
     <string name="hide_bars">Скрывать панели</string>
     <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
-    <string name="fullscreen_mode">Полноэкранный режим</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
     <string name="use_dpad_cursor">Использовать курсор для D-pad навигации</string>
+    <string name="fullscreen_mode">Полноэкранный режим</string>
     <string name="nav_bar_size">Размер панели навигации</string>
     <string name="tool_bar_size">Размер панели инструментов</string>
     <string name="control_panel_size">Размер панели управления</string>
@@ -56,6 +54,7 @@
     <string name="action_cp_menu">Панель управления</string>
     <string name="action_back_or_exit">Назад или выход</string>
     <string name="action_exit">Выход</string>
+    <string name="action_default">По умолчанию</string>
     <string name="action_none">Ничего</string>
 
     <string name="play_next_on_completion">Воспроизводить следующий трек</string>
@@ -95,7 +94,7 @@
     <string name="voice_control_sub_long">Активировать голосовое управление, при долгом нажатии</string>
     <string name="voice_control_subst">Замена слов</string>
     <string name="voice_control_subst_sub">Заменять слово другим словом или фразой</string>
-    <string name="voice_control_subst_hint">включить: играть\nвыключить: пауза\nскучно: найти в браузере ближайши бар</string>
+    <string name="voice_control_subst_hint">включить: играть\nвыключить: пауза</string>
 
     <string name="module_installation">Установка модуля: %1$s</string>
     <string name="install_pending">Ожидание инсталляции: %1$s</string>
@@ -126,7 +125,6 @@
     <string name="video_scaling_best">Наиболее подходящее</string>
     <string name="video_scaling_fill">Заполнить экран</string>
     <string name="video_scaling_orig">Оригинальный размер</string>
-
     <string name="audio">Аудио</string>
     <string name="audio_delay">Задержка аудио</string>
     <string name="audio_delay_aa">Задержка аудио - Android Auto</string>
@@ -215,8 +213,8 @@
     <string name="unselect_all">Отменить выбор</string>
     <string name="refresh">Обновить</string>
     <string name="rescan">Пересканировать</string>
-    <string name="edit">Редактировать</string>
     <string name="share">Поделиться</string>
+    <string name="edit">Редактировать</string>
     <string name="delete">Удалить</string>
     <string name="delete_confirm">Удалить %1$s?</string>
     <string name="delete_file_title">Удалить файл</string>
@@ -299,8 +297,11 @@
     <string name="import_prefs_ok">Настройки успешно импортированы.\nПожалуйста, перезапустите приложение.</string>
     <string name="import_prefs_failed">Не удалось импортировать настройки: %1$s</string>
     <string name="prefs_not_found">Настройки не найдены</string>
-    <string name="media_projection_action_text">Начать</string>
     <string name="open_log">Открыть лог файл</string>
+    <string name="unlock_phone_and_grant">Разблокируйте телефон и предоставьте запрошенные разрешения.</string>
+    <string name="screen_capture_rejected">Запрос на трянсляцию экрана отклонен.</string>
+    <string name="accessibility_dsc">Эта служба используется Fermata Mirror для взаимодействия с экраном телефона.</string>
+    <string name="media_projection_action_text">Начать</string>
 
     <string name="about">О приложении</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="addons">Addons</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Browser</string>
-
     <string name="interface_prefs">Benutzeroberfläche</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Wiedergabeeinstellungen</string>
@@ -16,6 +14,7 @@
     <string name="theme_dark">Dark</string>
     <string name="theme_day_night">Tag/Nacht</string>
     <string name="theme_black">Schwarz</string>
+    <string name="theme_star_wars">Krieg der Sterne</string>
 
     <string name="nav_bar_pos">Navigationsleistenposition</string>
     <string name="nav_bar_pos_sub">aktuelle Position: %1$s</string>
@@ -28,11 +27,35 @@
     <string name="hide_bars">Navigationsbalken ausblenden</string>
     <string name="hide_bars_sub">Den oberen und unteren Navigationsbalken ausblenden, wenn das Bedienfeld erscheint</string>
     <string name="show_pg_up_down">Seite nach oben/unten anzeigen</string>
+    <string name="use_dpad_cursor">Verwenden Sie den Cursor für die D-Pad-Navigation</string>
     <string name="fullscreen_mode">Vollbildmodus</string>
     <string name="nav_bar_size">Navigationsleiste - Größe</string>
     <string name="tool_bar_size">Werkzeugleiste - Größe</string>
     <string name="control_panel_size">Bedienfeld - Größe</string>
     <string name="text_icon_size">Text &amp; Icons - Größe</string>
+
+    <string name="key_bindings">Tastenbelegungen</string>
+    <string name="key_on_click">Auf Klick</string>
+    <string name="key_on_long_click">Auf langen Klick</string>
+    <string name="key_on_dbl_click">Auf Doppelklick</string>
+    <string name="action_stop">Stoppen</string>
+    <string name="action_play">Spielen</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_play_pause">Spielpause</string>
+    <string name="action_prev">Vorheriges abspielen</string>
+    <string name="action_next">Als nächstes spielen</string>
+    <string name="action_rw">Zurückspulen</string>
+    <string name="action_ff">Schneller Vorlauf</string>
+    <string name="action_vol_up">Lautstärke erhöhen</string>
+    <string name="action_vol_down">Lautstärke runter</string>
+    <string name="action_vol_mute_unmute">Stummschalten/Stummschaltung aufheben</string>
+    <string name="action_activate_voice_ctrl">Sprachsteuerung aktivieren</string>
+    <string name="action_menu">Speisekarte</string>
+    <string name="action_cp_menu">Bedienfeldmenü</string>
+    <string name="action_back_or_exit">Zurück oder Ausstieg</string>
+    <string name="action_exit">Ausfahrt</string>
+    <string name="action_default">Standard</string>
+    <string name="action_none">Keiner</string>
 
     <string name="play_next_on_completion">nach Beendigung weiter spielen</string>
 
@@ -71,6 +94,7 @@
     <string name="voice_control_sub_long">Aktivieren der Sprachsteuerung durch langes Drücken</string>
     <string name="voice_control_subst">Wortersetzung</string>
     <string name="voice_control_subst_sub">Ersetzen Sie ein Wort durch ein anderes Wort oder einen Satz</string>
+    <string name="voice_control_subst_hint">Ein: Wiedergabe\nAus: Pause</string>
 
     <string name="module_installation">Modul-Installation: %1$s</string>
     <string name="install_pending">Installation läuft: %1$s</string>
@@ -93,10 +117,14 @@
     <string name="video">Video</string>
     <string name="video_settings">Video Einstellungen</string>
     <string name="video_scaling">Video Skalierung</string>
+    <string name="hw_accel">Hardware-Beschleunigung</string>
+    <string name="hw_accel_auto">Auto</string>
+    <string name="hw_accel_full">Voll</string>
+    <string name="hw_accel_decoding">Dekodierung</string>
+    <string name="hw_accel_disabled">Deaktiviert</string>
     <string name="video_scaling_best">Bestmögliche Auflösung</string>
     <string name="video_scaling_fill">Bildschirm ausfüllen</string>
     <string name="video_scaling_orig">Original Größe</string>
-
     <string name="audio">Audio</string>
     <string name="audio_delay">Audio Verzögerung</string>
     <string name="audio_delay_aa">Audio Verzögerung - Android Auto</string>
@@ -185,6 +213,7 @@
     <string name="unselect_all">alle abwählen</string>
     <string name="refresh">Aktualisieren</string>
     <string name="rescan">neu einlesen</string>
+    <string name="share">Aktie</string>
     <string name="edit">bearbeiten</string>
     <string name="delete">Löschen</string>
     <string name="delete_confirm">Löschen %1$s?</string>
@@ -200,6 +229,7 @@
     <string name="vfs_content">SD-Card / System</string>
     <string name="vfs_file_system">Dateisystem</string>
     <string name="vfs_gdrive">Google Drive</string>
+    <string name="m3u_playlist">M3U Playlist</string>
     <string name="m3u_playlist_name">Name</string>
     <string name="m3u_playlist_location">Speicherort</string>
     <string name="m3u_playlist_location_hint">Datei oder Http(s) URL</string>
@@ -241,6 +271,7 @@
     <string name="move_up">nach oben verschieben</string>
     <string name="move_down">nach unten verschieben</string>
 
+    <string name="sys_bars_on_video_touch">Systemleisten bei Video-Touch anzeigen</string>
     <string name="play_video_landscape">Video im Querformat abspielen</string>
     <string name="clock_pos">Uhrposition</string>
     <string name="clock_pos_none">Keine</string>
@@ -266,6 +297,10 @@
     <string name="import_prefs_ok">Die Einstellungen wurden erfolgreich importiert.\nBitte starten Sie die Anwendung neu.</string>
     <string name="import_prefs_failed">Import der Einstellungen fehlgeschlagen: %1$s</string>
     <string name="prefs_not_found">Keine Einstellungen gefunden</string>
+    <string name="open_log">Protokolldatei öffnen</string>
+    <string name="unlock_phone_and_grant">Entsperren Sie das Telefon und erteilen Sie die angeforderten Berechtigungen.</string>
+    <string name="screen_capture_rejected">Anfrage zur Bildschirmaufnahme abgelehnt.</string>
+    <string name="accessibility_dsc">Der Barrierefreiheitsdienst wird von Fermata Mirror verwendet, um Touchscreen-Ereignisse zu simulieren.</string>
     <string name="media_projection_action_text">Jetzt starten</string>
 
     <string name="about">Über Fermata</string>

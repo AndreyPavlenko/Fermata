@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="addons">Addon</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web browser</string>
-
     <string name="interface_prefs">Interfaccia</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Impostazioni riproduzione</string>
@@ -16,6 +14,7 @@
     <string name="theme_dark">Scuro</string>
     <string name="theme_day_night">Giorno/Notte</string>
     <string name="theme_black">Nero</string>
+    <string name="theme_star_wars">Guerre stellari</string>
 
     <string name="nav_bar_pos">Posizione barra navigazione</string>
     <string name="nav_bar_pos_sub">Posizione impostata: %1$s</string>
@@ -57,6 +56,7 @@
     <string name="action_exit">Esci</string>
     <string name="action_default">Predefinito</string>
     <string name="action_none">Nessuno</string>
+
     <string name="play_next_on_completion">Riproduci successivo al termine</string>
 
     <string name="rw_ff_click">RW/FF - clic</string>
@@ -94,6 +94,7 @@
     <string name="voice_control_sub_long">Attiva controllo vocale con clic lungo</string>
     <string name="voice_control_subst">Sostituzione comandi</string>
     <string name="voice_control_subst_sub">Sostituisci un comando con un\'altra parola o con una frase</string>
+    <string name="voice_control_subst_hint">on: riproduci\noff: pausa</string>
 
     <string name="module_installation">Installazione modulo: %1$s</string>
     <string name="install_pending">Installazione in attesa: %1$s</string>
@@ -124,7 +125,6 @@
     <string name="video_scaling_best">Adatta</string>
     <string name="video_scaling_fill">Ritaglia</string>
     <string name="video_scaling_orig">Originale</string>
-
     <string name="audio">Audio</string>
     <string name="audio_delay">Ritardo audio</string>
     <string name="audio_delay_aa">Ritardo audio - Android Auto</string>
@@ -229,6 +229,7 @@
     <string name="vfs_content">Contenuto</string>
     <string name="vfs_file_system">File system</string>
     <string name="vfs_gdrive">Google drive</string>
+    <string name="m3u_playlist">Playlist M3U</string>
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Posizione</string>
     <string name="m3u_playlist_location_hint">URL file o http(s)</string>
@@ -296,7 +297,7 @@
     <string name="import_prefs_ok">Backup importato con successo.[…]</string>
     <string name="import_prefs_failed">Importazione backup non riuscita: %1$s</string>
     <string name="prefs_not_found">Nessun backup trovato</string>
-
+    <string name="open_log">Apri il file di registro</string>
     <string name="unlock_phone_and_grant">Sblocca il telefono e concedi le autorizzazioni richieste.</string>
     <string name="screen_capture_rejected">Richiesta di acquisizione schermo respinta.</string>
     <string name="accessibility_dsc">Il servizio di accessibilità viene utilizzato da Fermata Mirror per simulare eventi touch screen.</string>

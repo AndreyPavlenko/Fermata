@@ -1,10 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="engine_mp_name">Leitor de Multimédia</string>
     <string name="addons">Extras</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Navegador</string>
-
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Definições de Reprodução</string>
@@ -17,6 +14,7 @@
     <string name="theme_dark">Escuro</string>
     <string name="theme_day_night">Dia/Noite</string>
     <string name="theme_black">Preto</string>
+    <string name="theme_star_wars">Guerra das Estrelas</string>
 
     <string name="nav_bar_pos">Posição da Barra de Navegação</string>
     <string name="nav_bar_pos_sub">Posição Atual: %1$s</string>
@@ -96,6 +94,7 @@
     <string name="voice_control_sub_long">Ativar o comando de voz ao pressionar continuo</string>
     <string name="voice_control_subst">Substituição de palavra</string>
     <string name="voice_control_subst_sub">Substituir uma palavra por outra palavra ou frase</string>
+    <string name="voice_control_subst_hint">ligado: reproduzir\ndesligado: pausar</string>
 
     <string name="module_installation">Instalação do módulo: %1$s</string>
     <string name="install_pending">Instalação pendente: %1$s</string>
@@ -126,7 +125,6 @@
     <string name="video_scaling_best">Melhor Ajuste</string>
     <string name="video_scaling_fill">Preencher Ecrã</string>
     <string name="video_scaling_orig">Tamanho Original</string>
-
     <string name="audio">Audio</string>
     <string name="audio_delay">Atraso do áudio</string>
     <string name="audio_delay_aa">Atraso do áudio - Android Auto</string>
@@ -235,7 +233,6 @@
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Localização</string>
     <string name="m3u_playlist_location_hint">Ficheiro ou http(s) URL</string>
-    <string name="m3u_playlist_timeout">Tempo limite da resposta</string>
     <string name="m3u_playlist_video">Lista de reprodução de vídeo</string>
 
     <string name="eq_manual">Manual</string>
@@ -300,6 +297,10 @@
     <string name="import_prefs_ok">Preferências importadas com sucesso.\nPor favor restaure a aplicação.</string>
     <string name="import_prefs_failed">Falha na importação das preferências: %1$s</string>
     <string name="prefs_not_found">Não foram encontradas preferências</string>
+    <string name="open_log">Abrir arquivo de registro</string>
+    <string name="unlock_phone_and_grant">Desbloqueie o telefone e conceda as permissões solicitadas.</string>
+    <string name="screen_capture_rejected">Solicitação de captura de tela rejeitada.</string>
+    <string name="accessibility_dsc">O serviço de acessibilidade é utilizado pelo Fermata Mirror para simular eventos de tela sensível ao toque.</string>
     <string name="media_projection_action_text">Iniciar agora</string>
 
     <string name="about">Sobre</string>

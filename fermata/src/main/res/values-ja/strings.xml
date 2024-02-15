@@ -1,35 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile_release" translatable="false">Fermata</string>
-    <string name="app_name_auto_release" translatable="false">Fermata Auto</string>
-    <string name="app_name_mobile_debug" translatable="false">Debug Fermata</string>
-    <string name="app_name_auto_debug" translatable="false">Debug Fermata Auto</string>
-    <string name="mirror_service_name_release" translatable="false">Fermata Mirror</string>
-    <string name="mirror_service_name_debug" translatable="false">Debug Fermata Mirror</string>
-    <string name="mirror_fs_service_name_release" translatable="false">Fermata FS Mirror</string>
-    <string name="mirror_fs_service_name_debug" translatable="false">Debug Fermata FS Mirror</string>
-    <string name="media_service_name_mobile_release" translatable="false">@string/app_name_mobile_release</string>
-    <string name="media_service_name_auto_release" translatable="false">Fermata Media Service</string>
-    <string name="media_service_name_mobile_debug" translatable="false">@string/app_name_mobile_debug</string>
-    <string name="media_service_name_auto_debug" translatable="false">Debug Fermata Media Service</string>
-    <string name="engine_mp_name" translatable="false">MediaPlayer</string>
-    <string name="engine_exo_name" translatable="false">ExoPlayer</string>
-    <string name="engine_vlc_name" translatable="false">VLC</string>
-
-    <string name="module_name_gdrive" translatable="false">Google Drive</string>
-    <string name="module_name_sftp" translatable="false">SFTP</string>
-    <string name="module_name_smb" translatable="false">SMB</string>
-    <string name="module_name_web" translatable="false">Web</string>
-    <string name="module_name_tv" translatable="false">TV</string>
-
     <string name="addons">アドイン</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Webブラウザ</string>
-    <string name="addon_name_youtube" translatable="false">Youtube</string>
-    <string name="addon_name_felex" translatable="false">Felex</string>
-    <string name="addon_name_cast" translatable="false">Google Cast</string>
-    <string name="addon_name_chat" translatable="false">ChatGPT</string>
-
     <string name="interface_prefs">インターフェース</string>
     <string name="interface_prefs_aa">Android Autoの設定</string>
     <string name="playback_settings">再生設定</string>
@@ -42,7 +14,7 @@
     <string name="theme_dark">ダーク</string>
     <string name="theme_day_night">昼間/夜間</string>
     <string name="theme_black">黒</string>
-    <string name="theme_star_wars" translatable="false">Star Wars</string>
+    <string name="theme_star_wars">スターウォーズ</string>
 
     <string name="nav_bar_pos">ナビゲーションバーの位置</string>
     <string name="nav_bar_pos_sub">現在の位置: %1$s</string>
@@ -122,7 +94,7 @@
     <string name="voice_control_sub_long">長押しで音声コントロールを有効にする</string>
     <string name="voice_control_subst">単語の置換</string>
     <string name="voice_control_subst_sub">単語を別の単語またはフレーズに置き換えます</string>
-    <string name="voice_control_subst_hint" translatable="false">on: play\noff: pause\nmerde: find in browser nearest bar</string>
+    <string name="voice_control_subst_hint">オン: 再生\nオフ: 一時停止</string>
 
     <string name="module_installation">モジュールのインストール: %1$s</string>
     <string name="install_pending">インストールの保留中: %1$s</string>
@@ -153,9 +125,6 @@
     <string name="video_scaling_best">ベストフィット</string>
     <string name="video_scaling_fill">フルスクリーン</string>
     <string name="video_scaling_orig">オリジナルサイズ</string>
-    <string name="video_scaling_4" translatable="false">4x3</string>
-    <string name="video_scaling_16" translatable="false">16x9</string>
-
     <string name="audio">オーディオ</string>
     <string name="audio_delay">オーディオ遅延設定</string>
     <string name="audio_delay_aa">オーディオ遅延設定 - Android Auto</string>
@@ -170,7 +139,6 @@
     <string name="preferred_sub_key">キーワードを含む字幕を優先</string>
     <string name="select_subtitles">字幕を選択</string>
 
-    <string name="string_format" translatable="false">%1$s</string>
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -261,14 +229,10 @@
     <string name="vfs_content">コンテンツ</string>
     <string name="vfs_file_system">ファイルシステム</string>
     <string name="vfs_gdrive">Google drive</string>
-    <string name="vfs_sftp" translatable="false">SFTP</string>
-    <string name="vfs_smb" translatable="false">LAN (SMB)</string>
-    <string name="m3u_playlist" translatable="false">M3U プレイリスト</string>
+    <string name="m3u_playlist">M3U プレイリスト</string>
     <string name="m3u_playlist_name">名前</string>
     <string name="m3u_playlist_location">ロケーション</string>
     <string name="m3u_playlist_location_hint">ファイル または http(s) URL</string>
-    <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
-    <string name="m3u_playlist_timeout" translatable="false">Response timeout</string>
     <string name="m3u_playlist_video">ビデオ プレイリスト</string>
 
     <string name="eq_manual">マニュアル</string>
@@ -337,6 +301,7 @@
     <string name="unlock_phone_and_grant">スマートフォンのロックを解除し、要求された権限を付与してください。</string>
     <string name="screen_capture_rejected">画面キャプチャ要求が拒否されました。</string>
     <string name="accessibility_dsc">アクセシビリティサービスは、Fermata Mirror によってタッチスクリーンをシミュレートするために使用されます。</string>
+    <string name="media_projection_action_text">今すぐ始めましょう</string>
 
     <string name="about">About</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>

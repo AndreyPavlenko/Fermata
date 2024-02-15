@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="addons">Tiện ích</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Trình duyệt</string>
-
     <string name="interface_prefs">Giao diện</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Cài đặt phát lại</string>
@@ -16,7 +14,7 @@
     <string name="theme_dark">tối</string>
     <string name="theme_day_night">Theo hệ thống</string>
     <string name="theme_black">Đen</string>
-    <string name="theme_star_wars" translatable="false">Star Wars</string>
+    <string name="theme_star_wars">Chiến tranh giữa các vì sao</string>
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>
@@ -96,6 +94,7 @@
     <string name="voice_control_sub_long">Kích hoạt điều khiển bằng giọng nói khi nhấn giữ</string>
     <string name="voice_control_subst">Từ thay thế</string>
     <string name="voice_control_subst_sub">Thay thế một từ bằng một từ hoặc cụm từ khác</string>
+    <string name="voice_control_subst_hint">bật: phát\ntắt: tạm dừng</string>
 
     <string name="module_installation">Cài đặt Module: %1$s</string>
     <string name="install_pending">Đang chờ cài đặt: %1$s</string>
@@ -126,9 +125,6 @@
     <string name="video_scaling_best">Phù hợp nhất</string>
     <string name="video_scaling_fill">Lấp đầy màn hình</string>
     <string name="video_scaling_orig">Giữ nguyên kích thước</string>
-    <string name="video_scaling_4" translatable="false">Tỷ lệ 4x3</string>
-    <string name="video_scaling_16" translatable="false">Tỷ lệ 16x9</string>
-
     <string name="audio">Âm thanh</string>
     <string name="audio_delay">Độ trễ âm thanh</string>
     <string name="audio_delay_aa">Độ trễ âm thanh trong Android Auto</string>
@@ -233,10 +229,10 @@
     <string name="vfs_content">Nội dung</string>
     <string name="vfs_file_system">Tệp tin hệ thống</string>
     <string name="vfs_gdrive">Google drive</string>
+    <string name="m3u_playlist">Danh sách phát M3U</string>
     <string name="m3u_playlist_name">Tên</string>
     <string name="m3u_playlist_location">Vị trí</string>
     <string name="m3u_playlist_location_hint">Tệp tin hoặc liên kết (https)</string>
-    <string name="m3u_playlist_timeout" translatable="false">Hết thời gian phản hồi</string>
     <string name="m3u_playlist_video">Danh sách phát video</string>
 
     <string name="eq_manual">Thủ công</string>
@@ -301,6 +297,10 @@
     <string name="import_prefs_ok">Cấu hình cài đặt đã được nhập thành công.\nXin vui lòng khởi động lại ứng dụng.</string>
     <string name="import_prefs_failed">Không thể nhập tệp tin cấu hình cài đặt: %1$s</string>
     <string name="prefs_not_found">Không tìm thấy tệp tin cấu hình cài đặt</string>
+    <string name="open_log">Mở tệp nhật ký</string>
+    <string name="unlock_phone_and_grant">Mở khóa điện thoại và cấp các quyền được yêu cầu.</string>
+    <string name="screen_capture_rejected">Yêu cầu chụp ảnh màn hình bị từ chối.</string>
+    <string name="accessibility_dsc">Dịch vụ trợ năng được Fermata Mirror sử dụng để mô phỏng các sự kiện trên màn hình cảm ứng.</string>
     <string name="media_projection_action_text">Bắt đầu ngay</string>
 
     <string name="about">About</string>
