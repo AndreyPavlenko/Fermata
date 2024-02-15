@@ -22,9 +22,9 @@
     <string name="module_name_web" translatable="false">Web</string>
     <string name="module_name_tv" translatable="false">TV</string>
 
-    <string name="addons">Addons</string>
+    <string name="addons">アドイン</string>
     <string name="addon_name_tv">TV</string>
-    <string name="addon_name_web_browser">Web browser</string>
+    <string name="addon_name_web_browser">Webブラウザ</string>
     <string name="addon_name_youtube" translatable="false">Youtube</string>
     <string name="addon_name_felex" translatable="false">Felex</string>
     <string name="addon_name_cast" translatable="false">Google Cast</string>
@@ -87,8 +87,8 @@
 
     <string name="play_next_on_completion">再生が終わり次第、次を再生</string>
 
-    <string name="rw_ff_click">巻き戻そ/早送り - クリック</string>
-    <string name="rw_ff_long_click">巻き戻そ/早送り - 長押し</string>
+    <string name="rw_ff_click">巻き戻し/早送り - クリック</string>
+    <string name="rw_ff_long_click">巻き戻し/早送り - 長押し</string>
     <string name="prev_next_long_click">前/次 - 長押し</string>
     <string name="play_pause_stop">再生/一時停止ボタンを長押しした際、再生停止する</string>
 
@@ -220,7 +220,7 @@
     <string name="favorites_remove">お気に入りから削除</string>
     <string name="mark_watched">視聴済みとしてマーク</string>
     <string name="mark_unwatched">未視聴としてマーク</string>
-    <string name="preferred_media_engine">優先されるメディア エンジン</string>
+    <string name="preferred_media_engine">メディアエンジン</string>
     <string name="by_default">デフォルト</string>
 
     <string name="playlist_add">プレイリストに追加</string>
