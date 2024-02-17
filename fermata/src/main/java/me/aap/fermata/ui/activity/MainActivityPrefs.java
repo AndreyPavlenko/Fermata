@@ -241,16 +241,34 @@ public interface MainActivityPrefs
 	}
 
 	enum Lang {
-		EN, RU, IT, TR, DE, PT, VI, PL, HR, JA;
+		EN(Locale.ENGLISH),
+		RU,
+		IT(Locale.ITALIAN),
+		TR,
+		DE(Locale.GERMAN),
+		PT,
+		VI,
+		PL,
+		HR,
+		JA,
+		ZH_TW(Locale.TRADITIONAL_CHINESE);
 
 		private static final List<Lang> values = List.of(values());
 		private static final Map<String, Lang> nameToValue = new HashMap<>();
-		public final Locale locale = new Locale(name().toLowerCase());
+		public final Locale locale;
 
 		static {
 			for (var v : values) {
 				nameToValue.put(v.locale.getLanguage(), v);
 			}
+		}
+
+		Lang() {
+			locale = new Locale(name().toLowerCase());
+		}
+
+		Lang(Locale locale) {
+			this.locale = locale;
 		}
 
 		public static List<Lang> getValues() {

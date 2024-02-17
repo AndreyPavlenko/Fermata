@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="addons">擴充功能</string>
+    <string name="addon_name_tv">電視</string>
+    <string name="addon_name_web_browser">網頁瀏覽器</string>
+
+    <string name="interface_prefs">播放選項</string>
+    <string name="interface_prefs_aa">Android Auto播放選項</string>
+    <string name="playback_settings">播放設定</string>
+    <string name="playback_control">播放控制設定</string>
+    <string name="engine_prefs">播放引擎設定</string>
+
+    <string name="theme">佈景主題</string>
+    <string name="theme_sub">目前佈景主題: %1$s</string>
+    <string name="theme_light">亮</string>
+    <string name="theme_dark">暗</string>
+    <string name="theme_day_night">日間/夜間</string>
+    <string name="theme_black">黑</string>
+
+    <string name="nav_bar_pos">選單位置</string>
+    <string name="nav_bar_pos_sub">目前位置: %1$s</string>
+    <string name="nav_bar_pos_bottom">下</string>
+    <string name="nav_bar_pos_left">左</string>
+    <string name="nav_bar_pos_right">右</string>
+
+    <string name="show_track_icons">顯示播放圖示</string>
+    <string name="lang">語言</string>
+    <string name="hide_bars">隱藏工具列</string>
+    <string name="hide_bars_sub">控制面板出現時隱藏工具列</string>
+    <string name="show_pg_up_down">顯示上移/下移按鈕</string>
+    <string name="use_dpad_cursor">使用方向鍵瀏覽游標</string>
+    <string name="fullscreen_mode">全螢幕模式</string>
+    <string name="nav_bar_size">播放列尺寸</string>
+    <string name="tool_bar_size">工具列尺寸</string>
+    <string name="control_panel_size">控制面板尺寸</string>
+    <string name="text_icon_size">文字圖示尺寸</string>
+
+    <string name="key_bindings">快速鍵設定</string>
+    <string name="key_on_click">點擊</string>
+    <string name="key_on_long_click">長按</string>
+    <string name="key_on_dbl_click">點兩下</string>
+    <string name="action_stop">停止</string>
+    <string name="action_play">播放</string>
+    <string name="action_pause">暫停</string>
+    <string name="action_play_pause">播放/暫停</string>
+    <string name="action_prev">播放上一個</string>
+    <string name="action_next">播放下一個</string>
+    <string name="action_rw">倒帶</string>
+    <string name="action_ff">快轉</string>
+    <string name="action_vol_up">調大音量</string>
+    <string name="action_vol_down">調小音量</string>
+    <string name="action_vol_mute_unmute">靜音/解除靜音</string>
+    <string name="action_activate_voice_ctrl">啟動語音控制</string>
+    <string name="action_menu">功能表</string>
+    <string name="action_cp_menu">控制功能表單</string>
+    <string name="action_back_or_exit">退出或關閉</string>
+    <string name="action_exit">關閉</string>
+    <string name="action_default">預設</string>
+    <string name="action_none">無</string>
+
+    <string name="play_next_on_completion">自動播放下一個</string>
+
+    <string name="rw_ff_click">倒帶/快轉 - 點擊</string>
+    <string name="rw_ff_long_click">倒帶/快轉 - 長按</string>
+    <string name="prev_next_long_click">上一個/下一個 - 長按</string>
+    <string name="play_pause_stop">長按播放/暫停停止播放</string>
+
+    <string name="time">時間</string>
+    <string name="time_unit">時間單位</string>
+    <string name="time_unit_sub">目前: %1$s</string>
+    <string name="time_unit_second">秒</string>
+    <string name="time_unit_minute">分</string>
+    <string name="time_unit_percent">百分比</string>
+
+    <string name="video_control">影片控制</string>
+    <string name="video_control_start_delay">開啟時顯示</string>
+    <string name="video_control_touch_delay">觸碰時顯示</string>
+    <string name="video_control_seek_delay">滑動搜尋時顯示</string>
+    <string name="video_aa_show_status">在Android Auto中顯示狀態列</string>
+
+    <string name="enable_exoplayer">啟用ExoPlayer</string>
+    <string name="enable_vlcplayer">啟用VLC</string>
+    <string name="preferred_audio_engine">預設音效播放器</string>
+    <string name="preferred_video_engine">預設影片播放器</string>
+    <string name="engine_installed">已安裝媒體播放器: %1$s</string>
+    <string name="engine_uninstalled">解除安裝媒體播放器: %1$s</string>
+
+    <string name="preferred_media_scanner">預設媒體掃描</string>
+    <string name="preferred_media_scanner_default">預設</string>
+    <string name="preferred_media_scanner_system">系統</string>
+
+    <string name="voice_search">語音輸入搜尋</string>
+    <string name="voice_control">語音輸入控制</string>
+    <string name="voice_control_fb">浮動操作按鈕</string>
+    <string name="voice_control_sub_long">長按啟用語音控制</string>
+    <string name="voice_control_subst">替代文字</string>
+    <string name="voice_control_subst_sub">將文字用其他文字或句子替代</string>
+
+    <string name="module_installation">模組安裝: %1$s</string>
+    <string name="install_pending">等待安裝: %1$s</string>
+    <string name="downloading">正在下載 %1$s</string>
+    <string name="installing">正在安裝 %1$s</string>
+
+    <string name="speed">播放速度</string>
+    <string name="audio_effects">聲音效果</string>
+    <string name="equalier">等化器</string>
+    <string name="preset_name">預設名稱</string>
+    <string name="virtualizer">虛擬效果</string>
+    <string name="auto">自動</string>
+    <string name="binaural">雙聲道</string>
+    <string name="transaural">立體音</string>
+    <string name="bass_boost">重低音強化</string>
+    <string name="vol_boost">音量強化</string>
+    <string name="strength">強度</string>
+    <string name="apply_to">套用</string>
+
+    <string name="video">影片</string>
+    <string name="video_settings">影片設定</string>
+    <string name="video_scaling">影片縮放</string>
+    <string name="hw_accel">硬體加速</string>
+    <string name="hw_accel_auto">自動</string>
+    <string name="hw_accel_full">全螢幕</string>
+    <string name="hw_accel_decoding">視訊解碼</string>
+    <string name="hw_accel_disabled">關閉</string>
+    <string name="video_scaling_best">最符合螢幕大小</string>
+    <string name="video_scaling_fill">全螢幕</string>
+    <string name="video_scaling_orig">原始</string>
+
+    <string name="audio">音效</string>
+    <string name="audio_delay">音效延遲</string>
+    <string name="audio_delay_aa">音效延遲 - Android Auto</string>
+    <string name="preferred_audio_lang">預設音訊串流語言</string>
+    <string name="preferred_audio_key">預設音訊串流關鍵字</string>
+    <string name="select_audio_stream">選擇音訊串流</string>
+
+    <string name="subtitles">字幕</string>
+    <string name="subtitle_delay">字幕延遲</string>
+    <string name="display_subtitles">顯示字幕</string>
+    <string name="preferred_sub_lang">預設字幕語言</string>
+    <string name="preferred_sub_key">預設字幕關鍵字</string>
+    <string name="select_subtitles">選擇字幕</string>
+
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">目前影音</string>
+    <string name="current_folder">目前檔案夾</string>
+
+    <string name="folders">檔案夾</string>
+    <string name="favorites">我的最愛</string>
+    <string name="playlists">播放清單</string>
+    <string name="search">搜尋</string>
+    <string name="filter">過濾</string>
+    <string name="settings">設定</string>
+    <string name="menu">功能</string>
+    <string name="exit">關閉</string>
+    <string name="cancel">取消</string>
+    <string name="got_to_current">目前影音</string>
+
+    <string name="view">顯示</string>
+    <string name="title">標題</string>
+    <string name="subtitle">字幕</string>
+    <string name="seq_num">曲目</string>
+    <string name="track_name">名稱</string>
+    <string name="file_name">檔案名稱</string>
+    <string name="date">日期</string>
+    <string name="random">隨機</string>
+    <string name="descending">遞減</string>
+    <string name="album">專輯</string>
+    <string name="artist">歌手</string>
+    <string name="duration">曲目長度</string>
+
+    <string name="sort_by">分類</string>
+    <string name="do_not_sort">取消分類</string>
+
+    <string name="play">播放</string>
+    <string name="pause">暫停</string>
+    <string name="stop">停止</string>
+    <string name="prev">上一個</string>
+    <string name="next">下一個</string>
+    <string name="rewind">倒帶</string>
+    <string name="fast_forward">快轉</string>
+    <string name="repeat">重複播放</string>
+    <string name="repeat_disable">取消重複播放</string>
+    <string name="shuffle">隨機播放</string>
+    <string name="shuffle_disable">取消隨機播放</string>
+    <string name="programme_guide">說明</string>
+    <string name="favorites_add">加入我的最愛</string>
+    <string name="favorites_remove">從我的最愛移除</string>
+    <string name="mark_watched">標示為已播放</string>
+    <string name="mark_unwatched">標示為未播放</string>
+    <string name="preferred_media_engine">預設影音播放器</string>
+    <string name="by_default">預設</string>
+
+    <string name="playlist_add">加入播放清單</string>
+    <string name="playlist_remove_item">從播放清單移除</string>
+    <string name="playlist_create">新增播放清單</string>
+    <string name="playlist_remove">移除播放清單</string>
+    <string name="playlist_name">播放清單名稱</string>
+
+    <string name="bookmarks">書籤</string>
+    <string name="create_bookmark">新增書籤</string>
+    <string name="remove_bookmark">移除書籤</string>
+    <string name="remove_all_bookmarks">移除所有書籤</string>
+    <string name="bookmark_name">名稱</string>
+    <string name="bookmark_time">時間</string>
+
+    <string name="folder_subtitle">檔案: %1$d. 檔案夾: %2$d.</string>
+    <string name="browsable_subtitle">影音: %1$d.</string>
+    <string name="add_folder">新增資料夾</string>
+    <string name="remove_folder">移除資料夾</string>
+    <string name="select">選擇</string>
+    <string name="select_all">全選</string>
+    <string name="unselect_all">取消全選</string>
+    <string name="refresh">更新載入</string>
+    <string name="rescan">重新搜尋</string>
+    <string name="share">分享</string>
+    <string name="edit">編輯</string>
+    <string name="delete">刪除</string>
+    <string name="delete_confirm">刪除 %1$s?</string>
+    <string name="delete_file_title">刪除檔案</string>
+    <string name="delete_file_question">確定刪除檔案?</string>
+    <string name="delete_file_failed">無法刪除檔案 %1$s</string>
+    <string name="loading">載入中…</string>
+    <string name="press_back_again">再次點選返回鍵離開</string>
+    <string name="press_x_again">再次點選 X 離開</string>
+    <string name="please_restart_app">請重新啟動程式</string>
+    <string name="use_phone_to_grant_perm">請使用手機取得需要的權限</string>
+
+    <string name="vfs_content">內容</string>
+    <string name="vfs_file_system">檔案系統</string>
+    <string name="vfs_gdrive">Google雲端硬碟</string>
+    <string name="m3u_playlist_name">名稱</string>
+    <string name="m3u_playlist_location">位置</string>
+    <string name="m3u_playlist_location_hint">網址</string>
+    <string name="m3u_playlist_video">影片播放清單</string>
+
+    <string name="eq_manual">手動</string>
+    <string name="eq_normal">一般</string>
+    <string name="eq_classical">古典</string>
+    <string name="eq_dance">舞曲</string>
+    <string name="eq_flat">平坦</string>
+    <string name="eq_folk">鄉村</string>
+    <string name="eq_heavy_metal">重金屬</string>
+    <string name="eq_hip_hop">嘻哈</string>
+    <string name="eq_jazz">爵士</string>
+    <string name="eq_pop">流行</string>
+    <string name="eq_rock">搖滾</string>
+
+    <string name="host">主機</string>
+    <string name="port">埠</string>
+    <string name="path">路徑</string>
+    <string name="share_name">共用名稱</string>
+    <string name="domain">網域</string>
+    <string name="username">使用者名稱</string>
+    <string name="password">密碼</string>
+    <string name="private_key">私密金鑰</string>
+    <string name="private_key_pass">私密金鑰密碼</string>
+
+    <string name="donate">贊助</string>
+    <string name="donate_text">如果你喜歡這個程式，歡迎贊助開發者</string>
+    <string name="use_phone_for_donation">請使用手機贊助開發者</string>
+
+    <string name="timer">計時器</string>
+    <string name="hours">小時</string>
+    <string name="minutes">分鐘</string>
+
+    <string name="enable">啟用</string>
+    <string name="move_left">向左移動</string>
+    <string name="move_right">向右移動</string>
+    <string name="move_up">向上移動</string>
+    <string name="move_down">向下移動</string>
+
+    <string name="sys_bars_on_video_touch">觸碰影片時顯示系統列</string>
+    <string name="play_video_landscape">在全螢幕模式播放影片</string>
+    <string name="clock_pos">時間位置</string>
+    <string name="clock_pos_none">無</string>
+    <string name="clock_pos_left">左</string>
+    <string name="clock_pos_right">右</string>
+    <string name="clock_pos_center">中</string>
+    <string name="change_brightness">播放影片時變更亮度</string>
+    <string name="video_brightness">影片亮度</string>
+    <string name="change_brightness_sub">雙指滑動也可變更亮度</string>
+    <string name="watched_threshold">已觀看設定</string>
+    <string name="watched_threshold_sub">將影片標示為已觀看之百分比</string>
+
+    <string name="other">其他</string>
+    <string name="check_updates">啟動時檢查更新</string>
+    <string name="update">更新</string>
+    <string name="update_question">已有新版本 %1$s 提供更新. \n要更新應用程式嗎?</string>
+    <string name="export_prefs">匯出偏好至檔案</string>
+    <string name="export_prefs_sub">匯出設定、檔案夾及播放清單至檔案</string>
+    <string name="export_prefs_ok">偏好已存至檔案 %1$s.</string>
+    <string name="export_prefs_failed">無法將偏好匯出至檔案: %1$s</string>
+    <string name="import_prefs">從檔案匯入偏好</string>
+    <string name="import_prefs_sub">從過去匯出的檔案匯入偏好</string>
+    <string name="import_prefs_ok">偏好已完成匯入.\n請重新啟動應用程式.</string>
+    <string name="import_prefs_failed">無法從檔案匯入偏好: %1$s</string>
+    <string name="prefs_not_found">沒有找到偏好檔</string>
+    <string name="open_log">開啟記錄檔</string>
+    <string name="unlock_phone_and_grant">請解鎖手機並同意需要的權限</string>
+    <string name="screen_capture_rejected">無法取得螢幕截圖權限</string>
+    <string name="accessibility_dsc">Fermata Mirror使用無障礙功能進行螢幕觸控模擬</string>
+    <string name="media_projection_action_text">正在開始</string>
+
+    <string name="about">關於</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player is a free, open source audio and video player with a simple and
+        intuitive interface.</p>
+        <p><b>Author:</b> Andrey Pavlenko</p>
+        <p><b>Version:</b> %1$s (%2$d)</p>
+        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
+
+    <string name="err_failed_to_play">無法播放 %s</string>
+    <string name="err_failed_to_play_cause">無法播放 %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">不支援的來源類型: %s</string>
+    <string name="err_playlist_exists">播放清單已存在: %1$s</string>
+    <string name="err_invalid_playlist_name">無效的播放清單名稱: %1$s</string>
+    <string name="err_failed_add_folder">無法新增資料夾: %1$s</string>
+    <string name="err_failed_open_url">無法開啟網站: %1$s</string>
+    <string name="err_failed_install_module">無法安裝模組: %1$s</string>
+    <string name="err_failed_to_download">無法下載 %1$s</string>
+    <string name="err_no_audio_record_perm">無法取得錄音權限</string>
+</resources>
