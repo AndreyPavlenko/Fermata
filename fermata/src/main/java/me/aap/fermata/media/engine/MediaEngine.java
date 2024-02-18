@@ -174,18 +174,22 @@ public interface MediaEngine extends Closeable {
 				}
 			}
 
-			String lang = langSupplier.get().trim();
+			String langPattern = langSupplier.get().trim();
 			boolean hasMatching = false;
 
-			if (!lang.isEmpty()) {
+			if (!langPattern.isEmpty()) {
 				List<I> filtered = null;
 
-				for (var st = new StringTokenizer(lang, ","); st.hasMoreTokens(); ) {
+				for (var st = new StringTokenizer(langPattern, ","); st.hasMoreTokens(); ) {
 					String l = st.nextToken().trim();
-
-					if (!l.isEmpty()) {
-						for (I i : streams) {
-							if (l.equalsIgnoreCase(i.getLanguage())) {
+					if (l.isEmpty()) continue;
+					for (I i : streams) {
+						for (var lang : new String[]{i.getIsoLanguage(), i.getLanguage()}) {
+							if (lang == null) continue;
+							if (lang.equalsIgnoreCase(l) ||
+									(l.startsWith("+") && lang.endsWith(" + " + l.substring(1).trim())) ||
+									(l.endsWith("+") &&
+											lang.startsWith(l.substring(0, l.length() - 1).trim() + " + "))) {
 								hasMatching = true;
 								if (filtered == null) filtered = new ArrayList<>(streams.size());
 								if (!filtered.contains(i)) filtered.add(i);

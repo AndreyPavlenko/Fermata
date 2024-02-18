@@ -92,11 +92,13 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		FutureSupplier<Uri> icon = getIconUri();
 
 		if (title.isDone() && subtitle.isDone() && icon.isDone() && extras.isDone()) {
+			BrowsableItem parrent = getParent();
 			MediaDescriptionCompat.Builder b = builder();
 			b.setTitle(title.get(this::getName));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
 			b.setExtras(extras.get(null));
+			if (parrent != null) b.setDescription(parrent.getName());
 			MediaDescriptionCompat dsc = b.build();
 			load.complete(dsc);
 			d = completed(dsc);

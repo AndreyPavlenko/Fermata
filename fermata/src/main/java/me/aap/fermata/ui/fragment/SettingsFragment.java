@@ -9,6 +9,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_ENG_VLC;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
+import static me.aap.fermata.media.pref.MediaPrefs.SUB_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
@@ -233,18 +234,17 @@ public class SettingsFragment extends MainActivityFragment
 
 		if (!isCar) {
 			set.addStringPref(o -> {
-				Locale locale = Locale.getDefault();
 				o.store = store;
 				o.pref = MediaLibPrefs.SUB_LANG;
 				o.title = R.string.preferred_sub_lang;
-				o.stringHint = locale.getLanguage() + ' ' + locale.getISO3Language();
+				o.stringHint = SUB_LANG.getDefaultValue().get();
 				o.visibility = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
 			});
 			set.addStringPref(o -> {
 				o.store = store;
 				o.pref = MediaLibPrefs.SUB_KEY;
 				o.title = R.string.preferred_sub_key;
-				o.stringHint = "full forced";
+				o.stringHint = "full, forced";
 				o.visibility = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
 			});
 		}

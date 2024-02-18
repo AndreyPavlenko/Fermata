@@ -1,13 +1,15 @@
 package me.aap.fermata.media.pref;
 
+import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
+
+import java.util.Locale;
+
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.text.SharedTextBuilder;
-
-import static android.media.audiofx.Virtualizer.VIRTUALIZATION_MODE_AUTO;
 
 /**
  * @author Andrey Pavlenko
@@ -37,26 +39,35 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<IntSupplier> AUDIO_ENGINE = Pref.i("AUDIO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_ENGINE = Pref.i("VIDEO_ENGINE", MEDIA_ENG_MP);
 	Pref<IntSupplier> VIDEO_SCALE = Pref.i("VIDEO_SCALE", SCALE_BEST);
-	Pref<IntSupplier> MEDIA_SCANNER = Pref.i("MEDIA_SCANNER", MEDIA_SCANNER_DEFAULT).withInheritance(false);
+	Pref<IntSupplier> MEDIA_SCANNER =
+			Pref.i("MEDIA_SCANNER", MEDIA_SCANNER_DEFAULT).withInheritance(false);
 	Pref<DoubleSupplier> SPEED = Pref.f("SPEED", 1.0f).withInheritance(false);
 	Pref<BooleanSupplier> AE_ENABLED = Pref.b("AE_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> EQ_ENABLED = Pref.b("EQ_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> VIRT_ENABLED = Pref.b("VIRT_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> BASS_ENABLED = Pref.b("BASS_ENABLED", false).withInheritance(false);
-	Pref<BooleanSupplier> VOL_BOOST_ENABLED = Pref.b("VOL_BOOST_ENABLED", false).withInheritance(false);
+	Pref<BooleanSupplier> VOL_BOOST_ENABLED =
+			Pref.b("VOL_BOOST_ENABLED", false).withInheritance(false);
 
 	// 0 stands for Manual, negative for user presets, positive for system presets
 	Pref<IntSupplier> EQ_PRESET = Pref.i("EQ_PRESET", 0).withInheritance(false);
 	Pref<Supplier<int[]>> EQ_BANDS = Pref.ia("EQ_BANDS", () -> null).withInheritance(false);
-	Pref<Supplier<String[]>> EQ_USER_PRESETS = Pref.sa("EQ_USER_PRESETS", new String[0]).withInheritance(false);
-	Pref<IntSupplier> VIRT_MODE = Pref.i("VIRT_MODE", VIRTUALIZATION_MODE_AUTO).withInheritance(false);
+	Pref<Supplier<String[]>> EQ_USER_PRESETS =
+			Pref.sa("EQ_USER_PRESETS", new String[0]).withInheritance(false);
+	Pref<IntSupplier> VIRT_MODE =
+			Pref.i("VIRT_MODE", VIRTUALIZATION_MODE_AUTO).withInheritance(false);
 	Pref<IntSupplier> VIRT_STRENGTH = Pref.i("VIRT_STRENGTH", 0).withInheritance(false);
 	Pref<IntSupplier> BASS_STRENGTH = Pref.i("BASS_STRENGTH", 0).withInheritance(false);
 	Pref<IntSupplier> VOL_BOOST_STRENGTH = Pref.i("VOL_BOOST_STRENGTH", 0).withInheritance(false);
 
 	Pref<BooleanSupplier> SUB_ENABLED = Pref.b("SUB_ENABLED", true);
 	Pref<IntSupplier> SUB_DELAY = Pref.i("SUB_DELAY", 0);
-	Pref<Supplier<String>> SUB_LANG = Pref.s("SUB_LANG", "");
+	Pref<Supplier<String>> SUB_LANG = Pref.s("SUB_LANG", () -> {
+		Locale locale = Locale.getDefault();
+		var lang = locale.getLanguage();
+		var lang3 = locale.getISO3Language();
+		return "+" + lang3 + ", +" + lang + ", " + lang3 + "+, " + lang + "+, " + lang3 + ", " + lang;
+	});
 	Pref<Supplier<String>> SUB_KEY = Pref.s("SUB_KEY", "");
 	Pref<IntSupplier> AUDIO_DELAY = Pref.i("AUDIO_DELAY", 0);
 	Pref<IntSupplier> AUDIO_DELAY_AA = Pref.i("AUDIO_DELAY_AA", 0);
@@ -64,7 +75,6 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
 	Pref<IntSupplier> WATCHED_THRESHOLD = Pref.i("WATCHED_THRESHOLD", 95);
 	Pref<IntSupplier> HW_ACCEL = Pref.i("HW_ACCEL", HW_ACCEL_DECODING);
-
 
 
 	default int getAudioEnginePref() {

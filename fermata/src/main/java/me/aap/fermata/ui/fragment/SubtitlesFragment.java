@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import me.aap.fermata.R;
 import me.aap.fermata.ui.view.SubtitlesView;
+import me.aap.utils.text.SharedTextBuilder;
 
 /**
  * @author Andrey Pavlenko
@@ -29,8 +30,22 @@ public class SubtitlesFragment extends MainActivityFragment {
 		var eng = getActivityDelegate().getMediaSessionCallback().getEngine();
 
 		if (eng != null) {
-			var si = eng.getCurrentSubtitleStreamInfo();
-			if (si != null) return si.toString();
+			var i = eng.getSource();
+			if (i != null) {
+				var md = i.getMediaDescription().peek();
+				try (var tb = SharedTextBuilder.get()) {
+					if (md == null) {
+						tb.append(i.getName());
+					} else {
+						tb.append(md.getTitle());
+						var dsc = md.getDescription();
+						if (dsc != null) tb.append(" (").append(dsc).append(')');
+					}
+					var si = eng.getCurrentSubtitleStreamInfo();
+					if (si != null) tb.append(" (").append(si).append(')');
+					return tb.toString();
+				}
+			}
 		}
 
 		return getString(R.string.subtitles);

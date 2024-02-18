@@ -11,13 +11,24 @@ import java.util.Locale;
 public class MediaStreamInfo {
 	private final long id;
 	private final String language;
+	private final String isoLanguage;
 	private final String description;
 
 	public MediaStreamInfo(long id, String language, String description) {
 		this.id = id;
-		this.language = (language == null) ? null :
-				language.contains(" + ") ? language : new Locale(language).getDisplayLanguage();
-		this.description = description;
+		if ((language == null) || (language = language.trim()).isEmpty()) {
+			this.language = isoLanguage = null;
+		} else {
+			var lang = new Locale(language).getDisplayLanguage();
+			if (lang.equalsIgnoreCase(language)) {
+				this.language = isoLanguage = language;
+			} else {
+				this.language = lang;
+				isoLanguage = language;
+			}
+		}
+		this.description =
+				(description == null) || (description = description.trim()).isEmpty() ? null : description;
 	}
 
 	public long getId() {
@@ -26,6 +37,10 @@ public class MediaStreamInfo {
 
 	public String getLanguage() {
 		return language;
+	}
+
+	public String getIsoLanguage() {
+		return isoLanguage;
 	}
 
 	public String getDescription() {
@@ -48,14 +63,12 @@ public class MediaStreamInfo {
 	public String toString() {
 		String lang = getLanguage();
 		String desc = getDescription();
-		boolean langEmpty = (lang == null) || (lang = lang.trim()).isEmpty();
-		boolean descEmpty = (desc == null) || (desc = desc.trim()).isEmpty();
 
-		if (langEmpty && descEmpty) {
+		if ((lang == null) && (desc == null)) {
 			return "Track " + getId();
-		} else if (langEmpty) {
+		} else if (lang == null) {
 			return desc;
-		} else if (descEmpty) {
+		} else if (desc == null) {
 			return lang;
 		} else {
 			return desc.endsWith("]") ? desc : desc + " - [" + lang + ']';

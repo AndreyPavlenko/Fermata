@@ -3,7 +3,6 @@ package me.aap.fermata.media.engine;
 import static android.media.session.PlaybackState.STATE_PAUSED;
 import static android.media.session.PlaybackState.STATE_PLAYING;
 import static android.media.session.PlaybackState.STATE_STOPPED;
-import static java.util.Collections.singletonList;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_RIGHT;
 import static me.aap.utils.async.Completed.cancelled;
@@ -15,7 +14,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -88,16 +86,12 @@ public abstract class MediaEngineBase implements MediaEngine {
 				var langStart = baseName.length() + 1;
 				var langEnd = name.length() - 4;
 				var lang = langStart >= langEnd ? null : name.substring(langStart, langEnd);
-				list.add(new SubtitleStreamInfo(id++, lang, null, singletonList((VirtualFile) f)));
+				list.add(new SubtitleStreamInfo(id++, lang, null, (VirtualFile) f));
 			}
 
 			for (int i = 0, n = list.size(); i < n; i++) {
 				for (int j = 0; j < n; j++) {
-					if (i == j) continue;
-					var si1 = list.get(i);
-					var si2 = list.get(j);
-					list.add(new SubtitleStreamInfo(id++, si1 + " + " + si2, null,
-							Arrays.asList(si1.getFiles().get(0), si2.getFiles().get(0))));
+					if (i != j) list.add(list.get(i).join(id++, list.get(j)));
 				}
 			}
 
