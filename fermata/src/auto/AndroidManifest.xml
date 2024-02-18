@@ -18,7 +18,7 @@
 
     <queries>
         <intent>
-            <action android:name="me.aap.fermata.action.ControlService" />
+            <action android:name="android.intent.action.MAIN" />
         </intent>
     </queries>
 
@@ -82,6 +82,13 @@
 
         <activity
             android:name="me.aap.fermata.auto.ProjectionActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance" />
+
+        <activity
+            android:name="me.aap.fermata.auto.LauncherActivity"
+            android:configChanges="colorMode|keyboard|keyboardHidden|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleInstance" />

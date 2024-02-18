@@ -5,11 +5,15 @@ import static android.content.Context.WINDOW_SERVICE;
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static android.os.Build.VERSION.SDK_INT;
+import static android.os.SystemClock.uptimeMillis;
 import static android.provider.Settings.System.ACCELEROMETER_ROTATION;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.provider.Settings.System.USER_ROTATION;
+import static android.view.Surface.ROTATION_0;
 import static android.view.Surface.ROTATION_270;
 import static android.view.Surface.ROTATION_90;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
@@ -17,6 +21,7 @@ import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
@@ -24,6 +29,7 @@ import android.graphics.Point;
 import android.graphics.Typeface;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
@@ -34,6 +40,7 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.view.Display;
+import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -41,7 +48,11 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.car.app.SurfaceContainer;
+import androidx.media.AudioAttributesCompat;
+import androidx.media.AudioFocusRequestCompat;
+import androidx.media.AudioManagerCompat;
 
 import java.lang.ref.WeakReference;
 
@@ -61,11 +72,12 @@ public class MirrorDisplay {
 	private final int[] loc = new int[2];
 	private final Display defaultDisplay;
 	private final float scaleDiff;
+	private final AudioFocusRequestCompat audioFocusReq;
 	private WakeLock wakeLock;
-	private int accel = -1;
+	private static int accel = -1;
 	private int brightness = -1;
 	private int refCounter;
-	private FutureSupplier<VirtualDisplay> vd = Completed.cancelled();
+	private FutureSupplier<Session> session = Completed.cancelled();
 	private SurfaceContainer sc;
 	private Overlay overlay;
 	private Metrics lMetrics;
@@ -80,15 +92,28 @@ public class MirrorDisplay {
 		var size = new Point();
 		defaultDisplay.getRealSize(size);
 		scaleDiff = Math.max(UiUtils.toPx(ctx, 20), Math.min(size.x, size.y) / 20f);
+		audioFocusReq =
+				new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN).setAudioAttributes(
+								new AudioAttributesCompat.Builder().setUsage(AudioAttributesCompat.USAGE_MEDIA)
+										.setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC).build())
+						.setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(focusChange -> {}).build();
 	}
 
 	public static MirrorDisplay get() {
-		MirrorDisplay vd;
-		if ((ref == null) || ((vd = ref.get()) == null)) {
-			ref = new WeakReference<>(vd = new MirrorDisplay());
+		MirrorDisplay md;
+		if ((ref == null) || ((md = ref.get()) == null)) {
+			ref = new WeakReference<>(md = new MirrorDisplay());
 		}
-		vd.refCounter++;
-		return vd;
+		md.refCounter++;
+		return md;
+	}
+
+	public static void close() {
+		MirrorDisplay md;
+		if ((ref == null) || ((md = ref.get()) == null)) return;
+		var sc = md.sc;
+		md.cleanUp();
+		if (sc != null) drawMsg(sc, R.string.app_name);
 	}
 
 	public void release() {
@@ -96,30 +121,34 @@ public class MirrorDisplay {
 	}
 
 	public void setSurface(@NonNull SurfaceContainer sc) {
-		if (this.sc == sc) return;
+		var oldSc = this.sc;
+		if (oldSc == sc) return;
 		this.sc = sc;
 		lMetrics = pMetrics = null;
-		if (vd.isDoneNotFailed()) {
+		if (session.isDoneNotFailed()) {
 			try {
-				var vd = this.vd.getOrThrow();
+				var vd = this.session.getOrThrow().vd;
 				vd.setSurface(sc.getSurface());
 				vd.resize(sc.getWidth(), sc.getHeight(), sc.getDpi());
 				started();
 			} catch (Throwable err) {
 				Log.d(err);
-				noVd();
-				createDisplay();
+				noSession();
+				createSession();
 			}
 		} else {
-			createDisplay();
+			createSession();
 		}
+		if (oldSc != null) drawMsg(oldSc, R.string.app_name);
 	}
 
 	public void releaseSurface(@NonNull SurfaceContainer sc) {
-		if (this.sc != sc) return;
+		var oldSc = this.sc;
+		if (oldSc != sc) return;
 		this.sc = null;
 		lMetrics = pMetrics = null;
-		if (vd.isDoneNotFailed()) vd.getOrThrow().setSurface(null);
+		if (session.isDoneNotFailed()) session.getOrThrow().vd.setSurface(null);
+		drawMsg(oldSc, R.string.app_name);
 	}
 
 	public void tap(float x, float y) {
@@ -133,16 +162,20 @@ public class MirrorDisplay {
 		if (d != null) d.scale(dx, dy, zoomIn ? scaleDiff : -scaleDiff);
 	}
 
-	public boolean motionEvent(MotionEvent e) {
-		var x = e.getX();
-		var y = e.getY();
-		var d = translate(x, y);
-		if (d == null) return false;
-		var cnt = e.getPointerCount();
+	private long downTime;
 
+	public boolean motionEvent(MotionEvent e) {
+		EventDispatcher d;
+		var action = e.getAction();
+		if (action == MotionEvent.ACTION_DOWN) downTime = uptimeMillis();
+		var cnt = e.getPointerCount();
 		if (cnt == 1) {
-			e.setLocation(dx, dy);
+			d = translate(e.getX(), e.getY());
+			if (d == null) return false;
+			e = MotionEvent.obtain(downTime, uptimeMillis(), e.getAction(), dx, dy, 0);
+			e.setSource(InputDevice.SOURCE_TOUCHSCREEN);
 		} else {
+			d = EventDispatcher.get();
 			var a = d.getActivity();
 			var m = metrics(a);
 			if (m == null) return false;
@@ -162,11 +195,10 @@ public class MirrorDisplay {
 					c.y = (c.y - m.y) * m.scale;
 				}
 			}
-			e = MotionEvent.obtain(e.getDownTime(), e.getEventTime(), e.getAction(), cnt, props, coords,
+			e = MotionEvent.obtain(downTime, uptimeMillis(), action, cnt, props, coords,
 					e.getMetaState(), e.getButtonState(), e.getXPrecision(), e.getYPrecision(),
-					e.getDeviceId(), e.getEdgeFlags(), e.getSource(), e.getFlags());
+					e.getDeviceId(), e.getEdgeFlags(), InputDevice.SOURCE_TOUCHSCREEN, e.getFlags());
 		}
-
 		return d.motionEvent(e);
 	}
 
@@ -175,26 +207,35 @@ public class MirrorDisplay {
 		return (d != null) && d.motionEvent(downTime, eventTime, action, dx, dy);
 	}
 
-	public void disableAccelRotation() {
+	public static void disableAccelRotation() {
 		var app = FermataApplication.get();
 		app.getHandler().postDelayed(() -> disableAccelRotation(app), 3000);
 	}
 
-	private void disableAccelRotation(Context ctx) {
+	private static void disableAccelRotation(Context ctx) {
+		var a = EventDispatcher.get().getActivity();
+		var land = FermataApplication.get().isMirroringLandscape();
+		if (a != null) {
+			a.setRequestedOrientation(
+					land ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE : SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+		}
+
 		try {
 			var cr = ctx.getContentResolver();
 			if (accel == -1) {
-				var a = Settings.System.getInt(cr, ACCELEROMETER_ROTATION, -1);
-				if (a != -1) accel = a;
+				var v = Settings.System.getInt(cr, ACCELEROMETER_ROTATION, -1);
+				if (v != -1) accel = v;
 			}
 			Settings.System.putInt(cr, ACCELEROMETER_ROTATION, 0);
-			Settings.System.putInt(cr, USER_ROTATION, ROTATION_90);
+			Settings.System.putInt(cr, USER_ROTATION, land ? ROTATION_90 : ROTATION_0);
 		} catch (Exception err) {
 			Log.e(err);
 		}
 	}
 
-	private void restoreAccelRotation(Context ctx) {
+	private static void restoreAccelRotation(Context ctx) {
+		var a = EventDispatcher.get().getActivity();
+		if (a != null) a.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 		if (accel == -1) return;
 		try {
 			Settings.System.putInt(ctx.getContentResolver(), ACCELEROMETER_ROTATION, accel);
@@ -205,11 +246,12 @@ public class MirrorDisplay {
 	}
 
 	private void dimScreen(Context ctx) {
-		var br = Settings.System.getInt(ctx.getContentResolver(), SCREEN_BRIGHTNESS, -1);
-		if (br > 0) {
-			brightness = br;
-			setBrightness(ctx, Build.MANUFACTURER.equalsIgnoreCase("Xiaomi") ? 1 : 0);
+		if (brightness == -1) {
+			var br = Settings.System.getInt(ctx.getContentResolver(), SCREEN_BRIGHTNESS, -1);
+			brightness = (br > 0) ? br : 200;
 		}
+		setBrightness(ctx, 1);
+		if (!Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) setBrightness(ctx, 0);
 	}
 
 	private void restoreBrightness(Context ctx) {
@@ -218,7 +260,9 @@ public class MirrorDisplay {
 
 	@Override
 	protected void finalize() {
-		cleanUp();
+		if ((ref == null) || (ref.get() == null) || (ref.get() == this)) {
+			cleanUp();
+		}
 	}
 
 	private void started() {
@@ -259,107 +303,99 @@ public class MirrorDisplay {
 			}
 		}
 
-		startFermata(app, mode);
+		var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
+		if (amgr != null) AudioManagerCompat.requestAudioFocus(amgr, audioFocusReq);
+		setMirroringMode(app, mode);
 	}
 
 	private void cleanUp() {
+		noSession();
+		sc = null;
+		lMetrics = pMetrics = null;
 		var app = FermataApplication.get();
-		var overlay = this.overlay;
 		if (overlay != null) {
-			this.overlay = null;
 			overlay.dimAndRotate.cancel();
 			var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
 			wm.removeView(overlay);
+			overlay = null;
 		}
-		sc = null;
-		lMetrics = pMetrics = null;
-		if (vd.isDoneNotFailed()) vd.getOrThrow().release();
-		else vd.cancel();
-		noVd();
-		if ((ref == null) || (ref.get() != this)) return;
-		ref = null;
-		startFermata(app, 0);
+		if (wakeLock != null) {
+			wakeLock.release();
+			wakeLock = null;
+		}
+		setMirroringMode(app, 0);
 		restoreBrightness(app);
 		restoreAccelRotation(app);
-		if (wakeLock != null) wakeLock.release();
 		ProjectionService.stop();
+
+		var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
+		if (amgr != null) AudioManagerCompat.abandonAudioFocusRequest(amgr, audioFocusReq);
 	}
 
-	private void noVd() {
-		this.vd.cancel();
-		this.vd = Completed.cancelled();
+	private void noSession() {
+		if (session.isDoneNotFailed()) session.getOrThrow().close();
+		else session.cancel();
+		session = Completed.cancelled();
 	}
 
-	private void createDisplay() {
-		if (!vd.isDone()) return;
-		Log.i("Creating VirtualDisplay");
-		var p = new Promise<VirtualDisplay>();
-		vd = p;
-		createDisplay(p);
-		p.onSuccess(vd -> {
-			Log.i("VirtualDisplay created: ", vd);
-			this.vd = Completed.completed(vd);
+	private void createSession() {
+		if (!session.isDone()) return;
+		var p = new Promise<Session>();
+		session = p;
+		createSession(p);
+		p.onSuccess(s -> {
+			Log.i("Session created: ", s);
+			session = Completed.completed(s);
 			started();
 		});
 		FermataApplication.get().getHandler().schedule(() -> {
-			if (!vd.isDone()) drawMsg(R.string.unlock_phone_and_grant);
+			if (!session.isDone()) drawMsg(R.string.unlock_phone_and_grant);
 		}, 500);
 	}
 
-	private void createDisplay(Promise<VirtualDisplay> p) {
-		if (vd != p) return;
-		if (sc == null) noVd();
+	private void createSession(Promise<Session> p) {
+		if (session != p) return;
+		if (sc == null) noSession();
 		if (p.isDone()) return;
 		ProjectionService.start().onCompletion((mp, err) -> {
-			if (vd != p) return;
-			if (sc == null) noVd();
+			if (session != p) return;
+			if (sc == null) noSession();
 			if (p.isDone()) return;
 			if (err != null) {
 				if (isCancellation(err)) {
 					drawMsg(R.string.screen_capture_rejected);
-					noVd();
+					cleanUp();
 					return;
 				}
-				Log.e(err, "Failed to create MediaProjection");
-				retryCreateDisplay(p);
+				Log.e(err, "Failed to create media projection");
+				retryCreateSession(p);
 			} else if (mp == null) {
-				Log.e("Failed to create MediaProjection");
-				retryCreateDisplay(p);
+				Log.e("Failed to create media projection");
+				retryCreateSession(p);
 			} else {
 				try {
-					mp.registerCallback(new MediaProjection.Callback() {
-						@Override
-						public void onStop() {
-							mp.unregisterCallback(this);
-						}
-					}, FermataApplication.get().getHandler());
-					var name = FermataApplication.get().getString(R.string.mirror_service_name);
-					var vd = mp.createVirtualDisplay(name, sc.getWidth(), sc.getHeight(), sc.getDpi(),
-							DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY, sc.getSurface(), null, null);
-					if (vd == null) {
-						Log.e("Failed to create VirtualDisplay");
-						retryCreateDisplay(p);
-					} else {
-						p.complete(vd);
-					}
+					p.complete(new Session(mp, this));
 				} catch (Exception ex) {
-					Log.e(ex, "Failed to create VirtualDisplay");
-					retryCreateDisplay(p);
+					Log.e(ex, "Failed to create media projection");
+					retryCreateSession(p);
 				}
 			}
 		});
 	}
 
-	private void retryCreateDisplay(Promise<VirtualDisplay> p) {
+	private void retryCreateSession(Promise<Session> p) {
 		FermataApplication.get().getHandler().schedule(() -> {
 			if (p.isDone()) return;
-			Log.i("Retrying to create VirtualDisplay");
-			createDisplay(p);
+			Log.i("Retrying to create media projection");
+			createSession(p);
 		}, 3000);
 	}
 
 	private void drawMsg(@StringRes int msg) {
-		if (sc == null) return;
+		if (sc != null) drawMsg(sc, msg);
+	}
+
+	private static void drawMsg(SurfaceContainer sc, @StringRes int msg) {
 		try {
 			var surface = sc.getSurface();
 			if (surface == null) return;
@@ -403,7 +439,7 @@ public class MirrorDisplay {
 
 	@Nullable
 	@SuppressLint("SwitchIntDef")
-	private Metrics metrics(@Nullable MainActivity a) {
+	private Metrics metrics(@Nullable AppCompatActivity a) {
 		if (sc == null) return null;
 		boolean landscape;
 		if (a != null) {
@@ -416,7 +452,7 @@ public class MirrorDisplay {
 		}
 		var m = landscape ? lMetrics : pMetrics;
 		if (m == null) {
-			if (!vd.isDoneNotFailed()) return null;
+			if (!session.isDoneNotFailed()) return null;
 			final Point size = new Point();
 			defaultDisplay.getRealSize(size);
 			m = new Metrics(size.x, size.y, sc.getWidth(), sc.getHeight());
@@ -426,18 +462,21 @@ public class MirrorDisplay {
 		return m;
 	}
 
-	private void startFermata(FermataApplication app, int mirrorMode) {
-		app.setMirroringMode(mirrorMode);
+	private void setMirroringMode(FermataApplication app, int mode) {
+		app.setMirroringMode(mode);
 		var intent = new Intent(app, MainActivity.class);
-		var flags = FLAG_ACTIVITY_NEW_TASK;
-		if (mirrorMode == 0) {
-			flags |= FLAG_ACTIVITY_CLEAR_TOP;
-			intent.setAction(MainActivityDelegate.INTENT_ACTION_FINISH);
-		} else {
-			flags |= FLAG_ACTIVITY_CLEAR_TASK;
-		}
-		intent.setFlags(flags);
+		intent.setAction(MainActivityDelegate.INTENT_ACTION_FINISH);
+		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TOP);
 		app.startActivity(intent);
+
+		if (mode == 0) {
+			var launcher = LauncherActivity.getActiveInstance();
+			if (launcher != null) launcher.finish();
+		} else {
+			intent = new Intent(app, LauncherActivity.class);
+			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TASK);
+			app.startActivity(intent);
+		}
 	}
 
 	private static void setBrightness(Context ctx, int br) {
@@ -445,6 +484,40 @@ public class MirrorDisplay {
 			Settings.System.putInt(ctx.getContentResolver(), SCREEN_BRIGHTNESS, br);
 		} catch (SecurityException ex) {
 			Log.e(ex, "Failed to change SCREEN_BRIGHTNESS");
+		}
+	}
+
+	private static final class Session extends MediaProjection.Callback {
+		final MediaProjection mp;
+		final VirtualDisplay vd;
+		final WeakReference<MirrorDisplay> mdRef;
+
+		Session(MediaProjection mp, MirrorDisplay md) {
+			this.mp = mp;
+			this.mdRef = new WeakReference<>(md);
+			var sc = md.sc;
+			var app = FermataApplication.get();
+			var name = app.getString(R.string.mirror_service_name);
+			mp.registerCallback(this, app.getHandler());
+			vd = mp.createVirtualDisplay(name, sc.getWidth(), sc.getHeight(), sc.getDpi(),
+					DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY, sc.getSurface(), null, null);
+			if (vd == null) throw new RuntimeException("Failed to create VirtualDisplay");
+			Log.i("VirtualDisplay created");
+		}
+
+		@Override
+		public void onStop() {
+			close();
+			var md = mdRef.get();
+			if (md == null) return;
+			Log.i("Media projection stopped");
+			md.cleanUp();
+		}
+
+		void close() {
+			mp.unregisterCallback(this);
+			vd.release();
+			mp.stop();
 		}
 	}
 

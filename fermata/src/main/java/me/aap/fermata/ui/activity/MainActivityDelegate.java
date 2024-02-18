@@ -213,6 +213,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onActivityCreate(@Nullable Bundle state) {
 		super.onActivityCreate(state);
+		Intent intent = getIntent();
+		if ((intent != null) && INTENT_ACTION_FINISH.equals(intent.getAction())) {
+			finish();
+			return;
+		}
+
 		getPrefs().addBroadcastListener(this);
 		int navId;
 		int fragmentId;
@@ -253,8 +259,6 @@ public class MainActivityDelegate extends ActivityDelegate
 				showFragment(fragmentId);
 				return;
 			}
-
-			Intent intent = getIntent();
 
 			if ((intent != null) && !Intent.ACTION_MAIN.equals(intent.getAction())) {
 				handleIntent(intent).onCompletion((r, err) -> {

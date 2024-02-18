@@ -15,6 +15,7 @@ import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.ui.activity.MainActivity;
@@ -27,38 +28,34 @@ abstract class EventDispatcher {
 		SuDispatcher.instance = completed(new SuDispatcher(su));
 	}
 
-	@NonNull
 	static EventDispatcher get() {
-		var ad = ActivityDispatcher.get();
-		return (ad.getActivity() == null) ? XposedDispatcher.get() : ad;
+		var d = ActivityDispatcher.get();
+		return (d.getActivity() == null) ? XposedDispatcher.get() : d;
 	}
 
 	public abstract boolean back();
 
 	public abstract boolean home();
 
+	public abstract boolean tap(float x, float y);
+
 	public abstract boolean motionEvent(MotionEvent e);
 
 	public abstract boolean motionEvent(long downTime, long eventTime, int action, float x, float y);
-
-	public boolean tap(float x, float y) {
-		var time = uptimeMillis();
-		return motionEvent(time, time, ACTION_DOWN, x, y) &&
-				motionEvent(time, time + 10, ACTION_UP, x, y);
-	}
 
 	public boolean scale(float x, float y, float diff) {
 		return AccessibilityDispatcher.get().scale(x, y, diff);
 	}
 
 	@Nullable
-	MainActivity getActivity() {
+	AppCompatActivity getActivity() {
 		return null;
 	}
 
 	private static final class XposedDispatcher extends EventDispatcher {
 		static final XposedDispatcher instance = new XposedDispatcher();
 
+		@NonNull
 		static XposedDispatcher get() {
 			return instance;
 		}
@@ -76,8 +73,13 @@ abstract class EventDispatcher {
 
 		@Override
 		public boolean tap(float x, float y) {
-			return (XposedEventDispatcherService.canDispatchEvent() && super.tap(x, y)) ||
-					AccessibilityDispatcher.get().tap(x, y);
+			if (XposedEventDispatcherService.canDispatchEvent()) {
+				var time = uptimeMillis();
+				return motionEvent(time, time, ACTION_DOWN, x, y) &&
+						motionEvent(time, time + 10, ACTION_UP, x, y);
+			} else {
+				return AccessibilityDispatcher.get().tap(x, y);
+			}
 		}
 
 		@Override
@@ -100,6 +102,7 @@ abstract class EventDispatcher {
 		private static final ActivityDispatcher instance = new ActivityDispatcher();
 		private InputMethodManager imm;
 
+		@NonNull
 		static ActivityDispatcher get() {
 			return instance;
 		}
@@ -108,13 +111,27 @@ abstract class EventDispatcher {
 		public boolean back() {
 			var a = getActivity();
 			if (a == null) return AccessibilityDispatcher.get().back();
-			a.onBackPressed();
+			a.getOnBackPressedDispatcher().onBackPressed();
 			return true;
 		}
 
 		@Override
 		public boolean home() {
 			return AccessibilityDispatcher.get().home();
+		}
+
+		@Override
+		public boolean tap(float x, float y) {
+			AppCompatActivity a = getActivity();
+			if (a == null) return AccessibilityDispatcher.get().tap(x, y);
+			var time = uptimeMillis();
+			var e = obtain(time, time, ACTION_DOWN, x, y, 0);
+			a.dispatchTouchEvent(e);
+			e.recycle();
+			e = obtain(time, time + 10, ACTION_UP, x, y, 0);
+			a.dispatchTouchEvent(e);
+			e.recycle();
+			return true;
 		}
 
 		@Override
@@ -137,9 +154,12 @@ abstract class EventDispatcher {
 		}
 
 		@Override
-		MainActivity getActivity() {
-			var a = MainActivity.getActiveInstance();
-			if (a == null) return null;
+		AppCompatActivity getActivity() {
+			AppCompatActivity a = LauncherActivity.getActiveInstance();
+			if (a == null) {
+				a = MainActivity.getActiveInstance();
+				if (a == null) return null;
+			}
 			if (imm == null) {
 				imm = (InputMethodManager) FermataApplication.get()
 						.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -151,6 +171,7 @@ abstract class EventDispatcher {
 	private static final class AccessibilityDispatcher extends EventDispatcher {
 		private static final AccessibilityDispatcher instance = new AccessibilityDispatcher();
 
+		@NonNull
 		static AccessibilityDispatcher get() {
 			return instance;
 		}
@@ -204,6 +225,7 @@ abstract class EventDispatcher {
 
 		SuDispatcher(Su su) {this.su = su;}
 
+		@Nullable
 		static SuDispatcher get() {
 			return instance.peek();
 		}

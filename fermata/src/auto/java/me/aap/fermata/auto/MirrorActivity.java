@@ -1,5 +1,6 @@
 package me.aap.fermata.auto;
 
+import static android.content.Context.KEYGUARD_SERVICE;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
 import static android.os.SystemClock.uptimeMillis;
@@ -8,10 +9,12 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static me.aap.utils.ui.UiUtils.toPx;
 
 import android.annotation.SuppressLint;
+import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -31,9 +34,7 @@ import com.google.android.apps.auto.sdk.CarActivity;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
-import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
-import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.concurrent.ReschedulableTask;
 
 /**
@@ -109,8 +110,12 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		}
 	}
 
-	static void onFermataButtonClick(MirrorDisplay md) {
-		if (MainActivity.getActiveInstance() == null) startFermata();
+	static void onHomeButtonClick(MirrorDisplay md) {
+		var ctx = FermataApplication.get();
+		var locked = (((KeyguardManager) ctx.getSystemService(
+				KEYGUARD_SERVICE)).inKeyguardRestrictedInputMode()) ||
+				!((PowerManager) ctx.getSystemService(POWER_SERVICE)).isInteractive();
+		if (!locked && (LauncherActivity.getActiveInstance() == null)) startLauncher();
 		else homeScreen(md);
 	}
 
@@ -132,15 +137,15 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		rotateScreen(md);
 	}
 
-	private static void startFermata() {
+	private static void startLauncher() {
 		var ctx = FermataApplication.get();
-		Intent intent = new Intent(ctx, MainActivity.class);
+		Intent intent = new Intent(ctx, LauncherActivity.class);
 		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
 		ctx.startActivity(intent);
 	}
 
 	private static void homeScreen(MirrorDisplay md) {
-		if (EventDispatcher.get().home()) {
+		if (!EventDispatcher.get().home()) {
 			var ctx = FermataApplication.get();
 			Intent intent = new Intent(Intent.ACTION_MAIN);
 			intent.addCategory(Intent.CATEGORY_HOME);
@@ -155,7 +160,6 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 	}
 
 	private final class ToolBar extends LinearLayout {
-		private final HandlerExecutor handler = FermataApplication.get().getHandler();
 		private final ReschedulableTask delayedHide = new ReschedulableTask() {
 			@Override
 			protected void perform() {
@@ -164,17 +168,11 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		};
 		private final float moveTolerance;
 		private final Animation animation;
-		private final AppCompatImageView fermataBtn;
-		private final AppCompatImageView homeBtn;
-		private final AppCompatImageView backBtn;
 		private final float minX;
 		private final float maxX;
 		private final float minY;
 		private final float maxY;
-		private final int size;
-		private final int size2;
-		private final int size3;
-		private boolean small;
+		private final int iconSize;
 		private long downTime;
 		private float downX, downY;
 		private View downButton;
@@ -189,30 +187,24 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			maxX = dm.widthPixels - pad;
 			minY = pad;
 			maxY = dm.heightPixels - pad;
-			size = (int) Math.max(Math.min(dm.widthPixels, dm.heightPixels) / 10f, toPx(ctx, 20));
-			size2 = size + size;
-			size3 = size2 + size;
+			iconSize = (int) Math.max(Math.min(dm.widthPixels, dm.heightPixels) / 10f, toPx(ctx, 20));
 			setLayoutParams(new FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
-			setX(dm.widthPixels - size - pad);
+			setX(dm.widthPixels - iconSize * 2 - pad);
 			setY(pad);
 
-			var iconPad = size / 4;
-			var icons = new int[]{R.drawable.launcher, R.drawable.home_btn, R.drawable.back_btn};
+			var iconPad = iconSize / 4;
+			var icons = new int[]{R.drawable.home_btn, R.drawable.back_btn};
 			for (var icon : icons) {
 				var v = new AppCompatImageView(ctx);
 				addView(v);
 				v.setId(icon);
 				v.setImageResource(icon);
 				v.setPadding(iconPad, iconPad, iconPad, iconPad);
-				v.setLayoutParams(new LinearLayout.LayoutParams(size, size));
+				v.setLayoutParams(new LinearLayout.LayoutParams(iconSize, iconSize));
 			}
 
 			moveTolerance = toPx(ctx, 10);
 			animation = AnimationUtils.loadAnimation(ctx, me.aap.utils.R.anim.button_press);
-			fermataBtn = (AppCompatImageView) getChildAt(0);
-			homeBtn = (AppCompatImageView) getChildAt(1);
-			backBtn = (AppCompatImageView) getChildAt(2);
-			setButtonsVisibility();
 			delayedHide.schedule(5000);
 		}
 
@@ -230,7 +222,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 					downTime = uptimeMillis();
 					downX = e.getRawX();
 					downY = e.getRawY();
-					downButton = getButtonAt(e.getX());
+					downButton = getChildAt(getButtonAt(e.getX()));
 					downButton.startAnimation(animation);
 					return true;
 				}
@@ -256,7 +248,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 						}
 					}
 					if ((uptimeMillis() - downTime) < 400) handleClick(e.getX());
-					else handleLongClick();
+					else handleLongClick(e.getX());
 					return true;
 				}
 				default -> {
@@ -265,64 +257,18 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			}
 		}
 
-		private AppCompatImageView getButtonAt(float x) {
-			var idx = (x < size) ? 0 : (x < size2) ? 1 : 2;
-			for (int i = 0, n = getChildCount(); i < n; i++) {
-				var v = getChildAt(i);
-				if ((v.getVisibility() == VISIBLE) && (--idx == -1)) return (AppCompatImageView) v;
-			}
-			throw new IllegalArgumentException();
+		private int getButtonAt(float x) {
+			return (x < iconSize) ? 0 : 1;
 		}
 
 		private void handleClick(float x) {
-			var v = getButtonAt(x);
-			if (v == fermataBtn) startFermata();
-			else if (v == homeBtn) homeScreen(md);
-			else if (v == backBtn) onBackButtonClick(md);
-			handler.postDelayed(this::setButtonsVisibility, 1000);
+			if (getButtonAt(x) == 0) onHomeButtonClick(md);
+			else onBackButtonClick(md);
 		}
 
-		private void handleLongClick() {
-			small = !small;
-			setButtonsVisibility();
-		}
-
-		@Override
-		public void setVisibility(int visibility) {
-			super.setVisibility(visibility);
-			setButtonsVisibility();
-		}
-
-		private void setButtonsVisibility() {
-			if (getVisibility() != VISIBLE) return;
-			int width;
-			if (MainActivity.getActiveInstance() != null) {
-				fermataBtn.setVisibility(GONE);
-				if (small) {
-					width = size;
-					homeBtn.setVisibility(VISIBLE);
-					backBtn.setVisibility(GONE);
-				} else {
-					width = size2;
-					homeBtn.setVisibility(VISIBLE);
-					backBtn.setVisibility(VISIBLE);
-				}
-			} else {
-				if (small) {
-					width = size;
-					fermataBtn.setVisibility(GONE);
-					homeBtn.setVisibility(GONE);
-					backBtn.setVisibility(VISIBLE);
-				} else {
-					width = size3;
-					fermataBtn.setVisibility(VISIBLE);
-					homeBtn.setVisibility(VISIBLE);
-					backBtn.setVisibility(VISIBLE);
-				}
-			}
-
-			var x = getX();
-			if (((x + width) >= maxX) || ((x + getWidth()) >= maxX)) setX(maxX - width);
+		private void handleLongClick(float x) {
+			if (getButtonAt(x) == 0) homeScreen(md);
+			else onBackButtonClick(md);
 		}
 	}
 }

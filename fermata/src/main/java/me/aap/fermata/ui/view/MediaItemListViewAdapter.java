@@ -146,28 +146,15 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		return true;
 	}
 
-	private void move(List<MediaItemWrapper> list, int fromPosition, int toPosition) {
-		if (fromPosition < toPosition) {
-			for (int i = fromPosition; i < toPosition; i++) {
-				swap(list, i, i + 1);
-			}
-		} else {
-			for (int i = fromPosition; i > toPosition; i--) {
-				swap(list, i, i - 1);
-			}
-		}
-	}
-
-	private void swap(List<MediaItemWrapper> list, int fromPosition, int toPosition) {
-		updatePos(list.get(fromPosition), fromPosition, toPosition);
-		updatePos(list.get(toPosition), toPosition, fromPosition);
-		Collections.swap(list, fromPosition, toPosition);
+	protected void swap(List<?> list, int fromPosition, int toPosition) {
+		updatePos((MediaItemWrapper) list.get(fromPosition), fromPosition, toPosition);
+		updatePos((MediaItemWrapper) list.get(toPosition), toPosition, fromPosition);
+		super.swap(list, fromPosition, toPosition);
 	}
 
 	private void updatePos(MediaItemWrapper w, int from, int to) {
 		Item i = w.getItem();
-		if (i instanceof ItemBase) {
-			ItemBase ib = (ItemBase) i;
+		if (i instanceof ItemBase ib) {
 			if (ib.getSeqNum() == from + 1) ib.setSeqNum(to + 1);
 		}
 		i.updateTitles().main().onSuccess(t -> activity.post(() -> {
