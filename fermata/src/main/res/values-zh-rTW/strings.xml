@@ -4,11 +4,11 @@
     <string name="addon_name_tv">電視</string>
     <string name="addon_name_web_browser">網頁瀏覽器</string>
 
-    <string name="interface_prefs">播放選項</string>
-    <string name="interface_prefs_aa">Android Auto播放選項</string>
+    <string name="interface_prefs">選項</string>
+    <string name="interface_prefs_aa">Android Auto模式選項</string>
     <string name="playback_settings">播放設定</string>
     <string name="playback_control">播放控制設定</string>
-    <string name="engine_prefs">播放引擎設定</string>
+    <string name="engine_prefs">播放器設定</string>
 
     <string name="theme">佈景主題</string>
     <string name="theme_sub">目前佈景主題: %1$s</string>
@@ -102,7 +102,7 @@
     <string name="installing">正在安裝 %1$s</string>
 
     <string name="speed">播放速度</string>
-    <string name="audio_effects">聲音效果</string>
+    <string name="audio_effects">音場效果</string>
     <string name="equalier">等化器</string>
     <string name="preset_name">預設名稱</string>
     <string name="virtualizer">虛擬效果</string>
@@ -116,10 +116,10 @@
 
     <string name="video">影片</string>
     <string name="video_settings">影片設定</string>
-    <string name="video_scaling">影片縮放</string>
+    <string name="video_scaling">影片尺寸</string>
     <string name="hw_accel">硬體加速</string>
     <string name="hw_accel_auto">自動</string>
-    <string name="hw_accel_full">全螢幕</string>
+    <string name="hw_accel_full">完整</string>
     <string name="hw_accel_decoding">視訊解碼</string>
     <string name="hw_accel_disabled">關閉</string>
     <string name="video_scaling_best">最符合螢幕大小</string>
@@ -212,7 +212,7 @@
     <string name="select">選擇</string>
     <string name="select_all">全選</string>
     <string name="unselect_all">取消全選</string>
-    <string name="refresh">更新載入</string>
+    <string name="refresh">重新整理</string>
     <string name="rescan">重新搜尋</string>
     <string name="share">分享</string>
     <string name="edit">編輯</string>
