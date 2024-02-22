@@ -34,7 +34,7 @@ import me.aap.utils.ui.view.ToolBarView;
 @Keep
 @SuppressWarnings("unused")
 public class YoutubeFragment extends WebBrowserFragment implements FermataServiceUiBinder.Listener {
-	private static final String DEFAULT_URL = "http://m.youtube.com";
+	private static final String DEFAULT_URL = "https://m.youtube.com/";
 	private static final Pref<LongSupplier> RESUME_POS = Pref.l("YT_RESUME_POS", 0L);
 	private boolean playOnResume;
 
@@ -172,7 +172,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			FermataChromeClient chrome = v.getWebChromeClient();
 			if (chrome == null) return;
 
-			chrome.enterFullScreen();
+			if (!DEFAULT_URL.equals(getUrl())) chrome.enterFullScreen();
 		} else if (YoutubeMediaEngine.isYoutubeItem(oldItem)) {
 			FermataWebView v = getWebView();
 			if (v == null) return;
