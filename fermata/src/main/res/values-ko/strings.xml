@@ -1,0 +1,325 @@
+<resources>
+    <string name="addons">애드온</string>
+    <string name="addon_name_tv">TV</string>
+    <string name="addon_name_web_browser">웹브라우저</string>
+    <string name="interface_prefs">인터페이스</string>
+    <string name="interface_prefs_aa">안드로이드 오토</string>
+    <string name="playback_settings">재생설정</string>
+    <string name="playback_control">재생조작</string>
+    <string name="engine_prefs">미디어 엔진</string>
+
+    <string name="theme">어플리케이션 테마</string>
+    <string name="theme_sub">현재 테마: %1$s</string>
+    <string name="theme_light">주간</string>
+    <string name="theme_dark">야간</string>
+    <string name="theme_day_night">주/야</string>
+    <string name="theme_black">검정</string>
+    <string name="theme_star_wars">스타워즈</string>
+
+    <string name="nav_bar_pos">네비게이션바 위치</string>
+    <string name="nav_bar_pos_sub">현재 위치: %1$s</string>
+    <string name="nav_bar_pos_bottom">아래</string>
+    <string name="nav_bar_pos_left">왼쪽</string>
+    <string name="nav_bar_pos_right">오른쪽</string>
+
+    <string name="show_track_icons">트랙 아이콘의 표시</string>
+    <string name="lang">언어</string>
+    <string name="hide_bars">바 숨기기</string>
+    <string name="hide_bars_sub">재생 컨트롤 패널이 열리면 위, 아래 바를 숨김</string>
+    <string name="show_pg_up_down">페이지 업/다운 버튼을 표시</string>
+    <string name="use_dpad_cursor">D-pad 네비게이션을 위한 커서를 사용</string>
+    <string name="fullscreen_mode">풀스크린 모드</string>
+    <string name="nav_bar_size">네비게이션 바 사이즈</string>
+    <string name="tool_bar_size">도구 바 사이즈</string>
+    <string name="control_panel_size">재생 컨트롤 패널 사이즈</string>
+    <string name="text_icon_size">텍스트와 아이콘의 크기</string>
+
+    <string name="key_bindings">조작키 설정</string>
+    <string name="key_on_click">한번 클릭시</string>
+    <string name="key_on_long_click">길게 클릭시</string>
+    <string name="key_on_dbl_click">두번 클릭시</string>
+    <string name="action_stop">정지</string>
+    <string name="action_play">재생</string>
+    <string name="action_pause">일시정지</string>
+    <string name="action_play_pause">재생/일시정지</string>
+    <string name="action_prev">이전재생</string>
+    <string name="action_next">다음재생</string>
+    <string name="action_rw">되감기</string>
+    <string name="action_ff">빨리감기</string>
+    <string name="action_vol_up">음향 키우기</string>
+    <string name="action_vol_down">음향 내리기</string>
+    <string name="action_vol_mute_unmute">음소거/해제</string>
+    <string name="action_activate_voice_ctrl">음성명령 활성화</string>
+    <string name="action_menu">메뉴</string>
+    <string name="action_cp_menu">컨트롤 패널 메뉴</string>
+    <string name="action_back_or_exit">뒤로 혹은 나가기</string>
+    <string name="action_exit">나가기</string>
+    <string name="action_default">기본설정</string>
+    <string name="action_none">미할당</string>
+
+    <string name="play_next_on_completion">재생 완료시 다음 재생</string>
+
+    <string name="rw_ff_click">되감기/빨리감기 - 한번 클릭시</string>
+    <string name="rw_ff_long_click">되감기/빨리감기 - 길게 클릭시</string>
+    <string name="prev_next_long_click">이전재생/다음재생 - 길게 클릭시</string>
+    <string name="play_pause_stop">재생/일시정지 - 길게 클릭시</string>
+
+    <string name="time">시간</string>
+    <string name="time_unit">시간단위</string>
+    <string name="time_unit_sub">현재 설정: %1$s</string>
+    <string name="time_unit_second">초단위</string>
+    <string name="time_unit_minute">분단위</string>
+    <string name="time_unit_percent">퍼센트</string>
+
+    <string name="video_control">동영상 컨트롤</string>
+    <string name="video_control_start_delay">시작시 표시</string>
+    <string name="video_control_touch_delay">터치시 표시</string>
+    <string name="video_control_seek_delay">찾을시 표시</string>
+    <string name="video_aa_show_status">안드로이드오토 스테이터스 바 표시</string>
+
+    <string name="enable_exoplayer">ExoPlayer 활성화</string>
+    <string name="enable_vlcplayer">VLC 활성화</string>
+    <string name="preferred_audio_engine">선호하는 오디오 엔진</string>
+    <string name="preferred_video_engine">선호하는 비디오 엔진</string>
+    <string name="engine_installed">설치된 미디어 엔진: %1$s</string>
+    <string name="engine_uninstalled">삭제된 미디어 엔진: %1$s</string>
+
+    <string name="preferred_media_scanner">선호하는 미디어 스케너</string>
+    <string name="preferred_media_scanner_default">기본설정</string>
+    <string name="preferred_media_scanner_system">시스템</string>
+
+    <string name="voice_search">음성 검색</string>
+    <string name="voice_control">음성 조작</string>
+    <string name="voice_control_fb">플로팅 버튼</string>
+    <string name="voice_control_sub_long">길게 눌러 음성 조작 활성화</string>
+    <string name="voice_control_subst">대체 단어</string>
+    <string name="voice_control_subst_sub">단어를 다른 단어 또는 문구로 대체 합니다</string>
+    <string name="voice_control_subst_hint">on: 재생\noff: 일시정지 </string>
+
+    <string name="module_installation">모듈 설치: %1$s</string>
+    <string name="install_pending">설치 보류중: %1$s</string>
+    <string name="downloading">다운로드중 %1$s</string>
+    <string name="installing">설치중 %1$s</string>
+
+    <string name="speed">재생 속도</string>
+    <string name="audio_effects">음향 효과</string>
+    <string name="equalier">이퀄라이저</string>
+    <string name="preset_name">프레셋 이름</string>
+    <string name="virtualizer">현장감</string>
+    <string name="auto">자동</string>
+    <string name="binaural">바이노럴</string>
+    <string name="transaural">트랜스오럴</string>
+    <string name="bass_boost">베이스 부스트</string>
+    <string name="vol_boost">볼륨 부스트</string>
+    <string name="strength">세기</string>
+    <string name="apply_to">설정대상</string>
+
+    <string name="video">비디오</string>
+    <string name="video_settings">비디오 설정</string>
+    <string name="video_scaling">비디오 화면크기</string>
+    <string name="hw_accel">하드웨어 가속</string>
+    <string name="hw_accel_auto">자동</string>
+    <string name="hw_accel_full">최대</string>
+    <string name="hw_accel_decoding">디코딩</string>
+    <string name="hw_accel_disabled">비활성화</string>
+    <string name="video_scaling_best">최대 크기</string>
+    <string name="video_scaling_fill">화면 채움</string>
+    <string name="video_scaling_orig">원본 크기</string>
+    <string name="audio">오디오</string>
+    <string name="audio_delay">오디오 딜레이</string>
+    <string name="audio_delay_aa">오디오 딜레이 - 안드로이드 오토</string>
+    <string name="preferred_audio_lang">선호하는 오디오 재생언어</string>
+    <string name="preferred_audio_key">선호하는 오디오 재생키워드</string>
+    <string name="select_audio_stream">오디오 스트림 선택</string>
+
+    <string name="subtitles">자막</string>
+    <string name="subtitle_delay">자막 지연속도</string>
+    <string name="display_subtitles">자막 활성화</string>
+    <string name="preferred_sub_lang">선호하는 자막 언어</string>
+    <string name="preferred_sub_key">선호하는 키워드 자막</string>
+    <string name="select_subtitles">자막 선택</string>
+
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">현재 트랙</string>
+    <string name="current_folder">현재 폴더</string>
+
+    <string name="folders">폴더</string>
+    <string name="favorites">즐겨찾기</string>
+    <string name="playlists">재생목록</string>
+    <string name="search">검색</string>
+    <string name="filter">필터</string>
+    <string name="settings">설정</string>
+    <string name="menu">메뉴</string>
+    <string name="exit">나가기</string>
+    <string name="cancel">취소</string>
+    <string name="got_to_current">현재 트랙</string>
+
+    <string name="view">보기</string>
+    <string name="title">제목</string>
+    <string name="subtitle">자막</string>
+    <string name="seq_num">시퀀스 번호</string>
+    <string name="track_name">이름</string>
+    <string name="file_name">파일명</string>
+    <string name="date">날짜</string>
+    <string name="random">랜덤</string>
+    <string name="descending">내림차순</string>
+    <string name="album">앨범</string>
+    <string name="artist">음악가</string>
+    <string name="duration">간격</string>
+
+    <string name="sort_by">정렬</string>
+    <string name="do_not_sort">정렬하지 않음</string>
+
+    <string name="play">재생</string>
+    <string name="pause">일시정지</string>
+    <string name="stop">정지</string>
+    <string name="prev">이전</string>
+    <string name="next">다음</string>
+    <string name="rewind">되감기</string>
+    <string name="fast_forward">빨리감기</string>
+    <string name="repeat">반복</string>
+    <string name="repeat_disable">반복 안함</string>
+    <string name="shuffle">무작위 재생</string>
+    <string name="shuffle_disable">무작위 재생 안함</string>
+    <string name="programme_guide">프로그램 안내</string>
+    <string name="favorites_add">즐겨찾기 추가</string>
+    <string name="favorites_remove">즐겨찾기 삭제</string>
+    <string name="mark_watched">시청완료로 마크</string>
+    <string name="mark_unwatched">시청전으로 마크</string>
+    <string name="preferred_media_engine">선호하는 미디어엔진</string>
+    <string name="by_default">기본설정</string>
+
+    <string name="playlist_add">재생목록 추가</string>
+    <string name="playlist_remove_item">재생목록 삭제</string>
+    <string name="playlist_create">재생목록 작성</string>
+    <string name="playlist_remove">재생목록 삭제</string>
+    <string name="playlist_name">재생목록 이름</string>
+
+    <string name="bookmarks">북마크</string>
+    <string name="create_bookmark">북마크 작성</string>
+    <string name="remove_bookmark">북마크 삭제</string>
+    <string name="remove_all_bookmarks">모든 북마크 삭제</string>
+    <string name="bookmark_name">이름</string>
+    <string name="bookmark_time">시간</string>
+
+    <string name="folder_subtitle">파일: %1$d. 폴더: %2$d.</string>
+    <string name="browsable_subtitle">트랙: %1$d.</string>
+    <string name="add_folder">폴더 추가</string>
+    <string name="remove_folder">폴더 삭제</string>
+    <string name="select">선택</string>
+    <string name="select_all">전체선택</string>
+    <string name="unselect_all">전체선택 해제</string>
+    <string name="refresh">새로고침</string>
+    <string name="rescan">다시스켄</string>
+    <string name="share">공유</string>
+    <string name="edit">편집</string>
+    <string name="delete">삭제</string>
+    <string name="delete_confirm">삭제 %1$s?</string>
+    <string name="delete_file_title">파일 삭제</string>
+    <string name="delete_file_question">정말 파일을 삭제 하시겠습니까?</string>
+    <string name="delete_file_failed">파일 삭제 실패 %1$s</string>
+    <string name="loading">불러오는중…</string>
+    <string name="press_back_again">뒤로가기를 한번 더 눌러 종료합니다.</string>
+    <string name="press_x_again">X 버튼을 한번 더 눌러 종료 합니다.</string>
+    <string name="please_restart_app">어플리케이션을 재시작 해주십시요.</string>
+    <string name="use_phone_to_grant_perm">스마트폰 본체를 사용하여 필요한 권한을 부여 해주세요.</string>
+
+    <string name="vfs_content">컨텐츠</string>
+    <string name="vfs_file_system">파일 시스템</string>
+    <string name="vfs_gdrive">구글 드라이브</string>
+    <string name="m3u_playlist">M3U 재생목록</string>
+    <string name="m3u_playlist_name">이름</string>
+    <string name="m3u_playlist_location">장소</string>
+    <string name="m3u_playlist_location_hint">파일 또는 http(s) URL 주소</string>
+    <string name="m3u_playlist_video">비디오 목록</string>
+
+    <string name="eq_manual">수동</string>
+    <string name="eq_normal">보통</string>
+    <string name="eq_classical">클래식</string>
+    <string name="eq_dance">댄스</string>
+    <string name="eq_flat">플랫</string>
+    <string name="eq_folk">포크</string>
+    <string name="eq_heavy_metal">헤비메탈</string>
+    <string name="eq_hip_hop">힙합</string>
+    <string name="eq_jazz">재즈</string>
+    <string name="eq_pop">팝</string>
+    <string name="eq_rock">락</string>
+
+    <string name="host">호스트</string>
+    <string name="port">포트</string>
+    <string name="path">경로</string>
+    <string name="share_name">공유이름</string>
+    <string name="domain">도메인</string>
+    <string name="username">아이디</string>
+    <string name="password">패스워드</string>
+    <string name="private_key">개인열쇠</string>
+    <string name="private_key_pass">개인열쇠 비밀번호</string>
+
+    <string name="donate">개발자에게 커피 한잔 도네하기</string>
+    <string name="donate_text">이 어플리케이션이 마음에 드신다면, 저에게 커피 한잔을 사주시는 것이 어떤가요.</string>
+    <string name="use_phone_for_donation">도네시 핸드폰으로 해주세요.</string>
+
+    <string name="timer">타이머</string>
+    <string name="hours">시</string>
+    <string name="minutes">분</string>
+
+    <string name="enable">활성</string>
+    <string name="move_left">왼쪽으로 이동</string>
+    <string name="move_right">오른쪽으로 이동</string>
+    <string name="move_up">위로 이동</string>
+    <string name="move_down">아래로 이동</string>
+
+    <string name="sys_bars_on_video_touch">터치시 시스템바 표시</string>
+    <string name="play_video_landscape">가로모드로 동영상 재생하기</string>
+    <string name="clock_pos">시계 위치</string>
+    <string name="clock_pos_none">없음</string>
+    <string name="clock_pos_left">왼쪽</string>
+    <string name="clock_pos_right">오른쪽</string>
+    <string name="clock_pos_center">중앙</string>
+    <string name="change_brightness">동영상 재생시 화면밝기를 변경한다</string>
+    <string name="video_brightness">동영상 화면밝기</string>
+    <string name="change_brightness_sub">두손가락 제츠쳐로도 밝기 조정 가능하다</string>
+    <string name="watched_threshold">재생 기준점</string>
+    <string name="watched_threshold_sub">아래의 표시된 % 부분까지 동영상 시청시, 동영상 시청이 완료 된 것으로 마크 합니다.</string>
+
+    <string name="other">기타</string>
+    <string name="check_updates">시작시 업데이트 확인</string>
+    <string name="update">업데이트</string>
+    <string name="update_question">새로운 버전 %1$s 가 출시 되었습니다.\n앱을 업데이트 하시겠습니까?</string>
+    <string name="export_prefs">환경설정을 파일로 내보내기xport preferences to file</string>
+    <string name="export_prefs_sub">설정, 폴더, 재생목록 등을 파일로 내보내기Export settings, folders, playlists etc. to file</string>
+    <string name="export_prefs_ok">설정이 파일에 저장 되었습니다: %1$s.</string>
+    <string name="export_prefs_failed">설정 내보내기에 실패 했습니다: %1$s</string>
+    <string name="import_prefs">파일에서 설정 불러오기</string>
+    <string name="import_prefs_sub">환경설정 불러오기Import, previously exported, preferences from file</string>
+    <string name="import_prefs_ok">환경설정을 정상적으로 불러 왔습니다.\n어플리케이션을 다시 시작 하십시요.</string>
+    <string name="import_prefs_failed">환경설정 불러오기에 실패 했습니다: %1$s</string>
+    <string name="prefs_not_found">환경설정을 찾을 수 없습니다</string>
+    <string name="open_log">로그파일 열기</string>
+    <string name="unlock_phone_and_grant">스마트폰의 잠금을 해제하여 요청된 권한을 부여해주세요.</string>
+    <string name="screen_capture_rejected">스크린샷 요청이 거절 되었습니다.</string>
+    <string name="accessibility_dsc">접근성 서비스는 Fermata Mirror에 의해 터치스크린을 시뮬레이션하기 위해 사용됩니다.</string>
+    <string name="media_projection_action_text">Now Start</string>
+
+    <string name="about">About</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player is a free, open source audio and video player with a simple and
+        intuitive interface.</p>
+        <p><b>Author:</b> Andrey Pavlenko</p>
+        <p><b>Version:</b> %1$s (%2$d)</p>
+        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
+
+    <string name="err_failed_to_play">재생에 실패 했습니다 %s</string>
+    <string name="err_failed_to_play_cause">지생에 실패 했습니다 %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">지원하지 않는 소스 유형입니다: %s</string>
+    <string name="err_playlist_exists">재생목록이 이미 존재 합니다: %1$s</string>
+    <string name="err_invalid_playlist_name">유효하지 않는 재생목록입니다: %1$s</string>
+    <string name="err_failed_add_folder">폴더 추가에 실패 했습니다: %1$s</string>
+    <string name="err_failed_open_url">URL을 열지 못했습니다: %1$s</string>
+    <string name="err_failed_install_module">모듈설치에 실패했습니다: %1$s</string>
+    <string name="err_failed_to_download">다운로드에 실패했습니다 %1$s</string>
+    <string name="err_no_audio_record_perm">음성녹음 권한이 부여되지 않았습니다</string>
+</resources>

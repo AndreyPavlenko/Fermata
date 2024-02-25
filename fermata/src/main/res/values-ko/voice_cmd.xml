@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE resources [
+    <!ENTITY action_find "검색">
+    <!ENTITY action_open "열기">
+    <!ENTITY action_pause "일시정지">
+    <!ENTITY action_stop "정지">
+    <!ENTITY action_play "재생">
+    <!ENTITY location_folders "폴더?">
+    <!ENTITY location_favorites "즐겨찾기?">
+    <!ENTITY location_playlists "재생목록?">
+    <!ENTITY location_tv "tv">
+    <!ENTITY location_youtube "유튜브">
+    <!ENTITY location_browser "브라우저">
+    <!ENTITY time_unit_second "초?">
+    <!ENTITY time_unit_minute "분?">
+    <!ENTITY time_unit_hour "시?">
+    ]>
+
+<resources>
+    <string name="vcmd_action_find">&action_find;</string>
+    <string name="vcmd_action_open">&action_open;</string>
+    <string name="vcmd_action_pause">&action_pause;</string>
+    <string name="vcmd_action_stop">&action_stop;</string>
+    <string name="vcmd_action_play">(&action_play;)|start</string>
+    <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
+    <string name="vcmd_action_sub_on">(((turn|switch) on)|show) subtitles?</string>
+    <string name="vcmd_action_sub_off">(((turn|switch) off)|hide) subtitles?</string>
+    <string name="vcmd_action_sub_change">change subtitles?</string>
+    <string name="vcmd_action_audio_change">change audio[ -]?stream</string>
+    <string name="vcmd_location_folders">&location_folders;</string>
+    <string name="vcmd_location_favorites">&location_favorites;</string>
+    <string name="vcmd_location_playlists">&location_playlists;</string>
+    <string name="vcmd_location_tv">&location_tv;</string>
+    <string name="vcmd_location_youtube">&location_youtube;</string>
+    <string name="vcmd_location_browser">&location_browser;</string>
+    <string name="vcmd_time_unit_second">&time_unit_second;</string>
+    <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
+    <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
+    <string name="vcmd_nums">zero one two three four five six seven eight nine</string>
+
+    <string name="vcmd_cur_track">(show )?current track</string>
+    <string name="vcmd_ff">(skip|fast)[- ]forward (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(skip back)|rewind (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((in )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
+    <string name="vcmd_chat">(chat( ?gpt)?)(?&lt;Q&gt;.*)</string>
+</resources>
