@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="addons">擴充功能</string>
     <string name="addon_name_tv">電視</string>
     <string name="addon_name_web_browser">網頁瀏覽器</string>
-
     <string name="interface_prefs">選項</string>
     <string name="interface_prefs_aa">Android Auto模式選項</string>
     <string name="playback_settings">播放設定</string>
@@ -16,6 +14,7 @@
     <string name="theme_dark">暗</string>
     <string name="theme_day_night">日間/夜間</string>
     <string name="theme_black">黑</string>
+    <string name="theme_star_wars">星際大戰</string>
 
     <string name="nav_bar_pos">選單位置</string>
     <string name="nav_bar_pos_sub">目前位置: %1$s</string>
@@ -95,6 +94,7 @@
     <string name="voice_control_sub_long">長按啟用語音控制</string>
     <string name="voice_control_subst">替代文字</string>
     <string name="voice_control_subst_sub">將文字用其他文字或句子替代</string>
+    <string name="voice_control_subst_hint">開：播放\n關：暫停</string>
 
     <string name="module_installation">模組安裝: %1$s</string>
     <string name="install_pending">等待安裝: %1$s</string>
@@ -125,7 +125,6 @@
     <string name="video_scaling_best">最符合螢幕大小</string>
     <string name="video_scaling_fill">全螢幕</string>
     <string name="video_scaling_orig">原始</string>
-
     <string name="audio">音效</string>
     <string name="audio_delay">音效延遲</string>
     <string name="audio_delay_aa">音效延遲 - Android Auto</string>
@@ -230,6 +229,7 @@
     <string name="vfs_content">內容</string>
     <string name="vfs_file_system">檔案系統</string>
     <string name="vfs_gdrive">Google雲端硬碟</string>
+    <string name="m3u_playlist">M3U 播放列表</string>
     <string name="m3u_playlist_name">名稱</string>
     <string name="m3u_playlist_location">位置</string>
     <string name="m3u_playlist_location_hint">網址</string>
