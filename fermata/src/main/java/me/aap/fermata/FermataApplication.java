@@ -109,11 +109,15 @@ public class FermataApplication extends NetSplitCompatApp {
 	}
 
 	public boolean isMirroringMode() {
-		return BuildConfig.AUTO && mirroringMode != 0;
+		return BuildConfig.AUTO && getMirroringMode() != 0;
 	}
 
 	public boolean isMirroringLandscape() {
-		return BuildConfig.AUTO && mirroringMode == 1;
+		return BuildConfig.AUTO && getMirroringMode() == 1;
+	}
+
+	public int getMirroringMode() {
+		return mirroringMode;
 	}
 
 	public void setMirroringMode(int mirroringMode) {

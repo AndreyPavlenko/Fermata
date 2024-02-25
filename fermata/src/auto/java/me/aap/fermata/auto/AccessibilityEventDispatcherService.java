@@ -1,11 +1,18 @@
 package me.aap.fermata.auto;
 
 import static android.accessibilityservice.GestureDescription.getMaxGestureDuration;
+import static android.view.Display.DEFAULT_DISPLAY;
 import static android.view.MotionEvent.ACTION_DOWN;
 import static android.view.MotionEvent.ACTION_MOVE;
 import static android.view.MotionEvent.ACTION_POINTER_DOWN;
 import static android.view.MotionEvent.ACTION_POINTER_UP;
 import static android.view.MotionEvent.ACTION_UP;
+import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED;
+import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
+import static android.view.accessibility.AccessibilityEvent.WINDOWS_CHANGE_ADDED;
+import static android.view.accessibility.AccessibilityEvent.WINDOWS_CHANGE_REMOVED;
+import static android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION;
+import static android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
@@ -20,16 +27,33 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import me.aap.utils.log.Log;
 
 public class AccessibilityEventDispatcherService extends AccessibilityService {
 	private static String clickOnButton;
 	private static AccessibilityEventDispatcherService instance;
+	private final Set<Integer> windowIds =
+			(VERSION.SDK_INT < VERSION_CODES.TIRAMISU) ? Collections.emptySet() : new HashSet<>();
 	private final Path path = new Path();
 	private GestureDescription.Builder gb;
 	private Pointer[] pointers = new Pointer[]{new Pointer()};
+
+	static int getWindowCount() {
+		var ds = instance;
+		if (ds == null) return -1;
+		int cnt =
+				(VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) ? ds.windowIds.size() :
+						ds.listWindows().size();
+		Log.d("Window count: ", cnt);
+		return cnt;
+	}
 
 	static void autoClickOnButton(@Nullable String text) {
 		if (clickOnButton != null) Log.i("Disabled auto click on button with text: ", clickOnButton);
@@ -50,6 +74,7 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 	static boolean dispatchTap(float x, float y) {
 		var ds = instance;
 		if ((VERSION.SDK_INT < VERSION_CODES.N) || (ds == null)) return false;
+		if ((x < 0f) || (y < 0f)) return true;
 		ds.path.reset();
 		ds.path.moveTo(x, y);
 		var gb = new GestureDescription.Builder().addStroke(new StrokeDescription(ds.path, 0L, 1L));
@@ -59,6 +84,7 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 	static boolean dispatchScale(float x, float y, float diff) {
 		var ds = instance;
 		if ((VERSION.SDK_INT < VERSION_CODES.O) || (ds == null)) return false;
+		if ((x < 0f) || (y < 0f)) return true;
 		var path = ds.path;
 		var dur = 100L;
 		if (diff > 0) {
@@ -207,6 +233,9 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 	public void onCreate() {
 		super.onCreate();
 		instance = this;
+		if (VERSION.SDK_INT < VERSION_CODES.TIRAMISU) return;
+		windowIds.clear();
+		windowIds.addAll(listWindows());
 	}
 
 	@Override
@@ -217,8 +246,16 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 
 	@Override
 	public void onAccessibilityEvent(AccessibilityEvent event) {
+		var type = event.getEventType();
+		if ((VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) && (type == TYPE_WINDOWS_CHANGED)) {
+			if (event.getDisplayId() != DEFAULT_DISPLAY) return;
+			var change = event.getWindowChanges();
+			if (change == WINDOWS_CHANGE_ADDED) windowIds.add(event.getWindowId());
+			else if (change == WINDOWS_CHANGE_REMOVED) windowIds.remove(event.getWindowId());
+			return;
+		}
+		if (type != TYPE_WINDOW_STATE_CHANGED) return;
 		if (clickOnButton == null) return;
-		if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
 		Log.i("Event received: ", event);
 		var root = getRootInActiveWindow();
 		if (root == null) return;
@@ -236,8 +273,20 @@ public class AccessibilityEventDispatcherService extends AccessibilityService {
 		btn.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
 	}
 
+
 	@Override
 	public void onInterrupt() {
+	}
+
+	private List<Integer> listWindows() {
+		var windows = getWindows();
+		var ids = new ArrayList<Integer>(windows.size());
+		for (var w : getWindows()) {
+			if ((VERSION.SDK_INT >= VERSION_CODES.R) && (w.getDisplayId() != DEFAULT_DISPLAY)) continue;
+			var type = w.getType();
+			if ((type == TYPE_APPLICATION) || (type == TYPE_INPUT_METHOD)) ids.add(w.getId());
+		}
+		return ids;
 	}
 
 	private static final class Pointer {

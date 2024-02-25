@@ -1,20 +1,18 @@
 package me.aap.fermata.auto;
 
-import static android.content.Context.KEYGUARD_SERVICE;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
 import static android.os.SystemClock.uptimeMillis;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static me.aap.fermata.auto.MirrorDisplay.disableAccelRotation;
 import static me.aap.utils.ui.UiUtils.toPx;
 
 import android.annotation.SuppressLint;
-import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -105,21 +103,17 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 	@Override
 	public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
 		if (sc != null) {
-			md.releaseSurface(sc);
+			if (md != null) md.releaseSurface(sc);
 			sc = null;
 		}
 	}
 
-	static void onHomeButtonClick(MirrorDisplay md) {
-		var ctx = FermataApplication.get();
-		var locked = (((KeyguardManager) ctx.getSystemService(
-				KEYGUARD_SERVICE)).inKeyguardRestrictedInputMode()) ||
-				!((PowerManager) ctx.getSystemService(POWER_SERVICE)).isInteractive();
-		if (!locked && (LauncherActivity.getActiveInstance() == null)) startLauncher();
-		else homeScreen(md);
+	static void onHomeButtonClick() {
+		if (LauncherActivity.getActiveInstance() == null) startLauncher();
+		else homeScreen();
 	}
 
-	static void onBackButtonClick(MirrorDisplay md) {
+	static void onBackButtonClick() {
 		var d = EventDispatcher.get();
 		if (!d.back()) {
 			var vm = (WindowManager) FermataApplication.get().getSystemService(WINDOW_SERVICE);
@@ -134,7 +128,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			d.motionEvent(time, time + 40, MotionEvent.ACTION_MOVE, size.x * 0.6f, y);
 			d.motionEvent(time, time + 50, MotionEvent.ACTION_UP, size.x * 0.5f, y);
 		}
-		rotateScreen(md);
+		disableAccelRotation();
 	}
 
 	private static void startLauncher() {
@@ -144,7 +138,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		ctx.startActivity(intent);
 	}
 
-	private static void homeScreen(MirrorDisplay md) {
+	private static void homeScreen() {
 		if (!EventDispatcher.get().home()) {
 			var ctx = FermataApplication.get();
 			Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -152,14 +146,10 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_SINGLE_TOP);
 			ctx.startActivity(intent);
 		}
-		rotateScreen(md);
+		disableAccelRotation();
 	}
 
-	private static void rotateScreen(MirrorDisplay md) {
-		md.disableAccelRotation();
-	}
-
-	private final class ToolBar extends LinearLayout {
+	private static final class ToolBar extends LinearLayout {
 		private final ReschedulableTask delayedHide = new ReschedulableTask() {
 			@Override
 			protected void perform() {
@@ -187,7 +177,7 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			maxX = dm.widthPixels - pad;
 			minY = pad;
 			maxY = dm.heightPixels - pad;
-			iconSize = (int) Math.max(Math.min(dm.widthPixels, dm.heightPixels) / 10f, toPx(ctx, 20));
+			iconSize = (int) Math.max(Math.min(dm.widthPixels, dm.heightPixels) / 8f, toPx(ctx, 20));
 			setLayoutParams(new FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
 			setX(dm.widthPixels - iconSize * 2 - pad);
 			setY(pad);
@@ -262,13 +252,13 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 		}
 
 		private void handleClick(float x) {
-			if (getButtonAt(x) == 0) onHomeButtonClick(md);
-			else onBackButtonClick(md);
+			if (getButtonAt(x) == 0) onHomeButtonClick();
+			else onBackButtonClick();
 		}
 
 		private void handleLongClick(float x) {
-			if (getButtonAt(x) == 0) homeScreen(md);
-			else onBackButtonClick(md);
+			if (getButtonAt(x) == 0) homeScreen();
+			else onBackButtonClick();
 		}
 	}
 }

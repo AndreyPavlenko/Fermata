@@ -9,6 +9,7 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAP
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static android.os.Build.VERSION.SDK_INT;
+import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
 import static android.os.SystemClock.uptimeMillis;
 import static android.provider.Settings.System.ACCELEROMETER_ROTATION;
 import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
@@ -16,6 +17,15 @@ import static android.provider.Settings.System.USER_ROTATION;
 import static android.view.Surface.ROTATION_0;
 import static android.view.Surface.ROTATION_270;
 import static android.view.Surface.ROTATION_90;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
+import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+import static android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+import static android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
+import static android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+import static android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.annotation.SuppressLint;
@@ -68,6 +78,9 @@ import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
 public class MirrorDisplay {
+	private static final int OVERLAY_FLAGS =
+			FLAG_NOT_FOCUSABLE | FLAG_KEEP_SCREEN_ON | FLAG_DISMISS_KEYGUARD | FLAG_TURN_SCREEN_ON |
+					FLAG_SHOW_WHEN_LOCKED | FLAG_NOT_TOUCHABLE | FLAG_WATCH_OUTSIDE_TOUCH;
 	private static WeakReference<MirrorDisplay> ref;
 	private final int[] loc = new int[2];
 	private final Display defaultDisplay;
@@ -175,7 +188,7 @@ public class MirrorDisplay {
 			e = MotionEvent.obtain(downTime, uptimeMillis(), e.getAction(), dx, dy, 0);
 			e.setSource(InputDevice.SOURCE_TOUCHSCREEN);
 		} else {
-			d = EventDispatcher.get();
+			d = dispatcher();
 			var a = d.getActivity();
 			var m = metrics(a);
 			if (m == null) return false;
@@ -196,8 +209,9 @@ public class MirrorDisplay {
 				}
 			}
 			e = MotionEvent.obtain(downTime, uptimeMillis(), action, cnt, props, coords,
-					e.getMetaState(), e.getButtonState(), e.getXPrecision(), e.getYPrecision(),
-					e.getDeviceId(), e.getEdgeFlags(), InputDevice.SOURCE_TOUCHSCREEN, e.getFlags());
+					e.getMetaState(),
+					e.getButtonState(), e.getXPrecision(), e.getYPrecision(), e.getDeviceId(),
+					e.getEdgeFlags(), InputDevice.SOURCE_TOUCHSCREEN, e.getFlags());
 		}
 		return d.motionEvent(e);
 	}
@@ -281,26 +295,29 @@ public class MirrorDisplay {
 		var pmg = (PowerManager) app.getSystemService(POWER_SERVICE);
 		if (pmg != null) {
 			//noinspection deprecation
-			wakeLock = pmg.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Fermata:ScreenLock");
+			wakeLock = pmg.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | ACQUIRE_CAUSES_WAKEUP,
+					"Fermata:ScreenLock");
 			if (wakeLock != null) wakeLock.acquire(24 * 3600000);
 		}
 
 		if ((overlay == null) && (SDK_INT >= VERSION_CODES.O)) {
 			try {
 				var wm = (WindowManager) app.getSystemService(WINDOW_SERVICE);
-				var lp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
-						WindowManager.LayoutParams.MATCH_PARENT,
-						WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-						WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-								WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-								WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH |
-								WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, PixelFormat.TRANSPARENT);
+				var lp =
+						new WindowManager.LayoutParams(MATCH_PARENT, MATCH_PARENT, TYPE_APPLICATION_OVERLAY,
+								OVERLAY_FLAGS, PixelFormat.TRANSPARENT);
 				var overlay = new Overlay(app);
 				wm.addView(overlay, lp);
 				this.overlay = overlay;
 			} catch (Exception err) {
 				Log.e(err, "Failed to add overlay");
 			}
+		}
+
+		try {
+			app.startService(new Intent(app, XposedEventDispatcherService.class));
+		} catch (Exception err) {
+			Log.e(err, "Failed to start XposedEventDispatcherService");
 		}
 
 		var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
@@ -327,6 +344,12 @@ public class MirrorDisplay {
 		restoreBrightness(app);
 		restoreAccelRotation(app);
 		ProjectionService.stop();
+
+		try {
+			app.stopService(new Intent(app, XposedEventDispatcherService.class));
+		} catch (Exception err) {
+			Log.d(err, "Failed to stop XposedEventDispatcherService");
+		}
 
 		var amgr = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
 		if (amgr != null) AudioManagerCompat.abandonAudioFocusRequest(amgr, audioFocusReq);
@@ -420,9 +443,15 @@ public class MirrorDisplay {
 		}
 	}
 
+	private EventDispatcher dispatcher() {
+		var d = EventDispatcher.get();
+		Log.d(d);
+		return d;
+	}
+
 	@Nullable
 	private EventDispatcher translate(float x, float y) {
-		var d = EventDispatcher.get();
+		var d = dispatcher();
 		var a = d.getActivity();
 		var m = metrics(a);
 		if (m == null) return null;
@@ -469,14 +498,10 @@ public class MirrorDisplay {
 		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TOP);
 		app.startActivity(intent);
 
-		if (mode == 0) {
-			var launcher = LauncherActivity.getActiveInstance();
-			if (launcher != null) launcher.finish();
-		} else {
-			intent = new Intent(app, LauncherActivity.class);
-			intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TASK);
-			app.startActivity(intent);
-		}
+		intent = new Intent(app, LauncherActivity.class);
+		intent.setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_CLEAR_TASK);
+		if (mode == 0) intent.setAction(MainActivityDelegate.INTENT_ACTION_FINISH);
+		app.startActivity(intent);
 	}
 
 	private static void setBrightness(Context ctx, int br) {
@@ -560,12 +585,12 @@ public class MirrorDisplay {
 		@SuppressLint("ClickableViewAccessibility")
 		@Override
 		public boolean onTouchEvent(MotionEvent event) {
-			if (event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER) {
-				dimAndRotate.schedule(30000);
-				var ctx = getContext();
-				restoreBrightness(ctx);
-				restoreAccelRotation(ctx);
-			}
+			if (event.getToolType(0) != MotionEvent.TOOL_TYPE_FINGER) return false;
+			Log.d("Temporary restoring brightness and rotation due to event ", event);
+			dimAndRotate.schedule(30000);
+			var ctx = getContext();
+			restoreBrightness(ctx);
+			restoreAccelRotation(ctx);
 			return false;
 		}
 	}

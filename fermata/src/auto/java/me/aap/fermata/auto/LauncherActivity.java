@@ -5,7 +5,11 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAP
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
+import static android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+import static me.aap.fermata.ui.activity.MainActivityDelegate.INTENT_ACTION_FINISH;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityDelegate.FULLSCREEN_FLAGS;
@@ -22,7 +26,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -57,11 +60,11 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.Supplier;
-import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
 
 public class LauncherActivity extends AppCompatActivity {
+	public static final String INTENT_EXTRA_MODE = "fermata.mirror.mode";
 	private static final Pref<Supplier<String[]>> AA_LAUNCHER_APPS = Pref.sa("AA_LAUNCHER_APPS",
 			() -> new String[]{FermataApplication.get().getPackageName(), "com.android.chrome",
 					"com.google.android.gm", "com.google.android.apps.maps", "com.google.android.youtube"});
@@ -72,14 +75,27 @@ public class LauncherActivity extends AppCompatActivity {
 	}
 
 	@Override
+	public void onConfigurationChanged(@NonNull Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+	}
+
+	@Override
 	protected void onCreate(@Nullable Bundle savedInstanceState) {
-		MainActivityDelegate.setTheme(this, true);
 		super.onCreate(savedInstanceState);
+
+		var intent = getIntent();
+		if ((intent != null) && INTENT_ACTION_FINISH.equals(intent.getAction())) {
+			finish();
+			return;
+		}
+
+		MainActivityDelegate.setTheme(this, true);
 		setRequestedOrientation();
 		var v = new AppListView(this);
 		setContentView(v);
 		var w = getWindow();
-		w.addFlags(FLAG_KEEP_SCREEN_ON);
+		w.addFlags(
+				FLAG_KEEP_SCREEN_ON | FLAG_TURN_SCREEN_ON | FLAG_DISMISS_KEYGUARD | FLAG_SHOW_WHEN_LOCKED);
 		w.getDecorView().setSystemUiVisibility(FULLSCREEN_FLAGS);
 		getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
 			@Override
@@ -92,8 +108,9 @@ public class LauncherActivity extends AppCompatActivity {
 	}
 
 	@Override
-	protected void onStart() {
-		super.onStart();
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		if (INTENT_ACTION_FINISH.equals(intent.getAction())) finish();
 	}
 
 	@Override
@@ -110,8 +127,9 @@ public class LauncherActivity extends AppCompatActivity {
 	}
 
 	private void setRequestedOrientation() {
+		var land = FermataApplication.get().isMirroringLandscape();
 		setRequestedOrientation(
-				FermataApplication.get().isMirroringLandscape() ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE :
+				land ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE :
 						SCREEN_ORIENTATION_SENSOR_PORTRAIT);
 	}
 
@@ -382,12 +400,6 @@ public class LauncherActivity extends AppCompatActivity {
 				}
 			}
 
-			@Override
-			public boolean onTouchEvent(MotionEvent event) {
-				Log.i(event);
-				return super.onTouchEvent(event);
-			}
-
 			@SuppressLint("NotifyDataSetChanged")
 			@Override
 			public void onClick(View v) {
@@ -422,6 +434,7 @@ public class LauncherActivity extends AppCompatActivity {
 						intent.addCategory(Intent.CATEGORY_LAUNCHER);
 						intent.setClassName(appInfo.pkg, appInfo.name);
 						intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+						intent.putExtra(INTENT_EXTRA_MODE, FermataApplication.get().getMirroringMode());
 						getContext().startActivity(intent);
 						MirrorDisplay.disableAccelRotation();
 					} catch (Exception err) {

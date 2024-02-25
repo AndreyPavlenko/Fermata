@@ -8,18 +8,21 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.utils.log.Log;
 
 public class XposedEventDispatcherService extends Service {
 	static final int MSG_REGISTER = 0;
 	static final int MSG_UNREGISTER = 1;
-	static final int MSG_MOTION_EVENT = 2;
-	static final int MSG_BACK_EVENT = 3;
+	static final int MSG_MIRROR_MODE = 2;
+	static final int MSG_MOTION_EVENT = 3;
+	static final int MSG_BACK_EVENT = 4;
 	private static Messenger activityMessenger;
 	private static int registrationKey;
 	private final Messenger messenger = new Messenger(new Handler(Looper.getMainLooper()) {
@@ -28,10 +31,17 @@ public class XposedEventDispatcherService extends Service {
 			if (msg.what == MSG_REGISTER) {
 				activityMessenger = msg.replyTo;
 				registrationKey = msg.arg1;
-				Log.d("Activity registered: ", activityMessenger, ", key: ", registrationKey);
+				Log.i("Activity registered: ", activityMessenger, ", key: ", registrationKey);
+
+				try {
+					var mode = FermataApplication.get().getMirroringMode();
+					activityMessenger.send(Message.obtain(null, MSG_MIRROR_MODE, mode, 0));
+				} catch (RemoteException err) {
+					Log.e(err);
+				}
 			} else if ((msg.what == MSG_UNREGISTER) && (registrationKey == msg.arg1)) {
 				activityMessenger = null;
-				Log.d("Activity unregistered: ", registrationKey);
+				Log.i("Activity unregistered: ", registrationKey);
 			}
 		}
 	});
@@ -39,7 +49,7 @@ public class XposedEventDispatcherService extends Service {
 	@Nullable
 	@Override
 	public IBinder onBind(Intent intent) {
-		Log.d("Bound: ", intent);
+		Log.i("Bound: ", intent);
 		return messenger.getBinder();
 	}
 

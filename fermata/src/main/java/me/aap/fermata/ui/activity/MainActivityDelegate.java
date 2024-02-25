@@ -10,7 +10,10 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static android.view.WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD;
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+import static android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
+import static android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static me.aap.fermata.BuildConfig.AUTO;
 import static me.aap.fermata.action.KeyEventHandler.handleKeyEvent;
@@ -618,10 +621,16 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private boolean checkMirroringMode() {
+		if (!AUTO) return false;
+		var screenOnFlags =
+				FLAG_KEEP_SCREEN_ON | FLAG_TURN_SCREEN_ON | FLAG_DISMISS_KEYGUARD | FLAG_SHOW_WHEN_LOCKED;
 		var app = FermataApplication.get();
-		if (!app.isMirroringMode()) return false;
-		keepScreenOn(true);
+		if (!app.isMirroringMode()) {
+			getWindow().clearFlags(screenOnFlags);
+			return false;
+		}
 		setFullScreen(true);
+		getWindow().addFlags(screenOnFlags);
 		getAppActivity().setRequestedOrientation(
 				app.isMirroringLandscape() ? SCREEN_ORIENTATION_SENSOR_LANDSCAPE :
 						SCREEN_ORIENTATION_SENSOR_PORTRAIT);

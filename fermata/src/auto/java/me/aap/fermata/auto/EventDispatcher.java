@@ -5,10 +5,12 @@ import static android.view.MotionEvent.ACTION_DOWN;
 import static android.view.MotionEvent.ACTION_MOVE;
 import static android.view.MotionEvent.ACTION_UP;
 import static android.view.MotionEvent.obtain;
+import static me.aap.fermata.auto.AccessibilityEventDispatcherService.getWindowCount;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 
 import android.content.Context;
+import android.os.Build;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.inputmethod.InputMethodManager;
@@ -29,8 +31,9 @@ abstract class EventDispatcher {
 	}
 
 	static EventDispatcher get() {
+		if (getWindowCount() > 1) return AccessibilityDispatcher.get();
 		var d = ActivityDispatcher.get();
-		return (d.getActivity() == null) ? XposedDispatcher.get() : d;
+		return (d.getActiveInstance() == null) ? XposedDispatcher.get() : d;
 	}
 
 	public abstract boolean back();
@@ -111,7 +114,8 @@ abstract class EventDispatcher {
 		public boolean back() {
 			var a = getActivity();
 			if (a == null) return AccessibilityDispatcher.get().back();
-			a.getOnBackPressedDispatcher().onBackPressed();
+			//noinspection deprecation
+			a.onBackPressed();
 			return true;
 		}
 
@@ -155,16 +159,24 @@ abstract class EventDispatcher {
 
 		@Override
 		AppCompatActivity getActivity() {
+			var cnt = getWindowCount();
+			if (cnt == -1) {
+				if (imm == null) {
+					imm = (InputMethodManager) FermataApplication.get()
+							.getSystemService(Context.INPUT_METHOD_SERVICE);
+				}
+				if (imm.isAcceptingText()) return null;
+			} else if (cnt > 1) {
+				return null;
+			}
+			return getActiveInstance();
+		}
+
+		private AppCompatActivity getActiveInstance() {
 			AppCompatActivity a = LauncherActivity.getActiveInstance();
-			if (a == null) {
-				a = MainActivity.getActiveInstance();
-				if (a == null) return null;
-			}
-			if (imm == null) {
-				imm = (InputMethodManager) FermataApplication.get()
-						.getSystemService(Context.INPUT_METHOD_SERVICE);
-			}
-			return ((imm != null) && imm.isAcceptingText()) ? null : a;
+			if (a == null) a = MainActivity.getActiveInstance();
+			return (a == null) || ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) &&
+					(a.isInMultiWindowMode() || a.isInPictureInPictureMode())) ? null : a;
 		}
 	}
 
