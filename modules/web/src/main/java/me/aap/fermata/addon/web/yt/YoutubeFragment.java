@@ -9,6 +9,10 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.web.FermataChromeClient;
@@ -34,7 +38,8 @@ import me.aap.utils.ui.view.ToolBarView;
 @Keep
 @SuppressWarnings("unused")
 public class YoutubeFragment extends WebBrowserFragment implements FermataServiceUiBinder.Listener {
-	private static final String DEFAULT_URL = "http://m.youtube.com";
+	private static final String DEFAULT_URL = "https://m.youtube.com";
+	private static final Set<String> DEFAULT_URLS = new HashSet<>(Arrays.asList(DEFAULT_URL, DEFAULT_URL + '/'));
 	private static final Pref<LongSupplier> RESUME_POS = Pref.l("YT_RESUME_POS", 0L);
 	private boolean playOnResume;
 
@@ -172,7 +177,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			FermataChromeClient chrome = v.getWebChromeClient();
 			if (chrome == null) return;
 
-			chrome.enterFullScreen();
+			if (!DEFAULT_URLS.contains(getUrl())) chrome.enterFullScreen();
 		} else if (YoutubeMediaEngine.isYoutubeItem(oldItem)) {
 			FermataWebView v = getWebView();
 			if (v == null) return;
