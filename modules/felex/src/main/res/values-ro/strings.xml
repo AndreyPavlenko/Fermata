@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dict_folder">Dosar de dicționare</string>
+    <string name="cache_folder">Dosar cache</string>
+    <string name="dict_sub1">Cuvinte: %1$d</string>
+    <string name="dict_sub2">Cuvinte: %1$d. Progres: %2$d/%3$d.</string>
+    <string name="start_tutor">Începe tutorul</string>
+    <string name="start_tutor_dir">Traducere directă</string>
+    <string name="start_tutor_rev">Traducere inversă</string>
+    <string name="start_tutor_mix">Amestecat</string>
+    <string name="start_tutor_listen">Ascultare</string>
+    <string name="add_dict">Adaugă dicționar</string>
+    <string name="dict_name">Nume dicționar</string>
+    <string name="src_lang">Limba sursei</string>
+    <string name="target_lang">Limba destinație</string>
+    <string name="no_lang_supported">Nicio limbă acceptată de TTS</string>
+    <string name="add_word">Adaugă cuvânt</string>
+    <string name="add_trans">Adaugă traducere</string>
+    <string name="add_example">Adaugă exemplu</string>
+    <string name="word">Cuvânt</string>
+    <string name="trans">Traducere</string>
+    <string name="example">Exemplu</string>
+    <string name="example_trans">Exemplu de traducere</string>
+    <string name="wipe_prog">Curăță progresul</string>
+    <string name="wipe_prog_for">Ștergi progresul pentru %1$s?</string>
+    <string name="change_prog">Schimbă progresul</string>
+    <string name="dir_prog">Progres direct</string>
+    <string name="rev_prog">Progres invers</string>
+    <string name="import_dict">Importă dicționarul</string>
+    <string name="import_dict_q">Se importă dicționarul %1$s?</string>
+    <string name="import_dict_exist">Adaugi cuvinte în dicționarul existent %1$s?</string>
+    <string name="err_invalid_dict_hdr">Antet dicționar nevalid: %1$s?</string>
+</resources>
