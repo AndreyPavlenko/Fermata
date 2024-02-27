@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="force_dark">Forțează modul întunecat, dacă este acceptat</string>
+    <string name="force_dark_sub">%1$s. Alege "\"Auto"\" pentru a urmări tema dispozitivului.</string>
+    <string name="force_dark_auto">Automat</string>
+    <string name="force_dark_enabled">Activat</string>
+    <string name="force_dark_disabled">Dezactivat</string>
+    <string name="user_agent_desktop">User-Agent - versiune desktop</string>
+    <string name="desktop_version">Versiune desktop</string>
+    <string name="full_screen">Ecran complet</string>
+    <string name="full_screen_exit">Ieșire din ecranul complet</string>
+    <string name="video_scaling_fill_proportional">Umple proporțional</string>
+    <string name="video_quality">Calitate video</string>
+    <string name="open_on_start">Deschide la pornire</string>
+    <string name="try_to_skip_ad">Încearcă să omiți publicitatea</string>
+</resources>
