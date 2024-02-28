@@ -29,7 +29,7 @@
     <string name="theme_dark">Sombre</string>
     <string name="theme_day_night">Jour/Nuit</string>
     <string name="theme_black">Noir</string>
-    <string name="theme_star_wars">Guerres des étoiles</string>
+    <string name="theme_star_wars">Star Wars</string>
 
     <string name="nav_bar_pos">Position de la barre de navigation</string>
     <string name="nav_bar_pos_sub">Position actuelle : %1$s</string>
@@ -42,7 +42,7 @@
     <string name="hide_bars">Masquer les barres</string>
     <string name="hide_bars_sub">Masquer les barres supérieure et inférieure lorsque le panneau de contrôle apparaît</string>
     <string name="show_pg_up_down">Afficher les boutons de page haut/bas</string>
-    <string name="use_dpad_cursor">Utiliser le curseur pour la navigation D-pad</string>
+    <string name="use_dpad_cursor">Utiliser le curseur pour la navigation avec la croix directionnelle</string>
     <string name="fullscreen_mode">Mode plein écran</string>
     <string name="nav_bar_size">Taille de la barre de navigation</string>
     <string name="tool_bar_size">Taille de la barre d'outils</string>
@@ -72,12 +72,12 @@
     <string name="action_default">Par défaut</string>
     <string name="action_none">Aucun</string>
 
-    <string name="play_next_on_completion">Lire la piste suivante à la fin</string>
+    <string name="play_next_on_completion">Lancer automatiquement la piste suivante</string>
 
     <string name="rw_ff_click">RW/FF - clic</string>
-    <string name="rw_ff_long_click">RW/FF - clic long</string>
-    <string name="prev_next_long_click">Préc/Suiv - clic long</string>
-    <string name="play_pause_stop">Arrêter sur un clic long de lecture/pause</string>
+    <string name="rw_ff_long_click">RW/FF - appui long</string>
+    <string name="prev_next_long_click">Préc/Suiv - appui long</string>
+    <string name="play_pause_stop">Arrêter avec un appui long sur lecture/pause</string>
 
     <string name="time">Temps</string>
     <string name="time_unit">Unité de temps</string>
@@ -86,10 +86,10 @@
     <string name="time_unit_minute">Minute</string>
     <string name="time_unit_percent">Pourcentage</string>
 
-    <string name="video_control">Contrôle vidéo</string>
+    <string name="video_control">Contrôle de la vidéo</string>
     <string name="video_control_start_delay">Afficher au démarrage</string>
     <string name="video_control_touch_delay">Afficher au toucher</string>
-    <string name="video_control_seek_delay">Afficher en avance/retour rapide</string>
+    <string name="video_control_seek_delay">Afficher avance/retour rapide</string>
     <string name="video_aa_show_status">Afficher la barre d'état dans Android Auto</string>
 
     <string name="enable_exoplayer">Activer ExoPlayer</string>
@@ -151,7 +151,7 @@
     <string name="subtitles">Sous-titres</string>
     <string name="subtitle_delay">Délai des sous-titres</string>
     <string name="display_subtitles">Afficher les sous-titres</string>
-    <string name="preferred_sub_lang">Langues de sous-titres préférées</string>
+    <string name="preferred_sub_lang">Langues préférées des sous-titres</string>
     <string name="preferred_sub_key">Préférer les sous-titres avec des mots-clés</string>
     <string name="select_subtitles">Sélectionner les sous-titres</string>
 
@@ -245,17 +245,17 @@
     <string name="vfs_content">Contenu</string>
     <string name="vfs_file_system">Système de fichiers</string>
     <string name="vfs_gdrive">Google Drive</string>
-    <string name="m3u_playlist">Playlist M3U</string>
+    <string name="m3u_playlist">Liste de lecture M3U</string>
     <string name="m3u_playlist_name">Nom</string>
     <string name="m3u_playlist_location">Emplacement</string>
     <string name="m3u_playlist_location_hint">Fichier ou URL http(s)</string>
-    <string name="m3u_playlist_video">Playlist vidéo</string>
+    <string name="m3u_playlist_video">Liste de lecture vidéo</string>
 
     <string name="eq_manual">Manuel</string>
     <string name="eq_normal">Normal</string>
     <string name="eq_classical">Classique</string>
-    <string name="eq_dance">Danse</string>
-    <string name="eq_flat">Plat</string>
+    <string name="eq_dance">Dance</string>
+    <string name="eq_flat">Flat</string>
     <string name="eq_folk">Folk</string>
     <string name="eq_heavy_metal">Heavy Metal</string>
     <string name="eq_hip_hop">Hip Hop</string>
@@ -274,8 +274,8 @@
     <string name="private_key_pass">Mot de passe de la clé privée</string>
 
     <string name="donate">Offrir un café au développeur</string>
-    <string name="donate_text">Si vous aimez l'application, veuillez envisager de m'offrir un café.</string>
-    <string name="use_phone_for_donation">Veuillez utiliser votre téléphone pour offrir un café.</string>
+    <string name="donate_text">Si vous aimez l'application, vous pouvez m'offrir un café.</string>
+    <string name="use_phone_for_donation">Vous pouvez utiliser votre téléphone pour offrir un café.</string>
 
     <string name="timer">Minuteur</string>
     <string name="hours">Heures</string>
@@ -287,7 +287,7 @@
     <string name="move_up">Déplacer vers le haut</string>
     <string name="move_down">Déplacer vers le bas</string>
 
-    <string name="sys_bars_on_video_touch">Afficher les barres système au toucher vidéo</string>
+    <string name="sys_bars_on_video_touch">Afficher les barres système au toucher de la vidéo</string>
     <string name="play_video_landscape">Lecture vidéo en mode paysage</string>
     <string name="clock_pos">Position de l'horloge</string>
     <string name="clock_pos_none">Aucune</string>
@@ -313,7 +313,7 @@
     <string name="import_prefs_ok">Les préférences ont été importées avec succès.\nVeuillez redémarrer l'application.</string>
     <string name="import_prefs_failed">Échec de l'importation des préférences : %1$s</string>
     <string name="prefs_not_found">Aucune préférence trouvée</string>
-    <string name="open_log">Ouvrir le fichier journal</string>
+    <string name="open_log">Ouvrir le fichier de log</string>
     <string name="unlock_phone_and_grant">Déverrouillez le téléphone et accordez les autorisations demandées.</string>
     <string name="screen_capture_rejected">Demande de capture d'écran rejetée.</string>
     <string name="accessibility_dsc">Le service d'accessibilité est utilisé par Fermata Mirror pour simuler des événements de toucher à l'écran.</string>
