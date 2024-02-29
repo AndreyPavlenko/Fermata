@@ -253,7 +253,7 @@ public interface MainActivityPrefs
 		JA,
 		ZH_TW(Locale.TRADITIONAL_CHINESE),
 		KO,
-		FR;
+		FR(Locale.FRENCH);
 
 		private static final List<Lang> values = List.of(values());
 		private static final Map<String, Lang> nameToValue = new HashMap<>();
