@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="force_dark">Forcer le mode sombre, si pris en charge</string>
+    <string name="force_dark_sub">%1$s. Choisissez "Auto" pour suivre le thème de l'appareil.</string>
+    <string name="force_dark_auto">Auto</string>
+    <string name="force_dark_enabled">Activé</string>
+    <string name="force_dark_disabled">Désactivé</string>
+    <string name="desktop_version">Version de bureau</string>
+    <string name="full_screen">Plein écran</string>
+    <string name="full_screen_exit">Quitter le mode plein écran</string>
+    <string name="video_scaling_fill_proportional">Remplissage proportionnel</string>
+    <string name="video_quality">Qualité vidéo</string>
+    <string name="open_on_start">Ouvrir au démarrage</string>
+    <string name="try_to_skip_ad">Essayer de passer la publicité</string>
+</resources>
+
