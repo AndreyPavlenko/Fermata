@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="openai_key">Cheie OpenAI</string>
+    <string name="openai_key_sub">Obține cheia personală: &lt;a href="%1$s"&gt;%1$s&lt;a&gt;</string>
+</resources>

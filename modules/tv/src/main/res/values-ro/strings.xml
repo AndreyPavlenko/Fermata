@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sub_ch">Canale: %1$d.</string>
+    <string name="sub_gr">Grupuri: %1$d.</string>
+    <string name="sub_ch_gr">Canale: %1$d. Grupuri: %2$d.</string>
+    <string name="add_tv_source">Adaugă sursa IPTV M3U</string>
+    <string name="epg_time_shift">Decalaj de timp EPG (ore)</string>
+    <string name="logo">Siglele canalelor</string>
+    <string name="logo_location">Locație</string>
+    <string name="logo_location_hint">Dosar sau URL de bază http(s).</string>
+    <string name="logo_prefer_epg">Preferă siglele din EPG</string>
+    <string name="catchup_query">Format solicitare</string>
+    <string name="catchup_type">Tip Catchup</string>
+    <string name="catchup_type_cur">Tip curent catchup: %1$s</string>
+    <string name="catchup_type_auto">Automat</string>
+    <string name="catchup_days">Numărul de zile</string>
+    <string name="connection_settings">Setări de conectare</string>
+    <string name="err_failed_to_add_tv_source">Nu s-a putut adăuga sursa: %1$s</string>
+</resources>
