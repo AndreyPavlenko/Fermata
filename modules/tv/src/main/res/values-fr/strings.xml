@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sub_ch">Chaînes : %1$d.</string>
+    <string name="sub_gr">Groupes : %1$d.</string>
+    <string name="sub_ch_gr">Chaînes : %1$d. Groupes : %2$d.</string>
+    <string name="add_tv_source">Ajouter une source IPTV M3U</string>
+    <string name="epg_time_shift">Décalage horaire EPG (heures)</string>
+    <string name="logo">Logos de chaînes</string>
+    <string name="logo_location">Emplacement</string>
+    <string name="logo_location_hint">Dossier ou URL de base http(s)</string>
+    <string name="logo_prefer_epg">Préférer les logos de l'EPG</string>
+    <string name="catchup_query">Format de requête</string>
+    <string name="catchup_type">Type de rattrapage</string>
+    <string name="catchup_type_cur">Type de rattrapage actuel : %1$s</string>
+    <string name="catchup_type_auto">Auto</string>
+    <string name="catchup_days">Nombre de jours</string>
+    <string name="connection_settings">Paramètres de connexion</string>
+
+    <string name="err_failed_to_add_tv_source">Impossible d'ajouter la source : %1$s</string>
+</resources>

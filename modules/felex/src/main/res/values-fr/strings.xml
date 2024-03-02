@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dict_folder">Dossier des dictionnaires</string>
+    <string name="cache_folder">Dossier de cache</string>
+    <string name="dict_sub1">Mots : %1$d</string>
+    <string name="dict_sub2">Mots : %1$d. Progression : %2$d/%3$d.</string>
+    <string name="start_tutor">Commencer le tutoriel</string>
+    <string name="start_tutor_dir">Traduction directe</string>
+    <string name="start_tutor_rev">Traduction inversé</string>
+    <string name="start_tutor_mix">Mixte</string>
+    <string name="start_tutor_listen">A l'écoute</string>
+    <string name="add_dict">Ajouter un dictionnaire</string>
+    <string name="dict_name">Nom du dictionnaire</string>
+    <string name="src_lang">Langue source</string>
+    <string name="target_lang">Langue cible</string>
+    <string name="no_lang_supported">Aucune langue prise en charge par la synthèse vocale</string>
+    <string name="add_word">Ajouter un mot</string>
+    <string name="add_trans">Ajouter une traduction</string>
+    <string name="add_example">Ajouter un exemple</string>
+    <string name="word">Mot</string>
+    <string name="trans">Traduction</string>
+    <string name="example">Exemple</string>
+    <string name="example_trans">Traduction de l'exemple</string>
+    <string name="wipe_prog">Effacer la progression</string>
+    <string name="wipe_prog_for">Effacer la progression pour %1$s ?</string>
+    <string name="change_prog">Modifier la progression</string>
+    <string name="dir_prog">Progression directe</string>
+    <string name="rev_prog">Progression inversé</string>
+    <string name="import_dict">Importer un dictionnaire</string>
+    <string name="import_dict_q">Importer le dictionnaire %1$s ?</string>
+    <string name="import_dict_exist">Ajouter des mots au dictionnaire existant %1$s ?</string>
+    <string name="err_invalid_dict_hdr">En-tête de dictionnaire invalide : %1$s ?</string>
+</resources>
+
