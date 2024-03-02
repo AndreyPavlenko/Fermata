@@ -50,8 +50,8 @@ public class DictMgr {
 		if (dictionaries == null) {
 			dictionaries = load().then(d -> {
 				if (!d.isEmpty()) return completed(d);
-				return createExample().then(f -> Dict.create(this, f))
-						.map(Collections::singletonList).ifFail(err -> {
+				return createExample().then(f -> Dict.create(this, f)).map(Collections::singletonList)
+						.ifFail(err -> {
 							Log.e(err, "Failed to create example");
 							return emptyList();
 						});
@@ -69,12 +69,13 @@ public class DictMgr {
 	}
 
 	public FutureSupplier<Dict> getDictionary(String name) {
-		return getDictionaries().map(dicts -> CollectionUtils
-				.find(dicts, d -> d.getName().equals(name)));
+		return getDictionaries().map(
+				dicts -> CollectionUtils.find(dicts, d -> d.getName().equals(name)));
 	}
 
-	public FutureSupplier<Dict> createDictionary(String name, Locale srcLang, Locale targetLang) {
-		return createDictionary(new DictInfo(name, srcLang, targetLang));
+	public FutureSupplier<Dict> createDictionary(String name, Locale srcLang, Locale targetLang,
+																							 String skipPhrase) {
+		return createDictionary(new DictInfo(name, srcLang, targetLang, skipPhrase));
 	}
 
 	public FutureSupplier<Dict> createDictionary(DictInfo info) {
@@ -87,11 +88,10 @@ public class DictMgr {
 			}
 
 			String fileName = name + DICT_EXT;
-			return FelexAddon.get().getDictFolder().then(dir -> dir.getChild(fileName)
-							.then(c -> (c == null) ? dir.createFile(fileName)
-									: dir.createTempFile(name + '-', DICT_EXT)))
-					.then(f -> Dict.create(this, f, info)).main()
-					.onSuccess(d -> {
+			return FelexAddon.get().getDictFolder().then(dir -> dir.getChild(fileName).then(
+							c -> (c == null) ? dir.createFile(fileName) : dir.createTempFile(name + '-',
+									DICT_EXT)))
+					.then(f -> Dict.create(this, f, info)).main().onSuccess(d -> {
 						List<Dict> newDicts = new ArrayList<>(dicts.size() + 1);
 						newDicts.addAll(dicts);
 						newDicts.add(d);
@@ -110,8 +110,8 @@ public class DictMgr {
 			dicts.remove(idx);
 			dictionaries = completed(dicts);
 			return d.close().then(v -> d.getDictFile().delete()
-							.then(fd -> d.getCacheFile(false)
-									.then(c -> (c == null) ? completed(true) : c.delete())))
+							.then(fd -> d.getCacheFile(false).then(c -> (c == null) ? completed(true) :
+									c.delete())))
 					.map(cd -> idx);
 		}).main();
 	}
@@ -119,8 +119,8 @@ public class DictMgr {
 	public FutureSupplier<Void> reset() {
 		assertMainThread();
 		if (dictionaries == null) return completedVoid();
-		return dictionaries.then(dicts -> Async.forEach(Dict::close, dicts))
-				.main().onCompletion((r, err) -> {
+		return dictionaries.then(dicts -> Async.forEach(Dict::close, dicts)).main()
+				.onCompletion((r, err) -> {
 					dictionaries = null;
 					if (err != null) Log.e(err, "Failed to close dictionaries");
 				});
@@ -131,21 +131,18 @@ public class DictMgr {
 	}
 
 	private FutureSupplier<List<Dict>> load() {
-		return FelexAddon.get().getDictFolder().then(folder ->
-				enqueue(folder::getChildren).map(FutureSupplier::peek).then(files -> {
+		return FelexAddon.get().getDictFolder()
+				.then(folder -> enqueue(folder::getChildren).map(FutureSupplier::peek).then(files -> {
 					ArrayList<Dict> list = new ArrayList<>(files.size());
-					return Async.forEach(f -> (f instanceof VirtualFile) && (f.getName().endsWith(DICT_EXT))
-									? Dict.create(this, (VirtualFile) f)
-									.onSuccess(list::add)
-									.ifFail(err -> {
-										Log.e(err, "Failed to load dictionary: ", f);
-										return null;
-									}) : completedVoid(), files)
-							.map(v -> {
-								list.trimToSize();
-								Collections.sort(list);
-								return list;
-							});
+					return Async.forEach(f -> (f instanceof VirtualFile) && (f.getName().endsWith(DICT_EXT)) ?
+							Dict.create(this, (VirtualFile) f).onSuccess(list::add).ifFail(err -> {
+								Log.e(err, "Failed to load dictionary: ", f);
+								return null;
+							}) : completedVoid(), files).map(v -> {
+						list.trimToSize();
+						Collections.sort(list);
+						return list;
+					});
 				}));
 	}
 

@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
+import me.aap.fermata.addon.felex.dict.DictInfo;
 import me.aap.fermata.addon.felex.dict.DictMgr;
 import me.aap.fermata.addon.felex.dict.Example;
 import me.aap.fermata.addon.felex.dict.Translation;
@@ -61,6 +62,7 @@ import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.TextUtils;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
 import me.aap.utils.ui.view.ScalableTextView;
@@ -102,6 +104,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 	}
 
 	void refresh(int scrollTo) {
+		if (scrollTo == -1) return;
 		content.clear();
 		adapter().setContent(content);
 		activity.post(() -> scrollToPosition(scrollTo));
@@ -190,8 +193,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 	void setFilter(@NonNull String filter) {
 		if (filter.equals(filterText)) return;
 		filterText = filter;
-		this.filter = filter.isEmpty() ? null
-				: Pattern.compile(Pattern.quote(filter) + ".*", Pattern.CASE_INSENSITIVE);
+		this.filter = filter.isEmpty() ? null :
+				Pattern.compile(Pattern.quote(filter) + ".*", Pattern.CASE_INSENSITIVE);
 		content.filtered = null;
 		adapter().notifyDataSetChanged();
 	}
@@ -202,8 +205,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 		}
 	}
 
-	private final class DictAdapter extends Adapter<Holder> implements OnClickListener,
-			OnLongClickListener {
+	private final class DictAdapter extends Adapter<Holder>
+			implements OnClickListener, OnLongClickListener {
 
 		@NonNull
 		@Override
@@ -277,6 +280,10 @@ public class FelexListView extends RecyclerView implements Closeable {
 			Object item = dv.item;
 			activity.getContextMenu().show(b -> {
 				b.setSelectionHandler(this::menuHandler);
+				if (!(item instanceof Example)) {
+					b.addItem(me.aap.fermata.R.id.edit, me.aap.fermata.R.drawable.edit,
+							me.aap.fermata.R.string.edit).setData(dv);
+				}
 				b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
 						me.aap.fermata.R.string.delete).setData(dv);
 
@@ -300,14 +307,45 @@ public class FelexListView extends RecyclerView implements Closeable {
 			Content<?, ?, ?> cnt = content;
 			Context ctx = getContext();
 
-			if (id == me.aap.fermata.R.id.delete) {
+			if (id == me.aap.fermata.R.id.edit) {
+				var item = dv.item;
+				String oldValue;
+
+				if (item instanceof Dict d) {
+					oldValue = d.getName();
+				} else if (item instanceof Word w) {
+					oldValue = w.getRaw();
+				} else if (item instanceof Translation t) {
+					oldValue = t.getTranslation();
+				} else {
+					return false;
+				}
+
+				UiUtils.queryText(getContext(), me.aap.fermata.R.string.edit,
+						me.aap.fermata.R.drawable.edit, oldValue).then(newValue -> {
+					if (item instanceof Dict d) {
+						var inf = d.getInfo();
+						return d.setInfo(new DictInfo(newValue, inf.getSourceLang(), inf.getTargetLang(),
+								inf.getSkipPhrase())).map(v -> 0);
+					} else if (item instanceof Word) {
+						return requireNonNull(content.dict()).changeWord(oldValue, newValue);
+					} else if (item instanceof Translation t) {
+						var wc = (WordContent) content;
+						t.setTranslation(newValue);
+						return wc.content.setTranslations(wc.dict(), wc.notFiltered).map(v -> 0);
+					} else {
+						return completed(0);
+					}
+				}).onSuccess(FelexListView.this::refresh);
+
+			} else if (id == me.aap.fermata.R.id.delete) {
 				Object item = dv.item;
 				Supplier<FutureSupplier<Integer>> delete;
 
-				if (item instanceof Dict) {
-					delete = () -> getDictMgr().deleteDictionary((Dict) item);
-				} else if (item instanceof Word) {
-					delete = () -> requireNonNull(content.dict()).deleteWord(((Word) item).getWord());
+				if (item instanceof Dict d) {
+					delete = () -> getDictMgr().deleteDictionary(d);
+				} else if (item instanceof Word w) {
+					delete = () -> requireNonNull(content.dict()).deleteWord(w.getWord());
 				} else if (item instanceof Translation) {
 					WordContent wc = (WordContent) content;
 					delete = () -> wc.ls().then(tr -> {
@@ -326,8 +364,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 						if (idx == -1) return completed(-1);
 						ex.remove(idx);
 						tc.notFiltered.remove(item);
-						return tc.parent.content.setTranslations(tc.dict(),
-								tc.parent.notFiltered).map(v -> idx);
+						return tc.parent.content.setTranslations(tc.dict(), tc.parent.notFiltered)
+								.map(v -> idx);
 					});
 				} else {
 					return false;
@@ -336,11 +374,11 @@ public class FelexListView extends RecyclerView implements Closeable {
 				String title = ctx.getString(me.aap.fermata.R.string.delete);
 				String msg = ctx.getString(me.aap.fermata.R.string.delete_confirm, item.toString());
 				Drawable icon = getDrawable(ctx, me.aap.fermata.R.drawable.delete);
-				showQuestion(ctx, title, msg, icon).onSuccess(v -> delete.get().main()
-						.onFailure(err -> showAlert(ctx, err.toString()))
-						.onSuccess(idx -> {
-							if ((cnt == content) && (idx >= 0)) notifyItemRemoved(idx);
-						}));
+				showQuestion(ctx, title, msg, icon).onSuccess(
+						v -> delete.get().main().onFailure(err -> showAlert(ctx, err.toString()))
+								.onSuccess(idx -> {
+									if ((cnt == content) && (idx >= 0)) notifyItemRemoved(idx);
+								}));
 			} else if (id == R.id.wipe_prog) {
 				Dict d = (Dict) dv.item;
 				String title = ctx.getString(R.string.wipe_prog);
@@ -625,8 +663,8 @@ public class FelexListView extends RecyclerView implements Closeable {
 
 		@Override
 		boolean matches(Pattern filter, Example item) {
-			return filter.matcher(item.getSentence()).find()
-					|| filter.matcher(item.getTranslation()).find();
+			return filter.matcher(item.getSentence()).find() ||
+					filter.matcher(item.getTranslation()).find();
 		}
 	}
 

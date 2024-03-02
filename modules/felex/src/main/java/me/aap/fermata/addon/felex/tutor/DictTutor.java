@@ -21,10 +21,15 @@ import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
 
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
@@ -35,6 +40,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.ToIntFunction;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
@@ -45,8 +51,9 @@ import me.aap.utils.voice.TextToSpeech;
 /**
  * @author Andrey Pavlenko
  */
-public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeListener,
-		View.OnClickListener, View.OnLongClickListener {
+public class DictTutor
+		implements Closeable, AudioManager.OnAudioFocusChangeListener, View.OnClickListener,
+		View.OnLongClickListener {
 	public static final byte MODE_LISTENING = 0;
 	public static final byte MODE_DIRECT = 1;
 	public static final byte MODE_REVERSE = 2;
@@ -70,55 +77,56 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 	private final AudioFocusRequestCompat audioFocusReq;
 	private final FelexListView listView;
 	private final ToIntFunction<Word> getProgress;
+	private final Set<String> skipPhrases;
 	private final Deque<Word> history = new LinkedList<>();
 	private TextView transView;
 	private Task current;
 	private TextView wordView;
 	private byte state;
 
-	private DictTutor(MainActivityDelegate activity, Dict dict, byte mode,
-										TextToSpeech dirTts, TextToSpeech revTts) {
+	private DictTutor(MainActivityDelegate activity, Dict dict, byte mode, TextToSpeech dirTts,
+										TextToSpeech revTts) {
 		this.activity = activity;
 		this.dict = dict;
 		this.mode = mode;
 		this.dirTts = dirTts;
 		this.revTts = revTts;
-		this.dirStt = ((mode == MODE_DIRECT) || (mode == MODE_MIXED))
-				? new SpeechToText(activity.getContext(), dict.getTargetLang()) : null;
-		this.revStt = ((mode == MODE_REVERSE) || (mode == MODE_MIXED))
-				? new SpeechToText(activity.getContext(), dict.getSourceLang()) : null;
+		this.dirStt = ((mode == MODE_DIRECT) || (mode == MODE_MIXED)) ?
+				new SpeechToText(activity.getContext(), dict.getTargetLang()) : null;
+		this.revStt = ((mode == MODE_REVERSE) || (mode == MODE_MIXED)) ?
+				new SpeechToText(activity.getContext(), dict.getSourceLang()) : null;
 		rnd = new Random();
 
-		AudioAttributesCompat attrs = new AudioAttributesCompat.Builder()
-				.setUsage(AudioAttributesCompat.USAGE_MEDIA)
-				.setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC)
-				.build();
-		audioFocusReq = new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
-				.setAudioAttributes(attrs)
-				.setWillPauseWhenDucked(false)
-				.setOnAudioFocusChangeListener(this)
-				.build();
+		AudioAttributesCompat attrs =
+				new AudioAttributesCompat.Builder().setUsage(AudioAttributesCompat.USAGE_MEDIA)
+						.setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC).build();
+		audioFocusReq =
+				new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN).setAudioAttributes(
+						attrs).setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(this).build();
 		listView = activity.findViewById(R.id.felix_list_view);
-		getProgress = (mode == MODE_DIRECT) ? Word::getDirProgress
-				: (mode == MODE_REVERSE) ? Word::getRevProgress : Word::getProgress;
+		getProgress = (mode == MODE_DIRECT) ? Word::getDirProgress :
+				(mode == MODE_REVERSE) ? Word::getRevProgress : Word::getProgress;
+
+		var skipPhrase = dict.getInfo().getSkipPhrase();
+		skipPhrases = skipPhrase.isEmpty() ? Collections.emptySet() : new HashSet<>(
+				CollectionUtils.map(Arrays.asList(skipPhrase.split(",")),
+						(i, p, a) -> a.add(p.trim().toLowerCase()), ArrayList::new));
 	}
 
 	public static FutureSupplier<DictTutor> create(MainActivityDelegate activity, Dict dict,
 																								 byte mode) {
 		Context ctx = activity.getContext();
-		return MainActivityDelegate.getActivityDelegate(ctx).then(a ->
-				activity.isCarActivityNotMirror() ? completed(true) : a.getAppActivity()
-						.checkPermissions(RECORD_AUDIO).map(r -> {
+		return MainActivityDelegate.getActivityDelegate(ctx).then(
+				a -> activity.isCarActivityNotMirror() ? completed(true) :
+						a.getAppActivity().checkPermissions(RECORD_AUDIO).map(r -> {
 							if (r[0] == PERMISSION_GRANTED) return true;
 							showAlert(ctx, me.aap.fermata.R.string.err_no_audio_record_perm);
 							return false;
-						})
-		).then(p -> {
+						})).then(p -> {
 			if (!p) throw new IllegalStateException("Failed to request RECORD_AUDIO permission");
 
-			return TextToSpeech.create(ctx, dict.getSourceLang())
-					.then(dir ->
-							TextToSpeech.create(ctx, dict.getTargetLang()).onFailure(err -> dir.close())
+			return TextToSpeech.create(ctx, dict.getSourceLang()).then(
+							dir -> TextToSpeech.create(ctx, dict.getTargetLang()).onFailure(err -> dir.close())
 									.map(rev -> new DictTutor(activity, dict, mode, dir, rev)))
 					.onFailure(err -> showAlert(ctx, err.getLocalizedMessage()));
 		});
@@ -158,12 +166,11 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 	public void onAudioFocusChange(int focusChange) {
 		if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
 			switch (getState()) {
-				case STATE_PAUSING_BY_FOCUS:
-					setState(STATE_RUNNING);
-					return;
-				case STATE_PAUSED_BY_FOCUS:
+				case STATE_PAUSING_BY_FOCUS -> setState(STATE_RUNNING);
+				case STATE_PAUSED_BY_FOCUS -> {
 					setState(STATE_RUNNING);
 					speak(current);
+				}
 			}
 		} else if (getState() == STATE_RUNNING) {
 			setState(STATE_PAUSING_BY_FOCUS);
@@ -240,8 +247,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 				speakTrans(t).onSuccess(v -> activity.postDelayed(this::speak, 1000));
 			} else {
 				assert (t.direct ? dirStt : revStt) != null;
-				(t.direct ? dirStt : revStt).recognize(t)
-						.onProgress((r, p, c) -> setTransText(r.getText()))
+				(t.direct ? dirStt : revStt).recognize(t).onProgress((r, p, c) -> setTransText(r.getText()))
 						.onCompletion(this::recognizeHandler);
 			}
 		}
@@ -251,8 +257,7 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 		if (isClosed()) return;
 		if (err != null) {
 			Log.e(err);
-			if (err instanceof SpeechToTextException) {
-				SpeechToTextException e = (SpeechToTextException) err;
+			if (err instanceof SpeechToTextException e) {
 				if (e.getErrorCode() == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
 					showAlert(getContext(), me.aap.fermata.R.string.err_no_audio_record_perm);
 				} else {
@@ -273,6 +278,9 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 				listView.onProgressChanged(dict, t.w);
 				activity.postDelayed(this::speak, 1000);
 			} else {
+				if ((text != null) && !skipPhrases.isEmpty() && skipPhrases.contains(text.toLowerCase())) {
+					t.attempt = 2;
+				}
 				activity.postDelayed(() -> retry(t), 2000);
 			}
 		}
@@ -314,15 +322,15 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 	}
 
 	private FutureSupplier<Task> nextTask() {
-		return dict.getRandomWord(rnd, history, getProgress).then(w -> w.getTranslations(dict)
-				.map(tr -> new Task(w, tr))).main().onFailure(err -> {
-			if (isClosed()) return;
-			if (err != null) {
-				Log.e(err);
-				showAlert(getContext(), "Failed to load a word: " + err);
-				close();
-			}
-		});
+		return dict.getRandomWord(rnd, history, getProgress)
+				.then(w -> w.getTranslations(dict).map(tr -> new Task(w, tr))).main().onFailure(err -> {
+					if (isClosed()) return;
+					if (err != null) {
+						Log.e(err);
+						showAlert(getContext(), "Failed to load a word: " + err);
+						close();
+					}
+				});
 	}
 
 	private byte getState() {
@@ -335,17 +343,21 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 
 	private boolean checkState() {
 		switch (getState()) {
-			case STATE_RUNNING:
+			case STATE_RUNNING -> {
 				return true;
-			case STATE_PAUSING_BY_FOCUS:
+			}
+			case STATE_PAUSING_BY_FOCUS -> {
 				setState(STATE_PAUSED_BY_FOCUS);
 				return false;
-			case STATE_PAUSING_BY_USER:
+			}
+			case STATE_PAUSING_BY_USER -> {
 				setState(STATE_PAUSED_BY_USER);
 				releaseAudioFocus();
 				return false;
-			default:
+			}
+			default -> {
 				return false;
+			}
 		}
 	}
 
@@ -375,8 +387,8 @@ public class DictTutor implements Closeable, AudioManager.OnAudioFocusChangeList
 						break;
 					}
 				case MODE_REVERSE:
-					speak = (trans.isEmpty()) ? w.getExpr()
-							: trans.get(rnd.nextInt(trans.size())).getTranslation();
+					speak = (trans.isEmpty()) ? w.getExpr() :
+							trans.get(rnd.nextInt(trans.size())).getTranslation();
 					direct = false;
 					break;
 				default:

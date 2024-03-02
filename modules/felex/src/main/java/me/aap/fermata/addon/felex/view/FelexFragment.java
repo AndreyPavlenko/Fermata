@@ -65,8 +65,8 @@ import me.aap.utils.voice.TextToSpeech;
 /**
  * @author Andrey Pavlenko
  */
-public class FelexFragment extends MainActivityFragment implements
-		MainActivityListener, PreferenceStore.Listener, ToolBarView.Listener {
+public class FelexFragment extends MainActivityFragment
+		implements MainActivityListener, PreferenceStore.Listener, ToolBarView.Listener {
 	private DictTutor tutor;
 	private Uri importDict;
 
@@ -154,8 +154,8 @@ public class FelexFragment extends MainActivityFragment implements
 		FutureSupplier<List<Dict>> f = view().getDictMgr().getDictionaries();
 		if (!f.isDone() || f.peek(Collections::emptyList).isEmpty()) return;
 		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
-		b.addItem(R.id.start_tutor, me.aap.fermata.R.drawable.record_voice,
-				R.string.start_tutor).setSubmenu(this::buildTutorMenu);
+		b.addItem(R.id.start_tutor, me.aap.fermata.R.drawable.record_voice, R.string.start_tutor)
+				.setSubmenu(this::buildTutorMenu);
 
 		Object content = view().getContent();
 
@@ -241,14 +241,14 @@ public class FelexFragment extends MainActivityFragment implements
 			String title = ctx.getString(R.string.import_dict);
 			String msg = ctx.getString(R.string.import_dict_q, info);
 			Drawable icon = AppCompatResources.getDrawable(ctx, me.aap.fermata.R.drawable.felex);
-			return showQuestion(ctx, title, msg, icon).then(v -> DictMgr.get()
-					.getDictionary(info.getName()).then(d -> {
+			return showQuestion(ctx, title, msg, icon).then(
+					v -> DictMgr.get().getDictionary(info.getName()).then(d -> {
 						if (d == null) {
 							return DictMgr.get().createDictionary(info);
-						} else if (d.getSourceLang().equals(info.getSourceLang())
-								&& d.getTargetLang().equals(info.getTargetLang())) {
-							return showQuestion(ctx, title, ctx.getString(R.string.import_dict_exist, d), icon)
-									.then(ok -> completed(d), cancel -> createDict(info));
+						} else if (d.getSourceLang().equals(info.getSourceLang()) &&
+								d.getTargetLang().equals(info.getTargetLang())) {
+							return showQuestion(ctx, title, ctx.getString(R.string.import_dict_exist, d),
+									icon).then(ok -> completed(d), cancel -> createDict(info));
 						} else {
 							return createDict(info);
 						}
@@ -257,8 +257,9 @@ public class FelexFragment extends MainActivityFragment implements
 	}
 
 	private FutureSupplier<Dict> createDict(DictInfo i) {
-		return queryText(requireContext(), R.string.dict_name, me.aap.fermata.R.drawable.felex)
-				.then(name -> DictMgr.get().createDictionary(name, i.getSourceLang(), i.getTargetLang()));
+		return queryText(requireContext(), R.string.dict_name, me.aap.fermata.R.drawable.felex).then(
+				name -> DictMgr.get()
+						.createDictionary(name, i.getSourceLang(), i.getTargetLang(), i.getSkipPhrase()));
 	}
 
 	@NonNull
@@ -271,12 +272,13 @@ public class FelexFragment extends MainActivityFragment implements
 		activity().onSuccess(a -> {
 			FelexListView v = view();
 			Dict d = v.getCurrentDict();
-			FutureSupplier<DictTutor> f = (d != null) ? DictTutor.create(a, d, mode)
-					: v.getDictMgr().getDictionaries().then(list ->
-					list.isEmpty() ? completedNull() : DictTutor.create(a, list.get(0), mode).map(t -> t));
+			FutureSupplier<DictTutor> f = (d != null) ? DictTutor.create(a, d, mode) :
+					v.getDictMgr().getDictionaries().then(list -> list.isEmpty() ? completedNull() :
+							DictTutor.create(a, list.get(0), mode).map(t -> t));
 			f.onCompletion((t, err) -> {
 				closeTutor();
 				if (err != null) {
+					Log.e(err);
 					showAlert(requireContext(), err.toString());
 					return;
 				}
@@ -313,7 +315,8 @@ public class FelexFragment extends MainActivityFragment implements
 		public void enable(ToolBarView tb, ActivityFragment f) {
 			BackTitleFilter.super.enable(tb, f);
 			addButton(tb, me.aap.fermata.R.drawable.playlist_add, ToolBarMediator::add, R.id.add);
-			addButton(tb, me.aap.fermata.R.drawable.record_voice, ToolBarMediator::tutor, R.id.start_tutor);
+			addButton(tb, me.aap.fermata.R.drawable.record_voice, ToolBarMediator::tutor,
+					R.id.start_tutor);
 			setButtonsVisibility(tb, f);
 		}
 
@@ -326,12 +329,11 @@ public class FelexFragment extends MainActivityFragment implements
 		}
 
 		private void setButtonsVisibility(ToolBarView tb, ActivityFragment f) {
-			if (!(f instanceof FelexFragment)) return;
-			FelexFragment ff = (FelexFragment) f;
+			if (!(f instanceof FelexFragment ff)) return;
 			Object content = ff.view().getContent();
 
-			if ((content instanceof DictMgr) || (content instanceof Dict)
-					|| (content instanceof Word) || (content instanceof Translation)) {
+			if ((content instanceof DictMgr) || (content instanceof Dict) || (content instanceof Word) ||
+					(content instanceof Translation)) {
 				tb.findViewById(R.id.add).setVisibility(View.VISIBLE);
 			} else {
 				tb.findViewById(R.id.add).setVisibility(GONE);
@@ -341,8 +343,7 @@ public class FelexFragment extends MainActivityFragment implements
 		private static void add(View v) {
 			MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
 			ActivityFragment f = a.getActiveFragment();
-			if (!(f instanceof FelexFragment)) return;
-			FelexFragment ff = (FelexFragment) f;
+			if (!(f instanceof FelexFragment ff)) return;
 			FelexListView lv = ff.view();
 			Object content = lv.getContent();
 
@@ -353,8 +354,8 @@ public class FelexFragment extends MainActivityFragment implements
 			} else if (content instanceof Word) {
 				addTrans(ff, requireNonNull(lv.getCurrentDict()), (Word) content);
 			} else if (content instanceof Translation) {
-				addExample(ff, requireNonNull(lv.getCurrentDict()),
-						requireNonNull(lv.getCurrentWord()), (Translation) content);
+				addExample(ff, requireNonNull(lv.getCurrentDict()), requireNonNull(lv.getCurrentWord()),
+						(Translation) content);
 			}
 		}
 
@@ -365,8 +366,8 @@ public class FelexFragment extends MainActivityFragment implements
 				tts.close();
 
 				if (locales.isEmpty()) {
-					showAlert(ctx, R.string.no_lang_supported).thenRun(() ->
-							TextToSpeech.installTtsData(ctx));
+					showAlert(ctx, R.string.no_lang_supported).thenRun(
+							() -> TextToSpeech.installTtsData(ctx));
 					return;
 				}
 
@@ -384,6 +385,7 @@ public class FelexFragment extends MainActivityFragment implements
 				Pref<Supplier<String>> namePref = Pref.s("NAME", "");
 				Pref<IntSupplier> srcLangPref = Pref.i("SRC_LANG", defaultLangIdx);
 				Pref<IntSupplier> targetLangPref = Pref.i("TARGET_LANG", defaultLangIdx);
+				Pref<Supplier<String>> skipPref = Pref.s("SKIP", "");
 				queryPrefs(ctx, R.string.add_dict, (store, set) -> {
 					set.addStringPref(o -> {
 						o.pref = namePref;
@@ -406,6 +408,12 @@ public class FelexFragment extends MainActivityFragment implements
 						o.formatSubtitle = true;
 						o.subtitle = me.aap.fermata.R.string.string_format;
 					});
+					set.addStringPref(o -> {
+						o.pref = skipPref;
+						o.title = R.string.skip_phrase;
+						o.hint = R.string.skip_phrase_sub;
+						o.store = store;
+					});
 				}, p -> {
 					String name = p.getStringPref(namePref);
 					if (isNullOrBlank(name)) return false;
@@ -413,17 +421,19 @@ public class FelexFragment extends MainActivityFragment implements
 					return (dicts == null) || !contains(dicts, d -> d.getName().equalsIgnoreCase(name));
 				}).onSuccess(p -> {
 					String name = p.getStringPref(namePref);
+					String skipPhrase = p.getStringPref(skipPref);
 					if (isNullOrBlank(name)) return;
 					int srcLangIdx = p.getIntPref(srcLangPref);
 					int targetLangIdx = p.getIntPref(targetLangPref);
-					mgr.createDictionary(name, locales.get(srcLangIdx), locales.get(targetLangIdx)).main()
-							.onCompletion((d, err) -> {
-								if (err != null) {
-									showAlert(ctx, err.getLocalizedMessage());
-								} else {
-									ff.view().setContent(d);
-								}
-							});
+					mgr.createDictionary(name, locales.get(srcLangIdx), locales.get(targetLangIdx),
+							skipPhrase).main().onCompletion((d, err) -> {
+						if (err != null) {
+							Log.e(err);
+							showAlert(ctx, err.toString());
+						} else {
+							ff.view().setContent(d);
+						}
+					});
 				});
 			});
 		}
@@ -468,7 +478,8 @@ public class FelexFragment extends MainActivityFragment implements
 				String exTrans = p.getStringPref(exTransPref);
 				d.addWord(word, trans, ex, exTrans).main().onCompletion((idx, err) -> {
 					if (err != null) {
-						showAlert(ff.getContext(), err.getLocalizedMessage());
+						Log.e(err);
+						showAlert(ff.getContext(), err.toString());
 					} else {
 						ff.view().refresh(idx);
 					}
@@ -481,8 +492,8 @@ public class FelexFragment extends MainActivityFragment implements
 			Pref<Supplier<String>> exPref = Pref.s("EX");
 			Pref<Supplier<String>> exTransPref = Pref.s("EX_TRANS");
 
-			w.getTranslations(d).then(translations ->
-					queryPrefs(ff.getContext(), R.string.add_trans, (store, set) -> {
+			w.getTranslations(d)
+					.then(translations -> queryPrefs(ff.getContext(), R.string.add_trans, (store, set) -> {
 						set.addStringPref(o -> {
 							o.pref = transPref;
 							o.title = R.string.trans;
@@ -512,7 +523,8 @@ public class FelexFragment extends MainActivityFragment implements
 						newTrans.add(new Translation(trans, ex, exTrans));
 						w.setTranslations(d, newTrans).onCompletion((v, err) -> {
 							if (err != null) {
-								showAlert(ff.getContext(), err.getLocalizedMessage());
+								Log.e(err);
+								showAlert(ff.getContext(), err.toString());
 							} else {
 								ff.view().refresh(newTrans.size() - 1);
 							}
@@ -555,7 +567,8 @@ public class FelexFragment extends MainActivityFragment implements
 					tr.setExamples(newExamples);
 					w.setTranslations(d, translations).onCompletion((v, err) -> {
 						if (err != null) {
-							showAlert(ff.getContext(), err.getLocalizedMessage());
+							Log.e(err);
+							showAlert(ff.getContext(), err.toString());
 						} else {
 							ff.view().refresh(newExamples.size() - 1);
 						}
@@ -567,8 +580,7 @@ public class FelexFragment extends MainActivityFragment implements
 		private static void tutor(View v) {
 			MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
 			ActivityFragment f = a.getActiveFragment();
-			if (!(f instanceof FelexFragment)) return;
-			FelexFragment ff = (FelexFragment) f;
+			if (!(f instanceof FelexFragment ff)) return;
 			a.getToolBarMenu().show(ff::buildTutorMenu);
 		}
 	}

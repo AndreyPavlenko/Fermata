@@ -103,7 +103,8 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		MainActivityDelegate.setTheme(this, isCarActivity());
+		MainActivityDelegate.setTheme(this,
+				isCarActivity() || FermataApplication.get().isMirroringMode());
 		AddonManager.get().addBroadcastListener(this);
 		super.onCreate(savedInstanceState);
 	}
@@ -134,7 +135,6 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	public boolean isCarActivity() {
-		if (BuildConfig.AUTO) return FermataApplication.get().isMirroringMode();
 		return false;
 	}
 

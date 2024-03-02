@@ -13,6 +13,8 @@
     <string name="dict_name">Dictionary name</string>
     <string name="src_lang">Source language</string>
     <string name="target_lang">Target language</string>
+    <string name="skip_phrase">Skip phrase</string>
+    <string name="skip_phrase_sub">Skip, I don\'t know, Nächste, Ich weiß nicht</string>
     <string name="no_lang_supported">No languages supported by TTS</string>
     <string name="add_word">Add word</string>
     <string name="add_trans">Add translation</string>
