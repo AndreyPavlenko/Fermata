@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="openai_key">Clé OpenAI</string>
+    <string name="openai_key_sub">Obtenez votre clé personnelle: &lt;a href="%1$s"&gt;%1$s&lt;a&gt;</string>
+</resources>
