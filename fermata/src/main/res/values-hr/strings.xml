@@ -6,7 +6,7 @@
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Postavke reprodukcije</string>
     <string name="playback_control">Kontrola reprodukcije</string>
-    <string name="engine_prefs">Media engine</string>
+    <string name="engine_prefs">Multimedija</string>
 
     <string name="theme">Tema aplikacije</string>
     <string name="theme_sub">Trenutna tema: %1$s</string>
@@ -18,9 +18,9 @@
 
     <string name="nav_bar_pos">Pozicija navigacijske trake</string>
     <string name="nav_bar_pos_sub">Trenutna pozicija: %1$s</string>
-    <string name="nav_bar_pos_bottom">Donja</string>
-    <string name="nav_bar_pos_left">Lijeva</string>
-    <string name="nav_bar_pos_right">Desna</string>
+    <string name="nav_bar_pos_bottom">Dolje</string>
+    <string name="nav_bar_pos_left">Lijevo</string>
+    <string name="nav_bar_pos_right">Desno</string>
 
     <string name="show_track_icons">Prikaži ikone trake</string>
     <string name="lang">Jezik</string>
@@ -79,10 +79,10 @@
 
     <string name="enable_exoplayer">Omogući ExoPlayer</string>
     <string name="enable_vlcplayer">Omogući VLC</string>
-    <string name="preferred_audio_engine">Preferirani audio motor</string>
-    <string name="preferred_video_engine">Preferirani video motor</string>
-    <string name="engine_installed">Instaliran medijski motor: %1$s</string>
-    <string name="engine_uninstalled">Deinstaliran medijski motor: %1$s</string>
+    <string name="preferred_audio_engine">Preferirani audio player</string>
+    <string name="preferred_video_engine">Preferirani video player</string>
+    <string name="engine_installed">Instaliran medijski player: %1$s</string>
+    <string name="engine_uninstalled">Deinstaliran medijski player: %1$s</string>
 
     <string name="preferred_media_scanner">Preferirani medij skener</string>
     <string name="preferred_media_scanner_default">Zadano</string>
@@ -123,7 +123,7 @@
     <string name="hw_accel_decoding">Dekodiranje</string>
     <string name="hw_accel_disabled">Onemogućeno</string>
     <string name="video_scaling_best">Najbolje prilagođeno</string>
-    <string name="video_scaling_fill">Ispuni zaslon</string>
+    <string name="video_scaling_fill">Cijeli zaslon</string>
     <string name="video_scaling_orig">Originalna veličina</string>
     <string name="audio">Audio</string>
     <string name="audio_delay">Zakašnjenje zvuka</string>
@@ -271,10 +271,10 @@
     <string name="move_up">Pomakni gore</string>
     <string name="move_down">Pomakni dolje</string>
 
-    <string name="sys_bars_on_video_touch">Prikaži sistemsko trake na dodir videa</string>
+    <string name="sys_bars_on_video_touch">Prikaži sistemske trake na dodir videa</string>
     <string name="play_video_landscape">Reprodukcija videa u horizontalnom načinu</string>
     <string name="clock_pos">Pozicija sata</string>
-    <string name="clock_pos_none">Nijedan</string>
+    <string name="clock_pos_none">Ništa</string>
     <string name="clock_pos_left">Lijevo</string>
     <string name="clock_pos_right">Desno</string>
     <string name="clock_pos_center">Središnje</string>
