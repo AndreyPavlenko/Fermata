@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="force_dark">Forcer le mode sombre, si pris en charge</string>
-    <string name="force_dark_sub">%1$s. Choisissez "Auto" pour suivre le thème de l'appareil.</string>
+    <string name="force_dark_sub">%1$s. Choisissez "Auto" pour suivre le thème de l\'appareil.</string>
     <string name="force_dark_auto">Auto</string>
     <string name="force_dark_enabled">Activé</string>
     <string name="force_dark_disabled">Désactivé</string>

@@ -8,7 +8,7 @@
     <string name="start_tutor_dir">Traduction directe</string>
     <string name="start_tutor_rev">Traduction inversé</string>
     <string name="start_tutor_mix">Mixte</string>
-    <string name="start_tutor_listen">A l'écoute</string>
+    <string name="start_tutor_listen">A l\'écoute</string>
     <string name="add_dict">Ajouter un dictionnaire</string>
     <string name="dict_name">Nom du dictionnaire</string>
     <string name="src_lang">Langue source</string>
@@ -20,7 +20,7 @@
     <string name="word">Mot</string>
     <string name="trans">Traduction</string>
     <string name="example">Exemple</string>
-    <string name="example_trans">Traduction de l'exemple</string>
+    <string name="example_trans">Traduction de l\'exemple</string>
     <string name="wipe_prog">Effacer la progression</string>
     <string name="wipe_prog_for">Effacer la progression pour %1$s ?</string>
     <string name="change_prog">Modifier la progression</string>
