@@ -55,89 +55,89 @@
     <string name="action_back_or_exit">Wróć lub wyjdź</string>
     <string name="action_exit">Wyjście</string>
     <string name="action_default">Domyślny</string>
-    <string name="action_none">None</string>
+    <string name="action_none">Brak</string>
 
     <string name="play_next_on_completion">Odtwórz następny po zakończeniu</string>
 
-    <string name="rw_ff_click">RW/FF - click</string>
-    <string name="rw_ff_long_click">RW/FF - long click</string>
-    <string name="prev_next_long_click">Prev/Next - long click</string>
-    <string name="play_pause_stop">Stop on Play/Pause long click</string>
+    <string name="rw_ff_click">RW/FF - naciśnięcie</string>
+    <string name="rw_ff_long_click">RW/FF - długie naciśnięcie</string>
+    <string name="prev_next_long_click">Prev/Next - długie naciśnięcie</string>
+    <string name="play_pause_stop">Stop lub Odtwórz/Przerwa długie naciśnięcie</string>
 
-    <string name="time">Time</string>
-    <string name="time_unit">Time unit</string>
-    <string name="time_unit_sub">Current value: %1$s</string>
-    <string name="time_unit_second">Second</string>
-    <string name="time_unit_minute">Minute</string>
-    <string name="time_unit_percent">Percent</string>
+    <string name="time">Czas</string>
+    <string name="time_unit">Jednostka czasu</string>
+    <string name="time_unit_sub">Aktualna wartość: %1$s</string>
+    <string name="time_unit_second">Sekund</string>
+    <string name="time_unit_minute">Minut</string>
+    <string name="time_unit_percent">Procent</string>
 
-    <string name="video_control">Video control</string>
-    <string name="video_control_start_delay">Show on start</string>
-    <string name="video_control_touch_delay">Show on touch</string>
-    <string name="video_control_seek_delay">Show on seek</string>
-    <string name="video_aa_show_status">Show status bar in Android Auto</string>
+    <string name="video_control">Sterowanie wideo</string>
+    <string name="video_control_start_delay">Pokaż na początku</string>
+    <string name="video_control_touch_delay">Pokaż po dotknięciu</string>
+    <string name="video_control_seek_delay">Pokaż przy wyszukiwaniu</string>
+    <string name="video_aa_show_status">Pokaż pasek stanu w Android Auto</string>
 
-    <string name="enable_exoplayer">Enable ExoPlayer</string>
-    <string name="enable_vlcplayer">Enable VLC</string>
-    <string name="preferred_audio_engine">Preferred audio engine</string>
-    <string name="preferred_video_engine">Preferred video engine</string>
-    <string name="engine_installed">Media engine installed: %1$s</string>
-    <string name="engine_uninstalled">Media engine uninstalled: %1$s</string>
+    <string name="enable_exoplayer">Włącz ExoPlayer</string>
+    <string name="enable_vlcplayer">Włącz VLC</string>
+    <string name="preferred_audio_engine">Preferowany silnik dźwiękowy</string>
+    <string name="preferred_video_engine">Preferowany silnik wideo</string>
+    <string name="engine_installed">Zainstalowany silnik multimediów: %1$s</string>
+    <string name="engine_uninstalled">Odinstalowano silnik multimediów: %1$s</string>
 
-    <string name="preferred_media_scanner">Preferred media scanner</string>
-    <string name="preferred_media_scanner_default">Default</string>
+    <string name="preferred_media_scanner">Preferowany skaner multimediów</string>
+    <string name="preferred_media_scanner_default">Domyślny</string>
     <string name="preferred_media_scanner_system">System</string>
 
-    <string name="voice_search">Voice search</string>
-    <string name="voice_control">Voice control</string>
-    <string name="voice_control_fb">Floating button</string>
-    <string name="voice_control_sub_long">Activate voice control on long press</string>
-    <string name="voice_control_subst">Word substitution</string>
-    <string name="voice_control_subst_sub">Replace a word with an another word or a phrase</string>
+    <string name="voice_search">Szukanie głosowe</string>
+    <string name="voice_control">Sterowanie głosowe</string>
+    <string name="voice_control_fb">Pływający przycisk</string>
+    <string name="voice_control_sub_long">Włącz sterowanie głosowe po długim naciśnięciu</string>
+    <string name="voice_control_subst">Zastępowanie słów</string>
+    <string name="voice_control_subst_sub">Zastąp słowo innym słowem lub frazą</string>
     <string name="voice_control_subst_hint">wł.: odtwarzanie\nwył.: pauza</string>
 
-    <string name="module_installation">Module installation: %1$s</string>
-    <string name="install_pending">Installation pending: %1$s</string>
-    <string name="downloading">Downloading %1$s</string>
-    <string name="installing">Installing %1$s</string>
+    <string name="module_installation">Instalacja modułu: %1$s</string>
+    <string name="install_pending">Instalacja w toku: %1$s</string>
+    <string name="downloading">Ściąganie %1$s</string>
+    <string name="installing">Instalowanie %1$s</string>
 
-    <string name="speed">Speed</string>
-    <string name="audio_effects">Audio effects</string>
-    <string name="equalier">Equalizer</string>
-    <string name="preset_name">Preset name</string>
+    <string name="speed">Prędkość</string>
+    <string name="audio_effects">Efekty dźwiękowe</string>
+    <string name="equalier">Korektor</string>
+    <string name="preset_name">Zaprogramowana nazwa</string>
     <string name="virtualizer">Virtualizer</string>
     <string name="auto">Auto</string>
     <string name="binaural">Binaural</string>
     <string name="transaural">Transaural</string>
-    <string name="bass_boost">Bass boost</string>
-    <string name="vol_boost">Volume boost</string>
+    <string name="bass_boost">Podbicie basów</string>
+    <string name="vol_boost">Podbicie głośności</string>
     <string name="strength">Strength</string>
-    <string name="apply_to">Apply to</string>
+    <string name="apply_to">Zastosuj do</string>
 
-    <string name="video">Video</string>
-    <string name="video_settings">Ustawiennia obrazu</string>
+    <string name="video">Obraz</string>
+    <string name="video_settings">Ustawienia obrazu</string>
     <string name="video_scaling">Skalowanie obrazu</string>
     <string name="hw_accel">Przyspieszenie sprzętowe</string>
-    <string name="hw_accel_auto">Auto</string>
-    <string name="hw_accel_full">Full</string>
-    <string name="hw_accel_decoding">Decoding</string>
-    <string name="hw_accel_disabled">Disabled</string>
-    <string name="video_scaling_best">Best fit</string>
-    <string name="video_scaling_fill">Fill screen</string>
+    <string name="hw_accel_auto">Autmatyczny</string>
+    <string name="hw_accel_full">Pełny ekran</string>
+    <string name="hw_accel_decoding">Rozkodowanie</string>
+    <string name="hw_accel_disabled">Wyłączony</string>
+    <string name="video_scaling_best">Najlepiej dopasowany</string>
+    <string name="video_scaling_fill">Wypełnij ekran</string>
     <string name="video_scaling_orig">Oryginalny rozmiar</string>
-    <string name="audio">Audio</string>
-    <string name="audio_delay">Audio delay</string>
-    <string name="audio_delay_aa">Audio delay - Android Auto</string>
-    <string name="preferred_audio_lang">Preferred audio stream languages</string>
-    <string name="preferred_audio_key">Prefer audio stream with keywords</string>
-    <string name="select_audio_stream">Select audio stream</string>
+    <string name="audio">Dźwięk</string>
+    <string name="audio_delay">Opóźnienie dźwięku</string>
+    <string name="audio_delay_aa">Opóźnienie dźwięku – Android Auto</string>
+    <string name="preferred_audio_lang">Preferowane języki strumieni audio</string>
+    <string name="preferred_audio_key">Preferuj strumień audio ze słowami kluczowymi</string>
+    <string name="select_audio_stream">Wybierz strumień audio</string>
 
-    <string name="subtitles">Subtitles</string>
-    <string name="subtitle_delay">Subtitles delay</string>
-    <string name="display_subtitles">Display subtitles</string>
-    <string name="preferred_sub_lang">Preferred subtitles languages</string>
-    <string name="preferred_sub_key">Prefer subtitles with keywords</string>
-    <string name="select_subtitles">Select subtitles</string>
+    <string name="subtitles">Napisy</string>
+    <string name="subtitle_delay">Opóżnienie wyświetlana</string>
+    <string name="display_subtitles">Wyświetl napisy</string>
+    <string name="preferred_sub_lang">Preferowane języki napisów</string>
+    <string name="preferred_sub_key">Preferuj napisy ze słowami kluczowymi</string>
+    <string name="select_subtitles">Wybierz napisy</string>
 
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
@@ -149,28 +149,28 @@
     <string name="favorites">Ulubione</string>
     <string name="playlists">Lista odtwarzania</string>
     <string name="search">Szukaj</string>
-    <string name="filter">Filter</string>
+    <string name="filter">Filtruj</string>
     <string name="settings">Ustawienia</string>
     <string name="menu">Menu</string>
     <string name="exit">Wyjście</string>
     <string name="cancel">Anuluj</string>
     <string name="got_to_current">Bieżący utwór</string>
 
-    <string name="view">View</string>
-    <string name="title">Title</string>
-    <string name="subtitle">Subtitle</string>
-    <string name="seq_num">Sequence number</string>
-    <string name="track_name">Name</string>
-    <string name="file_name">File name</string>
-    <string name="date">Date</string>
-    <string name="random">Random</string>
-    <string name="descending">Descending</string>
+    <string name="view">Pokaż</string>
+    <string name="title">Tytuł</string>
+    <string name="subtitle">Napisy</string>
+    <string name="seq_num">Numer porządkowy</string>
+    <string name="track_name">Nazwa</string>
+    <string name="file_name">Nazwa pliku</string>
+    <string name="date">Data</string>
+    <string name="random">Losowo</string>
+    <string name="descending">Malejąco</string>
     <string name="album">Album</string>
-    <string name="artist">Artist</string>
-    <string name="duration">Duration</string>
+    <string name="artist">Wykonawca</string>
+    <string name="duration">Czas trwania</string>
 
-    <string name="sort_by">Sort by</string>
-    <string name="do_not_sort">Do not sort</string>
+    <string name="sort_by">Sortuj według</string>
+    <string name="do_not_sort">Nie sortuj</string>
 
     <string name="play">Odtwórz</string>
     <string name="pause">Przerwa</string>
@@ -181,9 +181,9 @@
     <string name="fast_forward">Szybkie przewijanie do przodu</string>
     <string name="repeat">Powtórz</string>
     <string name="repeat_disable">Nie powtarzaj</string>
-    <string name="shuffle">Shuffle</string>
-    <string name="shuffle_disable">Do not shuffle</string>
-    <string name="programme_guide">Przewodnik programowy</string>
+    <string name="shuffle">Przetasuj</string>
+    <string name="shuffle_disable">Nie tasuj</string>
+    <string name="programme_guide">Program stacji TV</string>
     <string name="favorites_add">Dodaj do ulubionych</string>
     <string name="favorites_remove">Usuń z ulubionych</string>
     <string name="mark_watched">Zaznacz jako obejrzane</string>
@@ -204,8 +204,8 @@
     <string name="bookmark_name">Nazwa</string>
     <string name="bookmark_time">Czas</string>
 
-    <string name="folder_subtitle">Files: %1$d. Foldery: %2$d.</string>
-    <string name="browsable_subtitle">Ścieżki: %1$d.</string>
+    <string name="folder_subtitle">Utwory: %1$d. Foldery: %2$d.</string>
+    <string name="browsable_subtitle">Utwory: %1$d.</string>
     <string name="add_folder">Dodaj folder</string>
     <string name="remove_folder">Usuń folder</string>
     <string name="select">Wybierz</string>
@@ -213,7 +213,7 @@
     <string name="unselect_all">Odznacz wszystko</string>
     <string name="refresh">Odśwież</string>
     <string name="rescan">Przeskanuj ponownie</string>
-    <string name="share">Share</string>
+    <string name="share">Losowo</string>
     <string name="edit">Edytuj</string>
     <string name="delete">Usuń</string>
     <string name="delete_confirm">Usuń %1$s?</string>
@@ -235,7 +235,7 @@
     <string name="m3u_playlist_location_hint">File or http(s) URL</string>
     <string name="m3u_playlist_video">Video playlist</string>
 
-    <string name="eq_manual">Manual</string>
+    <string name="eq_manual">Ręcznie</string>
     <string name="eq_normal">Normal</string>
     <string name="eq_classical">Classical</string>
     <string name="eq_dance">Dance</string>
@@ -258,31 +258,31 @@
     <string name="private_key_pass">Private key password</string>
 
     <string name="donate">Kawa dla programisty</string>
-    <string name="donate_text">Jeśli aplikacja przypadła Ci do gustu, rozważ możliwość zakupu mi kawy.</string>
-    <string name="use_phone_for_donation">Aby kupić kawę, użyj telefonu.</string>
+    <string name="donate_text">Jeśli podoba Ci się aplikacja, rozważ możliwość zakupu mi kawy.</string>
+    <string name="use_phone_for_donation">Użyj telefonu, aby kupić kawe.</string>
 
-    <string name="timer">Timer</string>
+    <string name="timer">Odliczanie</string>
     <string name="hours">Godziny</string>
     <string name="minutes">Minuty</string>
 
-    <string name="enable">Enable</string>
-    <string name="move_left">Move left</string>
-    <string name="move_right">Move right</string>
-    <string name="move_up">Move up</string>
-    <string name="move_down">Move down</string>
+    <string name="enable">Włącz</string>
+    <string name="move_left">Przesuń w lewo</string>
+    <string name="move_right">Przesuń w prawo</string>
+    <string name="move_up">Przesuń w górę</string>
+    <string name="move_down">Przesuń w dół</string>
 
-    <string name="sys_bars_on_video_touch">Show system bars on video touch</string>
-    <string name="play_video_landscape">Playing video in landscape mode</string>
-    <string name="clock_pos">Clock position</string>
-    <string name="clock_pos_none">None</string>
-    <string name="clock_pos_left">Left</string>
-    <string name="clock_pos_right">Right</string>
-    <string name="clock_pos_center">Center</string>
-    <string name="change_brightness">Change brightness while playing video</string>
-    <string name="video_brightness">Video brightness</string>
-    <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>
-    <string name="watched_threshold">Watched threshold</string>
-    <string name="watched_threshold_sub">Marked video as watched, if more than this number of percentages has been watched</string>
+    <string name="sys_bars_on_video_touch">Pokaż paski systemowe po dotknięciu ekranu</string>
+    <string name="play_video_landscape">Odtwarzanie wideo w trybie poziomym</string>
+    <string name="clock_pos">Pozycja zegara</string>
+    <string name="clock_pos_none">Brak</string>
+    <string name="clock_pos_left">Z lewej strony</string>
+    <string name="clock_pos_right">Z prawej strony</string>
+    <string name="clock_pos_center">W środku</string>
+    <string name="change_brightness">Zmień jasność podczas odtwarzania wideo</string>
+    <string name="video_brightness">Jasność wideo</string>
+    <string name="change_brightness_sub">Jasność można także zmieniać za pomocą przewijania dwoma palcami</string>
+    <string name="watched_threshold">Próg obejrzanego filmu</string>
+    <string name="watched_threshold_sub">Oznacz film jako obejrzany, jeśli obejrzano więcej niż podaną liczbę procentową</string>
 
     <string name="other">Inne</string>
     <string name="check_updates">Sprawdź dostępność aktualizacji podczas uruchamiania</string>
