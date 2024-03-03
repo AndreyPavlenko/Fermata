@@ -326,9 +326,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private void defaultIntent() {
-		if (getActiveFragment() != null) return;
-		String showAddon = getPrefs().getShowAddonOnStartPref();
+		if (getActiveFragment() != null) {
+			checkUpdates();
+			return;
+		}
 
+		String showAddon = getPrefs().getShowAddonOnStartPref();
 		if (showAddon != null) {
 			FermataAddon addon = AddonManager.get().getAddon(showAddon);
 
