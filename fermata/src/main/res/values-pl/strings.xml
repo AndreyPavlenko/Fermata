@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Nie udało się usunąć pliku %1$s</string>
     <string name="loading">Ładuję…</string>
     <string name="press_back_again">Naciśnij ponownie przycisk Wstecz, aby wyjść.</string>
-    <string name="press_x_again">Naciśnij ponownie przycisk X, aby wyjść.</string>
     <string name="please_restart_app">Proszę ponownie uruchomić aplikację.</string>
     <string name="use_phone_to_grant_perm">Użyj telefonu, aby przyznać wymagane uprawnienia.</string>
 

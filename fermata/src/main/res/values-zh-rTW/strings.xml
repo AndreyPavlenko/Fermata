@@ -222,7 +222,6 @@
     <string name="delete_file_failed">無法刪除檔案 %1$s</string>
     <string name="loading">載入中…</string>
     <string name="press_back_again">再次點選返回鍵離開</string>
-    <string name="press_x_again">再次點選 X 離開</string>
     <string name="please_restart_app">請重新啟動程式</string>
     <string name="use_phone_to_grant_perm">請使用手機取得需要的權限</string>
 

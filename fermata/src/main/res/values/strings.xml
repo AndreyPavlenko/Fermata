@@ -254,7 +254,6 @@
     <string name="delete_file_failed">Failed to delete file %1$s</string>
     <string name="loading">Loading…</string>
     <string name="press_back_again">Press back button again to exit.</string>
-    <string name="press_x_again">Press X button again to exit.</string>
     <string name="please_restart_app">Please restart the application.</string>
     <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions.</string>
 

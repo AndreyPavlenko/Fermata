@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Nije uspjelo brisanje datoteke %1$s</string>
     <string name="loading">Učitavanje…</string>
     <string name="press_back_again">Pritisnite tipku za povratak ponovno kako biste izašli.</string>
-    <string name="press_x_again">Pritisnite tipku X ponovno kako biste izašli.</string>
     <string name="please_restart_app">Molimo ponovno pokrenite aplikaciju.</string>
     <string name="use_phone_to_grant_perm">Molimo koristite svoj telefon za dodjelu potrebnih dozvola.</string>
 

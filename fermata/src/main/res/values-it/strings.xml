@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Impossibile eliminare il file %1$s</string>
     <string name="loading">Caricamento…</string>
     <string name="press_back_again">Premi di nuovo Indietro per uscire</string>
-    <string name="press_x_again">Premi di nuovo X per uscire</string>
     <string name="please_restart_app">Riavvia l\'app</string>
     <string name="use_phone_to_grant_perm">Concedi le autorizzazioni richieste dal telefono</string>
 

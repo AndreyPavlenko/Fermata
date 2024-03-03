@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Не удалось удалить файл %1$s</string>
     <string name="loading">Загрузка…</string>
     <string name="press_back_again">Нажмите кнопку назад еще раз, чтобы выйти.</string>
-    <string name="press_x_again">Нажмите кнопку X еще раз, чтобы выйти.</string>
     <string name="please_restart_app">Пожалуйста, перезапустите приложение.</string>
     <string name="use_phone_to_grant_perm">Пожалуйста, воспользуйтесь телефоном, чтобы предоставить необходимые разрешения.</string>
 

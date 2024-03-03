@@ -238,7 +238,6 @@
     <string name="delete_file_failed">Impossible de supprimer le fichier %1$s</string>
     <string name="loading">Chargement…</string>
     <string name="press_back_again">Appuyez à nouveau sur le bouton retour pour quitter.</string>
-    <string name="press_x_again">Appuyez à nouveau sur le bouton X pour quitter.</string>
     <string name="please_restart_app">Veuillez redémarrer l\'application.</string>
     <string name="use_phone_to_grant_perm">Veuillez utiliser votre téléphone pour accorder les autorisations requises.</string>
 

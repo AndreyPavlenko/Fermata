@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Datei %1$s konnte nicht gelöscht werden</string>
     <string name="loading">Lädt…</string>
     <string name="press_back_again">Drücken Sie zum Beenden erneut die Zurück-Taste.</string>
-    <string name="press_x_again">Drücken Sie erneut die X-Taste, um den Vorgang zu beenden..</string>
     <string name="please_restart_app">Bitte starten Sie die Anwendung neu.</string>
     <string name="use_phone_to_grant_perm">Bitte verwenden Sie Ihr Telefon, um die erforderlichen Berechtigungen zu erteilen.</string>
 
