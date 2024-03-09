@@ -5,7 +5,7 @@
     <string name="force_dark_auto">Auto</string>
     <string name="force_dark_enabled">Enabled</string>
     <string name="force_dark_disabled">Disabled</string>
-    <string name="user_agent" translatable="false">User-Agent</string>
+    <string name="user_agent">User-Agent</string>
     <string name="user_agent_desktop">User-Agent - Desktop version</string>
     <string name="desktop_version">Desktop version</string>
     <string name="full_screen">Full screen</string>
