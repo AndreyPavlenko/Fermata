@@ -5,6 +5,7 @@ import static me.aap.utils.async.Completed.completedEmptyList;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.misc.MiscUtils.ifNull;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -27,6 +28,7 @@ import java.util.Set;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.AddonManager;
+import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
@@ -106,47 +108,29 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 		if (i != null) return completed(i);
 
 		int idx = id.indexOf(':');
-
 		if (idx == -1) {
-			switch (id) {
-				case DefaultFolders.ID:
-					return completed(getFolders());
-				case DefaultFavorites.ID:
-					return completed(getFavorites());
-				case DefaultPlaylists.ID:
-					return completed(getPlaylists());
-				default:
-					FutureSupplier<? extends Item> ai = AddonManager.get().getItem(this, null, id);
-					return (ai != null) ? ai : completedNull();
-			}
+			return switch (id) {
+				case DefaultFolders.ID -> completed(getFolders());
+				case DefaultFavorites.ID -> completed(getFavorites());
+				case DefaultPlaylists.ID -> completed(getPlaylists());
+				default -> ifNull(AddonManager.get().getItem(this, null, id), completedNull());
+			};
 		}
 
 		try {
 			String scheme = id.substring(0, idx);
-
-			switch (scheme) {
-				case FileItem.SCHEME:
-					return FileItem.create(this, id);
-				case FolderItem.SCHEME:
-					return FolderItem.create(this, id);
-				case CueItem.SCHEME:
-					return CueItem.create(this, id);
-				case CueTrackItem.SCHEME:
-					return CueTrackItem.create(this, id);
-				case M3uItem.SCHEME:
-					return M3uItem.create(this, id);
-				case M3uGroupItem.SCHEME:
-					return M3uGroupItem.create(this, id);
-				case M3uTrackItem.SCHEME:
-					return M3uTrackItem.create(this, id);
-				case DefaultFavorites.SCHEME:
-					return getFavorites().getItem(id);
-				case DefaultPlaylists.SCHEME:
-					return getPlaylists().getItem(id);
-				default:
-					FutureSupplier<? extends Item> ai = AddonManager.get().getItem(this, scheme, id);
-					return (ai != null) ? ai : completedNull();
-			}
+			return switch (scheme) {
+				case FileItem.SCHEME -> FileItem.create(this, id);
+				case FolderItem.SCHEME -> FolderItem.create(this, id);
+				case CueItem.SCHEME -> CueItem.create(this, id);
+				case CueTrackItem.SCHEME -> CueTrackItem.create(this, id);
+				case M3uItem.SCHEME -> M3uItem.create(this, id);
+				case M3uGroupItem.SCHEME -> M3uGroupItem.create(this, id);
+				case M3uTrackItem.SCHEME -> M3uTrackItem.create(this, id);
+				case DefaultFavorites.SCHEME -> getFavorites().getItem(id);
+				case DefaultPlaylists.SCHEME -> getPlaylists().getItem(id);
+				default -> ifNull(AddonManager.get().getItem(this, scheme, id), completedNull());
+			};
 		} catch (Throwable ex) {
 			return failed(ex);
 		}
@@ -185,7 +169,13 @@ public class DefaultMediaLib extends BasicEventBroadcaster<PreferenceStore.Liste
 					}).then(v -> getFolders().asMediaItem()).onSuccess(items::add)
 					.then(v -> getFavorites().asMediaItem()).onSuccess(items::add)
 					.then(v -> getPlaylists().asMediaItem()).onSuccess(items::add)
-					.onCompletion((r, f) -> result.sendResult(items, null)).onFailure(this::log);
+
+					.then(v -> Async.forEach(i -> i.asMediaItem().onSuccess(items::add),
+							CollectionUtils.map(AddonManager.get().getAddons(MediaLibAddon.class),
+									a -> a.getRootItem(this)))).onCompletion((r, err) -> {
+						if (err != null) Log.e(err);
+						result.sendResult(items, null);
+					});
 		} else {
 			getItem(parentMediaId).then(i -> {
 				if (i instanceof BrowsableItem) {

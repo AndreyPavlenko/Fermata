@@ -31,6 +31,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -197,24 +198,18 @@ public class Dict implements Comparable<Dict> {
 		return words.fork();
 	}
 
-	public FutureSupplier<Word> getRandomWord(Random rnd, Deque<Word> history,
-																						ToIntFunction<Word> getProgress) {
+	public FutureSupplier<Integer> getRandomWords(Random rnd, Collection<Word> dest, int max,
+																								ToIntFunction<Word> getProgress) {
 		assertMainThread();
-		if (!history.isEmpty()) return completed(history.pollFirst());
-
 		return getWords().main().map(words -> {
 			int s = words.size();
-			if (s == 0) return null;
-
+			if (s == 0) return 0;
+			s = Math.min(max, s);
 			List<Word> sorted = new ArrayList<>(words);
 			shuffle(sorted, rnd);
 			sort(sorted, comparingInt(getProgress));
-
-			for (int i = 0, n = Math.min(100, s); i < n; i++) {
-				history.addLast(sorted.get(i));
-			}
-
-			return history.pollFirst();
+			dest.addAll(sorted.subList(0, s));
+			return s;
 		});
 	}
 

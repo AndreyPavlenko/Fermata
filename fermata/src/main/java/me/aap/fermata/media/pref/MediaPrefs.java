@@ -20,6 +20,7 @@ public interface MediaPrefs extends PreferenceStore {
 	int MEDIA_ENG_VLC = 2;
 	int MEDIA_ENG_YT = 3;
 	int MEDIA_ENG_CAST = 4;
+	int MEDIA_ENG_FELEX = 5;
 
 	int SCALE_BEST = 0;
 	int SCALE_FILL = 1;

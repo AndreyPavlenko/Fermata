@@ -6,8 +6,8 @@
     <string name="app_name_auto_debug" translatable="false">Debug Fermata Auto</string>
     <string name="mirror_service_name_release" translatable="false">Fermata Mirror</string>
     <string name="mirror_service_name_debug" translatable="false">Debug Fermata Mirror</string>
-    <string name="mirror_fs_service_name_release" translatable="false">Fermata FS Mirror</string>
-    <string name="mirror_fs_service_name_debug" translatable="false">Debug Fermata FS Mirror</string>
+    <string name="mirror_fs_service_name_release" translatable="false">FS Fermata Mirror</string>
+    <string name="mirror_fs_service_name_debug" translatable="false">Debug FS Fermata Mirror</string>
     <string name="media_service_name_mobile_release" translatable="false">@string/app_name_mobile_release</string>
     <string name="media_service_name_auto_release" translatable="false">Fermata Media Service</string>
     <string name="media_service_name_mobile_debug" translatable="false">@string/app_name_mobile_debug</string>

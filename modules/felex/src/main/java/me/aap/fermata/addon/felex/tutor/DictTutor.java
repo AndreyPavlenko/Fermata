@@ -2,45 +2,41 @@ package me.aap.fermata.addon.felex.tutor;
 
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
+import static android.speech.RecognizerIntent.EXTRA_LANGUAGE;
+import static java.util.Collections.unmodifiableList;
+import static me.aap.fermata.R.string.err_no_audio_record_perm;
 import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.ui.UiUtils.showAlert;
+import static me.aap.utils.async.Completed.failed;
+import static me.aap.utils.function.Cancellable.CANCELED;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.content.Context;
-import android.media.AudioManager;
 import android.speech.SpeechRecognizer;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.media.AudioAttributesCompat;
-import androidx.media.AudioFocusRequestCompat;
-import androidx.media.AudioManagerCompat;
+import androidx.annotation.StringRes;
 
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 import java.util.Set;
 
-import me.aap.fermata.addon.felex.R;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.felex.dict.Dict;
 import me.aap.fermata.addon.felex.dict.Translation;
 import me.aap.fermata.addon.felex.dict.Word;
-import me.aap.fermata.addon.felex.view.FelexListView;
-import me.aap.fermata.media.service.MediaSessionCallback;
-import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.function.BiConsumer;
+import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.ToIntFunction;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
@@ -51,61 +47,33 @@ import me.aap.utils.voice.TextToSpeech;
 /**
  * @author Andrey Pavlenko
  */
-public class DictTutor
-		implements Closeable, AudioManager.OnAudioFocusChangeListener, View.OnClickListener,
-		View.OnLongClickListener {
-	public static final byte MODE_LISTENING = 0;
-	public static final byte MODE_DIRECT = 1;
-	public static final byte MODE_REVERSE = 2;
-	public static final byte MODE_MIXED = 3;
-	private static final byte STATE_RUNNING = 1;
-	private static final byte STATE_PAUSING_BY_FOCUS = 2;
-	private static final byte STATE_PAUSED_BY_FOCUS = 3;
-	private static final byte STATE_PAUSING_BY_USER = 4;
-	private static final byte STATE_PAUSED_BY_USER = 5;
-	private static final byte STATE_CLOSED = 6;
-	private final MainActivityDelegate activity;
+public class DictTutor implements Closeable {
 	private final Dict dict;
-	private final byte mode;
+	private final Mode mode;
 	private final TextToSpeech dirTts;
 	private final TextToSpeech revTts;
-	@Nullable
-	private final SpeechToText dirStt;
-	@Nullable
-	private final SpeechToText revStt;
+	private final SpeechToText stt;
 	private final Random rnd;
-	private final AudioFocusRequestCompat audioFocusReq;
-	private final FelexListView listView;
 	private final ToIntFunction<Word> getProgress;
 	private final Set<String> skipPhrases;
-	private final Deque<Word> history = new LinkedList<>();
-	private TextView transView;
-	private Task current;
-	private TextView wordView;
-	private byte state;
+	private final List<Word> queue = new ArrayList<>();
+	private ListIterator<Word> queueIterator = Collections.emptyListIterator();
+	private Cancellable running = CANCELED;
+	private Task curTask;
+	private String curText;
+	private String curTrans;
+	private BiConsumer<String, String> textConsumer;
 
-	private DictTutor(MainActivityDelegate activity, Dict dict, byte mode, TextToSpeech dirTts,
-										TextToSpeech revTts) {
-		this.activity = activity;
+
+	private DictTutor(Context ctx, Dict dict, Mode mode, TextToSpeech dirTts, TextToSpeech revTts) {
 		this.dict = dict;
 		this.mode = mode;
 		this.dirTts = dirTts;
 		this.revTts = revTts;
-		this.dirStt = ((mode == MODE_DIRECT) || (mode == MODE_MIXED)) ?
-				new SpeechToText(activity.getContext(), dict.getTargetLang()) : null;
-		this.revStt = ((mode == MODE_REVERSE) || (mode == MODE_MIXED)) ?
-				new SpeechToText(activity.getContext(), dict.getSourceLang()) : null;
+		stt = new SpeechToText(ctx);
 		rnd = new Random();
-
-		AudioAttributesCompat attrs =
-				new AudioAttributesCompat.Builder().setUsage(AudioAttributesCompat.USAGE_MEDIA)
-						.setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC).build();
-		audioFocusReq =
-				new AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN).setAudioAttributes(
-						attrs).setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(this).build();
-		listView = activity.findViewById(R.id.felix_list_view);
-		getProgress = (mode == MODE_DIRECT) ? Word::getDirProgress :
-				(mode == MODE_REVERSE) ? Word::getRevProgress : Word::getProgress;
+		getProgress = (mode == Mode.DIRECT) ? Word::getDirProgress :
+				(mode == Mode.REVERSE) ? Word::getRevProgress : Word::getProgress;
 
 		var skipPhrase = dict.getInfo().getSkipPhrase();
 		skipPhrases = skipPhrase.isEmpty() ? Collections.emptySet() : new HashSet<>(
@@ -113,252 +81,245 @@ public class DictTutor
 						(i, p, a) -> a.add(p.trim().toLowerCase()), ArrayList::new));
 	}
 
-	public static FutureSupplier<DictTutor> create(MainActivityDelegate activity, Dict dict,
-																								 byte mode) {
-		Context ctx = activity.getContext();
-		return MainActivityDelegate.getActivityDelegate(ctx).then(
-				a -> activity.isCarActivityNotMirror() ? completed(true) :
-						a.getAppActivity().checkPermissions(RECORD_AUDIO).map(r -> {
-							if (r[0] == PERMISSION_GRANTED) return true;
-							showAlert(ctx, me.aap.fermata.R.string.err_no_audio_record_perm);
-							return false;
-						})).then(p -> {
-			if (!p) throw new IllegalStateException("Failed to request RECORD_AUDIO permission");
-
+	public static FutureSupplier<DictTutor> create(Dict dict, Mode mode) {
+		return checkRecordPerm().then(granted -> {
+			if (!granted) return failed(new IllegalStateException(getString(err_no_audio_record_perm)));
+			var ctx = FermataApplication.get();
 			return TextToSpeech.create(ctx, dict.getSourceLang()).then(
-							dir -> TextToSpeech.create(ctx, dict.getTargetLang()).onFailure(err -> dir.close())
-									.map(rev -> new DictTutor(activity, dict, mode, dir, rev)))
-					.onFailure(err -> showAlert(ctx, err.getLocalizedMessage()));
+					dir -> TextToSpeech.create(ctx, dict.getTargetLang()).onFailure(err -> dir.close())
+							.map(rev -> new DictTutor(ctx, dict, mode, dir, rev)));
 		});
 	}
 
+	public void setTextConsumer(@Nullable BiConsumer<String, String> textConsumer) {
+		this.textConsumer = textConsumer;
+		if ((textConsumer != null) && (curText != null)) textConsumer.accept(curText, curTrans);
+	}
+
 	public void start() {
-		MediaSessionCallback cb = activity.getMediaSessionCallback();
-		if (cb.isPlaying()) cb.onPause();
-		activity.getContextMenu().show(b -> {
-			ViewGroup v = (ViewGroup) b.inflate(R.layout.dict_tutor);
-			wordView = v.findViewById(R.id.word);
-			transView = v.findViewById(R.id.trans);
-			b.setCloseHandlerHandler(m -> close());
-			v.setOnClickListener(this);
-			v.setOnLongClickListener(this);
-			setState(STATE_RUNNING);
-			requestAudioFocus();
-			activity.keepScreenOn(true);
-			speak();
-		});
+		nextTask();
+	}
+
+	public void pause() {
+		if (dirTts != null) dirTts.stop();
+		if (revTts != null) revTts.stop();
+		stt.stop();
+		running.cancel();
+	}
+
+	public void prev(boolean start) {
+		pause();
+		curTask = null;
+		if (queueIterator.hasPrevious()) queueIterator.previous();
+		if (queueIterator.hasPrevious()) queueIterator.previous();
+		if (start) start();
+	}
+
+	public void next(boolean start) {
+		pause();
+		curTask = null;
+		if (start) start();
 	}
 
 	@Override
 	public void close() {
-		current = null;
-		releaseAudioFocus();
-		activity.keepScreenOn(false);
-		setState(STATE_CLOSED);
-		IoUtils.close(dirTts, revTts, dirStt, revStt);
+		running.cancel();
+		textConsumer = null;
+		IoUtils.close(dirTts, revTts, stt);
 	}
 
-	public boolean isClosed() {
-		return state == STATE_CLOSED;
-	}
-
-	@Override
-	public void onAudioFocusChange(int focusChange) {
-		if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-			switch (getState()) {
-				case STATE_PAUSING_BY_FOCUS -> setState(STATE_RUNNING);
-				case STATE_PAUSED_BY_FOCUS -> {
-					setState(STATE_RUNNING);
-					speak(current);
-				}
+	private void nextTask() {
+		if ((curTask != null) && !curTask.isDone()) {
+			speak(curTask);
+		} else {
+			FutureSupplier<Task> f;
+			if (queueIterator.hasNext()) {
+				var w = queueIterator.next();
+				f = w.getTranslations(dict).map(tr -> new Task(w, tr));
+			} else {
+				int s = queue.size();
+				if (s > 100) queue.subList(0, s - 100).clear();
+				int off = queue.size();
+				assert off <= 100;
+				f = dict.getRandomWords(rnd, queue, 100, getProgress).then(ignore -> {
+					queueIterator = queue.listIterator(off);
+					if (!queueIterator.hasNext())
+						return failed(new UnsupportedOperationException("Empty dictionary!"));
+					var w = queueIterator.next();
+					return w.getTranslations(dict).map(tr -> new Task(w, tr));
+				});
 			}
-		} else if (getState() == STATE_RUNNING) {
-			setState(STATE_PAUSING_BY_FOCUS);
+			run(f.main().onCompletion(this::nextTaskHandler));
 		}
 	}
 
-	@Override
-	public void onClick(View v) {
-		if (current != null) current.attempt++;
-	}
-
-	@Override
-	public boolean onLongClick(View v) {
-		if (current == null) return false;
-		switch (getState()) {
-			case STATE_RUNNING:
-			case STATE_PAUSING_BY_FOCUS:
-				setState(STATE_PAUSING_BY_USER);
-				return true;
-			case STATE_PAUSING_BY_USER:
-				setState(STATE_RUNNING);
-				return true;
-			case STATE_PAUSED_BY_FOCUS:
-				return true;
-			case STATE_PAUSED_BY_USER:
-				setState(STATE_RUNNING);
-				speak(current);
-			default:
-				return false;
+	private void nextTaskHandler(@Nullable Task t, @Nullable Throwable err) {
+		if (err != null) {
+			if (isCancellation(err)) return;
+			error("Failed to load a word: " + err);
+			schedule(this::nextTask, 5000);
+		} else {
+			assert t != null;
+			speak(curTask = t);
 		}
-	}
-
-	private void requestAudioFocus() {
-		AudioManager am = (AudioManager) activity.getContext().getSystemService(Context.AUDIO_SERVICE);
-		if (am == null) return;
-		AudioManagerCompat.requestAudioFocus(am, audioFocusReq);
-	}
-
-	private void releaseAudioFocus() {
-		AudioManager am = (AudioManager) activity.getContext().getSystemService(Context.AUDIO_SERVICE);
-		if (am == null) return;
-		AudioManagerCompat.requestAudioFocus(am, audioFocusReq);
-	}
-
-	private void speak() {
-		if (isClosed()) return;
-		nextTask().onSuccess(this::speak);
 	}
 
 	private void speak(Task t) {
-		if (isClosed()) return;
-		current = t;
-		setWordText(t.speak);
-		(t.direct ? dirTts : revTts).speak(t.speak, t).onCompletion(this::speakHandler);
+		setText(t.speak, null);
+		run((t.direct ? dirTts : revTts).speak(t.speak, t).onCompletion(this::speakHandler));
 	}
 
-	private FutureSupplier<Void> speakTrans(Task t) {
-		if (isClosed()) return completedVoid();
-		return Async.forEach(tr -> {
-			String text = tr.getTranslation();
-			setTransText(text);
-			return revTts.speak(text);
-		}, t.trans);
-	}
-
-	private void speakHandler(Task t, Throwable err) {
-		if (isClosed()) return;
+	private void speakHandler(@Nullable Task t, @Nullable Throwable err) {
 		if (err != null) {
+			if (isCancellation(err)) return;
 			Log.e(err, "Speech failed");
-			showAlert(getContext(), err.getLocalizedMessage());
-			close();
-		} else if (checkState()) {
-			if (mode == MODE_LISTENING) {
-				speakTrans(t).onSuccess(v -> activity.postDelayed(this::speak, 1000));
-			} else {
-				assert (t.direct ? dirStt : revStt) != null;
-				(t.direct ? dirStt : revStt).recognize(t).onProgress((r, p, c) -> setTransText(r.getText()))
-						.onCompletion(this::recognizeHandler);
-			}
+			error(err.getLocalizedMessage());
+			schedule(() -> {
+				if (curTask == null) nextTask();
+				else speak(curTask);
+			}, 5000);
+		} else if (mode == Mode.LISTENING) {
+			assert t != null;
+			curTask = null;
+			speakTrans(t);
+		} else {
+			assert t != null;
+			recognize(t);
 		}
 	}
 
-	private void recognizeHandler(SpeechToText.Result<Task> r, Throwable err) {
-		if (isClosed()) return;
+	private void speakTrans(Task t) {
+		var f = Async.forEach(tr -> {
+			String text = tr.getTranslation();
+			setText(t.speak, text);
+			return revTts.speak(text);
+		}, t.trans).onCompletion(this::speakTransHandler);
+		run(f);
+	}
+
+	private void speakTransHandler(Object ignore, @Nullable Throwable err) {
 		if (err != null) {
-			Log.e(err);
+			if (isCancellation(err)) return;
+			Log.e(err, "Translation speech failed");
+			error(err.getLocalizedMessage());
+			schedule(this::nextTask, 5000);
+		} else {
+			schedule(this::nextTask, 1000);
+		}
+	}
+
+	private void recognize(Task t) {
+		var lang = t.direct ? dict.getTargetLang() : dict.getSourceLang();
+		stt.getRecognizerIntent().putExtra(EXTRA_LANGUAGE, lang.toLanguageTag());
+		var f = stt.recognize(t).onProgress(this::incompleteRecognitionHandler)
+				.onCompletion(this::recognizeHandler);
+		run(f);
+	}
+
+	private void incompleteRecognitionHandler(SpeechToText.Result<Task> incomplete, int ignore1,
+																						int ignore2) {
+		setText(incomplete.getData().speak, incomplete.getText());
+	}
+
+	private void recognizeHandler(@Nullable SpeechToText.Result<Task> r, @Nullable Throwable err) {
+		if (err != null) {
+			if (isCancellation(err)) return;
+			Log.e(err, "Speech recognition failed");
 			if (err instanceof SpeechToTextException e) {
 				if (e.getErrorCode() == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-					showAlert(getContext(), me.aap.fermata.R.string.err_no_audio_record_perm);
+					error(getString(err_no_audio_record_perm));
+					run(checkRecordPerm().onSuccess(b -> schedule(() -> {
+						if (curTask == null) {
+							nextTask();
+						} else {
+							if (b) setText(curTask.speak, null);
+							recognize(curTask);
+						}
+					}, 10000)));
 				} else {
-					if (!checkState()) return;
-					setTransText(e.getLocalizedMessage());
-					Task t = current;
-					if (t != null) activity.postDelayed(() -> speak(t), 15000);
+					var msg = e.getLocalizedMessage();
+					setText((msg == null) ? e.toString() : msg, null);
+					schedule(() -> {
+						if (curTask == null) {
+							nextTask();
+						} else {
+							setText(curTask.speak, null);
+							recognize(curTask);
+						}
+					}, 5000);
 				}
 			}
 		} else {
-			if (!checkState()) return;
+			assert r != null;
 			Task t = r.getData();
 			String text = r.getText();
-			setTransText(text);
+			setText(t.speak, text);
 
 			if (t.validTranslation(text)) {
+				curTask = null;
 				t.w.incrProgress(dict, t.direct, 10);
-				listView.onProgressChanged(dict, t.w);
-				activity.postDelayed(this::speak, 1000);
+				schedule(this::nextTask, 1000);
 			} else {
 				if ((text != null) && !skipPhrases.isEmpty() && skipPhrases.contains(text.toLowerCase())) {
 					t.attempt = 2;
+					retry(t);
+				} else {
+					schedule(() -> retry(t), 1000);
 				}
-				activity.postDelayed(() -> retry(t), 2000);
 			}
 		}
 	}
 
 	private void retry(Task t) {
-		if (isClosed()) return;
-		if (++t.attempt < 2) {
-			setTransText(null);
-			speak(t);
-		} else {
-			FutureSupplier<?> f;
+		if (t.isDone()) {
+			t.w.incrProgress(dict, t.direct, -10);
 			if (t.direct) {
-				f = speakTrans(t);
+				speakTrans(t);
 			} else {
 				String text = t.w.getExpr();
-				setTransText(text);
-				f = dirTts.speak(text);
+				setText(t.speak, text);
+				run(dirTts.speak(text).onCompletion(this::speakTransHandler));
 			}
-
-			t.w.incrProgress(dict, t.direct, -10);
-			listView.onProgressChanged(dict, t.w);
-			f.thenRun(() -> activity.postDelayed(this::speak, 1000));
+		} else {
+			setText(t.speak, null);
+			speak(t);
 		}
 	}
 
-	private void setWordText(CharSequence text) {
-		wordView.setText(text);
-		transView.setVisibility(GONE);
+	private void setText(@NonNull String text, @Nullable String trans) {
+		curText = text;
+		curTrans = trans;
+		if (textConsumer != null) textConsumer.accept(text, trans);
 	}
 
-	private void setTransText(CharSequence text) {
-		transView.setText(text);
-		transView.setVisibility((text == null) ? GONE : VISIBLE);
+	private void error(String err) {
+		Log.e(err);
+		setText(err, null);
 	}
 
-	private Context getContext() {
-		return activity.getContext();
+	public void run(Cancellable c) {
+		running.cancel();
+		running = c;
 	}
 
-	private FutureSupplier<Task> nextTask() {
-		return dict.getRandomWord(rnd, history, getProgress)
-				.then(w -> w.getTranslations(dict).map(tr -> new Task(w, tr))).main().onFailure(err -> {
-					if (isClosed()) return;
-					if (err != null) {
-						Log.e(err);
-						showAlert(getContext(), "Failed to load a word: " + err);
-						close();
-					}
-				});
+	private void schedule(Runnable r, long delay) {
+		run(FermataApplication.get().getHandler().schedule(r, delay));
 	}
 
-	private byte getState() {
-		return state;
+	private static FutureSupplier<Boolean> checkRecordPerm() {
+		var a = MainActivity.getActiveInstance();
+		return (a == null) ? completed(true) :
+				a.checkPermissions(RECORD_AUDIO).map(r -> (r[0] == PERMISSION_GRANTED));
 	}
 
-	private void setState(byte state) {
-		this.state = state;
+	private static String getString(@StringRes int resId) {
+		return FermataApplication.get().getString(resId);
 	}
 
-	private boolean checkState() {
-		switch (getState()) {
-			case STATE_RUNNING -> {
-				return true;
-			}
-			case STATE_PAUSING_BY_FOCUS -> {
-				setState(STATE_PAUSED_BY_FOCUS);
-				return false;
-			}
-			case STATE_PAUSING_BY_USER -> {
-				setState(STATE_PAUSED_BY_USER);
-				releaseAudioFocus();
-				return false;
-			}
-			default -> {
-				return false;
-			}
-		}
+	public enum Mode {
+		DIRECT, REVERSE, LISTENING, MIXED;
+
+		public static final List<Mode> values = unmodifiableList(Arrays.asList(values()));
 	}
 
 	private final class Task {
@@ -373,20 +334,18 @@ public class DictTutor
 			this.trans = trans;
 
 			switch (mode) {
-				case MODE_LISTENING:
-				case MODE_DIRECT:
+				case LISTENING:
+				case DIRECT:
 					speak = w.getExpr();
 					direct = true;
 					break;
-				case MODE_MIXED:
-					int dir = w.getDirProgress();
-					int rev = w.getRevProgress();
-					if ((dir == rev) ? rnd.nextBoolean() : (dir < rev)) {
+				case MIXED:
+					if (rnd.nextBoolean()) {
 						speak = w.getExpr();
 						direct = true;
 						break;
 					}
-				case MODE_REVERSE:
+				case REVERSE:
 					speak = (trans.isEmpty()) ? w.getExpr() :
 							trans.get(rnd.nextInt(trans.size())).getTranslation();
 					direct = false;
@@ -397,6 +356,7 @@ public class DictTutor
 		}
 
 		boolean validTranslation(String text) {
+			attempt++;
 			if (text == null) return false;
 			if (direct) {
 				for (Translation t : trans) {
@@ -406,6 +366,10 @@ public class DictTutor
 			} else {
 				return w.matches(text);
 			}
+		}
+
+		boolean isDone() {
+			return attempt > 1;
 		}
 	}
 }

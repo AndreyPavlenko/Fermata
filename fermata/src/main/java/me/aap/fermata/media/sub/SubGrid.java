@@ -45,6 +45,10 @@ public class SubGrid extends AbstractCollection<Map.Entry<SubGrid.Position, Subt
 		subtitles.remove(position);
 	}
 
+	public void move(Position from, Position to) {
+		subtitles.put(to,subtitles.remove(from));
+	}
+
 	@Override
 	public int size() {
 		return subtitles.size();

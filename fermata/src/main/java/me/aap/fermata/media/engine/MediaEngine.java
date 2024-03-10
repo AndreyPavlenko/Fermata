@@ -59,6 +59,10 @@ public interface MediaEngine extends Closeable {
 		return (src != null) && src.isSeekable();
 	}
 
+	default boolean muteOnTransientFocusLoss() {
+		return !canPause();
+	}
+
 	PlayableItem getSource();
 
 	FutureSupplier<Long> getDuration();
@@ -71,7 +75,7 @@ public interface MediaEngine extends Closeable {
 
 	void setSpeed(float speed);
 
-	void setVideoView(VideoView view);
+	void setVideoView(@Nullable VideoView view);
 
 	float getVideoWidth();
 

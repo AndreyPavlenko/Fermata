@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.provider.FermataContentProvider;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -108,6 +109,9 @@ public class BitmapCache {
 
 		if (iconFile.isFile()) {
 			return ctx.getContentResolver().openFileDescriptor(Uri.parse(iconUri), "r");
+		} else if (ContentResolver.SCHEME_ANDROID_RESOURCE.equals(uri.getScheme())) {
+			loadBitmap(ctx, uri.toString(), iconUri, true, size);
+			return ctx.getContentResolver().openFileDescriptor(Uri.parse(iconUri), "r");
 		} else {
 			return openResource(ctx, uri, 0).getParcelFileDescriptor();
 		}
@@ -115,27 +119,29 @@ public class BitmapCache {
 
 	@NonNull
 	public FutureSupplier<Bitmap> getBitmap(Context ctx, String uri, boolean cache, boolean resize) {
+		String orig = FermataContentProvider.getOrigUri(uri);
+		String u = (orig == null) ? uri : orig;
 		int size;
 		String iconUri;
 		Bitmap bm;
 
 		if (resize) {
 			size = getIconSize(ctx);
-			iconUri = toIconUri(uri, size);
+			iconUri = toIconUri(u, size);
 			bm = getCachedBitmap(iconUri);
 		} else {
 			size = 0;
 			iconUri = null;
-			bm = getCachedBitmap(uri);
+			bm = getCachedBitmap(u);
 		}
 
 		if (bm != null) return completed(bm);
 
-		if (uri.startsWith("http://") || uri.startsWith("https://")) {
-			return loadHttpBitmap(uri, iconUri, size);
+		if (u.startsWith("http://") || u.startsWith("https://")) {
+			return loadHttpBitmap(u, iconUri, size);
 		}
 
-		return queue.enqueue(() -> loadBitmap(ctx, uri, iconUri, cache, size));
+		return queue.enqueue(() -> loadBitmap(ctx, u, iconUri, cache, size));
 	}
 
 	@Nullable
@@ -191,6 +197,11 @@ public class BitmapCache {
 					Resources res = ctx.getResources();
 					String[] s = uri.split("/");
 					int id = res.getIdentifier(s[s.length - 1], s[s.length - 2], ctx.getPackageName());
+					if (id == 0) id = res.getIdentifier(s[s.length - 1], s[s.length - 2], s[s.length - 3]);
+					if (id == 0) {
+						Log.e("Resource, ", uri, " not found!");
+						break;
+					}
 					Drawable d = ResourcesCompat.getDrawable(res, id, ctx.getTheme());
 					if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
 					break;
@@ -263,7 +274,8 @@ public class BitmapCache {
 		});
 	}
 
-	public synchronized FutureSupplier<Uri> addImage(String uri, CheckedSupplier<Bitmap, Exception> s) {
+	public synchronized FutureSupplier<Uri> addImage(String uri,
+																									 CheckedSupplier<Bitmap, Exception> s) {
 		File f = toImageFile(uri);
 		if (f.isFile()) return completed(Uri.fromFile(f));
 
@@ -271,8 +283,8 @@ public class BitmapCache {
 			synchronized (BitmapCache.this) {
 				if (!f.isFile()) {
 					try (OutputStream out = new FileOutputStream(f)) {
-						CompressFormat fmt = (f.getName().endsWith(".png"))
-								? CompressFormat.PNG : CompressFormat.JPEG;
+						CompressFormat fmt =
+								(f.getName().endsWith(".png")) ? CompressFormat.PNG : CompressFormat.JPEG;
 						s.get().compress(fmt, 100, out);
 					} catch (Exception ex) {
 						Log.e(ex, "Failed to save image: ", f);

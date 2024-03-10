@@ -41,19 +41,20 @@ public class TvAddon implements MediaLibAddon {
 		return new TvFragment();
 	}
 
-	@Nullable
-	@Override
-	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme, String id) {
-		return getRootItem(lib).getItem(scheme, id);
-	}
-
 	@Override
 	public boolean isSupportedItem(Item i) {
 		return (i instanceof TvItem);
 	}
 
-	public static TvRootItem getRootItem(DefaultMediaLib lib) {
+	public TvRootItem getRootItem(DefaultMediaLib lib) {
 		if ((root == null) || (root.getLib() != lib)) root = new TvRootItem(lib);
 		return root;
+	}
+
+	@Nullable
+	@Override
+	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme,
+																								String id) {
+		return getRootItem(lib).getItem(scheme, id);
 	}
 }

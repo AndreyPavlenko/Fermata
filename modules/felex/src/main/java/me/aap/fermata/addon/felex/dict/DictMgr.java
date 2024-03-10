@@ -21,6 +21,7 @@ import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.PromiseQueue;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.function.CheckedSupplier;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
@@ -30,10 +31,11 @@ import me.aap.utils.vfs.VirtualFile;
 /**
  * @author Andrey Pavlenko
  */
-public class DictMgr {
+public class DictMgr extends BasicEventBroadcaster<DictMgr.ProgressChangeListener> {
 	public static final String DICT_EXT = ".fxd";
 	public static final String CACHE_EXT = ".fxc";
 	private static final DictMgr instance = new DictMgr();
+	private final List<ProgressChangeListener> listeners = new ArrayList<>();
 	final PromiseQueue queue = new PromiseQueue();
 	private FutureSupplier<List<Dict>> dictionaries;
 
@@ -44,6 +46,7 @@ public class DictMgr {
 	public static DictMgr get() {
 		return instance;
 	}
+
 
 	public FutureSupplier<List<Dict>> getDictionaries() {
 		assertMainThread();
@@ -163,5 +166,9 @@ public class DictMgr {
 		} catch (IOException ex) {
 			return App.get().getAssets().open("Example" + DICT_EXT);
 		}
+	}
+
+	public interface ProgressChangeListener {
+		void onProgressChanged(Dict d, Word w);
 	}
 }

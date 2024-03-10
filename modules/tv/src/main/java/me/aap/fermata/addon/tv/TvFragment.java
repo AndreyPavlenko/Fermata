@@ -1,5 +1,6 @@
 package me.aap.fermata.addon.tv;
 
+import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
@@ -11,6 +12,7 @@ import androidx.annotation.NonNull;
 import java.util.Collections;
 import java.util.concurrent.CancellationException;
 
+import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.tv.m3u.TvM3uFile;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystem;
 import me.aap.fermata.addon.tv.m3u.TvM3uFileSystemProvider;
@@ -78,26 +80,23 @@ public class TvFragment extends MediaLibFragment {
 
 	public void addSource() {
 		TvM3uFileSystemProvider prov = new TvM3uFileSystemProvider();
-		prov.select(getMainActivity(), Collections.singletonList(TvM3uFileSystem.getInstance()))
-				.main()
-				.onFailure(this::failedToAddSource)
-				.onSuccess(this::addM3uSource);
+		prov.select(getMainActivity(), Collections.singletonList(TvM3uFileSystem.getInstance())).main()
+				.onFailure(this::failedToAddSource).onSuccess(this::addM3uSource);
 	}
 
 	public TvRootItem getRootItem() {
-		return TvAddon.getRootItem((DefaultMediaLib) getMainActivity().getLib());
+		return requireNonNull(AddonManager.get().getAddon(TvAddon.class)).getRootItem(
+				(DefaultMediaLib) getMainActivity().getLib());
 	}
 
 	@Override
 	public void contributeToContextMenu(OverlayMenu.Builder b, MediaItemMenuHandler h) {
 		if (!(h.getItem() instanceof TvM3uItem)) return;
 		b.addItem(me.aap.fermata.R.id.edit, me.aap.fermata.R.drawable.edit,
-				me.aap.fermata.R.string.edit)
-				.setData(h.getItem())
+						me.aap.fermata.R.string.edit).setData(h.getItem())
 				.setHandler(this::contextMenuItemSelected);
 		b.addItem(me.aap.fermata.R.id.delete, me.aap.fermata.R.drawable.delete,
-				me.aap.fermata.R.string.delete)
-				.setData(h.getItem())
+						me.aap.fermata.R.string.delete).setData(h.getItem())
 				.setHandler(this::contextMenuItemSelected);
 		super.contributeToContextMenu(b, h);
 	}
@@ -106,14 +105,15 @@ public class TvFragment extends MediaLibFragment {
 		int id = item.getItemId();
 		if (id == me.aap.fermata.R.id.edit) {
 			TvM3uItem i = item.getData();
-			new TvM3uFileSystemProvider().edit(getMainActivity(), i.getResource()).onCompletion((ok, err) -> {
-				if ((err != null) && !(err instanceof CancellationException)) {
-					Log.e(err, "Failed to edit TV source ", i);
-					UiUtils.showAlert(getContext(), err.getLocalizedMessage());
-				}
-				getMainActivity().showFragment(getFragmentId());
-				if ((ok != null) && ok) i.refresh().thenRun(this::refresh);
-			});
+			new TvM3uFileSystemProvider().edit(getMainActivity(), i.getResource())
+					.onCompletion((ok, err) -> {
+						if ((err != null) && !(err instanceof CancellationException)) {
+							Log.e(err, "Failed to edit TV source ", i);
+							UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+						}
+						getMainActivity().showFragment(getFragmentId());
+						if ((ok != null) && ok) i.refresh().thenRun(this::refresh);
+					});
 		} else if (id == me.aap.fermata.R.id.delete) {
 			TvRootItem root = getRootItem();
 			root.removeItem(item.getData()).onSuccess(v -> getAdapter().setParent(root));
@@ -158,8 +158,8 @@ public class TvFragment extends MediaLibFragment {
 
 		App.get().getHandler().post(() -> {
 			String msg = ex.getLocalizedMessage();
-			UiUtils.showAlert(getContext(), getString(R.string.err_failed_to_add_tv_source,
-					(msg != null) ? msg : ex.toString()));
+			UiUtils.showAlert(getContext(),
+					getString(R.string.err_failed_to_add_tv_source, (msg != null) ? msg : ex.toString()));
 		});
 	}
 
@@ -206,7 +206,8 @@ public class TvFragment extends MediaLibFragment {
 
 				FloatingButton fb = getMainActivity().getFloatingButton();
 				fb.requestFocus();
-				Animation shake = AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
+				Animation shake =
+						AnimationUtils.loadAnimation(getContext(), me.aap.utils.R.anim.shake_y_20);
 				fb.startAnimation(shake);
 			});
 		}

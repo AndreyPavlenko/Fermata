@@ -41,10 +41,13 @@ import me.aap.fermata.addon.felex.dict.DictMgr;
 import me.aap.fermata.addon.felex.dict.Example;
 import me.aap.fermata.addon.felex.dict.Translation;
 import me.aap.fermata.addon.felex.dict.Word;
+import me.aap.fermata.addon.felex.media.FelexItem;
 import me.aap.fermata.addon.felex.tutor.DictTutor;
+import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.fermata.ui.fragment.FloatingButtonMediator;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
@@ -59,6 +62,7 @@ import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.fragment.ActivityFragment;
 import me.aap.utils.ui.menu.OverlayMenu;
 import me.aap.utils.ui.menu.OverlayMenuItem;
+import me.aap.utils.ui.view.FloatingButton;
 import me.aap.utils.ui.view.ToolBarView;
 import me.aap.utils.voice.TextToSpeech;
 
@@ -67,7 +71,6 @@ import me.aap.utils.voice.TextToSpeech;
  */
 public class FelexFragment extends MainActivityFragment
 		implements MainActivityListener, PreferenceStore.Listener, ToolBarView.Listener {
-	private DictTutor tutor;
 	private Uri importDict;
 
 	@Override
@@ -86,6 +89,11 @@ public class FelexFragment extends MainActivityFragment
 	}
 
 	@Override
+	public boolean isVideoModeSupported() {
+		return true;
+	}
+
+	@Override
 	public CharSequence getTitle() {
 		return view().getTitle();
 	}
@@ -93,6 +101,11 @@ public class FelexFragment extends MainActivityFragment
 	@Override
 	public ToolBarView.Mediator getToolBarMediator() {
 		return ToolBarMediator.instance;
+	}
+
+	@Override
+	public FloatingButton.Mediator getFloatingButtonMediator() {
+		return FbMediator.instance;
 	}
 
 	@Nullable
@@ -111,7 +124,12 @@ public class FelexFragment extends MainActivityFragment
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		importDict();
+		if (importDict()) return;
+		getActivityDelegate().getLib().getLastPlayedItem().onSuccess(i -> {
+			if (i instanceof FelexItem.Tutor t) {
+				view().setContent(t.getParent().getDict());
+			}
+		});
 	}
 
 	@Override
@@ -124,7 +142,6 @@ public class FelexFragment extends MainActivityFragment
 	@Override
 	public void onHiddenChanged(boolean hidden) {
 		super.onHiddenChanged(hidden);
-		closeTutor();
 	}
 
 	public boolean canScrollUp() {
@@ -151,8 +168,7 @@ public class FelexFragment extends MainActivityFragment
 
 	@Override
 	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
-		FutureSupplier<List<Dict>> f = view().getDictMgr().getDictionaries();
-		if (!f.isDone() || f.peek(Collections::emptyList).isEmpty()) return;
+		if ((getCurrentDict() == null)) return;
 		OverlayMenu.Builder b = builder.withSelectionHandler(this::navBarMenuItemSelected);
 		b.addItem(R.id.start_tutor, me.aap.fermata.R.drawable.record_voice, R.string.start_tutor)
 				.setSubmenu(this::buildTutorMenu);
@@ -167,6 +183,11 @@ public class FelexFragment extends MainActivityFragment
 		super.contributeToNavBarMenu(b);
 	}
 
+	@Nullable
+	private Dict getCurrentDict() {
+		return (getView() instanceof FelexListView v) ? v.getCurrentDict() : null;
+	}
+
 	private void buildTutorMenu(OverlayMenu.Builder sb) {
 		sb.setSelectionHandler(this::navBarMenuItemSelected);
 		sb.addItem(R.id.start_tutor_dir, R.string.start_tutor_dir);
@@ -175,17 +196,22 @@ public class FelexFragment extends MainActivityFragment
 		sb.addItem(R.id.start_tutor_listen, R.string.start_tutor_listen);
 	}
 
+	/**
+	 * @noinspection SameReturnValue
+	 */
 	private boolean navBarMenuItemSelected(OverlayMenuItem item) {
+		var d = getCurrentDict();
+		if (d == null) return true;
 		int id = item.getItemId();
 
 		if (id == R.id.start_tutor_dir) {
-			startTutor(DictTutor.MODE_DIRECT);
+			startTutor(d, DictTutor.Mode.DIRECT);
 		} else if (id == R.id.start_tutor_rev) {
-			startTutor(DictTutor.MODE_REVERSE);
+			startTutor(d, DictTutor.Mode.REVERSE);
 		} else if (id == R.id.start_tutor_mix) {
-			startTutor(DictTutor.MODE_MIXED);
+			startTutor(d, DictTutor.Mode.MIXED);
 		} else if (id == R.id.start_tutor_listen) {
-			startTutor(DictTutor.MODE_LISTENING);
+			startTutor(d, DictTutor.Mode.LISTENING);
 		} else if (id == me.aap.fermata.R.id.refresh) {
 			refresh(item.getData());
 		}
@@ -205,7 +231,6 @@ public class FelexFragment extends MainActivityFragment
 				View v = getView();
 				if (v instanceof FelexListView) ((FelexListView) v).scale(a.getTextIconSize());
 			} else if (prefs.contains(DICT_FOLDER) || prefs.contains(CACHE_FOLDER)) {
-				closeTutor();
 				view().onFolderChanged();
 			}
 		});
@@ -225,8 +250,8 @@ public class FelexFragment extends MainActivityFragment
 		if (getView() != null) importDict();
 	}
 
-	private void importDict() {
-		if (importDict == null) return;
+	private boolean importDict() {
+		if (importDict == null) return false;
 		Uri uri = importDict;
 		importDict = null;
 		Context ctx = requireContext();
@@ -240,7 +265,7 @@ public class FelexFragment extends MainActivityFragment
 		}).then(info -> {
 			String title = ctx.getString(R.string.import_dict);
 			String msg = ctx.getString(R.string.import_dict_q, info);
-			Drawable icon = AppCompatResources.getDrawable(ctx, me.aap.fermata.R.drawable.felex);
+			Drawable icon = AppCompatResources.getDrawable(ctx, R.drawable.dictionary);
 			return showQuestion(ctx, title, msg, icon).then(
 					v -> DictMgr.get().getDictionary(info.getName()).then(d -> {
 						if (d == null) {
@@ -254,10 +279,11 @@ public class FelexFragment extends MainActivityFragment
 						}
 					}));
 		}).then(d -> d.addWords(uri)).onSuccess(view()::setContent);
+		return true;
 	}
 
 	private FutureSupplier<Dict> createDict(DictInfo i) {
-		return queryText(requireContext(), R.string.dict_name, me.aap.fermata.R.drawable.felex).then(
+		return queryText(requireContext(), R.string.dict_name, R.drawable.dictionary).then(
 				name -> DictMgr.get()
 						.createDictionary(name, i.getSourceLang(), i.getTargetLang(), i.getSkipPhrase()));
 	}
@@ -267,37 +293,13 @@ public class FelexFragment extends MainActivityFragment
 		return (FelexListView) requireView();
 	}
 
-	private void startTutor(byte mode) {
-		closeTutor();
-		activity().onSuccess(a -> {
-			FelexListView v = view();
-			Dict d = v.getCurrentDict();
-			FutureSupplier<DictTutor> f = (d != null) ? DictTutor.create(a, d, mode) :
-					v.getDictMgr().getDictionaries().then(list -> list.isEmpty() ? completedNull() :
-							DictTutor.create(a, list.get(0), mode).map(t -> t));
-			f.onCompletion((t, err) -> {
-				closeTutor();
-				if (err != null) {
-					Log.e(err);
-					showAlert(requireContext(), err.toString());
-					return;
-				}
-				if (t == null) return;
-				tutor = t;
-				t.start();
-			});
-		});
-	}
-
-	private void closeTutor() {
-		if (tutor != null) {
-			tutor.close();
-			tutor = null;
-		}
+	private void startTutor(Dict d, DictTutor.Mode mode) {
+		var a = getActivityDelegate();
+		var lib = (DefaultMediaLib) a.getLib();
+		a.getMediaServiceBinder().playItem(FelexItem.Tutor.create(lib, d, mode));
 	}
 
 	private void cleanUp(MainActivityDelegate a) {
-		closeTutor();
 		a.removeBroadcastListener(this);
 		a.getPrefs().removeBroadcastListener(this);
 		a.getToolBar().removeBroadcastListener(this);
@@ -331,13 +333,19 @@ public class FelexFragment extends MainActivityFragment
 		private void setButtonsVisibility(ToolBarView tb, ActivityFragment f) {
 			if (!(f instanceof FelexFragment ff)) return;
 			Object content = ff.view().getContent();
-
-			if ((content instanceof DictMgr) || (content instanceof Dict) || (content instanceof Word) ||
+			int add;
+			int start;
+			if (content instanceof Dict) {
+				add = start = View.VISIBLE;
+			} else if ((content instanceof DictMgr) || (content instanceof Word) ||
 					(content instanceof Translation)) {
-				tb.findViewById(R.id.add).setVisibility(View.VISIBLE);
+				add = View.VISIBLE;
+				start = GONE;
 			} else {
-				tb.findViewById(R.id.add).setVisibility(GONE);
+				add = start = GONE;
 			}
+			tb.findViewById(R.id.add).setVisibility(add);
+			tb.findViewById(R.id.start_tutor).setVisibility(start);
 		}
 
 		private static void add(View v) {
@@ -582,6 +590,22 @@ public class FelexFragment extends MainActivityFragment
 			ActivityFragment f = a.getActiveFragment();
 			if (!(f instanceof FelexFragment ff)) return;
 			a.getToolBarMenu().show(ff::buildTutorMenu);
+		}
+	}
+
+	private static final class FbMediator extends FloatingButtonMediator {
+		static final FbMediator instance = new FbMediator();
+
+		@Override
+		public boolean onLongClick(View v) {
+			MainActivityDelegate a = MainActivityDelegate.get(v.getContext());
+			if (a.getActiveFragment() instanceof FelexFragment f) {
+				if (f.view().getContent() instanceof Dict d) {
+					f.startTutor(d, DictTutor.Mode.DIRECT);
+					return true;
+				}
+			}
+			return super.onLongClick(v);
 		}
 	}
 }

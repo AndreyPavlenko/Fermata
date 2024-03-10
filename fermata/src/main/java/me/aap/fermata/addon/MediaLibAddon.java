@@ -11,8 +11,10 @@ import me.aap.utils.async.FutureSupplier;
  */
 public interface MediaLibAddon extends FermataFragmentAddon {
 
+	boolean isSupportedItem(Item i);
+
+	Item getRootItem(DefaultMediaLib lib);
+
 	@Nullable
 	FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme, String id);
-
-	boolean isSupportedItem(Item i);
 }

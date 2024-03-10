@@ -3,6 +3,7 @@ package me.aap.fermata.media.engine;
 import static android.media.session.PlaybackState.STATE_PAUSED;
 import static android.media.session.PlaybackState.STATE_PLAYING;
 import static android.media.session.PlaybackState.STATE_STOPPED;
+import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_CENTER;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_RIGHT;
 import static me.aap.utils.async.Completed.cancelled;
@@ -11,6 +12,7 @@ import static me.aap.utils.collection.CollectionUtils.comparing;
 import static me.aap.utils.text.TextUtils.timeToString;
 
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import me.aap.utils.vfs.VirtualResource;
  */
 public abstract class MediaEngineBase implements MediaEngine {
 	protected final Listener listener;
+	@Nullable
 	protected VideoView videoView;
 	private int state = STATE_STOPPED;
 	private SubMgr subMgr;
@@ -43,10 +46,11 @@ public abstract class MediaEngineBase implements MediaEngine {
 
 	@CallSuper
 	@Override
-	public void setVideoView(VideoView view) {
+	public void setVideoView(@Nullable VideoView view) {
 		if ((subMgr != null) && (videoView != null)) subMgr.removeSubtitleConsumer(videoView);
 		videoView = view;
 		if (view == null) return;
+		view.clearSubtitleSurface();
 		if (subMgr != null) subMgr.addSubtitleConsumer(view);
 		else selectSubtitleStream();
 	}
@@ -235,15 +239,15 @@ public abstract class MediaEngineBase implements MediaEngine {
 			return load().map(sub -> sub == null ? SubGrid.EMPTY : sub.getSubtitles());
 		}
 
-		void addSubtitleConsumer(BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {
+		void addSubtitleConsumer(@NonNull BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {
 			if (consumers.contains(consumer)) return;
 			consumers.add(consumer);
 			if (sub == null) load();
 			else if ((state == STATE_PLAYING) && !sub.isStarted()) start();
-			else if (consumer == videoView) prepareDrawer();
+			else if (consumer == videoView) prepareDrawer(videoView);
 		}
 
-		void removeSubtitleConsumer(BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {
+		void removeSubtitleConsumer(@NonNull BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {
 			if (!consumers.remove(consumer)) return;
 			if (consumers.isEmpty()) stop(true);
 			if (consumer == videoView) videoView.releaseSubDrawer();
@@ -279,6 +283,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 							s1.get(i).setTranslation(s2.get(i).getText());
 						}
 						sg.remove(BOTTOM_RIGHT);
+						sg.move(BOTTOM_LEFT, BOTTOM_CENTER);
 					}
 				}
 
@@ -316,9 +321,9 @@ public abstract class MediaEngineBase implements MediaEngine {
 			if (sub == null) return;
 			getPosition().then(pos -> getSpeed().main().onSuccess(speed -> {
 				if (sub != this.sub) return;
-				for (var c : consumers) {
+				for (@NonNull var c : consumers) {
 					if (c == videoView) {
-						prepareDrawer();
+						prepareDrawer(videoView);
 						break;
 					}
 				}
@@ -351,7 +356,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 			}
 		}
 
-		private void prepareDrawer() {
+		private void prepareDrawer(VideoView videoView) {
 			videoView.prepareSubDrawer((streamInfo != null) && (streamInfo.getFiles().size() == 2));
 		}
 	}

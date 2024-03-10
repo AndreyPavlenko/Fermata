@@ -50,7 +50,6 @@ import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.SharedTextBuilder;
 import me.aap.utils.text.TextBuilder;
 import me.aap.utils.vfs.VirtualFileSystem;
-import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 import me.aap.utils.vfs.content.ContentFileSystem;
 import me.aap.utils.vfs.content.ContentFolder;
@@ -179,10 +178,12 @@ public class MetadataRetriever implements Closeable {
 				if (mgr.vlcPlayer != null) mgr.vlcPlayer.getMediaMetadata(mb, item);
 		}
 
-		try {
-			insertMetadata(mb, item);
-		} catch (Throwable ex) {
-			Log.e(ex, "Failed to update MediaStore");
+		if (item.isCacheable()) {
+			try {
+				insertMetadata(mb, item);
+			} catch (Throwable ex) {
+				Log.e(ex, "Failed to update MediaStore");
+			}
 		}
 
 		return mb;
@@ -251,8 +252,7 @@ public class MetadataRetriever implements Closeable {
 					.query(uri, new String[]{"_data"}, null, null, null)) {
 				if ((c != null) && c.moveToNext()) path = c.getString(0);
 			}
-		} else if ((r.getVirtualFileSystem() instanceof LocalFileSystem) &&
-				(r instanceof VirtualFolder)) {
+		} else if (r.getVirtualFileSystem() instanceof LocalFileSystem) {
 			path = item.getResource().getRid().getPath();
 		}
 

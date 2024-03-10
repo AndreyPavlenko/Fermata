@@ -20,6 +20,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.log.Log;
 import me.aap.utils.module.DynamicModuleInstaller;
@@ -75,6 +76,13 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		return addons.values();
 	}
 
+	/**
+	 * @noinspection unchecked
+	 */
+	public <A extends FermataAddon> List<A> getAddons(Class<A> c) {
+		return (List<A>) CollectionUtils.filter(getAddons(), c::isInstance);
+	}
+
 	public boolean hasAddon(@IdRes int id) {
 		for (FermataAddon a : getAddons()) {
 			if (a.getAddonId() == id) return true;
@@ -93,7 +101,8 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	@Nullable
-	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme, String id) {
+	public FutureSupplier<? extends Item> getItem(DefaultMediaLib lib, @Nullable String scheme,
+																								String id) {
 		for (FermataAddon a : getAddons()) {
 			if (a instanceof MediaLibAddon) {
 				FutureSupplier<? extends Item> i = ((MediaLibAddon) a).getItem(lib, scheme, id);
@@ -107,8 +116,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	@Nullable
 	public MediaLibAddon getMediaLibAddon(Item i) {
 		for (FermataAddon a : getAddons()) {
-			if (a instanceof MediaLibAddon) {
-				MediaLibAddon mla = (MediaLibAddon) a;
+			if (a instanceof MediaLibAddon mla) {
 				if (mla.isSupportedItem(i)) return mla;
 			}
 		}
@@ -144,8 +152,8 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 			if (!installModule) return;
 
-			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon,
-					i.moduleName, null, MainActivity.class).onSuccess(a -> {
+			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon, i.moduleName, null,
+					MainActivity.class).onSuccess(a -> {
 				DynamicModuleInstaller inst = createInstaller(a, i);
 				inst.install(i.moduleName).onSuccess(v -> {
 					Log.i("Module installed: ", i.moduleName);
@@ -171,8 +179,8 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 				if (ai.moduleName.equals(i.moduleName)) return;
 			}
 
-			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon,
-					i.moduleName, null, MainActivity.class).onSuccess(a -> {
+			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon, i.moduleName, null,
+					MainActivity.class).onSuccess(a -> {
 				DynamicModuleInstaller inst = createInstaller(a, i);
 				inst.uninstall(i.moduleName).onSuccess(v -> Log.i("Module uninstalled: ", i.moduleName));
 			});
