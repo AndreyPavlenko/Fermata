@@ -13,6 +13,8 @@
     <string name="dict_name">Название словаря</string>
     <string name="src_lang">Исходный язык</string>
     <string name="target_lang">Язык перевода</string>
+    <string name="skip_phrase">Фраза для пропуска</string>
+    <string name="skip_phrase_sub">Пропустить, Не знаю, Skip, I don\'t know</string>
     <string name="no_lang_supported">Нет языков, поддерживаемых TTS</string>
     <string name="add_word">Добавить слово</string>
     <string name="add_trans">Добавить перевод</string>

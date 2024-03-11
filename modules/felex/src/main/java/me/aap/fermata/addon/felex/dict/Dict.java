@@ -9,6 +9,7 @@ import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.DictMgr.CACHE_EXT;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
+import static me.aap.utils.async.Completed.failed;
 import static me.aap.utils.collection.CollectionUtils.comparingInt;
 import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 import static me.aap.utils.misc.Assert.assertMainThread;
@@ -48,6 +49,7 @@ import me.aap.utils.function.ToIntFunction;
 import me.aap.utils.io.CountingOutputStream;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.io.IoUtils;
+import me.aap.utils.io.MemOutputStream;
 import me.aap.utils.io.RandomAccessChannel;
 import me.aap.utils.io.Utf8LineReader;
 import me.aap.utils.io.Utf8Reader;
@@ -61,8 +63,9 @@ public class Dict implements Comparable<Dict> {
 	private final DictMgr mgr;
 	private final VirtualFile dictFile;
 	private final RandomAccessChannel channel;
-	private final DictInfo info;
+	private DictInfo info;
 	private boolean closed;
+	@Nullable
 	private FutureSupplier<List<Word>> words;
 	private ByteBuffer bb;
 	private StringBuilder sb;
@@ -103,7 +106,8 @@ public class Dict implements Comparable<Dict> {
 			if (ch == null)
 				throw new IOException("Unable to create dictionary file: " + dictFile.getName());
 			Dict d = new Dict(mgr, dictFile, ch, info);
-			try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(ch.getOutputStream(0), UTF_8))) {
+			try (BufferedWriter w = new BufferedWriter(
+					new OutputStreamWriter(ch.getOutputStream(0), UTF_8))) {
 				info.write(w);
 			}
 			return d;
@@ -112,6 +116,22 @@ public class Dict implements Comparable<Dict> {
 
 	public DictInfo getInfo() {
 		return info;
+	}
+
+	public FutureSupplier<?> setInfo(DictInfo info) {
+		assertMainThread();
+		return editWords((size, words) -> {
+			var del = words.isEmpty() ? size : words.get(0).getOffset();
+			var m = new MemOutputStream();
+			try (Writer w = new OutputStreamWriter(m, UTF_8)) {
+				info.write(w);
+			} catch (Exception err) {
+				return failed(err);
+			}
+			shiftWords(words, 0, m.getCount() - del);
+			return dictReplace(0, del, ByteBuffer.wrap(m.getBuffer(), 0, m.getCount()));
+		}).then(f -> f).main().onSuccess(v -> this.info = info)
+				.onFailure(err -> Log.e(err, "Failed to change dictionary info", this));
 	}
 
 	public String getName() {
@@ -203,6 +223,7 @@ public class Dict implements Comparable<Dict> {
 		return writeDict(ch -> {
 			try (InputStream in = App.get().getContentResolver().openInputStream(dictUri);
 					 OutputStream out = ch.getOutputStream(ch.size())) {
+				if (in == null) throw new IOException("Failed to read dictionary: " + dictUri);
 				DictInfo i = DictInfo.read(in);
 				if (i == null) throw new IOException("Invalid dictionary header: " + dictUri);
 				FileUtils.copy(in, out);
@@ -213,6 +234,10 @@ public class Dict implements Comparable<Dict> {
 
 	public FutureSupplier<Integer> addWord(String word, String trans, @Nullable String example,
 																				 @Nullable String exampleTrans) {
+		return addWord(word, singletonList(new Translation(trans, example, exampleTrans)));
+	}
+
+	public FutureSupplier<Integer> addWord(String word, List<Translation> translations) {
 		assertMainThread();
 		return editWords((size, words) -> {
 			Word w = Word.create(word);
@@ -220,7 +245,7 @@ public class Dict implements Comparable<Dict> {
 			if (i > 0) throw new IllegalArgumentException("Word " + word + " is already exists");
 			int idx = -i - 1;
 			long off = (idx < words.size()) ? words.get(idx).getOffset() : size;
-			ByteBuffer bb = w.toBytes(singletonList(new Translation(trans, example, exampleTrans)));
+			ByteBuffer bb = w.toBytes(translations);
 			int len = bb.remaining();
 			w.setOffset(off);
 			words.add(idx, w);
@@ -249,6 +274,20 @@ public class Dict implements Comparable<Dict> {
 			Log.e("Failed to remove word ", word);
 			close();
 		});
+	}
+
+	public FutureSupplier<Integer> changeWord(String oldWord, String newWord) {
+		assertMainThread();
+		var old = Word.create(oldWord).getWord();
+		return editWords((size, words) -> {
+			var idx = findWord(words, Word.create(old).getWord());
+			return (idx < 0) ? completed((List<Translation>) null) :
+					words.get(idx).getTranslations(this);
+		}).then(loadTrans -> loadTrans.then(trans -> {
+			if (trans == null) return completed(-1);
+			return deleteWord(old).then(
+					deletedIdx -> (deletedIdx == -1) ? completed(-1) : addWord(newWord, trans));
+		}));
 	}
 
 	private void shiftWords(List<Word> words, int idx, long diff) {
@@ -395,11 +434,13 @@ public class Dict implements Comparable<Dict> {
 		}).main();
 	}
 
-	private <T> FutureSupplier<T> readDict(CheckedFunction<RandomAccessChannel, T, Throwable> reader) {
+	private <T> FutureSupplier<T> readDict(
+			CheckedFunction<RandomAccessChannel, T, Throwable> reader) {
 		return enqueue(() -> reader.apply(channel));
 	}
 
-	private <T> FutureSupplier<T> writeDict(CheckedFunction<RandomAccessChannel, T, Throwable> writer) {
+	private <T> FutureSupplier<T> writeDict(
+			CheckedFunction<RandomAccessChannel, T, Throwable> writer) {
 		return enqueue(() -> {
 			try (RandomAccessChannel ch = requireNonNull(dictFile.getChannel("w"))) {
 				return writer.apply(ch);
@@ -412,7 +453,7 @@ public class Dict implements Comparable<Dict> {
 		assertMainThread();
 		return enqueue(channel::size).main().then(size -> {
 			if (!mgr.queue.isEmpty()) return editWords(func);
-			List<Word> w = words.peek();
+			List<Word> w = getWords().peek();
 			return (w != null) ? completed(func.apply(size, w)) : editWords(func);
 		});
 	}
@@ -465,7 +506,7 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	private static void moveRight(RandomAccessChannel reader, RandomAccessChannel writer, long off,
-													 long len) throws IOException {
+																long len) throws IOException {
 		long size = writer.size();
 		long tailLen = (size - off) % len;
 		reader.transferTo(size - tailLen, size + len - tailLen, tailLen, writer);
@@ -488,10 +529,11 @@ public class Dict implements Comparable<Dict> {
 				}
 			}
 
-			getCacheFile(create).main().then(f -> (f == null) ? completed(a.apply(null)) : enqueue(() -> {
-				if (cacheChannel == null) cacheChannel = requireNonNull(f.getChannel("rw"));
-				return a.apply(cacheChannel);
-			})).thenComplete(p);
+			getCacheFile(create).main().then(f -> (f == null) ? completed(a.apply(null)) :
+					enqueue(() -> {
+						if (cacheChannel == null) cacheChannel = requireNonNull(f.getChannel("rw"));
+						return a.apply(cacheChannel);
+					})).thenComplete(p);
 			return null;
 		});
 		return p;
@@ -560,12 +602,11 @@ public class Dict implements Comparable<Dict> {
 		Log.i("Saving dictionary ", getName(), " to ", dictFile);
 		Promise<List<Word>> p = new Promise<>();
 		enqueue(() -> dictFile.getParent()
-				.then(parent -> parent.createTempFile(dictFile.getName() + '-', ".tmp"))
-				.then(tmp -> {
+				.then(parent -> parent.createTempFile(dictFile.getName() + '-', ".tmp")).then(tmp -> {
 					try (RandomAccessChannel tch = requireNonNull(tmp.getChannel("rw"));
 							 RandomAccessChannel dch = requireNonNull(dictFile.getChannel("w"))) {
-						CountingOutputStream out = new CountingOutputStream(
-								new BufferedOutputStream(tch.getOutputStream(0)));
+						CountingOutputStream out =
+								new CountingOutputStream(new BufferedOutputStream(tch.getOutputStream(0)));
 						Writer w = new OutputStreamWriter(out, UTF_8);
 						getInfo().write(w);
 						w.flush();
@@ -597,15 +638,14 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	private FutureSupplier<CacheHeader> readCacheHeader() {
-		return useCache(false, ch -> (ch == null) ? new CacheHeader()
-				: readCacheHeader(ch, ByteBuffer.allocate(CacheHeader.SIZE))).ifFail(err -> {
+		return useCache(false, ch -> (ch == null) ? new CacheHeader() :
+				readCacheHeader(ch, ByteBuffer.allocate(CacheHeader.SIZE))).ifFail(err -> {
 			Log.e(err, "Failed to read dictionary cache file: ", getName());
 			return new CacheHeader();
 		});
 	}
 
-	private CacheHeader readCacheHeader(RandomAccessChannel ch, ByteBuffer bb)
-			throws IOException {
+	private CacheHeader readCacheHeader(RandomAccessChannel ch, ByteBuffer bb) throws IOException {
 		bb.position(0).limit(CacheHeader.SIZE);
 		if (ch.read(bb, 0) != bb.limit()) {
 			Log.e("Dictionary ", getName(), " cache corrupted - resetting.");
@@ -788,18 +828,15 @@ public class Dict implements Comparable<Dict> {
 		}
 
 		public boolean equals(CacheHeader h) {
-			return (wordsCount == h.wordsCount) && (dirProgress == h.dirProgress)
-					&& (revProgress == h.revProgress);
+			return (wordsCount == h.wordsCount) && (dirProgress == h.dirProgress) &&
+					(revProgress == h.revProgress);
 		}
 
 		@NonNull
 		@Override
 		public String toString() {
-			return "CacheHeader{" +
-					"wordsCount=" + wordsCount +
-					", dirProgress=" + dirProgress +
-					", revProgress=" + revProgress +
-					'}';
+			return "CacheHeader{" + "wordsCount=" + wordsCount + ", dirProgress=" + dirProgress +
+					", revProgress=" + revProgress + '}';
 		}
 	}
 }

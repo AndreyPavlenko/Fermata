@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!DOCTYPE resources [
-    <!ENTITY action_find "znajdź">
-    <!ENTITY action_open "otwórz">
-    <!ENTITY action_pause "przerwa">
-    <!ENTITY action_stop "stop">
-    <!ENTITY action_play "odtwórz">
-    <!ENTITY location_folders "foldery?">
-    <!ENTITY location_favorites "ulubione?">
-    <!ENTITY location_playlists "listy odtwarzania?">
-    <!ENTITY location_tv "tv">
-    <!ENTITY location_youtube "youtube">
-    <!ENTITY location_browser "przeglądarka internetowa">
-    <!ENTITY time_unit_second "sekundy?">
-    <!ENTITY time_unit_minute "minuty?">
-    <!ENTITY time_unit_hour "godziny?">
+    <!ENTITY action_find "traži">
+    <!ENTITY action_open "otvori">
+    <!ENTITY action_pause "pauziraj">
+    <!ENTITY action_stop "zaustavi">
+    <!ENTITY action_play "pusti">
+    <!ENTITY location_folders "mape?">
+    <!ENTITY location_favorites "favoriti?">
+    <!ENTITY location_playlists "popisi za reprodukciju?">
+    <!ENTITY location_tv "TV">
+    <!ENTITY location_youtube "YouTube">
+    <!ENTITY location_browser "web preglednik">
+    <!ENTITY time_unit_second "sekunde?">
+    <!ENTITY time_unit_minute "minute?">
+    <!ENTITY time_unit_hour "sati?">
     ]>
 
 <resources>
@@ -24,10 +24,10 @@
     <string name="vcmd_action_stop">&action_stop;</string>
     <string name="vcmd_action_play">(&action_play;)|start</string>
     <string name="vcmd_action_play_favorites">(&action_play;) (&location_favorites;)</string>
-    <string name="vcmd_action_sub_on">(((włącz|przełącznik))|pokaż) napisy?</string>
-    <string name="vcmd_action_sub_off">(((wyłącz)|przełącznik)) |ukryj) napisy?</string>
-    <string name="vcmd_action_sub_change">zmień napisy?</string>
-    <string name="vcmd_action_audio_change">zmień audio[ -]?stream</string>
+    <string name="vcmd_action_sub_on">(((turn|switch) on)|show) subtitles?</string>
+    <string name="vcmd_action_sub_off">(((turn|switch) off)|hide) subtitles?</string>
+    <string name="vcmd_action_sub_change">promjeniti titlove</string>
+    <string name="vcmd_action_audio_change">promjeniti audio[ -]?stream</string>
     <string name="vcmd_location_folders">&location_folders;</string>
     <string name="vcmd_location_favorites">&location_favorites;</string>
     <string name="vcmd_location_playlists">&location_playlists;</string>
@@ -37,11 +37,11 @@
     <string name="vcmd_time_unit_second">&time_unit_second;</string>
     <string name="vcmd_time_unit_minute">&time_unit_minute;</string>
     <string name="vcmd_time_unit_hour">&time_unit_hour;</string>
-    <string name="vcmd_nums">zero jeden dwa trzy cztery pięc sześć siedem osiem dziewięć</string>
+    <string name="vcmd_nums">nula jedan dva tri četiri pet šest sedam osam devet</string>
 
-    <string name="vcmd_cur_track">(pokaż)?aktualny utwór</string>
-    <string name="vcmd_ff">(przeskocz|szybko)[-]do przodu (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
-    <string name="vcmd_rw">(przeskocz do tyłu)|przewiń do tyłu (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_cur_track">(show )?current track</string>
+    <string name="vcmd_ff">(skip|fast)[- ]forward (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
+    <string name="vcmd_rw">(skip back)|rewind (?&lt;N&gt;\\d+|\\p{Lower}+) ?(?&lt;U&gt;(&time_unit_second;)|(&time_unit_minute;)|(&time_unit_hour;))</string>
     <string name="vcmd_find_play_open">(?&lt;A&gt;\\b(&action_find;)|(&action_play;)|(&action_open;)\\b)? ?((in )?(?&lt;L&gt;\\b(&location_folders;)|(&location_favorites;)|(&location_playlists;)|(&location_tv;)|(&location_youtube;)|(&location_browser;)\\b))? ?(?&lt;Q&gt;.+)</string>
     <string name="vcmd_chat">(chat( ?gpt)?)(?&lt;Q&gt;.*)</string>
 </resources>

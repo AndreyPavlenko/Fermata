@@ -1,6 +1,7 @@
 #Name		Example
-#SourceLang	de
-#TargetLang	en
+#SourceLang	de-DE
+#TargetLang	en-US
+#SkipPhrase Nächste, Ich weiß nicht, Next, I don't know
 
 [das] Geld
 	Money

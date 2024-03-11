@@ -62,6 +62,10 @@ public class Word implements Comparable<Word> {
 		return new Expr(raw, offset, sb.substring(word), sb.substring(0, expr));
 	}
 
+	public String getRaw() {
+		return raw;
+	}
+
 	public String getWord() {
 		return raw;
 	}

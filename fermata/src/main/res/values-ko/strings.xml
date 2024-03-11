@@ -126,8 +126,8 @@
     <string name="video_scaling_fill">화면 채움</string>
     <string name="video_scaling_orig">원본 크기</string>
     <string name="audio">오디오</string>
-    <string name="audio_delay">오디오 딜레이</string>
-    <string name="audio_delay_aa">오디오 딜레이 - 안드로이드 오토</string>
+    <string name="audio_delay">오디오 재생지연</string>
+    <string name="audio_delay_aa">오디오 재생지연 - 안드로이드 오토</string>
     <string name="preferred_audio_lang">선호하는 오디오 재생언어</string>
     <string name="preferred_audio_key">선호하는 오디오 재생키워드</string>
     <string name="select_audio_stream">오디오 스트림 선택</string>
@@ -257,9 +257,9 @@
     <string name="private_key">개인열쇠</string>
     <string name="private_key_pass">개인열쇠 비밀번호</string>
 
-    <string name="donate">개발자에게 커피 한잔 도네하기</string>
+    <string name="donate">개발자에게 커피 한잔 보내기</string>
     <string name="donate_text">이 어플리케이션이 마음에 드신다면, 저에게 커피 한잔을 사주시는 것이 어떤가요.</string>
-    <string name="use_phone_for_donation">도네시 핸드폰으로 해주세요.</string>
+    <string name="use_phone_for_donation">커피를 주실 때는 스마트폰으로 해주세요.</string>
 
     <string name="timer">타이머</string>
     <string name="hours">시</string>
@@ -288,12 +288,12 @@
     <string name="check_updates">시작시 업데이트 확인</string>
     <string name="update">업데이트</string>
     <string name="update_question">새로운 버전 %1$s 가 출시 되었습니다.\n앱을 업데이트 하시겠습니까?</string>
-    <string name="export_prefs">환경설정을 파일로 내보내기xport preferences to file</string>
-    <string name="export_prefs_sub">설정, 폴더, 재생목록 등을 파일로 내보내기Export settings, folders, playlists etc. to file</string>
+    <string name="export_prefs">환경설정을 파일로 내보내기</string>
+    <string name="export_prefs_sub">설정, 폴더, 재생목록 등을 파일로 내보내기</string>
     <string name="export_prefs_ok">설정이 파일에 저장 되었습니다: %1$s.</string>
     <string name="export_prefs_failed">설정 내보내기에 실패 했습니다: %1$s</string>
-    <string name="import_prefs">파일에서 설정 불러오기</string>
-    <string name="import_prefs_sub">환경설정 불러오기Import, previously exported, preferences from file</string>
+    <string name="import_prefs">환경설정을 파일에서 불러오기</string>
+    <string name="import_prefs_sub">설정, 폴더, 재생목록 등을 파일로 불러오기</string>
     <string name="import_prefs_ok">환경설정을 정상적으로 불러 왔습니다.\n어플리케이션을 다시 시작 하십시요.</string>
     <string name="import_prefs_failed">환경설정 불러오기에 실패 했습니다: %1$s</string>
     <string name="prefs_not_found">환경설정을 찾을 수 없습니다</string>
@@ -301,15 +301,15 @@
     <string name="unlock_phone_and_grant">스마트폰의 잠금을 해제하여 요청된 권한을 부여해주세요.</string>
     <string name="screen_capture_rejected">스크린샷 요청이 거절 되었습니다.</string>
     <string name="accessibility_dsc">접근성 서비스는 Fermata Mirror에 의해 터치스크린을 시뮬레이션하기 위해 사용됩니다.</string>
-    <string name="media_projection_action_text">Now Start</string>
+    <string name="media_projection_action_text">지금 시작 합니다</string>
 
-    <string name="about">About</string>
+    <string name="about">앱정보</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
-        <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        <p>Fermata Media Player (페르마타 미디어 플레이어)는 간결하고 직관적인 
+        무료 오픈소스 오디오, 비디오 플레이어 입니다.</p>
+        <p><b>제작자:</b> Andrey Pavlenko</p>
+        <p><b>앱버전:</b> %1$s (%2$d)</p>
+        <p><b>홈페이지:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">재생에 실패 했습니다 %s</string>

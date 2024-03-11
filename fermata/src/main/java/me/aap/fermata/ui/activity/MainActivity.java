@@ -103,7 +103,8 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		MainActivityDelegate.setTheme(this, isCarActivity());
+		MainActivityDelegate.setTheme(this,
+				isCarActivity() || FermataApplication.get().isMirroringMode());
 		AddonManager.get().addBroadcastListener(this);
 		super.onCreate(savedInstanceState);
 	}
@@ -134,7 +135,6 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	public boolean isCarActivity() {
-		if (BuildConfig.AUTO) return FermataApplication.get().isMirroringMode();
 		return false;
 	}
 
@@ -215,7 +215,7 @@ public class MainActivity extends SplitCompatActivityBase
 				try {
 					JSONObject json = new JSONObject(TextUtils.toString(p, UTF_8));
 					String tag = json.getString("tag_name");
-					String[] res = new String[3];
+					String[] res = new String[2];
 					res[0] = tag;
 					int idx = tag.indexOf('(');
 					if (idx != -1) tag = tag.substring(0, idx);
@@ -228,13 +228,10 @@ public class MainActivity extends SplitCompatActivityBase
 						for (int i = 0, n = assets.length(); i < n; i++) {
 							JSONObject asset = assets.getJSONObject(i);
 							String name = asset.getString("name");
-
-							if (name.endsWith(ext)) res[2] = asset.getString("browser_download_url");
-							else if (name.contains("-control-")) res[1] = asset.getString(
-									"browser_download_url");
+							if (name.endsWith(ext)) res[1] = asset.getString("browser_download_url");
 						}
 
-						return (res[1] != null) && (res[2] != null) ? completed(res) : completedNull();
+						return (res[1] != null) ? completed(res) : completedNull();
 					} else {
 						Log.i("The latest release version - ", res[0], ". Application is up to date");
 						return completedNull();
@@ -246,9 +243,9 @@ public class MainActivity extends SplitCompatActivityBase
 			}).main().onSuccess(res -> {
 				if (res == null) return;
 				UiUtils.showQuestion(getContext(), getString(R.string.update),
-						getString(R.string.update_question, res[0]),
-						AppCompatResources.getDrawable(getContext(), R.drawable.notification)).onSuccess(
-						r -> update(res[1], ps, deletePref).onSuccess(v -> update(res[2], ps, deletePref)));
+								getString(R.string.update_question, res[0]),
+								AppCompatResources.getDrawable(getContext(), R.drawable.notification))
+						.onSuccess(r -> update(res[1], ps, deletePref));
 			});
 
 			return completedVoid();

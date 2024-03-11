@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class Translation {
 	static final Translation DUMMY = new Translation("");
-	private final String translation;
+	private String translation;
 	private List<Example> examples = Collections.emptyList();
 
 	public Translation(String translation) {
@@ -31,6 +31,10 @@ public class Translation {
 
 	public String getTranslation() {
 		return translation;
+	}
+
+	public void setTranslation(String translation) {
+		this.translation = translation;
 	}
 
 	public List<Example> getExamples() {

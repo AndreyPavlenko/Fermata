@@ -326,9 +326,12 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	private void defaultIntent() {
-		if (getActiveFragment() != null) return;
-		String showAddon = getPrefs().getShowAddonOnStartPref();
+		if (getActiveFragment() != null) {
+			checkUpdates();
+			return;
+		}
 
+		String showAddon = getPrefs().getShowAddonOnStartPref();
 		if (showAddon != null) {
 			FermataAddon addon = AddonManager.get().getAddon(showAddon);
 
@@ -383,7 +386,7 @@ public class MainActivityDelegate extends ActivityDelegate
 	@Override
 	public void onActivityResume() {
 		super.onActivityResume();
-		checkMirroringMode();
+		checkMirroringMode(true);
 		for (FermataAddon addon : AddonManager.get().getAddons()) {
 			if (addon instanceof FermataActivityAddon)
 				((FermataActivityAddon) addon).onActivityResume(this);
@@ -439,11 +442,11 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public boolean isCarActivity() {
-		return AUTO && getAppActivity().isCarActivity();
+		return AUTO && getAppActivity().isCarActivity() || FermataApplication.get().isMirroringMode();
 	}
 
 	public boolean isCarActivityNotMirror() {
-		return isCarActivity() && !FermataApplication.get().isMirroringMode();
+		return isCarActivity();
 	}
 
 	@NonNull
@@ -597,7 +600,7 @@ public class MainActivityDelegate extends ActivityDelegate
 			if (cp != null) cp.disableVideoMode();
 		}
 
-		if (!checkMirroringMode()) {
+		if (!checkMirroringMode(false)) {
 			MainActivityPrefs p = getPrefs();
 
 			if (p.getChangeBrightnessPref()) {
@@ -620,13 +623,13 @@ public class MainActivityDelegate extends ActivityDelegate
 		fireBroadcastEvent(FRAGMENT_CONTENT_CHANGED);
 	}
 
-	private boolean checkMirroringMode() {
+	private boolean checkMirroringMode(boolean clearFlags) {
 		if (!AUTO) return false;
 		var screenOnFlags =
 				FLAG_KEEP_SCREEN_ON | FLAG_TURN_SCREEN_ON | FLAG_DISMISS_KEYGUARD | FLAG_SHOW_WHEN_LOCKED;
 		var app = FermataApplication.get();
 		if (!app.isMirroringMode()) {
-			getWindow().clearFlags(screenOnFlags);
+			if (clearFlags) getWindow().clearFlags(screenOnFlags);
 			return false;
 		}
 		setFullScreen(true);

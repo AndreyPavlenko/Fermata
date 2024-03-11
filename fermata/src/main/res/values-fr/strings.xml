@@ -23,7 +23,7 @@
     <string name="playback_control">Contrôle de lecture</string>
     <string name="engine_prefs">Moteur multimédia</string>
 
-    <string name="theme">Thème de l'application</string>
+    <string name="theme">Thème de l\'application</string>
     <string name="theme_sub">Thème actuel : %1$s</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
@@ -45,7 +45,7 @@
     <string name="use_dpad_cursor">Utiliser le curseur pour la navigation avec la croix directionnelle</string>
     <string name="fullscreen_mode">Mode plein écran</string>
     <string name="nav_bar_size">Taille de la barre de navigation</string>
-    <string name="tool_bar_size">Taille de la barre d'outils</string>
+    <string name="tool_bar_size">Taille de la barre d\'outils</string>
     <string name="control_panel_size">Taille du panneau de contrôle</string>
     <string name="text_icon_size">Taille du texte et des icônes</string>
 
@@ -90,7 +90,7 @@
     <string name="video_control_start_delay">Afficher au démarrage</string>
     <string name="video_control_touch_delay">Afficher au toucher</string>
     <string name="video_control_seek_delay">Afficher avance/retour rapide</string>
-    <string name="video_aa_show_status">Afficher la barre d'état dans Android Auto</string>
+    <string name="video_aa_show_status">Afficher la barre d\'état dans Android Auto</string>
 
     <string name="enable_exoplayer">Activer ExoPlayer</string>
     <string name="enable_vlcplayer">Activer VLC</string>
@@ -131,15 +131,15 @@
 
     <string name="video">Vidéo</string>
     <string name="video_settings">Paramètres vidéo</string>
-    <string name="video_scaling">Mise à l'échelle vidéo</string>
+    <string name="video_scaling">Mise à l\'échelle vidéo</string>
     <string name="hw_accel">Accélération matérielle</string>
     <string name="hw_accel_auto">Auto</string>
     <string name="hw_accel_full">Complète</string>
     <string name="hw_accel_decoding">Décodage</string>
     <string name="hw_accel_disabled">Désactivée</string>
     <string name="video_scaling_best">Meilleur ajustement</string>
-    <string name="video_scaling_fill">Remplir l'écran</string>
-    <string name="video_scaling_orig">Taille d'origine</string>
+    <string name="video_scaling_fill">Remplir l\'écran</string>
+    <string name="video_scaling_orig">Taille d\'origine</string>
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Délai audio</string>
@@ -198,7 +198,7 @@
     <string name="repeat">Répéter</string>
     <string name="repeat_disable">Ne pas répéter</string>
     <string name="shuffle">Aléatoire</string>
-    <string name="shuffle_disable">Désactiver l'aléatoire</string>
+    <string name="shuffle_disable">Désactiver l\'aléatoire</string>
     <string name="programme_guide">Guide des programmes</string>
     <string name="favorites_add">Ajouter aux favoris</string>
     <string name="favorites_remove">Retirer des favoris</string>
@@ -239,7 +239,7 @@
     <string name="loading">Chargement…</string>
     <string name="press_back_again">Appuyez à nouveau sur le bouton retour pour quitter.</string>
     <string name="press_x_again">Appuyez à nouveau sur le bouton X pour quitter.</string>
-    <string name="please_restart_app">Veuillez redémarrer l'application.</string>
+    <string name="please_restart_app">Veuillez redémarrer l\'application.</string>
     <string name="use_phone_to_grant_perm">Veuillez utiliser votre téléphone pour accorder les autorisations requises.</string>
 
     <string name="vfs_content">Contenu</string>
@@ -268,13 +268,13 @@
     <string name="path">Chemin</string>
     <string name="share_name">Nom du partage</string>
     <string name="domain">Domaine</string>
-    <string name="username">Nom d'utilisateur</string>
+    <string name="username">Nom d\'utilisateur</string>
     <string name="password">Mot de passe</string>
     <string name="private_key">Clé privée</string>
     <string name="private_key_pass">Mot de passe de la clé privée</string>
 
     <string name="donate">Offrir un café au développeur</string>
-    <string name="donate_text">Si vous aimez l'application, vous pouvez m'offrir un café.</string>
+    <string name="donate_text">Si vous aimez l\'application, vous pouvez m\'offrir un café.</string>
     <string name="use_phone_for_donation">Vous pouvez utiliser votre téléphone pour offrir un café.</string>
 
     <string name="timer">Minuteur</string>
@@ -289,7 +289,7 @@
 
     <string name="sys_bars_on_video_touch">Afficher les barres système au toucher de la vidéo</string>
     <string name="play_video_landscape">Lecture vidéo en mode paysage</string>
-    <string name="clock_pos">Position de l'horloge</string>
+    <string name="clock_pos">Position de l\'horloge</string>
     <string name="clock_pos_none">Aucune</string>
     <string name="clock_pos_left">Gauche</string>
     <string name="clock_pos_right">Droite</string>
@@ -303,20 +303,20 @@
     <string name="other">Autre</string>
     <string name="check_updates">Vérifier les mises à jour au démarrage</string>
     <string name="update">Mise à jour</string>
-    <string name="update_question">Une nouvelle version %1$s est disponible.\nVoulez-vous mettre à jour l'application ?</string>
+    <string name="update_question">Une nouvelle version %1$s est disponible.\nVoulez-vous mettre à jour l\'application ?</string>
     <string name="export_prefs">Exporter les préférences vers un fichier</string>
     <string name="export_prefs_sub">Exporter les paramètres, dossiers, listes de lecture, etc. vers un fichier</string>
     <string name="export_prefs_ok">Les préférences ont été enregistrées dans le fichier %1$s.</string>
-    <string name="export_prefs_failed">Échec de l'exportation des préférences : %1$s</string>
+    <string name="export_prefs_failed">Échec de l\'exportation des préférences : %1$s</string>
     <string name="import_prefs">Importer les préférences depuis un fichier</string>
-    <string name="import_prefs_sub">Importer, à partir d'un fichier précédemment exporté, les préférences</string>
-    <string name="import_prefs_ok">Les préférences ont été importées avec succès.\nVeuillez redémarrer l'application.</string>
-    <string name="import_prefs_failed">Échec de l'importation des préférences : %1$s</string>
+    <string name="import_prefs_sub">Importer, à partir d\'un fichier précédemment exporté, les préférences</string>
+    <string name="import_prefs_ok">Les préférences ont été importées avec succès.\nVeuillez redémarrer l\'application.</string>
+    <string name="import_prefs_failed">Échec de l\'importation des préférences : %1$s</string>
     <string name="prefs_not_found">Aucune préférence trouvée</string>
     <string name="open_log">Ouvrir le fichier de log</string>
     <string name="unlock_phone_and_grant">Déverrouillez le téléphone et accordez les autorisations demandées.</string>
-    <string name="screen_capture_rejected">Demande de capture d'écran rejetée.</string>
-    <string name="accessibility_dsc">Le service d'accessibilité est utilisé par Fermata Mirror pour simuler des événements de toucher à l'écran.</string>
+    <string name="screen_capture_rejected">Demande de capture d\'écran rejetée.</string>
+    <string name="accessibility_dsc">Le service d\'accessibilité est utilisé par Fermata Mirror pour simuler des événements de toucher à l\'écran.</string>
     <string name="media_projection_action_text">Commencer maintenant</string>
 
     <string name="about">À propos</string>
@@ -325,7 +325,7 @@
         intuitive.</p>
         <p><b>Auteur :</b> Andrey Pavlenko</p>
         <p><b>Version :</b> %1$s (%2$d)</p>
-        <p><b>Page d'accueil :</b> <a href="%3$s">%3$s</a></p>
+        <p><b>Page d\'accueil :</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Impossible de lire %s</string>
@@ -333,9 +333,9 @@
     <string name="err_unsupported_source_type">Type de source non pris en charge : %s</string>
     <string name="err_playlist_exists">La liste de lecture existe déjà : %1$s</string>
     <string name="err_invalid_playlist_name">Nom de liste de lecture invalide : %1$s</string>
-    <string name="err_failed_add_folder">Impossible d'ajouter le dossier : %1$s</string>
-    <string name="err_failed_open_url">Impossible d'ouvrir l'URL : %1$s</string>
-    <string name="err_failed_install_module">Échec de l'installation du module : %1$s</string>
+    <string name="err_failed_add_folder">Impossible d\'ajouter le dossier : %1$s</string>
+    <string name="err_failed_open_url">Impossible d\'ouvrir l\'URL : %1$s</string>
+    <string name="err_failed_install_module">Échec de l\'installation du module : %1$s</string>
     <string name="err_failed_to_download">Échec du téléchargement de %1$s</string>
-    <string name="err_no_audio_record_perm">Autorisation d'enregistrement audio non accordée</string>
+    <string name="err_no_audio_record_perm">Autorisation d\'enregistrement audio non accordée</string>
 </resources>
