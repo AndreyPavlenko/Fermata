@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Erro ao eliminar o ficheiro %1$s</string>
     <string name="loading">A carregar…</string>
     <string name="press_back_again">Pressionar botão voltar atrás para sair!</string>
-    <string name="press_x_again">Pressionar novamente no botão X para sair.</string>
     <string name="please_restart_app">Por favor volte a reabrir a aplicação.</string>
     <string name="use_phone_to_grant_perm">Utilize o seu telemóvel para conceder as permissões necessárias.</string>
 

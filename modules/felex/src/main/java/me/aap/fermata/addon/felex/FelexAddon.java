@@ -23,9 +23,12 @@ import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataContentAddon;
-import me.aap.fermata.addon.FermataFragmentAddon;
+import me.aap.fermata.addon.MediaLibAddon;
 import me.aap.fermata.addon.felex.dict.DictInfo;
+import me.aap.fermata.addon.felex.media.FelexItem;
 import me.aap.fermata.addon.felex.view.FelexFragment;
+import me.aap.fermata.media.lib.DefaultMediaLib;
+import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.Supplier;
@@ -44,12 +47,12 @@ import me.aap.utils.vfs.VirtualFolder;
  */
 @Keep
 @SuppressWarnings("unused")
-public class FelexAddon implements FermataFragmentAddon, FermataContentAddon {
+public class FelexAddon implements MediaLibAddon, FermataContentAddon {
 	private static final AddonInfo info = FermataAddon.findAddonInfo(FelexAddon.class.getName());
-	public static final Pref<Supplier<String>> DICT_FOLDER = Pref.s("FELEX_DICT_FOLDER",
-			() -> getAddonsFileDir(info).getAbsolutePath());
-	public static final Pref<Supplier<String>> CACHE_FOLDER = Pref.s("FELEX_CACHE_FOLDER",
-			() -> getAddonsCacheDir(info).getAbsolutePath());
+	public static final Pref<Supplier<String>> DICT_FOLDER =
+			Pref.s("FELEX_DICT_FOLDER", () -> getAddonsFileDir(info).getAbsolutePath());
+	public static final Pref<Supplier<String>> CACHE_FOLDER =
+			Pref.s("FELEX_CACHE_FOLDER", () -> getAddonsCacheDir(info).getAbsolutePath());
 
 	public static FelexAddon get() {
 		return FermataApplication.get().getAddonManager().getAddon(FelexAddon.class);
@@ -65,6 +68,23 @@ public class FelexAddon implements FermataFragmentAddon, FermataContentAddon {
 	@Override
 	public AddonInfo getInfo() {
 		return info;
+	}
+
+	@Override
+	public boolean isSupportedItem(MediaLib.Item i) {
+		return i instanceof FelexItem;
+	}
+
+	@Override
+	public MediaLib.Item getRootItem(DefaultMediaLib lib) {
+		return new FelexItem.Root(lib);
+	}
+
+	@Nullable
+	@Override
+	public FutureSupplier<? extends MediaLib.Item> getItem(DefaultMediaLib lib,
+																												 @Nullable String scheme, String id) {
+		return FelexItem.getItem(lib, scheme, id);
 	}
 
 	@Override
@@ -128,13 +148,14 @@ public class FelexAddon implements FermataFragmentAddon, FermataContentAddon {
 	}
 
 	@Override
-	public void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
+	public void contributeSettings(PreferenceStore store, PreferenceSet set,
+																 ChangeableCondition visibility) {
 		contributeFolder(DICT_FOLDER, R.string.dict_folder, set, visibility);
 		contributeFolder(CACHE_FOLDER, R.string.cache_folder, set, visibility);
 	}
 
-	private void contributeFolder(Pref<Supplier<String>> p, int title,
-																PreferenceSet set, ChangeableCondition visibility) {
+	private void contributeFolder(Pref<Supplier<String>> p, int title, PreferenceSet set,
+																ChangeableCondition visibility) {
 		set.addFilePref(o -> {
 			o.pref = p;
 			o.store = getPreferenceStore();

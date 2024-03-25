@@ -153,7 +153,7 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 		private String translation;
 		private int index;
 
-		private Text(String text, long time, int duration) {
+		public Text(String text, long time, int duration) {
 			this.text = text;
 			this.time = time;
 			this.duration = duration;

@@ -6,8 +6,8 @@
     <string name="app_name_auto_debug" translatable="false">Debug Fermata Auto</string>
     <string name="mirror_service_name_release" translatable="false">Fermata Mirror</string>
     <string name="mirror_service_name_debug" translatable="false">Debug Fermata Mirror</string>
-    <string name="mirror_fs_service_name_release" translatable="false">Fermata FS Mirror</string>
-    <string name="mirror_fs_service_name_debug" translatable="false">Debug Fermata FS Mirror</string>
+    <string name="mirror_fs_service_name_release" translatable="false">FS Fermata Mirror</string>
+    <string name="mirror_fs_service_name_debug" translatable="false">Debug FS Fermata Mirror</string>
     <string name="media_service_name_mobile_release" translatable="false">@string/app_name_mobile_release</string>
     <string name="media_service_name_auto_release" translatable="false">Fermata Media Service</string>
     <string name="media_service_name_mobile_debug" translatable="false">@string/app_name_mobile_debug</string>
@@ -254,7 +254,6 @@
     <string name="delete_file_failed">Failed to delete file %1$s</string>
     <string name="loading">Loading…</string>
     <string name="press_back_again">Press back button again to exit.</string>
-    <string name="press_x_again">Press X button again to exit.</string>
     <string name="please_restart_app">Please restart the application.</string>
     <string name="use_phone_to_grant_perm">Please use you phone to grant required permissions.</string>
 

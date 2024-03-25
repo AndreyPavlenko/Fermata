@@ -1,0 +1,16 @@
+<resources>
+    <string name="force_dark">محاولة إجبار الوضع الليلي</string>
+    <string name="force_dark_sub">%1$s. إختيار تلقائي للمطابقة مع الجهاز</string>
+    <string name="force_dark_auto">تلقائي</string>
+    <string name="force_dark_enabled">تفعيل</string>
+    <string name="force_dark_disabled">تعطيل</string>
+    <string name="user_agent">وكيل المستخدم للمتصفح</string>
+    <string name="user_agent_desktop">وكيل المستخدم للمتصفح – نسخة سطح المكتب</string>
+    <string name="desktop_version">نسخة سطح المكتب</string>
+    <string name="full_screen">ملء الشاشة</string>
+    <string name="full_screen_exit">رجوع</string>
+    <string name="video_scaling_fill_proportional">ملء جزئي</string>
+    <string name="video_quality">جودة الفيديو</string>
+    <string name="open_on_start">بدأ اليوتيوب كإفتراضي عند فتح البرنامج</string>
+    <string name="try_to_skip_ad">تخطي الاعلانات</string>
+</resources>

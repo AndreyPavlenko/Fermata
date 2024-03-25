@@ -1,5 +1,5 @@
 ext {
-    VERSION_CODE = 238
+    VERSION_CODE = 239
     VERSION_NAME = "1.9.9"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
@@ -60,7 +60,8 @@ subprojects {
             targetSdkVersion SDK_TARGET_VERSION
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi', 'pl', 'hr', 'ja', 'zh_TW', 'ko', 'fr', 'ro'
+            resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi', 'pl', 'hr', 'ja', 'zh_TW', 'ko',
+                    'fr', 'ro', 'ar'
         }
 
         if (isDynFeature) {
@@ -110,8 +111,7 @@ gradle.projectsEvaluated {
                     gradle.ext.addonInfo.append(',\n')
                 }
 
-                gradle.ext.addonInfo.append(
-                        "new me.aap.fermata.addon.AddonInfo(\"${p.name}\", \"${it['class']}\", R.string.addon_name_${it['name']}, R.drawable.${it['icon']}, ${it['order']}, ${it['enabled']})")
+                gradle.ext.addonInfo.append("new me.aap.fermata.addon.AddonInfo(\"${p.name}\", \"${it['class']}\", R.string.addon_name_${it['name']}, R.drawable.${it['icon']}, ${it['order']}, ${it['enabled']})")
             }
         }
     }

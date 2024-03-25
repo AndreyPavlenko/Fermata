@@ -1,0 +1,320 @@
+<resources>
+    <string name="addons">إضافات</string>
+    <string name="addon_name_tv">تلفزيون</string>
+    <string name="addon_name_web_browser">متصفح الإنترنت</string>
+    <string name="interface_prefs">تفضيلات واجهه المستخدم</string>
+    <string name="interface_prefs_aa">أندرويد أوتو</string>
+    <string name="playback_settings">إعدادات التشغيل</string>
+    <string name="playback_control">التحكم في التشغيل</string>
+    <string name="engine_prefs">مشغل الوسائط</string>
+
+    <string name="theme">لون التطبيق</string>
+    <string name="theme_sub">لون واجهة التطبيق</string>
+    <string name="theme_light">نهاري</string>
+    <string name="theme_dark">ليلي</string>
+    <string name="theme_day_night">ليلي نهاري</string>
+    <string name="theme_black">أسود</string>
+    <string name="theme_star_wars">حرب النجوم</string>
+
+    <string name="nav_bar_pos">موضع شريط التنقل</string>
+    <string name="nav_bar_pos_sub">عرض ايقونات التنقل على الجهة:</string>
+    <string name="nav_bar_pos_bottom">أسفل</string>
+    <string name="nav_bar_pos_left">يسار</string>
+    <string name="nav_bar_pos_right">يمين</string>
+
+    <string name="show_track_icons">إظهار أيقونات المسار</string>
+    <string name="lang">اللغة</string>
+    <string name="hide_bars">إخفاء الأشرطة</string>
+    <string name="hide_bars_sub">إخفاء الأشرطة العلوية والسفلية عند ظهور لوحة التحكم</string>
+    <string name="show_pg_up_down">إظهار أزرار الصفحة لأعلى/لأسفل</string>
+    <string name="use_dpad_cursor">استخدم المؤشر للتنقل</string>
+    <string name="fullscreen_mode">وضع ملء الشاشة</string>
+    <string name="nav_bar_size">حجم شريط التنقل</string>
+    <string name="tool_bar_size">حجم شريط الأدوات</string>
+    <string name="control_panel_size">حجم لوحة التحكم</string>
+    <string name="text_icon_size">حجم النص والأيقونات</string>
+
+    <string name="key_bindings">إرتباطات المفاتيح</string>
+    <string name="key_on_click">عند النقر</string>
+    <string name="key_on_long_click">النقر لفترة طويلة</string>
+    <string name="key_on_dbl_click">النقر المزدوج</string>
+    <string name="action_stop">إيقاف</string>
+    <string name="action_play">تشغيل</string>
+    <string name="action_pause">إيقاف مؤقت</string>
+    <string name="action_play_pause">تشغيل/إيقاف مؤقت</string>
+    <string name="action_prev">السابق</string>
+    <string name="action_next">التالي</string>
+    <string name="action_rw">ترجيع</string>
+    <string name="action_ff">تقديم</string>
+    <string name="action_vol_up">رفع مستوى الصوت</string>
+    <string name="action_vol_down">خفض الصوت</string>
+    <string name="action_vol_mute_unmute">كتم الصوت/إلغاء كتم الصوت</string>
+    <string name="action_activate_voice_ctrl">تفعيل التحكم الصوتي</string>
+    <string name="action_menu">القائمة</string>
+    <string name="action_cp_menu">قائمة لوحة التحكم</string>
+    <string name="action_back_or_exit">العودة أو الخروج</string>
+    <string name="action_exit">خروج</string>
+    <string name="action_default">إعادة الإعدادات الإفتراضية</string>
+    <string name="action_none">لا شئ</string>
+
+    <string name="play_next_on_completion">تشغيل التالي عند الانتهاء</string>
+
+    <string name="rw_ff_click">RW/FF - نقر</string>
+    <string name="rw_ff_long_click">RW/FF - نقرة طويلة</string>
+    <string name="prev_next_long_click">السابق/التالي - نقرة طويلة</string>
+    <string name="play_pause_stop">تشغيل_إيقاف مؤقت_إيقاف</string>
+
+    <string name="time">وقت</string>
+    <string name="time_unit">قيمة الوقت</string>
+    <string name="time_unit_sub">القيمة الحالية</string>
+    <string name="time_unit_second">ثانية</string>
+    <string name="time_unit_minute">دقيقة</string>
+    <string name="time_unit_percent">نسبه مئويه</string>
+
+    <string name="video_control">التحكم بالفيديو</string>
+    <string name="video_control_start_delay">مدة العرض في البداية</string>
+    <string name="video_control_touch_delay">مدة العرض بعد اللمس</string>
+    <string name="video_control_seek_delay">العرض خلال ترجيع/تقديم</string>
+    <string name="video_aa_show_status">إظهار شريط الحالة في Android Auto</string>
+
+    <string name="enable_exoplayer">تمكين مشغل exoplayer</string>
+    <string name="enable_vlcplayer">تمكين برنامج VLC</string>
+    <string name="preferred_audio_engine">محرك الصوت المفضل</string>
+    <string name="preferred_video_engine">محرك الفيديو المفضل</string>
+    <string name="engine_installed">تم تثبيت محرك الوسائط</string>
+    <string name="engine_uninstalled">تم إلغاء تثبيت محرك الوسائط</string>
+
+    <string name="preferred_media_scanner">اختيار الوسائط المفضل</string>
+    <string name="preferred_media_scanner_default">الإفتراضي</string>
+    <string name="preferred_media_scanner_system">نظام</string>
+
+    <string name="voice_search">البحث الصوتي</string>
+    <string name="voice_control">التحكم الصوتي</string>
+    <string name="voice_control_fb">زر عائم</string>
+    <string name="voice_control_sub_long">تفعيل التحكم الصوتي عند الضغط لفترة طويلة</string>
+    <string name="voice_control_subst">استبدال الكلمات</string>
+    <string name="voice_control_subst_sub">استبدال كلمة بكلمة أو عبارة أخرى</string>
+    <string name="voice_control_subst_hint">تفعيل اقتراح الكلمات </string>
+
+    <string name="module_installation">تثبيت module</string>
+    <string name="install_pending">التثبيت معلق</string>
+    <string name="downloading">جارٍ تنزيل</string>
+    <string name="installing">تثبيت</string>
+
+    <string name="speed">السرعة</string>
+    <string name="audio_effects">المؤثرات الصوتية</string>
+    <string name="equalier">المعادل</string>
+    <string name="preset_name">تعيين اسم</string>
+    <string name="virtualizer">أداة المحاكاة الافتراضية</string>
+    <string name="auto">تلقائي</string>
+    <string name="binaural">بكلتا الأذنين</string>
+    <string name="transaural">عبر الأذن</string>
+    <string name="bass_boost">تعزيز الجهير</string>
+    <string name="vol_boost">تعزيز الصوت</string>
+    <string name="strength">القوة</string>
+    <string name="apply_to">ينطبق على</string>
+
+    <string name="video">فيديو</string>
+    <string name="video_settings">اعدادات الفيديو</string>
+    <string name="video_scaling">تحجيم الفيديو</string>
+    <string name="hw_accel">تسريع الجهاز</string>
+    <string name="hw_accel_auto">تسريع تلقائي</string>
+    <string name="hw_accel_full">تسريع أقصى</string>
+    <string name="hw_accel_decoding">فك التشفير</string>
+    <string name="hw_accel_disabled">منع</string>
+    <string name="video_scaling_best">الأنسب</string>
+    <string name="video_scaling_fill">ملء الشاشة</string>
+    <string name="video_scaling_orig">الحجم الأصلي</string>
+    <string name="audio">الصوت</string>
+    <string name="audio_delay">تأخير الصوت</string>
+    <string name="audio_delay_aa">تأخير صوت - Android Auto</string>
+    <string name="preferred_audio_lang">لغة البث الصوتي المفضلة</string>
+    <string name="preferred_audio_key">تفضيل الصوت بمسمى:</string>
+    <string name="select_audio_stream">تحديد صوت البث</string>
+
+    <string name="subtitles">الترجمة</string>
+    <string name="subtitle_delay">تأخير الترجمة</string>
+    <string name="display_subtitles">عرض الترجمة</string>
+    <string name="preferred_sub_lang">لغات الترجمة المفضلة</string>
+    <string name="preferred_sub_key">تفضيل الترجمة:</string>
+    <string name="select_subtitles">تحديد الترجمة</string>
+
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">المقطع الحالي</string>
+    <string name="current_folder">المجلد الحالي</string>
+
+    <string name="folders">المجلدات</string>
+    <string name="favorites">المفضلة</string>
+    <string name="playlists">قوائم التشغيل</string>
+    <string name="search">بحث</string>
+    <string name="filter">تنقية</string>
+    <string name="settings">الاعدادات</string>
+    <string name="menu">القائمة</string>
+    <string name="exit">خروج</string>
+    <string name="cancel">إلغاء</string>
+    <string name="got_to_current">المقطع الحالي</string>
+
+    <string name="view">عرض</string>
+    <string name="title">العنوان</string>
+    <string name="subtitle">الترجمة</string>
+    <string name="seq_num">الرقم التسلسلي</string>
+    <string name="track_name">اسم المقطع</string>
+    <string name="file_name">اسم الملف</string>
+    <string name="date">التاريخ</string>
+    <string name="random">عشوائي</string>
+    <string name="descending">تنازلي</string>
+    <string name="album">ألبوم</string>
+    <string name="artist">الفنان</string>
+    <string name="duration">المدة</string>
+
+    <string name="sort_by">تصنيف حسب</string>
+    <string name="do_not_sort">عدم التصنيف</string>
+
+    <string name="play">تشغيل</string>
+    <string name="pause">إيقاف مؤقت</string>
+    <string name="stop">إيقاف</string>
+    <string name="prev">السابق</string>
+    <string name="next">التالي</string>
+    <string name="rewind">الترجيع</string>
+    <string name="fast_forward">تقديم</string>
+    <string name="repeat">إعادة</string>
+    <string name="repeat_disable">إيقاف الإعادة</string>
+    <string name="shuffle">عشوائي</string>
+    <string name="shuffle_disable">إيقاف</string>
+    <string name="programme_guide">تعليمات البرنامج</string>
+    <string name="favorites_add">إضافة إلى المفضلة</string>
+    <string name="favorites_remove">إزالة من المفضلة</string>
+    <string name="mark_watched">تعليم شوهد مسبقا</string>
+    <string name="mark_unwatched">تعليم عدم المشاهدة مسبقا</string>
+    <string name="preferred_media_engine">مشغل الوسائط المفضل</string>
+    <string name="by_default">الإفتراضي</string>
+
+    <string name="playlist_add">إضافة إلى قائمة التشغيل</string>
+    <string name="playlist_remove_item">إزالة من قائمة التشغيل</string>
+    <string name="playlist_create">إضافة قائمة تشغيل</string>
+    <string name="playlist_remove">إزالة إضافة قائمة تشغيل</string>
+    <string name="playlist_name">اسم قائمة التشغيل</string>
+
+    <string name="bookmarks">المفضلة</string>
+    <string name="create_bookmark">إنشاء مفضلة</string>
+    <string name="remove_bookmark">إزالة مفضلة</string>
+    <string name="remove_all_bookmarks">إزالة جميع المفضلات</string>
+    <string name="bookmark_name">اسم المفضلة</string>
+    <string name="bookmark_time">الوقت</string>
+
+    <string name="folder_subtitle">مجلد الترجمة</string>
+    <string name="browsable_subtitle">Tracks: %1$d.</string>
+    <string name="add_folder">إضافة مجلد</string>
+    <string name="remove_folder">إزالة مجلد</string>
+    <string name="select">اختيار</string>
+    <string name="select_all">تحديد الكل</string>
+    <string name="unselect_all">إزالة تحديد الكل</string>
+    <string name="refresh">تحديث</string>
+    <string name="rescan">إعادة البحث</string>
+    <string name="share">المشاركة</string>
+    <string name="edit">تعديل</string>
+    <string name="delete">حذف</string>
+    <string name="delete_confirm">تأكيد الحذف</string>
+    <string name="delete_file_title">حذف الملف</string>
+    <string name="delete_file_question">تأكيد الحذف؟</string>
+    <string name="delete_file_failed">فشل الحذف</string>
+    <string name="loading">تحميل…</string>
+    <string name="press_back_again">انقر مرة أخرى للخروج</string>
+    <string name="please_restart_app">يرجى إغلاق البرنامج وإعادة تشغيلة</string>
+    <string name="use_phone_to_grant_perm">يرجى منح الأذونات</string>
+
+    <string name="vfs_content">Content</string>
+    <string name="vfs_file_system">إضافة من الجهاز </string>
+    <string name="vfs_gdrive">Google drive</string>
+    <string name="m3u_playlist">M3U playlist</string>
+    <string name="m3u_playlist_name">Name</string>
+    <string name="m3u_playlist_location">Location</string>
+    <string name="m3u_playlist_location_hint">File or http(s) URL</string>
+    <string name="m3u_playlist_video">Video playlist</string>
+
+    <string name="eq_manual">Manual</string>
+    <string name="eq_normal">Normal</string>
+    <string name="eq_classical">Classical</string>
+    <string name="eq_dance">Dance</string>
+    <string name="eq_flat">Flat</string>
+    <string name="eq_folk">Folk</string>
+    <string name="eq_heavy_metal">Heavy Metal</string>
+    <string name="eq_hip_hop">Hip Hop</string>
+    <string name="eq_jazz">Jazz</string>
+    <string name="eq_pop">Pop</string>
+    <string name="eq_rock">Rock</string>
+
+    <string name="host">Host</string>
+    <string name="port">Port</string>
+    <string name="path">Path</string>
+    <string name="share_name">Share name</string>
+    <string name="domain">Domain</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="private_key">Private key</string>
+    <string name="private_key_pass">Private key password</string>
+
+    <string name="donate">شراء قهوة للمطور</string>
+    <string name="donate_text">في حال اعجبك التطبيق يرجى التطوع بقهوة للمطور</string>
+    <string name="use_phone_for_donation">عن طريق الهاتف</string>
+
+    <string name="timer">مؤقت</string>
+    <string name="hours">الساعات</string>
+    <string name="minutes">الدقائق</string>
+
+    <string name="enable">تمكين</string>
+    <string name="move_left">تحريك إلى اليسار</string>
+    <string name="move_right">إلى اليمين</string>
+    <string name="move_up">إلى الأعلى</string>
+    <string name="move_down">إلى الأسفل</string>
+
+    <string name="sys_bars_on_video_touch">العرض عند اللمس</string>
+    <string name="play_video_landscape">عرض الفيديو في وضع أفقي</string>
+    <string name="clock_pos">موقع الساعة</string>
+    <string name="clock_pos_none">بدون</string>
+    <string name="clock_pos_left">يسار</string>
+    <string name="clock_pos_right">يمين</string>
+    <string name="clock_pos_center">منتصف</string>
+    <string name="change_brightness">تغيير السطوع خلال تشغيل الفيديو</string>
+    <string name="video_brightness">السطوع</string>
+    <string name="change_brightness_sub">يمكن تغيير السطوع خلال التحريك بإصبعين (أعلى/أسفل)</string>
+    <string name="watched_threshold">تحديد (تمت مشاهدته مسبقا)</string>
+    <string name="watched_threshold_sub">تحديد النسبة المئوية المقترحة للتعليم على الفيديو</string>
+
+    <string name="other">أخرى</string>
+    <string name="check_updates">البحث عن تحديث عند بدء التطبيق</string>
+    <string name="update">تحديث</string>
+    <string name="update_question">يوجد تحديث للتطبيق. هل تريد التحديث الآن؟</string>
+    <string name="export_prefs">إستخراج تفضيلات الإعدادات إلى ملف</string>
+    <string name="export_prefs_sub">إستخراج تفضيلات الإعدادات والمجلدات وقوائم التشغيل إلى ملف</string>
+    <string name="export_prefs_ok">تم إستخراج تفضيلات الإعدادات إلى ملف</string>
+    <string name="export_prefs_failed">لقد فشل إستخراج تفضيلات الإعدادات إلى ملف</string>
+    <string name="import_prefs">استيراد تفضيلات الإعدادات</string>
+    <string name="import_prefs_sub">استيراد تفضيلات الإعدادات من ملف خارجي</string>
+    <string name="import_prefs_ok">تم استيراد التفضيلات بنجاح</string>
+    <string name="import_prefs_failed">فشلت عملية الاستيراد</string>
+    <string name="prefs_not_found">لم يتم العثور</string>
+    <string name="open_log">Open log file</string>
+    <string name="unlock_phone_and_grant">يرجى فتح قفل الهاتف ومنح الأذونات</string>
+    <string name="screen_capture_rejected">تم رفض تصوير الشاشة</string>
+    <string name="accessibility_dsc">منح الوصول للتطبيق للإستفادة من التحكم بالشاشة باللمس</string>
+    <string name="media_projection_action_text">بدأ</string>
+
+    <string name="about">عن التطبيق</string>
+    <string name="about_html">
+    <![CDATA[ <H1 align="center">Fermata Media Player</H1> <p>Fermata Media Player is a free, open source audio and video player with a simple and intuitive interface.</p> <p><b>Author:</b> Andrey Pavlenko</p> <p><b>Version:</b> %1$s (%2$d)</p> <p><b>Home page:</b> <a href="%3$s">%3$s</a></p> ]]>
+    </string>
+
+    <string name="err_failed_to_play">فشل التشغيل %s</string>
+    <string name="err_failed_to_play_cause">فشل التشغيل بسبب %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">مصدر غير مدعوم: %s</string>
+    <string name="err_playlist_exists">قائمة التشغيل موجودة مسبقا: %1$s</string>
+    <string name="err_invalid_playlist_name">غلط في التسمية: %1$s</string>
+    <string name="err_failed_add_folder">فشل إضافة مجلد: %1$s</string>
+    <string name="err_failed_open_url">فشل فتح الرابط: %1$s</string>
+    <string name="err_failed_install_module">فشل التثبيت: %1$s</string>
+    <string name="err_failed_to_download">فشل التحميل %1$s</string>
+    <string name="err_no_audio_record_perm">لم يتم منح أذونات الموسيقى والصوتيات</string>
+</resources>

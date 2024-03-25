@@ -442,6 +442,11 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 	}
 
 	@Override
+	public boolean isVideoModeSupported() {
+		return true;
+	}
+
+	@Override
 	public boolean isVoiceCommandsSupported() {
 		return true;
 	}

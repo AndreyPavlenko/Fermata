@@ -70,7 +70,8 @@ import me.aap.utils.ui.view.ScalableTextView;
 /**
  * @author Andrey Pavlenko
  */
-public class FelexListView extends RecyclerView implements Closeable {
+public class FelexListView extends RecyclerView implements Closeable,
+		DictMgr.ProgressChangeListener {
 	private final Deque<Integer> stack = new ArrayDeque<>();
 	private final MainActivityDelegate activity;
 	@NonNull
@@ -87,6 +88,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 		setLayoutManager(new LinearLayoutManager(ctx));
 		setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
 		setAdapter(new DictAdapter());
+		DictMgr.get().addBroadcastListener(this);
 	}
 
 	DictMgr getDictMgr() {
@@ -155,6 +157,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 		if (isClosed()) return;
 		closed = true;
 		content.mgr().reset();
+		DictMgr.get().removeBroadcastListener(this);
 	}
 
 	public boolean isClosed() {
@@ -730,7 +733,7 @@ public class FelexListView extends RecyclerView implements Closeable {
 				int wc = d.getWordsCount();
 				int dir = d.getDirProgress();
 				int rev = d.getRevProgress();
-				setIcon(me.aap.fermata.R.drawable.felex);
+				setIcon(R.drawable.dictionary);
 				title.setText(d.toString());
 
 				if (wc > 0) {

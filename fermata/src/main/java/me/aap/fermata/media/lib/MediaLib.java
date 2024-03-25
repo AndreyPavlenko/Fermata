@@ -33,6 +33,7 @@ import java.util.Queue;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.engine.BitmapCache;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.engine.MetadataRetriever;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
@@ -174,6 +175,10 @@ public interface MediaLib {
 
 		default boolean isExternal() {
 			return false;
+		}
+
+		default boolean isCacheable() {
+			return !isExternal();
 		}
 
 		default FutureSupplier<MediaDescriptionCompat> getMediaItemDescription() {
@@ -400,6 +405,11 @@ public interface MediaLib {
 
 		@Nullable
 		default String getUserAgent() {
+			return null;
+		}
+
+		@Nullable
+		default MediaEngine getMediaEngine(@Nullable MediaEngine current, MediaEngine.Listener listener) {
 			return null;
 		}
 	}

@@ -255,6 +255,7 @@ public interface MainActivityPrefs
 		KO,
 		FR(Locale.FRENCH),
     RO,
+		AR,
     ;
 
 		private static final List<Lang> values = List.of(values());

@@ -69,7 +69,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Nullable
 	public static MainActivity getActiveInstance() {
-		return BuildConfig.AUTO ? activeInstance : null;
+		return activeInstance;
 	}
 
 	@Override
@@ -118,13 +118,12 @@ public class MainActivity extends SplitCompatActivityBase
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if (BuildConfig.AUTO) activeInstance = this;
+		 activeInstance = this;
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if (!BuildConfig.AUTO) return;
 		activeInstance = null;
 	}
 

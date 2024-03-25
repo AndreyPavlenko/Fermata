@@ -1107,6 +1107,11 @@ public class MainActivityDelegate extends ActivityDelegate
 		};
 	}
 
+	@Override
+	protected FutureSupplier<Void> sendCrashReport(Throwable err) {
+		return completedVoid();
+	}
+
 	static final class Prefs implements MainActivityPrefs {
 		static final Prefs instance = new Prefs();
 		private final List<ListenerRef<PreferenceStore.Listener>> listeners = new LinkedList<>();

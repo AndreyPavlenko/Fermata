@@ -39,9 +39,8 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	private static final AtomicReferenceFieldUpdater<ItemBase,
 			FutureSupplier<MediaDescriptionCompat>>
-			MD =
-			(AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class,
-					FutureSupplier.class, "description");
+			MD = (AtomicReferenceFieldUpdater) AtomicReferenceFieldUpdater.newUpdater(ItemBase.class,
+			FutureSupplier.class, "description");
 	@Keep
 	@SuppressWarnings({"unused", "FieldCanBeLocal"})
 	private volatile FutureSupplier<MediaDescriptionCompat> description;
@@ -55,7 +54,7 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		this.parent = parent;
 		this.file = resource;
 
-		if (!isExternal() && (getLib() instanceof DefaultMediaLib)) {
+		if (isCacheable() && (getLib() instanceof DefaultMediaLib)) {
 			((DefaultMediaLib) getLib()).addToCache(this);
 		}
 	}
@@ -63,6 +62,11 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 	protected abstract FutureSupplier<String> buildTitle(int seqNum, BrowsableItemPrefs parentPrefs);
 
 	protected abstract FutureSupplier<String> buildSubtitle();
+
+	protected FutureSupplier<String> buildDescription() {
+		BrowsableItem p = getParent();
+		return (p != null) ? completed(p.getName()) : completedNull();
+	}
 
 	protected FutureSupplier<Bundle> buildExtras() {
 		return completedNull();
@@ -88,17 +92,17 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 
 		FutureSupplier<String> title = buildTitle();
 		FutureSupplier<String> subtitle = buildSubtitle();
+		FutureSupplier<String> description = buildDescription();
 		FutureSupplier<Bundle> extras = buildExtras();
 		FutureSupplier<Uri> icon = getIconUri();
 
 		if (title.isDone() && subtitle.isDone() && icon.isDone() && extras.isDone()) {
-			BrowsableItem parrent = getParent();
 			MediaDescriptionCompat.Builder b = builder();
 			b.setTitle(title.get(this::getName));
 			b.setSubtitle(subtitle.get(() -> ""));
 			b.setIconUri(icon.get(null));
 			b.setExtras(extras.get(null));
-			if (parrent != null) b.setDescription(parrent.getName());
+			b.setDescription(description.get(null));
 			MediaDescriptionCompat dsc = b.build();
 			load.complete(dsc);
 			d = completed(dsc);
@@ -109,13 +113,14 @@ public abstract class ItemBase implements Item, MediaPrefs, SharedPreferenceStor
 		subtitle.onSuccess(s -> load.setProgress(builder().setSubtitle(s).build(), 2, 4));
 		extras.onSuccess(e -> load.setProgress(builder().setExtras(e).build(), 3, 4));
 		icon.onSuccess(i -> load.setProgress(builder().setIconUri(i).build(), 4, 4));
-		Async.all(title, subtitle, extras, icon).onCompletion((e, err) -> {
+		Async.all(title, subtitle, extras, icon, description).onCompletion((e, err) -> {
 			if (err != null) Log.d(err, "Failed to build MediaDescription: ", this);
 			MediaDescriptionCompat.Builder b = builder();
 			b.setTitle(title.peek(this::getName));
 			b.setSubtitle(subtitle.peek(() -> ""));
 			b.setIconUri(icon.peek(() -> null));
 			b.setExtras(extras.peek(() -> null));
+			b.setDescription(description.get(null));
 			MediaDescriptionCompat md = b.build();
 			MD.compareAndSet(this, load, completed(md));
 			load.complete(md);

@@ -222,7 +222,6 @@
     <string name="delete_file_failed">파일 삭제 실패 %1$s</string>
     <string name="loading">불러오는중…</string>
     <string name="press_back_again">뒤로가기를 한번 더 눌러 종료합니다.</string>
-    <string name="press_x_again">X 버튼을 한번 더 눌러 종료 합니다.</string>
     <string name="please_restart_app">어플리케이션을 재시작 해주십시요.</string>
     <string name="use_phone_to_grant_perm">스마트폰 본체를 사용하여 필요한 권한을 부여 해주세요.</string>
 

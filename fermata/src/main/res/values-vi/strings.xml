@@ -222,7 +222,6 @@
     <string name="delete_file_failed">Không thể xóa tập tin %1$s</string>
     <string name="loading">Đang tải…</string>
     <string name="press_back_again">Nhấn nút quay lại lần nữa để thoát.</string>
-    <string name="press_x_again">Nhấn phím X lần nữa để thoát.</string>
     <string name="please_restart_app">Vui lòng khởi động lại ứng dụng.</string>
     <string name="use_phone_to_grant_perm">Vui lòng sử dụng điện thoại của bạn để cấp các quyền cần thiết.</string>
 

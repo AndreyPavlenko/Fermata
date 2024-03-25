@@ -202,10 +202,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				ctx.getString(R.string.repeat), R.drawable.repeat).build();
 		customRepeatDisable =
 				new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_REPEAT_DISABLE,
-				ctx.getString(R.string.repeat_disable), R.drawable.repeat_filled).build();
+						ctx.getString(R.string.repeat_disable), R.drawable.repeat_filled).build();
 		customShuffleEnable =
 				new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_SHUFFLE_ENABLE,
-				ctx.getString(R.string.shuffle), R.drawable.shuffle).build();
+						ctx.getString(R.string.shuffle), R.drawable.shuffle).build();
 		customShuffleDisable =
 				new PlaybackStateCompat.CustomAction.Builder(CUSTOM_ACTION_SHUFFLE_DISABLE,
 						ctx.getString(R.string.shuffle_disable), R.drawable.shuffle_filled).build();
@@ -1079,7 +1079,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			case AUDIOFOCUS_LOSS_TRANSIENT:
 				if (!isPlaying()) return;
 				var eng = getEngine();
-				if ((eng != null) && !eng.canPause()) {
+				if ((eng != null) && eng.muteOnTransientFocusLoss()) {
 					isMuted = true;
 					eng.mute(getContext());
 					return;

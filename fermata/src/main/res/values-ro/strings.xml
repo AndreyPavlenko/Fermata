@@ -199,7 +199,6 @@
     <string name="delete_file_failed">Nu s-a putut șterge fișierul %1$s</string>
     <string name="loading">Se încarcă…</string>
     <string name="press_back_again">Apasă din nou butonul înapoi pentru a ieși.</string>
-    <string name="press_x_again">Apăsați din nou butonul X pentru a ieși.</string>
     <string name="please_restart_app">Repornește aplicația.</string>
     <string name="use_phone_to_grant_perm">Folosește telefonul pentru a acorda permisiunile necesare.</string>
     <string name="vfs_content">Conținut</string>

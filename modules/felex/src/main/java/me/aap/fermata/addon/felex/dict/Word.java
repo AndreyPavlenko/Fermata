@@ -94,6 +94,7 @@ public class Word implements Comparable<Word> {
 		if (dir) dirProgress = (byte) newProg;
 		else revProgress = (byte) newProg;
 		dict.incrProgress(this, dir, diff);
+		DictMgr.get().fireBroadcastEvent(l -> l.onProgressChanged(dict, this));
 	}
 
 	void wipeProgress() {

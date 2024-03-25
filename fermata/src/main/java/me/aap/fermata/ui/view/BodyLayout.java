@@ -24,6 +24,7 @@ import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.fermata.ui.fragment.MainActivityFragment;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.SubtitlesFragment;
 import me.aap.utils.app.App;
@@ -172,9 +173,9 @@ public class BodyLayout extends SplitLayout
 	@Override
 	public void onPlayableChanged(MediaLib.PlayableItem oldItem, MediaLib.PlayableItem newItem) {
 		MainActivityDelegate a = getActivity();
-		var f = a.getActiveFragment();
+		if (!(a.getActiveFragment() instanceof MainActivityFragment f)) return;
 		if (f instanceof SubtitlesFragment) a.goToCurrent();
-		else if ((f != null) && !(f instanceof MediaLibFragment)) return;
+		else if (!f.isVideoModeSupported()) return;
 		MediaEngine eng = a.getMediaServiceBinder().getCurrentEngine();
 
 		if ((newItem == null) || !newItem.isVideo() || (eng == null) || !eng.isSplitModeSupported()) {

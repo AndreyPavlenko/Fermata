@@ -17,13 +17,13 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
-import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.toIntPx;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -73,6 +73,7 @@ import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.function.BiConsumer;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.view.NavBarView;
 
@@ -136,6 +137,14 @@ public class VideoView extends FrameLayout
 		lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
 		d.setLayoutParams(lp);
 		addView(d);
+	}
+
+	@Override
+	protected void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		if (subDrawer == null) return;
+		var a = getActivity().peek();
+		if (a != null) a.post(this::drawSubtitles);
 	}
 
 	public SurfaceView getVideoSurface() {
@@ -217,15 +226,57 @@ public class VideoView extends FrameLayout
 	public void accept(SubGrid.Position position, @Nullable Subtitles.Text text) {
 		if (subDrawer == null) return;
 		if (!subDrawer.setText(position, text)) return;
+		drawSubtitles();
+	}
+
+	public void clearVideoSurface() {
+		createSurface.onSuccess(v -> {
+			SurfaceView sv = getVideoSurface();
+			if (sv == null) return;
+			var h = sv.getHolder();
+			var c = h.lockCanvas();
+			try {
+				c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+			} catch (Exception err) {
+				Log.e(err);
+			} finally {
+				h.unlockCanvasAndPost(c);
+			}
+
+			h.removeCallback(this);
+			h.setFormat(PixelFormat.TRANSPARENT);
+			h.setFormat(PixelFormat.OPAQUE);
+			h.addCallback(this);
+		});
+	}
+
+	public void clearSubtitleSurface() {
 		createSurface.onSuccess(v -> {
 			SurfaceView sv = getSubtitleSurface();
 			if (sv == null) return;
+			var h = sv.getHolder();
+			var c = h.lockCanvas();
+			try {
+				c.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+			} catch (Exception err) {
+				Log.e(err);
+			} finally {
+				h.unlockCanvasAndPost(c);
+			}
+		});
+	}
 
+	private void drawSubtitles() {
+		createSurface.onSuccess(v -> {
+			SurfaceView sv = getSubtitleSurface();
+			if (sv == null) return;
 			var h = sv.getHolder();
 			var c = h.lockCanvas();
 			try {
 				subDrawer.clr(c);
 				subDrawer.draw(c);
+			} catch (Exception err) {
+				Log.e(err);
 			} finally {
 				h.unlockCanvasAndPost(c);
 			}
@@ -569,9 +620,9 @@ public class VideoView extends FrameLayout
 
 	private static final class DoubleSubDrawer extends SubDrawer {
 		private final TextPaint paint;
-		private String left;
-		private String right;
-		private boolean clearBoth;
+		private boolean center;
+		private String text;
+		private String translation;
 
 		DoubleSubDrawer(float textScale) {
 			super(textScale);
@@ -580,76 +631,83 @@ public class VideoView extends FrameLayout
 
 		@Override
 		boolean setText(SubGrid.Position position, @Nullable Subtitles.Text text) {
-			if (text == null) {
-				if (clearBoth) {
-					clearBoth = false;
-					if ((left == null) && (right == null)) return false;
-					left = right = null;
-				} else if (position == BOTTOM_LEFT) {
-					if (left == null) return false;
-					left = null;
-				} else {
-					if (right == null) return false;
-					right = null;
-				}
-				return true;
-			}
-
-			var t = text.getText();
-			var trans = text.getTranslation();
-
-			if (trans != null) {
-				if (Objects.equals(left, t) && Objects.equals(left, trans)) return false;
-				left = t;
-				right = trans;
-				clearBoth = true;
-			} else if (position == BOTTOM_LEFT) {
-				if (Objects.equals(left, t)) return false;
-				left = t;
+			if (position == SubGrid.Position.BOTTOM_LEFT) {
+				var t = (text == null) ? null : text.getText();
+				if (!center && Objects.equals(this.text, t)) return false;
+				center = false;
+				this.text = t;
+			} else if (position == SubGrid.Position.BOTTOM_RIGHT) {
+				var t = (text == null) ? null : text.getText();
+				if (!center && Objects.equals(translation, t)) return false;
+				center = false;
+				translation = t;
 			} else {
-				if (Objects.equals(right, t)) return false;
-				right = t;
+				center = true;
+				var t = (text == null) ? null : text.getText();
+				var trans = (text == null) ? null : text.getTranslation();
+				if (center && Objects.equals(this.text, t) && Objects.equals(translation, trans))
+					return false;
+				center = true;
+				this.text = t;
+				translation = trans;
 			}
-
 			return true;
 		}
 
 		@Override
 		void draw(Canvas canvas) {
-			CharSequence t;
+			CharSequence sub;
 			int start;
 			int end;
 
-			if (left != null) {
-				if (right != null) {
-					var l = text(left).toString();
-					t = l + '\n' + text(right);
-					start = l.length() + 1;
-					end = t.length();
+			if (text != null) {
+				if (translation != null) {
+					var t = text(text).toString();
+					sub = t + '\n' + text(translation);
+					start = t.length() + 1;
+					end = sub.length();
 				} else {
-					t = text(left).toString();
+					sub = text(text).toString();
 					start = end = 0;
 				}
-			} else if (right != null) {
-				t = text(right).toString();
+			} else if (translation != null) {
+				sub = text(translation).toString();
 				start = 0;
-				end = t.length();
+				end = sub.length();
 			} else {
 				return;
 			}
 
 			if (start != end) {
-				var st = new SpannableString(t);
+				var st = new SpannableString(sub);
 				st.setSpan(new ForegroundColorSpan(Color.RED), start, end, SPAN_EXCLUSIVE_EXCLUSIVE);
-				t = st;
+				sub = st;
 			}
 
 			var ch = canvas.getHeight();
 			var cw = canvas.getWidth();
-			paint.setTextSize(textSize(ch));
-			var sl = layout(t, paint, cw);
-			canvas.translate(cw / 2f, ch - sl.getHeight());
-			sl.draw(canvas);
+			var x = cw / 2f;
+
+			if (center) {
+				float size = (ch > cw) ? cw / 10f : ch / 5f;
+				for (; ; ) {
+					paint.setTextSize(size);
+					var sl = layout(sub, paint, cw);
+					var sh = sl.getHeight();
+					if (sh < ch) {
+						canvas.translate(x, (ch - sl.getHeight()) / 2f);
+						sl.draw(canvas);
+						break;
+					} else {
+						size *= 0.9f;
+					}
+				}
+			} else {
+				paint.setTextSize(textSize(ch));
+				var sl = layout(sub, paint, cw);
+				canvas.translate(x, ch - sl.getHeight());
+				sl.draw(canvas);
+			}
 		}
 	}
 }

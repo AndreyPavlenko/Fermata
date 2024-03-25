@@ -222,7 +222,6 @@
     <string name="delete_file_failed">%1$s dosyası silinemedi</string>
     <string name="loading">Yükleniyor…</string>
     <string name="press_back_again">Çıkmak için geri düğmesine tekrar basın.</string>
-    <string name="press_x_again">Çıkmak için X düğmesine tekrar basın.</string>
     <string name="please_restart_app">Lütfen uygulamayı yeniden başlatın</string>
     <string name="use_phone_to_grant_perm">Lütfen gerekli izinleri vermek için telefonunuzu kullanın.</string>
 

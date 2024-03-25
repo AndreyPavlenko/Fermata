@@ -97,6 +97,12 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 	}
 
 	public MediaEngine createEngine(MediaEngine current, PlayableItem i, Listener listener) {
+		var newEng = i.getMediaEngine(current, listener);
+		if (newEng != null) {
+			if ((current != null) && (current != newEng)) current.close();
+			return newEng;
+		}
+
 		if (engineProvider != null) return engineProvider.createEngine(listener);
 		if (!isAdditionalPlayerSupported()) {
 			if (current != null) {

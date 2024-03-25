@@ -222,7 +222,6 @@
     <string name="delete_file_failed">ファイルの削除に失敗しました %1$s</string>
     <string name="loading">読み込み中…</string>
     <string name="press_back_again">戻るボタンをもう一度押して終了します。</string>
-    <string name="press_x_again">もう一度Xボタンを押して終了します。</string>
     <string name="please_restart_app">アプリケーションを再起動してください。</string>
     <string name="use_phone_to_grant_perm">スマホ本体を使用して必要な権限を付与してください。</string>
 
