@@ -13,6 +13,8 @@
     <string name="dict_name">Nume dicționar</string>
     <string name="src_lang">Limba sursei</string>
     <string name="target_lang">Limba destinație</string>
+    <string name="skip_phrase">Fraza de omitere</string>
+    <string name="skip_phrase_sub">Omite, Nu cunosc, Skip, I don\'t know</string>
     <string name="no_lang_supported">Nicio limbă acceptată de TTS</string>
     <string name="add_word">Adaugă cuvânt</string>
     <string name="add_trans">Adaugă traducere</string>
