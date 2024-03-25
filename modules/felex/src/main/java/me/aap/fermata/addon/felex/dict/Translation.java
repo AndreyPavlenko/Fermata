@@ -21,8 +21,7 @@ public class Translation {
 		this.translation = translation;
 	}
 
-	public Translation(String translation, @Nullable String example,
-										 @Nullable String exampleTrans) {
+	public Translation(String translation, @Nullable String example, @Nullable String exampleTrans) {
 		this(translation);
 		if (!isNullOrBlank(example)) {
 			addExample(new Example(example, exampleTrans));
@@ -46,11 +45,7 @@ public class Translation {
 	}
 
 	public boolean matches(String trans) {
-		if (translation.equalsIgnoreCase(trans)) return true;
-		for (String t : translation.split(",")) {
-			if (t.trim().equalsIgnoreCase(trans)) return true;
-		}
-		return false;
+		return Word.matches(translation, trans);
 	}
 
 	@NonNull

@@ -3,6 +3,7 @@ package me.aap.fermata.addon.felex.tutor;
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.speech.RecognizerIntent.EXTRA_LANGUAGE;
+import static android.speech.RecognizerIntent.EXTRA_PREFER_OFFLINE;
 import static java.util.Collections.unmodifiableList;
 import static me.aap.fermata.R.string.err_no_audio_record_perm;
 import static me.aap.utils.async.Completed.completed;
@@ -28,6 +29,7 @@ import java.util.Random;
 import java.util.Set;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.fermata.addon.felex.dict.Dict;
 import me.aap.fermata.addon.felex.dict.Translation;
 import me.aap.fermata.addon.felex.dict.Word;
@@ -63,6 +65,7 @@ public class DictTutor implements Closeable {
 	private String curText;
 	private String curTrans;
 	private BiConsumer<String, String> textConsumer;
+	private boolean offlineSupported = true;
 
 
 	private DictTutor(Context ctx, Dict dict, Mode mode, TextToSpeech dirTts, TextToSpeech revTts) {
@@ -211,6 +214,8 @@ public class DictTutor implements Closeable {
 	private void recognize(Task t) {
 		var lang = t.direct ? dict.getTargetLang() : dict.getSourceLang();
 		stt.getRecognizerIntent().putExtra(EXTRA_LANGUAGE, lang.toLanguageTag());
+		stt.getRecognizerIntent()
+				.putExtra(EXTRA_PREFER_OFFLINE, offlineSupported && FelexAddon.get().isOfflineMode());
 		var f = stt.recognize(t).onProgress(this::incompleteRecognitionHandler)
 				.onCompletion(this::recognizeHandler);
 		run(f);
@@ -224,6 +229,17 @@ public class DictTutor implements Closeable {
 	private void recognizeHandler(@Nullable SpeechToText.Result<Task> r, @Nullable Throwable err) {
 		if (err != null) {
 			if (isCancellation(err)) return;
+
+			if (offlineSupported && (err instanceof SpeechToTextException stte) &&
+					(stte.getErrorCode() == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED)) {
+				Log.e("ERROR_LANGUAGE_NOT_SUPPORTED received, disabling offline mode");
+				offlineSupported = false;
+				if (curTask != null) {
+					recognize(curTask);
+					return;
+				}
+			}
+
 			Log.e(err, "Speech recognition failed");
 			if (err instanceof SpeechToTextException e) {
 				if (e.getErrorCode() == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {

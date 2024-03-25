@@ -32,7 +32,6 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -63,7 +62,7 @@ import me.aap.utils.vfs.VirtualFile;
 public class Dict implements Comparable<Dict> {
 	private final DictMgr mgr;
 	private final VirtualFile dictFile;
-	private final RandomAccessChannel channel;
+	private RandomAccessChannel channel;
 	private DictInfo info;
 	private boolean closed;
 	@Nullable
@@ -314,10 +313,14 @@ public class Dict implements Comparable<Dict> {
 		});
 	}
 
-	public FutureSupplier<Void> reset() {
+	public FutureSupplier<?> reset() {
 		assertMainThread();
 		if (words == null) return completedVoid();
-		return words.thenRun(() -> words = null).map(w -> null);
+		return words.thenRun(() -> words = null).then(w -> readDict(ch -> {
+			channel.close(true);
+			channel = dictFile.getChannel("r");
+			return null;
+		})).main();
 	}
 
 	FutureSupplier<?> close() {

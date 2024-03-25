@@ -9,6 +9,7 @@
     <string name="start_tutor_rev">Reverse translation</string>
     <string name="start_tutor_mix">Mixed</string>
     <string name="start_tutor_listen">Listening</string>
+    <string name="offline_mode">Offline mode</string>
     <string name="add_dict">Add dictionary</string>
     <string name="dict_name">Dictionary name</string>
     <string name="src_lang">Source language</string>

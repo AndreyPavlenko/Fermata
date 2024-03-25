@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
+import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
 import me.aap.fermata.addon.felex.dict.DictInfo;
@@ -156,7 +157,7 @@ public class FelexFragment extends MainActivityFragment
 		refresh(view().getContent()).onCompletion((r, f) -> refreshing.accept(false));
 	}
 
-	private FutureSupplier<Void> refresh(Object content) {
+	private FutureSupplier<?> refresh(Object content) {
 		if (content instanceof DictMgr) {
 			return ((DictMgr) content).reset().thenRun(() -> view().refresh(0));
 		} else if (content instanceof Dict) {
@@ -194,6 +195,8 @@ public class FelexFragment extends MainActivityFragment
 		sb.addItem(R.id.start_tutor_rev, R.string.start_tutor_rev);
 		sb.addItem(R.id.start_tutor_mix, R.string.start_tutor_mix);
 		sb.addItem(R.id.start_tutor_listen, R.string.start_tutor_listen);
+		sb.addItem(R.id.offline_mode, R.string.offline_mode)
+				.setChecked(FelexAddon.get().isOfflineMode());
 	}
 
 	/**
@@ -212,6 +215,9 @@ public class FelexFragment extends MainActivityFragment
 			startTutor(d, DictTutor.Mode.MIXED);
 		} else if (id == R.id.start_tutor_listen) {
 			startTutor(d, DictTutor.Mode.LISTENING);
+		} else if (id == R.id.offline_mode) {
+			var addon = FelexAddon.get();
+			addon.setOfflineMode(!addon.isOfflineMode());
 		} else if (id == me.aap.fermata.R.id.refresh) {
 			refresh(item.getData());
 		}

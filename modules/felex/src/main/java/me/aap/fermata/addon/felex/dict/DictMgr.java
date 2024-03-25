@@ -35,7 +35,6 @@ public class DictMgr extends BasicEventBroadcaster<DictMgr.ProgressChangeListene
 	public static final String DICT_EXT = ".fxd";
 	public static final String CACHE_EXT = ".fxc";
 	private static final DictMgr instance = new DictMgr();
-	private final List<ProgressChangeListener> listeners = new ArrayList<>();
 	final PromiseQueue queue = new PromiseQueue();
 	private FutureSupplier<List<Dict>> dictionaries;
 

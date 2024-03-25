@@ -31,6 +31,7 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
@@ -53,6 +54,7 @@ public class FelexAddon implements MediaLibAddon, FermataContentAddon {
 			Pref.s("FELEX_DICT_FOLDER", () -> getAddonsFileDir(info).getAbsolutePath());
 	public static final Pref<Supplier<String>> CACHE_FOLDER =
 			Pref.s("FELEX_CACHE_FOLDER", () -> getAddonsCacheDir(info).getAbsolutePath());
+	public static final Pref<BooleanSupplier> OFFLINE_MODE = Pref.b("FELEX_OFFLINE_MODE", false);
 
 	public static FelexAddon get() {
 		return FermataApplication.get().getAddonManager().getAddon(FelexAddon.class);
@@ -139,6 +141,14 @@ public class FelexAddon implements MediaLibAddon, FermataContentAddon {
 			uri = "file:/" + uri;
 		}
 		return FermataApplication.get().getVfsManager().getFolder(uri);
+	}
+
+	public boolean isOfflineMode() {
+		return getPreferenceStore().getBooleanPref(OFFLINE_MODE);
+	}
+
+	public void setOfflineMode(boolean offline) {
+		getPreferenceStore().applyBooleanPref(OFFLINE_MODE, offline);
 	}
 
 	@NonNull

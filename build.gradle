@@ -1,5 +1,5 @@
 ext {
-    VERSION_CODE = 239
+    VERSION_CODE = 240
     VERSION_NAME = "1.9.9"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
@@ -25,7 +25,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath 'com.android.tools.build:gradle:8.3.1'
         classpath 'com.google.gms:google-services:4.4.1'
     }
 }
