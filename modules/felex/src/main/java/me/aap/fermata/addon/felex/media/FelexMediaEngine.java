@@ -67,8 +67,8 @@ public class FelexMediaEngine extends MediaEngineBase implements BiConsumer<Stri
 				} else {
 					if (this.tutor != null) this.tutor.close();
 					this.tutor = tutor;
-					tutor.setTextConsumer(this);
 					listener.onEnginePrepared(this);
+					tutor.setTextConsumer(this);
 				}
 			});
 		} else {
@@ -92,6 +92,7 @@ public class FelexMediaEngine extends MediaEngineBase implements BiConsumer<Stri
 			started();
 			tutor.start();
 			listener.onEngineStarted(this);
+			tutor.setTextConsumer(this);
 		} else {
 			listener.onEngineError(this, new IllegalStateException("Engine is not prepared"));
 		}

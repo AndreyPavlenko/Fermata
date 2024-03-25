@@ -124,6 +124,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		callback = new MediaSessionCallback(this, session, lib,
 				PlaybackControlPrefs.create(FermataApplication.get().getDefaultSharedPreferences()),
 				FermataApplication.get().getHandler());
+		callback.onPrepare();
 		session.setCallback(callback);
 
 		Intent mediaButtonIntent =

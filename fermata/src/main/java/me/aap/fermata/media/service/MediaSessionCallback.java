@@ -429,7 +429,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
-			if ((i == null) || i.isVideo() || !i.isSeekable()) return completedVoid();
+			if (i == null) return completedVoid();
+			if (i.isVideo() || !i.isSeekable()) {
+				setPlaybackState(createPlayingState(i, STATE_STOPPED, 0, 0, 1f));
+				return i.getMediaData().onSuccess(session::setMetadata).cast();
+			}
 
 			engine = getEngineManager().createEngine(engine, i, this);
 			Log.d("MediaEngine ", engine + " created for ", i);
@@ -1171,7 +1175,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private PlaybackStateCompat createPlayingState(PlayableItem i, boolean pause, long qid,
 																								 long position, float speed) {
-		int state = pause ? STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING;
+		return createPlayingState(i, pause ? STATE_PAUSED : PlaybackStateCompat.STATE_PLAYING, qid,
+				position, speed);
+	}
+
+	private PlaybackStateCompat createPlayingState(PlayableItem i, int state, long qid,
+																								 long position, float speed) {
 		BrowsableItemPrefs p = i.getParent().getPrefs();
 		boolean repeat = p.getRepeatPref();
 		boolean shuffle = p.getShufflePref();
