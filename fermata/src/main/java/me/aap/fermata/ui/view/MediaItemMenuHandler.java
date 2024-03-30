@@ -209,7 +209,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 		b.addItem(R.id.video_scaling, R.string.video_scaling).setSubmenu(this::buildVideoScalingMenu);
 
 		if (getMainActivity().getMediaSessionCallback().getEngineManager().isVlcPlayerSupported()) {
-			b.addItem(R.id.video_scaling, R.string.hw_accel).setSubmenu(this::buildHwAccelMenu);
+			b.addItem(R.id.hw_accel, R.string.hw_accel).setSubmenu(this::buildHwAccelMenu);
 		}
 
 		if (!item.isExternal()) {
@@ -303,7 +303,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 							.setSubmenu(this::buildVideoScalingMenu);
 
 					if (a.getMediaSessionCallback().getEngineManager().isVlcPlayerSupported()) {
-						sb.addItem(R.id.video_scaling, R.string.hw_accel)
+						sb.addItem(R.id.hw_accel, R.string.hw_accel)
 								.setSubmenu(this::buildHwAccelMenu);
 					}
 

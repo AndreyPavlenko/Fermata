@@ -108,7 +108,11 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if (!filter.equals(filterText)) {
 			filterText = filter;
 			this.filter = filter.isEmpty() ? null : Pattern.compile(Pattern.quote(filter), Pattern.CASE_INSENSITIVE);
-			setParent(getParent());
+			var parent = getParent();
+			if (parent == null) return;
+			this.parent.getChildren().main().onSuccess(children -> {
+				if (getParent() == parent) setChildren(children);
+			});
 		}
 	}
 
