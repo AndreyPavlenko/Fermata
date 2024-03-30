@@ -77,7 +77,7 @@ public class DictMgr extends BasicEventBroadcaster<DictMgr.ProgressChangeListene
 
 	public FutureSupplier<Dict> createDictionary(String name, Locale srcLang, Locale targetLang,
 																							 String skipPhrase) {
-		return createDictionary(new DictInfo(name, srcLang, targetLang, skipPhrase));
+		return createDictionary(new DictInfo(name, srcLang, targetLang, skipPhrase, null));
 	}
 
 	public FutureSupplier<Dict> createDictionary(DictInfo info) {

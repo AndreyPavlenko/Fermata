@@ -118,14 +118,6 @@ public class Word implements Comparable<Word> {
 		return dict.writeTranslations(this, translations);
 	}
 
-	public boolean matches(String w) {
-		String word = getWord();
-		if (matches(word, w)) return true;
-		String expr = getExpr();
-		//noinspection StringEquality
-		return (expr != word) && matches(expr, w);
-	}
-
 	@Override
 	public int compareTo(Word w) {
 		int c = getWord().compareToIgnoreCase(w.getWord());
@@ -198,45 +190,6 @@ public class Word implements Comparable<Word> {
 		this.cacheLen = cacheLen;
 		this.dirProgress = dirProgress;
 		this.revProgress = revProgress;
-	}
-
-	static boolean matches(String w1, String w2) {
-		if ((w1 == null) || (w2 == null)) return false;
-		var r1 = new CodePointReader(w1);
-		var r2 = new CodePointReader(w2);
-		for (int cp1 = r1.next(), cp2 = r2.next(); ; cp1 = r1.next(), cp2 = r2.next()) {
-			if ((cp1 == -1) || (cp2 == -1)) return cp1 == cp2;
-			if (cp1 != cp2) return false;
-		}
-	}
-
-	private static final class CodePointReader {
-		private final String str;
-		private final int len;
-		private int off;
-
-		private CodePointReader(String str) {
-			this.str = str;
-			len = str.length();
-		}
-
-		int next() {
-			while (off < len) {
-				int cp = str.codePointAt(off++);
-				switch (cp) {
-					case '.', ',', '?', '!', ':', ';', '"', '\'' -> {
-						// ignore
-					}
-					case ' ' -> {
-						for (; (off < len) && (str.codePointAt(off) == ' '); off++) ;
-					}
-					default -> {
-						return Character.toUpperCase(cp);
-					}
-				}
-			}
-			return -1;
-		}
 	}
 
 	private static final class Expr extends Word {

@@ -290,8 +290,7 @@ public class FelexFragment extends MainActivityFragment
 
 	private FutureSupplier<Dict> createDict(DictInfo i) {
 		return queryText(requireContext(), R.string.dict_name, R.drawable.dictionary).then(
-				name -> DictMgr.get()
-						.createDictionary(name, i.getSourceLang(), i.getTargetLang(), i.getSkipPhrase()));
+				name -> DictMgr.get().createDictionary(i.rename(name)));
 	}
 
 	@NonNull

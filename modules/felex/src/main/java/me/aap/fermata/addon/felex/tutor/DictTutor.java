@@ -22,21 +22,20 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
-import java.util.Set;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.fermata.addon.felex.dict.Dict;
+import me.aap.fermata.addon.felex.dict.DictInfo;
 import me.aap.fermata.addon.felex.dict.Translation;
 import me.aap.fermata.addon.felex.dict.Word;
+import me.aap.fermata.addon.felex.dict.WordMatcher;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
-import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Cancellable;
 import me.aap.utils.function.ToIntFunction;
@@ -51,13 +50,13 @@ import me.aap.utils.voice.TextToSpeech;
  */
 public class DictTutor implements Closeable {
 	private final Dict dict;
+	private final DictInfo dictInfo;
 	private final Mode mode;
 	private final TextToSpeech dirTts;
 	private final TextToSpeech revTts;
 	private final SpeechToText stt;
 	private final Random rnd;
 	private final ToIntFunction<Word> getProgress;
-	private final Set<String> skipPhrases;
 	private final List<Word> queue = new ArrayList<>();
 	private ListIterator<Word> queueIterator = Collections.emptyListIterator();
 	private Cancellable running = CANCELED;
@@ -70,6 +69,7 @@ public class DictTutor implements Closeable {
 
 	private DictTutor(Context ctx, Dict dict, Mode mode, TextToSpeech dirTts, TextToSpeech revTts) {
 		this.dict = dict;
+		this.dictInfo = dict.getInfo();
 		this.mode = mode;
 		this.dirTts = dirTts;
 		this.revTts = revTts;
@@ -77,11 +77,6 @@ public class DictTutor implements Closeable {
 		rnd = new Random();
 		getProgress = (mode == Mode.DIRECT) ? Word::getDirProgress :
 				(mode == Mode.REVERSE) ? Word::getRevProgress : Word::getProgress;
-
-		var skipPhrase = dict.getInfo().getSkipPhrase();
-		skipPhrases = skipPhrase.isEmpty() ? Collections.emptySet() : new HashSet<>(
-				CollectionUtils.map(Arrays.asList(skipPhrase.split(",")),
-						(i, p, a) -> a.add(p.trim().toLowerCase()), ArrayList::new));
 	}
 
 	public static FutureSupplier<DictTutor> create(Dict dict, Mode mode) {
@@ -276,7 +271,7 @@ public class DictTutor implements Closeable {
 				t.w.incrProgress(dict, t.direct, 10);
 				schedule(this::nextTask, 1000);
 			} else {
-				if ((text != null) && !skipPhrases.isEmpty() && skipPhrases.contains(text.toLowerCase())) {
+				if (dictInfo.isSkipPhrase(text)) {
 					t.attempt = 2;
 					retry(t);
 				} else {
@@ -376,11 +371,11 @@ public class DictTutor implements Closeable {
 			if (text == null) return false;
 			if (direct) {
 				for (Translation t : trans) {
-					if (t.matches(text)) return true;
+					if (WordMatcher.matches(dictInfo, t, text)) return true;
 				}
 				return false;
 			} else {
-				return w.matches(text);
+				return WordMatcher.matches(dictInfo, w, text);
 			}
 		}
 

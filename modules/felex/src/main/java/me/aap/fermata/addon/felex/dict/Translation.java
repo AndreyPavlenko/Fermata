@@ -44,10 +44,6 @@ public class Translation {
 		this.examples = examples;
 	}
 
-	public boolean matches(String trans) {
-		return Word.matches(translation, trans);
-	}
-
 	@NonNull
 	@Override
 	public String toString() {

@@ -44,7 +44,6 @@ import java.util.regex.Pattern;
 import me.aap.fermata.addon.felex.FelexAddon;
 import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.dict.Dict;
-import me.aap.fermata.addon.felex.dict.DictInfo;
 import me.aap.fermata.addon.felex.dict.DictMgr;
 import me.aap.fermata.addon.felex.dict.Example;
 import me.aap.fermata.addon.felex.dict.Translation;
@@ -172,8 +171,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 	public void onProgressChanged(Dict d, Word w) {
 		for (int n = getChildCount(), i = 0; i < n; i++) {
 			View c = getChildAt(i);
-			if (!((c instanceof DictItemView)) || (c.getVisibility() != VISIBLE)) continue;
-			DictItemView dv = (DictItemView) c;
+			if (!((c instanceof DictItemView dv)) || (c.getVisibility() != VISIBLE)) continue;
 			if (dv.item == d) dv.setItem(dv.item, dv.pos());
 			else if (dv.item == w) dv.setProgress(w.getDirProgress(), w.getRevProgress());
 		}
@@ -327,9 +325,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 				UiUtils.queryText(getContext(), me.aap.fermata.R.string.edit,
 						me.aap.fermata.R.drawable.edit, oldValue).then(newValue -> {
 					if (item instanceof Dict d) {
-						var inf = d.getInfo();
-						return d.setInfo(new DictInfo(newValue, inf.getSourceLang(), inf.getTargetLang(),
-								inf.getSkipPhrase())).map(v -> 0);
+						return d.setInfo(d.getInfo().rename(newValue)).map(v -> 0);
 					} else if (item instanceof Word) {
 						return requireNonNull(content.dict()).changeWord(oldValue, newValue);
 					} else if (item instanceof Translation t) {
@@ -747,9 +743,8 @@ public class FelexListView extends RecyclerView implements Closeable,
 					setSubtitle(null);
 					setProgress(0, 0);
 				}
-			} else if (item instanceof Word) {
+			} else if (item instanceof Word w) {
 				assert content instanceof DictContent;
-				Word w = (Word) item;
 				Dict d = ((DictContent) content).content;
 				setIcon(0);
 				title.setText(w.getWord());
