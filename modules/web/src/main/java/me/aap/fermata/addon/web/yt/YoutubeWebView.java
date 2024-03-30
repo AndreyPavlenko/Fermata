@@ -69,6 +69,7 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	protected void pageLoaded(String uri) {
 		attachListeners();
+		addFocusHighlight();
 		CookieManager.getInstance().flush();
 	}
 
@@ -83,7 +84,7 @@ public class YoutubeWebView extends FermataWebView {
 				"document.activeElement.dispatchEvent(e);");
 	}
 
-	void attachListeners() {
+	private void attachListeners() {
 		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		loadUrl("javascript:\n" +

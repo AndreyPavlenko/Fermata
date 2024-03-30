@@ -221,6 +221,7 @@ public class FermataWebView extends WebView
 	}
 
 	protected void pageLoaded(String uri) {
+		addFocusHighlight();
 		getAddon().setLastUrl(uri);
 		getActivity().onSuccess(a -> {
 			ActivityFragment f = a.getActiveFragment();
@@ -236,6 +237,15 @@ public class FermataWebView extends WebView
 
 			CookieManager.getInstance().flush();
 		});
+	}
+
+	protected void addFocusHighlight() {
+		evaluateJavascript("""
+				(function() {
+				  var style = document.createElement('style');
+				  style.innerHTML = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
+				  document.head.appendChild(style);
+				})()""", null);
 	}
 
 	protected boolean requestFullScreen() {
