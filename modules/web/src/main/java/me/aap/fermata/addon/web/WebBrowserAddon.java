@@ -11,11 +11,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.FermataFragmentAddon;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.app.App;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
@@ -49,8 +52,10 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 					"AppleWebKit/{WEBKIT_VERSION} (KHTML, like Gecko) " +
 					"Chrome/{CHROME_VERSION} Safari/{WEBKIT_VERSION}");
 	private static final Pref<BooleanSupplier> DESKTOP_VERSION = Pref.b("DESKTOP_VERSION", false);
+	private static final Pref<BooleanSupplier> WEB_OPEN_ON_START = Pref.b("WEB_OPEN_ON_START", false);
 	private static final Pref<Supplier<String[]>> BOOKMARKS = Pref.sa("BOOKMARKS");
 	private final SharedPreferences prefs;
+	private boolean ignorePrefChange;
 
 	public WebBrowserAddon() {
 		prefs = App.get().getSharedPreferences("web", Context.MODE_PRIVATE);
@@ -76,6 +81,9 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 
 	@Override
 	public void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
+		getPreferenceStore().addBroadcastListener(this::onPreferenceChanged);
+		FermataApplication.get().getPreferenceStore().addBroadcastListener(this::onPreferenceChanged);
+		MainActivityPrefs.get().addBroadcastListener(this::onPreferenceChanged);
 		set.addListPref(o -> {
 			o.store = getPreferenceStore();
 			o.pref = getForceDarkPref();
@@ -87,6 +95,12 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		});
 
 		if (getClass() == WebBrowserAddon.class) {
+			set.addBooleanPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = WEB_OPEN_ON_START;
+				o.title = R.string.open_on_start;
+				o.visibility = visibility;
+			});
 			set.addStringPref(o -> {
 				o.store = getPreferenceStore();
 				o.pref = getUserAgentPref();
@@ -106,6 +120,30 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 		}
 	}
 
+	public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
+		if (ignorePrefChange) return;
+		ignorePrefChange = true;
+
+		if (prefs.contains(getInfo().enabledPref)) {
+			if (!store.getBooleanPref(getInfo().enabledPref)) {
+				MainActivityPrefs ap = MainActivityPrefs.get();
+				getPreferenceStore().applyBooleanPref(WEB_OPEN_ON_START, false);
+				if (getInfo().className.equals(ap.getShowAddonOnStartPref()))
+					ap.setShowAddonOnStartPref(null);
+			}
+		} else if (prefs.contains(WEB_OPEN_ON_START)) {
+			MainActivityPrefs ap = MainActivityPrefs.get();
+			if (store.getBooleanPref(WEB_OPEN_ON_START)) {
+				ap.setShowAddonOnStartPref(getInfo().className);
+			} else if (getInfo().className.equals(ap.getShowAddonOnStartPref())) {
+				ap.setShowAddonOnStartPref(null);
+			}
+		} else if (prefs.contains(MainActivityPrefs.SHOW_ADDON_ON_START)) {
+			getPreferenceStore().applyBooleanPref(WEB_OPEN_ON_START,
+					getInfo().className.equals(MainActivityPrefs.get().getShowAddonOnStartPref()));
+		}
+		ignorePrefChange = false;
+	}
 	public SharedPreferenceStore getPreferenceStore() {
 		return this;
 	}
