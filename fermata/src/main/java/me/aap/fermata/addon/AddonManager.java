@@ -1,6 +1,7 @@
 package me.aap.fermata.addon;
 
 import static java.util.Collections.singletonList;
+import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.app.Activity;
 
@@ -20,6 +21,7 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.ui.activity.MainActivity;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.log.Log;
@@ -35,6 +37,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		implements PreferenceStore.Listener {
 	private static final String CHANNEL_ID = "fermata.addon.install";
 	private final Map<String, FermataAddon> addons = new HashMap<>();
+	private final Map<String, FutureSupplier<?>> installing = new HashMap<>();
 
 	public AddonManager(PreferenceStore store) {
 		for (AddonInfo i : BuildConfig.ADDONS) {
@@ -128,46 +131,66 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		for (AddonInfo i : BuildConfig.ADDONS) {
 			if (prefs.contains(i.enabledPref)) {
-				if (store.getBooleanPref(i.enabledPref)) {
-					install(i, true);
-				} else {
-					uninstall(i);
-				}
+				if (store.getBooleanPref(i.enabledPref)) install(i);
+				else uninstall(i);
 			}
 		}
 	}
 
-	private void install(AddonInfo i, boolean installModule) {
-		if (!addons.containsKey(i.className)) {
-			try {
-				FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();
-				PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
-				a.install();
-				addons.put(i.className, a);
-				fireBroadcastEvent(c -> c.onAddonChanged(this, i, true));
-				prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
-				return;
-			} catch (Exception ignore) {
-			}
+	private void install(AddonInfo i) {
+		if (loadAddon(i) || installing.containsKey(i.className)) return;
 
-			if (!installModule) return;
+		var task = ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon, i.moduleName, null,
+				MainActivity.class).then(a -> createInstaller(a, i).install(i.moduleName)).onSuccess(v -> {
+			Log.i("Module installed: ", i.moduleName);
+			if (loadAddon(i)) return;
+			Log.i("Failed to load addon, retrying: ", i.className);
+			var p = new Promise<Void>();
+			installing.put(i.className, p);
+			p.thenRun(() -> CollectionUtils.remove(installing, i.className, p));
+			scheduleLoadAddon(i, p, 1);
+		}).onFailure(err -> {
+			if (!isCancellation(err)) Log.e(err, "Failed to install module: ", i.moduleName);
+		});
+		installing.put(i.className, task);
+		task.thenRun(() -> CollectionUtils.remove(installing, i.className, task));
+		scheduleLoadAddon(i, task, 1);
+	}
 
-			ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon, i.moduleName, null,
-					MainActivity.class).onSuccess(a -> {
-				DynamicModuleInstaller inst = createInstaller(a, i);
-				inst.install(i.moduleName).onSuccess(v -> {
-					Log.i("Module installed: ", i.moduleName);
-
-					for (AddonInfo ai : BuildConfig.ADDONS) {
-						if (i.moduleName.equals(ai.moduleName)) install(ai, false);
-					}
-				});
-			});
+	private boolean loadAddon(AddonInfo i) {
+		if (addons.containsKey(i.className)) return true;
+		try {
+			FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();
+			PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
+			a.install();
+			addons.put(i.className, a);
+			fireBroadcastEvent(c -> c.onAddonChanged(this, i, true));
+			prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
+			Log.i("Addon loaded: ", i.className);
+			return true;
+		} catch (Exception ignore) {
+			return false;
 		}
+	}
+
+	private void scheduleLoadAddon(AddonInfo i, FutureSupplier<?> task, int counter) {
+		App.get().getHandler().postDelayed(() -> {
+			if (installing.get(i.className) != task) return;
+			if (loadAddon(i)) {
+				task.cancel();
+			} else if (counter == 180) {
+				Log.e("Failed load addon in 180 seconds: ", i.className);
+				task.cancel();
+			} else {
+				scheduleLoadAddon(i, task, counter + 1);
+			}
+		}, 1000);
 	}
 
 	private void uninstall(AddonInfo i) {
-		FermataAddon removed = addons.remove(i.className);
+		var task = installing.get(i.className);
+		if (task != null) task.cancel();
+		var removed = addons.remove(i.className);
 
 		if (removed != null) {
 			removed.uninstall();

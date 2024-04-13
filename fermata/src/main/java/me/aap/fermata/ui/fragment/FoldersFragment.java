@@ -24,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
 import com.google.android.play.core.install.InstallException;
+import com.google.android.play.core.splitinstall.SplitInstallException;
 
 import java.util.List;
 
@@ -214,7 +215,7 @@ public class FoldersFragment extends MediaLibFragment {
 			String n = getString(name);
 			Log.e(ex, "Failed to add folder: ", name);
 
-			if (ex instanceof InstallException) {
+			if (ex instanceof InstallException || ex instanceof SplitInstallException) {
 				UiUtils.showAlert(getContext(), getString(R.string.err_failed_install_module, n));
 			} else {
 				String msg = ex.getLocalizedMessage();

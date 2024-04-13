@@ -96,10 +96,10 @@
     <string name="voice_control_subst_sub">استبدال كلمة بكلمة أو عبارة أخرى</string>
     <string name="voice_control_subst_hint">تفعيل اقتراح الكلمات </string>
 
-    <string name="module_installation">تثبيت module</string>
-    <string name="install_pending">التثبيت معلق</string>
-    <string name="downloading">جارٍ تنزيل</string>
-    <string name="installing">تثبيت</string>
+    <string name="module_installation">تثبيت الوحدة: %1$s</string>
+    <string name="install_pending">التثبيت قيد الانتظار: %1$s</string>
+    <string name="downloading">جاري التحميل: %1$s</string>
+    <string name="installing">جاري التثبيت: %1$s</string>
 
     <string name="speed">السرعة</string>
     <string name="audio_effects">المؤثرات الصوتية</string>
