@@ -1,12 +1,9 @@
 package me.aap.fermata.ui.view;
 
-import static java.util.Objects.requireNonNull;
 import static me.aap.utils.async.Completed.completedVoid;
-import static me.aap.utils.collection.CollectionUtils.filterMap;
 import static me.aap.utils.concurrent.ConcurrentUtils.ensureMainThread;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
-import android.support.v4.media.MediaDescriptionCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -27,7 +24,9 @@ import me.aap.fermata.media.lib.MediaLib.Item;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.app.App;
+import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.view.MovableRecyclerViewAdapter;
@@ -100,14 +99,39 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 	@CallSuper
 	protected void setChildren(List<? extends Item> children) {
 		ensureMainThread(true);
-		list = filterMap(children, this::filter, (i, c, l) -> l.add(new MediaItemWrapper(c)), ArrayList::new);
+		var filter = this.filter;
+
+		if (filter == null) {
+			list = CollectionUtils.map(children, MediaItemWrapper::new);
+		} else {
+			var l = list = new ArrayList<>();
+			var app = App.get();
+			Async.forEach(c ->
+					(l != list) ? null : c.getMediaDescription().onSuccess(md -> {
+						if (l != list) return;
+						var s = md.getTitle();
+						var matches = (s != null) && filter.matcher(s).find();
+
+						if (!matches) {
+							s = md.getSubtitle();
+							matches = (s != null) && filter.matcher(s).find();
+						}
+						if (matches) {
+							app.run(() -> {
+								l.add(new MediaItemWrapper(c));
+								notifyItemInserted(l.size() - 1);
+							});
+						}
+					}), children);
+		}
 		notifyChanged();
 	}
 
 	public void setFilter(String filter) {
 		if (!filter.equals(filterText)) {
 			filterText = filter;
-			this.filter = filter.isEmpty() ? null : Pattern.compile(Pattern.quote(filter), Pattern.CASE_INSENSITIVE);
+			this.filter = filter.isEmpty() ? null :
+					Pattern.compile(Pattern.quote(filter), Pattern.CASE_INSENSITIVE);
 			var parent = getParent();
 			if (parent == null) return;
 			this.parent.getChildren().main().onSuccess(children -> {
@@ -257,14 +281,5 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		if ((listView != null) && listView.isComputingLayout())
 			App.get().getHandler().post(this::notifyDataSetChanged);
 		else notifyDataSetChanged();
-	}
-
-	private boolean filter(Item i) {
-		if (filter == null) return true;
-		MediaDescriptionCompat dsc = i.getMediaDescription().peek();
-		CharSequence title;
-		if (dsc != null) title = requireNonNull(dsc.getTitle());
-		else title = i.getName();
-		return filter.matcher(title).find();
 	}
 }
