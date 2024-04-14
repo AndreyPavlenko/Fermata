@@ -73,6 +73,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 		var baseName = (idx == -1) ? srcName : srcName.substring(0, idx);
 
 		return srcFile.getParent().then(srcDir -> {
+			if (srcDir == null) return completedEmptyList();
 			var filter = srcDir.filterChildren();
 			for (var ext : FileSubtitles.getSupportedFileExtensions())
 				filter = filter.or().startsEnds(baseName, ext);

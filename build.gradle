@@ -14,6 +14,7 @@ ext {
     ANDROIDX_APPCOMPAT_VERSION = '1.6.1'
     ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.1.4'
     ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = '1.1.0'
+    GUAVA_VERSION = '31.0.1-android'
 }
 
 buildscript {
@@ -96,6 +97,17 @@ subprojects {
         testImplementation 'junit:junit:4.13.2'
         androidTestImplementation 'androidx.test.ext:junit:1.1.5'
         androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    }
+
+    configurations.configureEach {
+        resolutionStrategy {
+            preferProjectModules()
+            eachDependency { details ->
+                if (details.requested.group == 'com.google.guava' && details.requested.name == 'guava') {
+                    details.useVersion GUAVA_VERSION
+                }
+            }
+        }
     }
 }
 
