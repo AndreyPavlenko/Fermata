@@ -3,7 +3,15 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path
-        android:fillColor="#FF000000"
-        android:pathData="M6,6h2v12L6,18zM9.5,12l8.5,6L18,6z" />
+  <path
+      android:pathData="M7.5,17.06L6.6,17.06A0.728,0.9 90,0 1,5.7 16.332L5.7,7.594A0.728,0.9 90,0 1,6.6 6.866L7.5,6.866A0.728,0.9 90,0 1,8.4 7.594L8.4,16.332A0.728,0.9 90,0 1,7.5 17.06z"
+      android:strokeWidth="0.8095"
+      android:fillColor="#000000"
+      android:fillType="evenOdd"/>
+  <path
+      android:pathData="M17.804,16.924C18.111,16.743 18.3,16.409 18.3,16.047L18.3,7.881c0,-0.78 -0.827,-1.267 -1.489,-0.877L9.878,11.087c-0.662,0.39 -0.662,1.365 0,1.754l6.933,4.083c0.307,0.181 0.686,0.181 0.993,0z"
+      android:strokeLineJoin="round"
+      android:strokeWidth="2.00519"
+      android:fillColor="#000000"
+      android:fillType="evenOdd"/>
 </vector>

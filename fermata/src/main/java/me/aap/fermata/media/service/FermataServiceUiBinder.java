@@ -9,6 +9,7 @@ import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -62,6 +63,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	private TextView progressTotal;
 	@Nullable
 	private View controlPanel;
+	private long playPauseTime;
 
 	FermataServiceUiBinder(FermataMediaServiceConnection c) {
 		sessionCallback = c.getMediaSessionCallback();
@@ -121,8 +123,14 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 	}
 
 	public void onPlayPauseButtonClick() {
-		if (isPlaying()) getMediaSessionCallback().onPause();
-		else getMediaSessionCallback().onPlay();
+		var time = SystemClock.uptimeMillis();
+		if ((time - playPauseTime) < 300) {
+			mediaController.getTransportControls().stop();
+		} else {
+			playPauseTime = time;
+			if (isPlaying()) getMediaSessionCallback().onPause();
+			else getMediaSessionCallback().onPlay();
+		}
 	}
 
 	private boolean onPlayPauseButtonLongClick(View v) {
