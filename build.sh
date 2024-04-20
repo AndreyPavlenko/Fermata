@@ -6,6 +6,23 @@ DIR="$(cd "$(dirname "$0")"; pwd -P)"
 DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
 export NO_GS=true
+CLEAN='clean'
+
+while [ "$1" != "" ]; do
+    case "$1" in
+        -nc)
+            unset CLEAN
+            ;;
+        -a)
+            ARM=true
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 if [ -z "$ANDROID_SDK_ROOT" ]; then
     if [ -f "$DIR/local.properties" ]; then
@@ -33,11 +50,11 @@ build_apk() {
         abi='armeabi-v7a'
     fi
 
-    ./gradlew clean fermata:packageAutoReleaseUniversalApk -PABI=$abi -PAPP_ID_SFX=$APP_ID_SFX
+    ./gradlew $CLEAN fermata:packageAutoReleaseUniversalApk -PABI=$abi -PAPP_ID_SFX=$APP_ID_SFX
     local path=$(ls ./fermata/build/outputs/apk_from_bundle/autoRelease/fermata-*.apk)
     local name=${path##*/}
     mv $path "$DEST_DIR/${name%auto-release-universal.apk}auto-universal-$sfx.apk"
 }
 
-# build_apk 'arm'
+[ $ARM ] && build_apk 'arm' || true
 build_apk 'arm64'
