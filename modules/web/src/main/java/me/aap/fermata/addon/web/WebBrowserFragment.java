@@ -1,5 +1,6 @@
 package me.aap.fermata.addon.web;
 
+import static android.os.Build.*;
 import static me.aap.fermata.addon.web.FermataWebClient.isYoutubeUri;
 import static me.aap.fermata.util.Utils.dynCtx;
 
@@ -19,6 +20,7 @@ import androidx.core.content.res.ResourcesCompat;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import me.aap.fermata.BuildConfig;
@@ -55,7 +57,8 @@ public class WebBrowserFragment extends MainActivityFragment
 
 	@Nullable
 	@Override
-	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+													 @Nullable Bundle savedInstanceState) {
 		dynCtx(requireContext());
 		return inflater.inflate(R.layout.browser, container, false);
 	}
@@ -233,8 +236,9 @@ public class WebBrowserFragment extends MainActivityFragment
 
 		if (isDesktopVersionSupported()) {
 			b.addItem(R.id.desktop_version,
-					ResourcesCompat.getDrawable(res, R.drawable.desktop, theme),
-					res.getString(R.string.desktop_version)).setChecked(a.isDesktopVersion()).setHandler(this);
+							ResourcesCompat.getDrawable(res, R.drawable.desktop, theme),
+							res.getString(R.string.desktop_version)).setChecked(a.isDesktopVersion())
+					.setHandler(this);
 		}
 
 		FermataChromeClient chrome = v.getWebChromeClient();
@@ -290,11 +294,13 @@ public class WebBrowserFragment extends MainActivityFragment
 		WebBrowserAddon a = getAddon();
 		if (a == null) return;
 
-		b.addItem(me.aap.fermata.R.id.bookmark_create, me.aap.fermata.R.string.create_bookmark).setSubmenu(this::createBookmark);
+		b.addItem(me.aap.fermata.R.id.bookmark_create, me.aap.fermata.R.string.create_bookmark)
+				.setSubmenu(this::createBookmark);
 		int i = 0;
 
 		for (Map.Entry<String, String> e : a.getBookmarks().entrySet()) {
-			b.addItem(UiUtils.getArrayItemId(i++), e.getValue()).setData(e.getKey()).setHandler(this::bookmarkSelected);
+			b.addItem(UiUtils.getArrayItemId(i++), e.getValue()).setData(e.getKey())
+					.setHandler(this::bookmarkSelected);
 		}
 	}
 
@@ -364,7 +370,11 @@ public class WebBrowserFragment extends MainActivityFragment
 		}
 
 		try {
-			String u = getSearchUrl() + URLEncoder.encode(q, "UTF-8");
+			var encoded =
+					(VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) ? URLEncoder.encode(q,
+							StandardCharsets.UTF_8) :
+							URLEncoder.encode(q, "UTF-8");
+			var u = getSearchUrl() + encoded;
 			loadUrl(u);
 		} catch (UnsupportedEncodingException ex) {
 			Log.e(ex, "Failed to encode query ", q);

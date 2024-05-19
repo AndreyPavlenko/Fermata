@@ -1,5 +1,5 @@
 ext {
-    VERSION_CODE = 246
+    VERSION_CODE = 247
     VERSION_NAME = "1.9.9"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
@@ -7,7 +7,7 @@ ext {
     BUILD_TOOLS_VERSION = "34.0.0"
     localProps = gradle.ext.localProps
 
-    ANDROID_MATERIAL_VERSION = '1.11.0'
+    ANDROID_MATERIAL_VERSION = '1.12.0'
     ANDROID_PLAY_CORE_VERSION = '1.10.3'
     ANDROIDX_CORE_VERSION = '1.12.0'
     ANDROIDX_MEDIA_VERSION = '1.7.0'
@@ -26,7 +26,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.3.2'
+        classpath 'com.android.tools.build:gradle:8.4.0'
         classpath 'com.google.gms:google-services:4.4.1'
     }
 }
