@@ -27,10 +27,10 @@ dependencies {
     implementation project(':utils')
     implementation project(':fermata')
     implementation "androidx.media:media:${ANDROIDX_MEDIA_VERSION}"
-    implementation "com.google.android.play:core:${ANDROID_PLAY_CORE_VERSION}"
+    implementation "com.google.android.play:feature-delivery:${ANDROID_PLAY_CORE_FD_VERSION}"
     implementation "androidx.appcompat:appcompat:${ANDROIDX_APPCOMPAT_VERSION}"
     implementation "com.google.android.material:material:${ANDROID_MATERIAL_VERSION}"
     implementation "androidx.constraintlayout:constraintlayout:${ANDROIDX_CONSTRAINTLAYOUT_VERSION}"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:${ANDROIDX_SWIPEREFRESHLAYOUT_VERSION}"
-    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.webkit:webkit:1.12.1'
 }

@@ -349,8 +349,7 @@ public class XmlTv implements Closeable {
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		SAXParser parser = factory.newSAXParser();
 
-		try (InputStream fis = status.getFileStream(true)) {
-			InputStream in = (status.getLocalFile().getName().endsWith(".gz")) ? new GZIPInputStream(fis) : fis;
+		try (InputStream in = status.getFileStream(true)) {
 			createTables(db);
 			db.beginTransaction();
 			parser.parse(in, new XmlHandler(db, idToTrack, nameToTrack, item.getResource().getEpgShift()));

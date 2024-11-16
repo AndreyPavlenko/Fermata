@@ -1,18 +1,17 @@
 ext {
-    VERSION_CODE = 247
+    VERSION_CODE = 250
     VERSION_NAME = "1.9.9"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 34
     SDK_COMPILE_VERSION = 34
-    BUILD_TOOLS_VERSION = "34.0.0"
     localProps = gradle.ext.localProps
 
     ANDROID_MATERIAL_VERSION = '1.12.0'
-    ANDROID_PLAY_CORE_VERSION = '1.10.3'
+    ANDROID_PLAY_CORE_FD_VERSION = '2.1.0'
     ANDROIDX_CORE_VERSION = '1.12.0'
     ANDROIDX_MEDIA_VERSION = '1.7.0'
-    ANDROIDX_APPCOMPAT_VERSION = '1.6.1'
-    ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.1.4'
+    ANDROIDX_APPCOMPAT_VERSION = '1.7.0'
+    ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.2.0'
     ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = '1.1.0'
     GUAVA_VERSION = '31.0.1-android'
 }
@@ -26,8 +25,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.4.0'
-        classpath 'com.google.gms:google-services:4.4.1'
+        classpath 'com.android.tools.build:gradle:8.7.2'
+        classpath 'com.google.gms:google-services:4.4.2'
     }
 }
 
@@ -52,8 +51,7 @@ subprojects {
     }
 
     android {
-        compileSdkVersion SDK_COMPILE_VERSION
-        buildToolsVersion BUILD_TOOLS_VERSION
+        compileSdk SDK_COMPILE_VERSION
         ndkVersion = "25.2.9519653"
 
         defaultConfig {
@@ -95,8 +93,8 @@ subprojects {
 
     dependencies {
         testImplementation 'junit:junit:4.13.2'
-        androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-        androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+        androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+        androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     }
 
     configurations.configureEach {

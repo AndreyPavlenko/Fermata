@@ -21,8 +21,8 @@ ext {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
-    implementation 'androidx.annotation:annotation:1.8.0'
-    implementation('com.google.android.gms:play-services-cast-framework:21.4.0') {
+    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation('com.google.android.gms:play-services-cast-framework:22.0.0') {
         exclude group: 'androidx.annotation', module: 'annotation'
     }
 }
