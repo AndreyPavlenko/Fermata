@@ -21,9 +21,7 @@ import androidx.annotation.StringRes;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Random;
 
 import me.aap.fermata.FermataApplication;
@@ -38,6 +36,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Cancellable;
+import me.aap.utils.function.Supplier;
 import me.aap.utils.function.ToIntFunction;
 import me.aap.utils.io.IoUtils;
 import me.aap.utils.log.Log;
@@ -56,9 +55,10 @@ public class DictTutor implements Closeable {
 	private final TextToSpeech revTts;
 	private final SpeechToText stt;
 	private final Random rnd;
-	private final ToIntFunction<Word> getProgress;
-	private final List<Word> queue = new ArrayList<>();
-	private ListIterator<Word> queueIterator = Collections.emptyListIterator();
+	private final int queueSize;
+	private final List<Word> queue;
+	private final Supplier<FutureSupplier<Integer>> batchFunc;
+	private int cursor;
 	private Cancellable running = CANCELED;
 	private Task curTask;
 	private String curText;
@@ -75,8 +75,29 @@ public class DictTutor implements Closeable {
 		this.revTts = revTts;
 		stt = new SpeechToText(ctx);
 		rnd = new Random();
-		getProgress = (mode == Mode.DIRECT) ? Word::getDirProgress :
-				(mode == Mode.REVERSE) ? Word::getRevProgress : Word::getProgress;
+		queueSize = dictInfo.getBatchSize() * 2;
+		queue = new ArrayList<>(queueSize);
+
+		ToIntFunction<Word> getProgress =
+				(mode == Mode.DIRECT || mode == Mode.LISTENING) ? Word::getDirProgress :
+						(mode == Mode.REVERSE) ? Word::getRevProgress : Word::getProgress;
+
+		if (dictInfo.getBatchType().equals(DictInfo.BATCH_TYPE_RND)) {
+			batchFunc = () -> dict.getRandomWords(rnd, queue, dictInfo.getBatchSize(), getProgress);
+		} else if (dictInfo.getBatchType().equals(DictInfo.BATCH_TYPE_LEAST)) {
+			batchFunc = () -> dict.getLeastProgressWords(queue, dictInfo.getBatchSize(), getProgress);
+		} else {
+			ToIntFunction<Dict> getDictProgress =
+					(mode == Mode.DIRECT || mode == Mode.LISTENING) ? Dict::getDirProgress :
+							(mode == Mode.REVERSE) ? Dict::getRevProgress : Dict::getProgress;
+			batchFunc = () -> {
+				if (getDictProgress.applyAsInt(dict) < 80) {
+					return dict.getLeastProgressWords(queue, dictInfo.getBatchSize(), getProgress);
+				} else {
+					return dict.getRandomWords(rnd, queue, dictInfo.getBatchSize(), getProgress);
+				}
+			};
+		}
 	}
 
 	public static FutureSupplier<DictTutor> create(Dict dict, Mode mode) {
@@ -108,8 +129,7 @@ public class DictTutor implements Closeable {
 	public void prev(boolean start) {
 		pause();
 		curTask = null;
-		if (queueIterator.hasPrevious()) queueIterator.previous();
-		if (queueIterator.hasPrevious()) queueIterator.previous();
+		cursor = Math.max(0, cursor - 2);
 		if (start) start();
 	}
 
@@ -131,19 +151,20 @@ public class DictTutor implements Closeable {
 			speak(curTask);
 		} else {
 			FutureSupplier<Task> f;
-			if (queueIterator.hasNext()) {
-				var w = queueIterator.next();
+			int s = queue.size();
+			if (cursor < s) {
+				var w = queue.get(cursor++);
 				f = w.getTranslations(dict).map(tr -> new Task(w, tr));
 			} else {
-				int s = queue.size();
-				if (s > 100) queue.subList(0, s - 100).clear();
-				int off = queue.size();
-				assert off <= 100;
-				f = dict.getRandomWords(rnd, queue, 100, getProgress).then(ignore -> {
-					queueIterator = queue.listIterator(off);
-					if (!queueIterator.hasNext())
+				int batchSize = dictInfo.getBatchSize();
+				int remain = queueSize - s;
+				if (remain < batchSize) queue.subList(0, batchSize - remain).clear();
+				cursor = queue.size();
+				f = batchFunc.get().then(ignore -> {
+					assert (queue.size() <= queueSize);
+					if (cursor >= queue.size())
 						return failed(new UnsupportedOperationException("Empty dictionary!"));
-					var w = queueIterator.next();
+					var w = queue.get(cursor++);
 					return w.getTranslations(dict).map(tr -> new Task(w, tr));
 				});
 			}
@@ -266,7 +287,7 @@ public class DictTutor implements Closeable {
 			String text = r.getText();
 			setText(t.speak, text);
 
-			if (t.validTranslation(text)) {
+			if (t.validTranslation(text) || dictInfo.isAckPhrase(text)) {
 				curTask = null;
 				t.w.incrProgress(dict, t.direct, 10);
 				schedule(this::nextTask, 1000);

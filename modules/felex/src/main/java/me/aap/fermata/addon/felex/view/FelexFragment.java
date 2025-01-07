@@ -398,6 +398,7 @@ public class FelexFragment extends MainActivityFragment
 				Pref<Supplier<String>> namePref = Pref.s("NAME", "");
 				Pref<IntSupplier> srcLangPref = Pref.i("SRC_LANG", defaultLangIdx);
 				Pref<IntSupplier> targetLangPref = Pref.i("TARGET_LANG", defaultLangIdx);
+				Pref<Supplier<String>> ackPref = Pref.s("ACK", "");
 				Pref<Supplier<String>> skipPref = Pref.s("SKIP", "");
 				queryPrefs(ctx, R.string.add_dict, (store, set) -> {
 					set.addStringPref(o -> {
@@ -422,6 +423,12 @@ public class FelexFragment extends MainActivityFragment
 						o.subtitle = me.aap.fermata.R.string.string_format;
 					});
 					set.addStringPref(o -> {
+						o.pref = ackPref;
+						o.title = R.string.ack_phrase;
+						o.hint = R.string.ack_phrase_sub;
+						o.store = store;
+					});
+					set.addStringPref(o -> {
 						o.pref = skipPref;
 						o.title = R.string.skip_phrase;
 						o.hint = R.string.skip_phrase_sub;
@@ -434,12 +441,13 @@ public class FelexFragment extends MainActivityFragment
 					return (dicts == null) || !contains(dicts, d -> d.getName().equalsIgnoreCase(name));
 				}).onSuccess(p -> {
 					String name = p.getStringPref(namePref);
+					String ackPhrase = p.getStringPref(ackPref);
 					String skipPhrase = p.getStringPref(skipPref);
 					if (isNullOrBlank(name)) return;
 					int srcLangIdx = p.getIntPref(srcLangPref);
 					int targetLangIdx = p.getIntPref(targetLangPref);
 					mgr.createDictionary(name, locales.get(srcLangIdx), locales.get(targetLangIdx),
-							skipPhrase).main().onCompletion((d, err) -> {
+							ackPhrase, skipPhrase).main().onCompletion((d, err) -> {
 						if (err != null) {
 							Log.e(err);
 							showAlert(ctx, err.toString());

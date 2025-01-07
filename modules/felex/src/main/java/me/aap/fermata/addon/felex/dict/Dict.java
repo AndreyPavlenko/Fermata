@@ -5,12 +5,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.sort;
+import static java.util.Collections.swap;
 import static java.util.Objects.requireNonNull;
 import static me.aap.fermata.addon.felex.dict.DictMgr.CACHE_EXT;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.async.Completed.failed;
-import static me.aap.utils.collection.CollectionUtils.comparingInt;
 import static me.aap.utils.collection.NaturalOrderComparator.compareNatural;
 import static me.aap.utils.misc.Assert.assertMainThread;
 import static me.aap.utils.misc.Assert.assertNotMainThread;
@@ -22,6 +22,8 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.common.collect.MinMaxPriorityQueue;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -160,6 +161,10 @@ public class Dict implements Comparable<Dict> {
 		return (c == 0) ? 0 : revProgress / c;
 	}
 
+	public int getProgress() {
+		return (getDirProgress() + getRevProgress()) / 2;
+	}
+
 	public VirtualFile getDictFile() {
 		return dictFile;
 	}
@@ -197,18 +202,51 @@ public class Dict implements Comparable<Dict> {
 		return words.fork();
 	}
 
-	public FutureSupplier<Integer> getRandomWords(Random rnd, Collection<Word> dest, int max,
+	public FutureSupplier<Integer> getLeastProgressWords(List<Word> dest, int max,
+																											 ToIntFunction<Word> getProgress) {
+		assertMainThread();
+		return getWords().main().map(words -> {
+			int s = words.size();
+			if (s == 0) return 0;
+			if (s <= max) {
+				dest.addAll(words);
+				return s;
+			}
+
+			var heap = MinMaxPriorityQueue.orderedBy(
+					CollectionUtils.comparingInt(getProgress)).expectedSize(max).maximumSize(max).create();
+			heap.addAll(words);
+			dest.addAll(heap);
+			return max;
+		});
+	}
+
+	public FutureSupplier<Integer> getRandomWords(Random rnd, List<Word> dest, int max,
 																								ToIntFunction<Word> getProgress) {
 		assertMainThread();
 		return getWords().main().map(words -> {
 			int s = words.size();
 			if (s == 0) return 0;
-			s = Math.min(max, s);
-			List<Word> sorted = new ArrayList<>(words);
-			shuffle(sorted, rnd);
-			sort(sorted, comparingInt(getProgress));
-			dest.addAll(sorted.subList(0, s));
-			return s;
+
+			int off = dest.size();
+
+			if (s <= max) {
+				dest.addAll(words);
+				shuffle(dest.subList(off, dest.size()), rnd);
+			} else {
+				var heap = MinMaxPriorityQueue.orderedBy(
+						CollectionUtils.comparingInt(getProgress)).expectedSize(max).maximumSize(max).create();
+				var shuffled = new ArrayList<>(words);
+				shuffle(shuffled, rnd);
+				heap.addAll(shuffled);
+				dest.addAll(heap);
+			}
+
+			s = dest.size();
+			shuffle(dest.subList(off, s), rnd);
+			if ((off > 0) && (dest.get(off - 1).equals(dest.get(off)))) swap(dest, off, s - 1);
+			assert (s - off <= max);
+			return s - off;
 		});
 	}
 

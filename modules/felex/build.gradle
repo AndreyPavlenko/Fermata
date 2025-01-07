@@ -21,6 +21,7 @@ ext {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
+    implementation "com.google.guava:guava:${GUAVA_VERSION}"
     implementation "androidx.media:media:${ANDROIDX_MEDIA_VERSION}"
     implementation "androidx.appcompat:appcompat:${ANDROIDX_APPCOMPAT_VERSION}"
     implementation "com.google.android.material:material:${ANDROID_MATERIAL_VERSION}"

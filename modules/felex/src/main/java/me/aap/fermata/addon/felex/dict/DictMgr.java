@@ -1,6 +1,8 @@
 package me.aap.fermata.addon.felex.dict;
 
 import static java.util.Collections.emptyList;
+import static me.aap.fermata.addon.felex.dict.DictInfo.BATCH_SIZE_DEFAULT;
+import static me.aap.fermata.addon.felex.dict.DictInfo.BATCH_TYPE_MIXED;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.contains;
@@ -76,8 +78,10 @@ public class DictMgr extends BasicEventBroadcaster<DictMgr.ProgressChangeListene
 	}
 
 	public FutureSupplier<Dict> createDictionary(String name, Locale srcLang, Locale targetLang,
-																							 String skipPhrase) {
-		return createDictionary(new DictInfo(name, srcLang, targetLang, skipPhrase, null));
+																							 String ackPhrase, String skipPhrase) {
+		return createDictionary(
+				new DictInfo(name, srcLang, targetLang, ackPhrase, skipPhrase, null, BATCH_SIZE_DEFAULT,
+						BATCH_TYPE_MIXED));
 	}
 
 	public FutureSupplier<Dict> createDictionary(DictInfo info) {
