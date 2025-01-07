@@ -75,7 +75,7 @@ public interface MediaPrefs extends PreferenceStore {
 	Pref<Supplier<String>> AUDIO_LANG = Pref.s("AUDIO_LANG", "");
 	Pref<Supplier<String>> AUDIO_KEY = Pref.s("AUDIO_KEY", "");
 	Pref<IntSupplier> WATCHED_THRESHOLD = Pref.i("WATCHED_THRESHOLD", 95);
-	Pref<IntSupplier> HW_ACCEL = Pref.i("HW_ACCEL", HW_ACCEL_DECODING);
+	Pref<IntSupplier> HW_ACCEL = Pref.i("HW_ACCEL", HW_ACCEL_AUTO);
 
 
 	default int getAudioEnginePref() {
