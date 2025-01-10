@@ -12,7 +12,7 @@
     <string name="theme_sub">Aktualny motyw: %1$s</string>
     <string name="theme_light">Jasny</string>
     <string name="theme_dark">Ciemny</string>
-    <string name="theme_day_night">Dzień/Noc</string>
+    <string name="theme_system">System</string>
     <string name="theme_black">Czarny</string>
     <string name="theme_star_wars">Gwiezdne Wojny</string>
 

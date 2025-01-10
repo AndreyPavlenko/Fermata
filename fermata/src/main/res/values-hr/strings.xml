@@ -12,7 +12,7 @@
     <string name="theme_sub">Trenutna tema: %1$s</string>
     <string name="theme_light">Svijetla</string>
     <string name="theme_dark">Tamna</string>
-    <string name="theme_day_night">Dan/Noć</string>
+    <string name="theme_system">Sistem</string>
     <string name="theme_black">Crna</string>
     <string name="theme_star_wars">Ratovi zvijezda</string>
 

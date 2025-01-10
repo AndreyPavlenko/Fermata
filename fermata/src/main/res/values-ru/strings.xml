@@ -12,9 +12,11 @@
     <string name="theme_sub">Текущая тема: %1$s</string>
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Темная</string>
-    <string name="theme_day_night">День/Ночь</string>
+    <string name="theme_system">Системная</string>
     <string name="theme_black">Черная</string>
     <string name="theme_star_wars">Звездные Войны</string>
+    <string name="theme_purple">Пурпурная</string>
+    <string name="theme_classic">Классическая</string>
 
     <string name="nav_bar_pos">Расположении панели навигации</string>
     <string name="nav_bar_pos_sub">Текущее расположение: %1$s</string>

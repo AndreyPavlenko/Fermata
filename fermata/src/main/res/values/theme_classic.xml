@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme.Classic">
+
+        <item name="android:colorBackground">#182532</item>
+
+        <!-- Status bar-->
+        <item name="colorPrimaryDark">#304D70</item>
+
+        <!-- Tool/Nav bars -->
+        <item name="colorPrimary">#121E29</item>
+        <item name="colorOnPrimary">#a1a5a9</item>
+        <item name="android:textColorPrimary">#a1a5a9</item>
+
+        <!-- List/Media items -->
+        <item name="colorSecondary">#243447</item>
+        <item name="colorOnSecondary">#095381</item>
+        <item name="android:textColorSecondary">#bec2c8</item>
+
+        <!-- Active media item -->
+        <item name="alpha">0.7</item>
+        <item name="colorSecondaryVariant">#2C486A</item>
+        <item name="android:textColorTertiary">#ffffff</item>
+
+        <!-- Popup menu -->
+        <item name="colorSurface">#182532</item>
+        <item name="colorOnSurface">#095381</item>
+        <item name="colorPrimarySurface">#27394A</item>
+        <item name="colorOnPrimarySurface">#095381</item>
+
+        <item name="colorAccent">#4B78AF</item>
+        <item name="rippleColor">#83A5CF</item>
+
+        <item name="android:textColorHint">#0F0F0F</item>
+
+        <item name="colorControlNormal">#999CA1</item>
+        <item name="colorControlActivated">#095381</item>
+
+    </style>
+
+</resources>

@@ -27,9 +27,11 @@
     <string name="theme_sub">Thème actuel : %1$s</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
-    <string name="theme_day_night">Jour/Nuit</string>
+    <string name="theme_system">Système</string>
     <string name="theme_black">Noir</string>
     <string name="theme_star_wars">Star Wars</string>
+    <string name="theme_purple">Pourpre</string>
+    <string name="theme_classic">Classique</string>
 
     <string name="nav_bar_pos">Position de la barre de navigation</string>
     <string name="nav_bar_pos_sub">Position actuelle : %1$s</string>

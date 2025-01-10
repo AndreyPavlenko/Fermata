@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build.VERSION_CODES;
 import android.os.Environment;
@@ -18,6 +19,7 @@ import com.google.android.play.core.splitcompat.SplitCompat;
 import java.io.File;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -26,6 +28,7 @@ import me.aap.utils.io.FileUtils;
 import me.aap.utils.log.Log;
 import me.aap.utils.misc.MiscUtils;
 import me.aap.utils.net.http.HttpFileDownloader;
+import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.notif.HttpDownloadStatusListener;
 
@@ -33,6 +36,10 @@ import me.aap.utils.ui.notif.HttpDownloadStatusListener;
  * @author Andrey Pavlenko
  */
 public class Utils {
+
+	public static Uri getResourceUri(int resourceId) {
+		return getResourceUri(App.get(), resourceId);
+	}
 
 	public static Uri getResourceUri(Context ctx, int resourceId) {
 		Resources res = ctx.getResources();
@@ -131,6 +138,20 @@ public class Utils {
 		} catch (Exception ex) {
 			Log.d(ex);
 			return false;
+		}
+	}
+
+	public static int getLauncherColor() {
+		return LauncherColorHolder.COLOR;
+	}
+
+	private static final class LauncherColorHolder {
+		static final int COLOR;
+
+		static {
+			var colors =
+					UiUtils.getDrawableColor(FermataApplication.get(), R.drawable.fermata_bg, Color.WHITE);
+			COLOR = colors[colors.length - 1];
 		}
 	}
 }

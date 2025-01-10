@@ -12,9 +12,11 @@
     <string name="theme_sub">Tema impostato: %1$s</string>
     <string name="theme_light">Chiaro</string>
     <string name="theme_dark">Scuro</string>
-    <string name="theme_day_night">Giorno/Notte</string>
+    <string name="theme_system">Sistema</string>
     <string name="theme_black">Nero</string>
     <string name="theme_star_wars">Guerre stellari</string>
+    <string name="theme_purple">Purple</string>
+    <string name="theme_classic">Classico</string>
 
     <string name="nav_bar_pos">Posizione barra navigazione</string>
     <string name="nav_bar_pos_sub">Posizione impostata: %1$s</string>

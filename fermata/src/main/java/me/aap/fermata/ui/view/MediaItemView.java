@@ -1,5 +1,6 @@
 package me.aap.fermata.ui.view;
 
+import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 import static android.util.TypedValue.COMPLEX_UNIT_PX;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_END_TIME;
 import static me.aap.fermata.media.lib.MediaLib.StreamItem.STREAM_START_TIME;
@@ -10,6 +11,7 @@ import static me.aap.utils.ui.UiUtils.getTextAppearanceSize;
 import static me.aap.utils.ui.UiUtils.toPx;
 import static me.aap.utils.ui.activity.ActivityListener.ACTIVITY_DESTROY;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
@@ -225,7 +227,7 @@ public class MediaItemView extends ConstraintLayout
 					if ((p == PROGRESS_DONE) || (p == 4)) {
 						Uri uri = md.getIconUri();
 
-						if (uri != null) {
+						if ((uri != null) && !SCHEME_ANDROID_RESOURCE.equals(uri.getScheme())) {
 							FutureSupplier<Bitmap> loadIcon =
 									i.getLib().getBitmap(uri.toString(), true, true).main()
 											.onCompletion((bm, err) -> {
@@ -470,6 +472,7 @@ public class MediaItemView extends ConstraintLayout
 		t = getSubtitle();
 		t.setTypeface(null, surfaceType);
 		t.setActivated(activated);
+		setActivated(activated);
 	}
 
 	public void refreshCheckbox() {

@@ -47,6 +47,8 @@
         android:layout_width="0dp"
         android:layout_height="4dp"
         android:layout_marginStart="4dp"
+        android:layout_marginEnd="?attr/cornerRadius"
+        android:layout_marginBottom="?attr/boxStrokeWidth"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

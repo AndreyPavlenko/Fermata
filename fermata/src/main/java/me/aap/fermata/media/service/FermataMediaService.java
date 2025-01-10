@@ -3,6 +3,7 @@ package me.aap.fermata.media.service;
 import static android.Manifest.permission.POST_NOTIFICATIONS;
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_ERROR;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_NONE;
@@ -24,6 +25,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -59,7 +61,9 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.app.App;
+import me.aap.utils.function.BiFunction;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
@@ -70,7 +74,7 @@ import me.aap.utils.ui.UiUtils;
 public class FermataMediaService extends MediaBrowserServiceCompat {
 	public static final String ACTION_MEDIA_SERVICE = "me.aap.fermata.action.MediaService";
 	public static final String INTENT_ATTR_NOTIF_COLOR = "me.aap.fermata.notif.color";
-	public static final String DEFAULT_NOTIF_COLOR = "#546e7a";
+	public static final String DEFAULT_NOTIF_COLOR = "#3D2562";
 	private static final String CONTENT_STYLE_SUPPORTED =
 			"android.media.browse.CONTENT_STYLE_SUPPORTED";
 	private static final String CONTENT_STYLE_PLAYABLE_HINT =
@@ -109,6 +113,8 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private Action actionFavRm;
 	private Bitmap defaultAudioIcon;
 	private Bitmap defaultVideoIcon;
+	private Uri defaultAudioIconUri;
+	private Uri defaultVideoIconUri;
 
 	public MediaLib getLib() {
 		return lib;
@@ -275,7 +281,7 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		if (s < min) s = min;
 		else if (s > max) s = max;
 		return UiUtils.drawBitmap(requireNonNull(AppCompatResources.getDrawable(this, icon)),
-				notifColor, Color.WHITE, s, s);
+				notifColor, Utils.getLauncherColor(), s, s);
 	}
 
 	public void notificationInit() {

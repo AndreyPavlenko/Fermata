@@ -1,4 +1,4 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/mirror_fs_bg" />
-    <item android:drawable="@drawable/fermata_l" />
+    <item android:drawable="@drawable/mirror_l" />
 </layer-list>

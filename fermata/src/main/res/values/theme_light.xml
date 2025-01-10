@@ -3,42 +3,46 @@
 
     <style name="AppTheme.Light">
 
-        <item name="android:colorBackground">#FAFAFA</item>
-        <item name="android:editTextColor">#000000</item>
+        <item name="android:colorBackground">#FFFFFF</item>
 
         <!-- Status bar-->
-        <item name="colorPrimaryDark">#426482</item>
+        <item name="colorPrimaryDark">#445D8F</item>
 
         <!-- Tool/Nav bars -->
-        <item name="colorPrimary">#527da3</item>
-        <item name="colorOnPrimary">#f6f8f9</item>
-        <item name="android:textColorPrimary">#f6f8f9</item>
+        <item name="colorPrimary">?colorPrimaryDark</item>
+        <item name="colorOnPrimary">#40C4FF</item>
+        <item name="android:textColorPrimary">?colorOnPrimary</item>
 
         <!-- List/Media items -->
-        <item name="colorSecondary">#ffffff</item>
-        <item name="colorOnSecondary">#598fba</item>
-        <item name="android:textColorSecondary">#000000</item>
-        <item name="boxStrokeColor">#CFDBE5</item>
+        <item name="colorSecondary">?android:colorBackground</item>
+        <item name="colorOnSecondary">?colorOnPrimary</item>
+        <item name="android:textColorSecondary">#030E26</item>
+        <item name="boxStrokeColor">#445D8F</item>
 
         <!-- Active media item -->
-        <item name="alpha">0.8</item>
-        <item name="colorSecondaryVariant">#3388A8C3</item>
-        <item name="android:textColorTertiary">#000000</item>
+        <item name="alpha">1</item>
+        <item name="colorSecondaryVariant">#A11477</item>
+        <item name="android:textColorTertiary">#FFFFFF</item>
 
         <!-- Popup menu -->
-        <item name="colorSurface">#FAFAFA</item>
-        <item name="colorOnSurface">#527da3</item>
-        <item name="colorPrimarySurface">#426482</item>
-        <item name="colorOnPrimarySurface">#000000</item>
+        <item name="colorSurface">?colorPrimary</item>
+        <item name="colorOnSurface">?colorOnPrimary</item>
+        <item name="colorPrimarySurface">?colorOnPrimary</item>
+        <item name="colorOnPrimarySurface">?colorOnPrimary</item>
+        <item name="popupMenuStyle">@style/AppTheme.Light.PopupMenuStyle</item>
 
-        <item name="colorAccent">#426482</item>
-        <item name="rippleColor">#8EABCF</item>
+        <item name="colorAccent">?colorSecondaryVariant</item>
+        <item name="rippleColor">?colorAccent</item>
 
-        <item name="android:textColorHint">#BEC3C5</item>
+        <item name="android:textColorHint">#858A94</item>
 
-        <item name="colorControlNormal">#999CA1</item>
-        <item name="colorControlActivated">#527da3</item>
+        <item name="colorControlNormal">#262A33</item>
+        <item name="colorControlActivated">?colorOnPrimary</item>
 
+    </style>
+
+    <style name="AppTheme.Light.PopupMenuStyle" parent="Theme.Utils.Base.PopupMenuStyle">
+        <item name="android:textColor">?colorOnPrimary</item>
     </style>
 
 </resources>

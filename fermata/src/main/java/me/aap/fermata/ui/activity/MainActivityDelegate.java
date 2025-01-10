@@ -35,6 +35,7 @@ import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED
 
 import android.Manifest;
 import android.Manifest.permission;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -66,10 +67,12 @@ import android.widget.EditText;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
+import androidx.annotation.StyleRes;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.fragment.app.Fragment;
 
@@ -459,17 +462,24 @@ public class MainActivityDelegate extends ActivityDelegate
 		return getMediaServiceBinder().getMediaSessionCallback().getPlaybackControlPrefs();
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void setTheme(Context ctx, boolean auto) {
-		switch (Prefs.instance.getThemePref(auto)) {
-			case MainActivityPrefs.THEME_DARK -> ctx.setTheme(R.style.AppTheme_Dark);
-			case MainActivityPrefs.THEME_LIGHT -> ctx.setTheme(R.style.AppTheme_Light);
-			case MainActivityPrefs.THEME_DAY_NIGHT -> {
-				AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_TIME);
-				ctx.setTheme(R.style.AppTheme_DayNight);
+		@StyleRes int theme = switch (Prefs.instance.getThemePref(auto)) {
+			case MainActivityPrefs.THEME_LIGHT -> R.style.AppTheme_Light;
+			case MainActivityPrefs.THEME_SYSTEM -> {
+				if ((ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) ==
+						Configuration.UI_MODE_NIGHT_YES)
+					yield R.style.AppTheme_Dark;
+				else yield R.style.AppTheme_Light;
 			}
-			case MainActivityPrefs.THEME_BLACK -> ctx.setTheme(R.style.AppTheme_Black);
-			case MainActivityPrefs.THEME_STAR_WARS -> ctx.setTheme(R.style.AppTheme_BlackStarWars);
+			case MainActivityPrefs.THEME_BLACK -> R.style.AppTheme_Black;
+			case MainActivityPrefs.THEME_STAR_WARS -> R.style.AppTheme_BlackStarWars;
+			case MainActivityPrefs.THEME_PURPLE -> R.style.AppTheme_Purple;
+			case MainActivityPrefs.THEME_CLASSIC -> R.style.AppTheme_Classic;
+			default -> R.style.AppTheme_Dark;
+		};
+		ctx.setTheme(theme);
+		if ((VERSION.SDK_INT >= VERSION_CODES.S) && (ctx instanceof Activity a)) {
+			a.getSplashScreen().setSplashScreenTheme(theme);
 		}
 	}
 
@@ -988,15 +998,26 @@ public class MainActivityDelegate extends ActivityDelegate
 		floatingButton = a.findViewById(R.id.floating_button);
 		floatingButton.setScale(getPrefs().getTextIconSizePref(this));
 		controlPanel.bind(getMediaServiceBinder());
+
+		if (VERSION.SDK_INT >= VERSION_CODES.VANILLA_ICE_CREAM && !a.isCarActivity()) {
+			ViewCompat.setOnApplyWindowInsetsListener(toolBar, (v, insets) -> {
+				var bars = insets.getInsets(
+						WindowInsetsCompat.Type.systemBars()
+				);
+				a.findViewById(R.id.main_activity).setPadding(bars.left, bars.top, bars.right,
+						bars.bottom);
+				return WindowInsetsCompat.CONSUMED;
+			});
+		}
 	}
 
 	@LayoutRes
 	private int getLayout() {
 		MainActivityPrefs prefs = getPrefs();
 		return switch (prefs.getNavBarPosPref(this)) {
-			default -> R.layout.main_activity;
 			case NavBarView.POSITION_LEFT -> R.layout.main_activity_left;
 			case NavBarView.POSITION_RIGHT -> R.layout.main_activity_right;
+			default -> R.layout.main_activity;
 		};
 	}
 

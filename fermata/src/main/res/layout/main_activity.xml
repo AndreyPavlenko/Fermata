@@ -5,6 +5,7 @@
     android:id="@+id/main_activity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:colorPrimary"
     android:layoutDirection="ltr">
 
     <me.aap.utils.ui.view.ToolBarView

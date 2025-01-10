@@ -2,6 +2,7 @@ package me.aap.fermata.media.engine;
 
 import static android.content.Context.MODE_PRIVATE;
 import static java.util.Collections.emptyList;
+import static me.aap.fermata.util.Utils.getLauncherColor;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.async.Completed.failed;
@@ -23,6 +24,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -203,7 +205,10 @@ public class BitmapCache {
 						break;
 					}
 					Drawable d = ResourcesCompat.getDrawable(res, id, ctx.getTheme());
-					if (d != null) bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.WHITE);
+					if (d != null) {
+						int color = (d instanceof VectorDrawable) ? getLauncherColor() : Color.TRANSPARENT;
+						bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, color);
+					}
 					break;
 				case "content":
 					bm = loadContentBitmap(ctx, u, size);

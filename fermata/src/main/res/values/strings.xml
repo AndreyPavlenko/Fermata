@@ -40,9 +40,11 @@
     <string name="theme_sub">Current theme: %1$s</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
-    <string name="theme_day_night">Day/Night</string>
+    <string name="theme_system">System</string>
     <string name="theme_black">Black</string>
     <string name="theme_star_wars">Star Wars</string>
+    <string name="theme_purple">Purple</string>
+    <string name="theme_classic">Classic</string>
 
     <string name="nav_bar_pos">Navigation bar position</string>
     <string name="nav_bar_pos_sub">Current position: %1$s</string>

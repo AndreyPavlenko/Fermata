@@ -12,7 +12,7 @@
     <string name="theme_sub">Chủ đề hiện tại: %1$s</string>
     <string name="theme_light">Sáng</string>
     <string name="theme_dark">tối</string>
-    <string name="theme_day_night">Theo hệ thống</string>
+    <string name="theme_system">Hệ thống</string>
     <string name="theme_black">Đen</string>
     <string name="theme_star_wars">Chiến tranh giữa các vì sao</string>
 

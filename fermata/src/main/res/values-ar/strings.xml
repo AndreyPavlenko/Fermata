@@ -12,7 +12,7 @@
     <string name="theme_sub">لون واجهة التطبيق</string>
     <string name="theme_light">نهاري</string>
     <string name="theme_dark">ليلي</string>
-    <string name="theme_day_night">ليلي نهاري</string>
+    <string name="theme_system">نظام</string>
     <string name="theme_black">أسود</string>
     <string name="theme_star_wars">حرب النجوم</string>
 

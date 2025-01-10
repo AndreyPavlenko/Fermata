@@ -12,7 +12,7 @@
     <string name="theme_sub">현재 테마: %1$s</string>
     <string name="theme_light">주간</string>
     <string name="theme_dark">야간</string>
-    <string name="theme_day_night">주/야</string>
+    <string name="theme_system">체계</string>
     <string name="theme_black">검정</string>
     <string name="theme_star_wars">스타워즈</string>
 

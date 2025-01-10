@@ -66,7 +66,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.audiofx.BassBoost;
@@ -1441,9 +1443,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Bitmap getDefaultImage() {
 		if (defaultImage == null) {
 			try {
-				FermataApplication app = FermataApplication.get();
-				Drawable d = app.getPackageManager().getApplicationIcon(app.getPackageName());
-				defaultImage = UiUtils.getBitmap(d);
+				var app = FermataApplication.get();
+				var d = app.getPackageManager().getApplicationIcon(app.getPackageName());
+				var res = app.getResources();
+				int nw = res.getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
+				int nh = res.getDimensionPixelSize(android.R.dimen.notification_large_icon_height);
+				int iw = d.getIntrinsicWidth();
+				int ih = d.getIntrinsicHeight();
+				float squeeze = Math.min(nw / Math.max(1f, iw), nh / Math.max(1f, ih)) * 0.8f;
+				defaultImage = UiUtils.drawBitmap(d, Color.TRANSPARENT, Color.TRANSPARENT,
+						0, 0, squeeze);
 			} catch (Exception ex) {
 				Log.e(ex, "Failed to get application icon");
 			}

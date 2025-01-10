@@ -12,7 +12,7 @@
     <string name="theme_sub">現在のテーマ: %1$s</string>
     <string name="theme_light">ライト</string>
     <string name="theme_dark">ダーク</string>
-    <string name="theme_day_night">昼間/夜間</string>
+    <string name="theme_system">システム</string>
     <string name="theme_black">黒</string>
     <string name="theme_star_wars">スターウォーズ</string>
 

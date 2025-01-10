@@ -7,7 +7,7 @@
       android:strokeWidth="1"
       android:pathData="M0,0h320v180h-320z"
       android:strokeLineJoin="bevel"
-      android:fillColor="#1e094a"
+      android:fillColor="#4E6AA2"
       android:strokeColor="#000000"
       android:fillType="evenOdd"
       android:strokeLineCap="square"/>

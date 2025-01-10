@@ -3,6 +3,7 @@ package me.aap.fermata.ui.view;
 import static me.aap.utils.text.TextUtils.isNullOrBlank;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.v4.media.MediaDescriptionCompat;
@@ -24,6 +25,7 @@ import me.aap.fermata.media.lib.MediaLib.StreamItem;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
+import me.aap.fermata.util.Utils;
 import me.aap.utils.async.FutureSupplier;
 
 /**
@@ -117,8 +119,7 @@ public class VideoInfoView extends ConstraintLayout
 		MaterialTextView tv = getTitleView();
 		MaterialTextView sv = getSubtitleView();
 		MaterialTextView dv = getDescriptionView();
-		getIconView().setVisibility(GONE);
-		if (i != null) setIcon(item, i.toString());
+		setIcon(item, i == null ? null : i.toString());
 		if (!isNullOrBlank(t)) tv.setText(t);
 
 		if (isNullOrBlank(s)) {
@@ -142,7 +143,7 @@ public class VideoInfoView extends ConstraintLayout
 		String d = md.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION);
 		MaterialTextView sv = getSubtitleView();
 		MaterialTextView dv = getDescriptionView();
-		setIcon(item, i);
+		if (i != null) setIcon(item, i);
 
 		if (!isNullOrBlank(s)) {
 			sv.setText(s);
@@ -155,7 +156,13 @@ public class VideoInfoView extends ConstraintLayout
 	}
 
 	private void setIcon(PlayableItem item, String icon) {
-		if (icon != null) {
+		if (icon == null) {
+			AppCompatImageView iv = getIconView();
+			iv.setImageResource(item.getIcon());
+			iv.setImageTintList(ColorStateList.valueOf(Utils.getLauncherColor()));
+			iv.setVisibility(VISIBLE);
+		} else {
+			getIconView().setVisibility(GONE);
 			item.getLib().getBitmap(icon, true, false).main().onSuccess(b -> {
 				if (b == null) return;
 				getActivity().onSuccess(a -> {

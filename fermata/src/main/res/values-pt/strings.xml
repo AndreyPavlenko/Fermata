@@ -12,7 +12,7 @@
     <string name="theme_sub">Tema Atual: %1$s</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Escuro</string>
-    <string name="theme_day_night">Dia/Noite</string>
+    <string name="theme_system">Sistema</string>
     <string name="theme_black">Preto</string>
     <string name="theme_star_wars">Guerra das Estrelas</string>
 

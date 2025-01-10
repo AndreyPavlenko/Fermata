@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme.Purple">
+
+        <item name="android:colorBackground">#7041b7</item>
+
+        <!-- Status bar-->
+        <item name="colorPrimaryDark">#3D2562</item>
+
+        <!-- Tool/Nav bars -->
+        <item name="colorPrimary">?colorPrimaryDark</item>
+        <item name="colorOnPrimary">#D9C9FB</item>
+        <item name="android:textColorPrimary">?colorOnPrimary</item>
+
+        <!-- List/Media items -->
+        <item name="colorSecondary">?android:colorBackground</item>
+        <item name="colorOnSecondary">?colorOnPrimary</item>
+        <item name="android:textColorSecondary">?android:textColorPrimary</item>
+        <item name="boxStrokeColor">#7A4FBA</item>
+
+        <!-- Active media item -->
+        <item name="alpha">1</item>
+        <item name="colorSecondaryVariant">#a11477</item>
+        <item name="android:textColorTertiary">#F6F4FA</item>
+
+        <!-- Popup menu -->
+        <item name="colorSurface">?colorPrimary</item>
+        <item name="colorOnSurface">?colorOnPrimary</item>
+        <item name="colorPrimarySurface">#1F1331</item>
+        <item name="colorOnPrimarySurface">?colorOnPrimary</item>
+
+        <item name="colorAccent">?colorSecondaryVariant</item>
+        <item name="rippleColor">?colorAccent</item>
+
+        <item name="android:textColorHint">?colorSurface</item>
+
+        <item name="colorControlNormal">?boxStrokeColor</item>
+        <item name="colorControlActivated">?colorOnPrimary</item>
+
+    </style>
+
+</resources>
