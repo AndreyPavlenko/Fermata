@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="openai_key">Chiave OpenAI</string>
     <string name="openai_key_sub">Ottieni la tua chiave personale: &lt;a href=\"%1$s\"&gt;%1$s&lt;a&gt;</string>
+    <string name="openai_model">Modello</string>
+    <string name="openai_model_other">Altro modello</string>
 </resources>

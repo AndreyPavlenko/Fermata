@@ -1,0 +1,6 @@
+<resources>
+    <string name="openai_key">Ключ OpenAI</string>
+    <string name="openai_key_sub"><![CDATA[Ваш персональный ключ: <a href=\"%1$s\">%1$s<a>]]></string>
+    <string name="openai_model">Модель</string>
+    <string name="openai_model_other">Другая модель</string>
+</resources>

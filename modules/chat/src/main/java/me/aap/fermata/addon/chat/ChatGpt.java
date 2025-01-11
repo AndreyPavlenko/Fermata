@@ -91,7 +91,7 @@ class ChatGpt implements EventBroadcaster<ChatGpt.Listener> {
 						jsonMessages[i].put("content", msg.content);
 					}
 					JSONObject json = new JSONObject();
-					json.put("model", "gpt-3.5-turbo");
+					json.put("model", addon.getModel());
 					json.put("temperature", 0.4f);
 					json.put("messages", new JSONArray(jsonMessages));
 					Log.d("Request: ", json.toString());
