@@ -273,7 +273,7 @@ public class FelexFragment extends MainActivityFragment
 			String msg = ctx.getString(R.string.import_dict_q, info);
 			Drawable icon = AppCompatResources.getDrawable(ctx, R.drawable.dictionary);
 			return showQuestion(ctx, title, msg, icon).then(
-					v -> DictMgr.get().getDictionary(info.getName()).then(d -> {
+					v -> DictMgr.get().getDictionary(info.getPath()).then(d -> {
 						if (d == null) {
 							return DictMgr.get().createDictionary(info);
 						} else if (d.getSourceLang().equals(info.getSourceLang()) &&

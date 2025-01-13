@@ -74,7 +74,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 	private final Deque<Integer> stack = new ArrayDeque<>();
 	private final MainActivityDelegate activity;
 	@NonNull
-	private Content<?, ?, ?> content = new MgrContent();
+	private Content<?, ?, ?> content = new MgrContent(null, DictMgr.get());
 	@Nullable
 	private Pattern filter;
 	@NonNull
@@ -99,9 +99,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 	}
 
 	void setContent(Dict d) {
-		MgrContent mgr = content.root();
-		mgr.filtered = null;
-		adapter().setContent(new DictContent(mgr, d));
+		adapter().setContent(new DictContent(new MgrContent(d.getDictMgr()), d));
 	}
 
 	void refresh(int scrollTo) {
@@ -155,7 +153,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 	public void close() {
 		if (isClosed()) return;
 		closed = true;
-		content.mgr().reset();
+		DictMgr.get().reset();
 		DictMgr.get().removeBroadcastListener(this);
 	}
 
@@ -165,7 +163,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 
 	public void onFolderChanged() {
 		Log.d("Dictionaries or cache folder changed - reloading");
-		content.mgr().reset().thenRun(() -> adapter().setContent(content.root()));
+		DictMgr.get().reset().thenRun(() -> adapter().setContent(new MgrContent(DictMgr.get())));
 	}
 
 	public void onProgressChanged(Dict d, Word w) {
@@ -259,7 +257,10 @@ public class FelexListView extends RecyclerView implements Closeable,
 			DictItemView dv = (DictItemView) v;
 			Object item = dv.item;
 
-			if (item instanceof Dict) {
+			if (item instanceof DictMgr mgr) {
+				assert content instanceof MgrContent;
+				adapter().setContent(new MgrContent((MgrContent) content, mgr));
+			} else if (item instanceof Dict) {
 				assert content instanceof MgrContent;
 				setContent(new DictContent((MgrContent) content, (Dict) item));
 			} else if (item instanceof Word) {
@@ -281,7 +282,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 			Object item = dv.item;
 			activity.getContextMenu().show(b -> {
 				b.setSelectionHandler(this::menuHandler);
-				if (!(item instanceof Example)) {
+				if (!(item instanceof Example) && !(item instanceof DictMgr)) {
 					b.addItem(me.aap.fermata.R.id.edit, me.aap.fermata.R.drawable.edit,
 							me.aap.fermata.R.string.edit).setData(dv);
 				}
@@ -312,7 +313,9 @@ public class FelexListView extends RecyclerView implements Closeable,
 				var item = dv.item;
 				String oldValue;
 
-				if (item instanceof Dict d) {
+				if (item instanceof DictMgr mgr) {
+					oldValue = mgr.getName();
+				} else if (item instanceof Dict d) {
 					oldValue = d.getName();
 				} else if (item instanceof Word w) {
 					oldValue = w.getRaw();
@@ -325,6 +328,10 @@ public class FelexListView extends RecyclerView implements Closeable,
 				UiUtils.queryText(getContext(), me.aap.fermata.R.string.edit,
 						me.aap.fermata.R.drawable.edit, oldValue).then(newValue -> {
 					if (item instanceof Dict d) {
+						if (newValue.contains("/")) {
+							showAlert(ctx, ctx.getString(R.string.err_invalid_name, newValue));
+							return completed(0);
+						}
 						return d.setInfo(d.getInfo().rename(newValue)).map(v -> 0);
 					} else if (item instanceof Word) {
 						return requireNonNull(content.dict()).changeWord(oldValue, newValue);
@@ -366,6 +373,8 @@ public class FelexListView extends RecyclerView implements Closeable,
 						return tc.parent.content.setTranslations(tc.dict(), tc.parent.notFiltered)
 								.map(v -> idx);
 					});
+				} else if (item instanceof DictMgr mgr) {
+					delete = () -> mgr.delete().map(v -> 0);
 				} else {
 					return false;
 				}
@@ -376,7 +385,10 @@ public class FelexListView extends RecyclerView implements Closeable,
 				showQuestion(ctx, title, msg, icon).onSuccess(
 						v -> delete.get().main().onFailure(err -> showAlert(ctx, err.toString()))
 								.onSuccess(idx -> {
-									if ((cnt == content) && (idx >= 0)) notifyItemRemoved(idx);
+									if (cnt != content) return;
+									cnt.filtered = null;
+									cnt.notFiltered = null;
+									if (idx >= 0) notifyItemRemoved(idx);
 								}));
 			} else if (id == R.id.wipe_prog) {
 				Dict d = (Dict) dv.item;
@@ -480,21 +492,21 @@ public class FelexListView extends RecyclerView implements Closeable,
 			return ls;
 		}
 
-		MgrContent root() {
-			for (Content c = this; ; c = c.parent) {
-				if (c instanceof MgrContent) return (MgrContent) c;
-			}
-		}
-
 		void clear() {
 			filtered = null;
 			if (parent != null) parent.clear();
 		}
 	}
 
-	private final class MgrContent extends Content<DictMgr, Dict, MgrContent> {
-		MgrContent() {
-			super(null, DictMgr.get());
+	private final class MgrContent extends Content<DictMgr, Object, MgrContent> {
+
+
+		MgrContent(DictMgr content) {
+			super(content.getParent() == null ? null : new MgrContent(content.getParent()), content);
+		}
+
+		MgrContent(MgrContent parent, DictMgr content) {
+			super(parent, content);
 		}
 
 		@NonNull
@@ -517,17 +529,26 @@ public class FelexListView extends RecyclerView implements Closeable,
 
 		@Override
 		CharSequence title() {
-			return getContext().getString(me.aap.fermata.R.string.addon_name_felex);
+			var name = content.getName();
+			return name.isEmpty() ? getContext().getString(me.aap.fermata.R.string.addon_name_felex) :
+					name;
 		}
 
 		@Override
-		FutureSupplier<List<Dict>> list() {
-			return content.getDictionaries();
+		FutureSupplier<List<Object>> list() {
+			return content.getChildren().then(children -> content.getDictionaries().map(dicts -> {
+				List<Object> list = new ArrayList<>(children.size() + dicts.size());
+				list.addAll(children);
+				list.addAll(dicts);
+				return list;
+			}));
 		}
 
 		@Override
-		boolean matches(Pattern filter, Dict item) {
-			return filter.matcher(item.getName()).matches();
+		boolean matches(Pattern filter, Object item) {
+			if (item instanceof Dict d) return filter.matcher(d.getName()).matches();
+			else if (item instanceof DictMgr m) return filter.matcher(m.getName()).matches();
+			return false;
 		}
 	}
 
@@ -723,8 +744,13 @@ public class FelexListView extends RecyclerView implements Closeable,
 				setIcon(0);
 				title.setText(null);
 				setSubtitle(null);
-			} else if (item instanceof Dict) {
-				Dict d = (Dict) item;
+				setProgress(0, 0);
+			} else if (item instanceof DictMgr m) {
+				setIcon(R.drawable.library);
+				title.setText(m.getName());
+				setSubtitle(null);
+				setProgress(0, 0);
+			} else if (item instanceof Dict d) {
 				Context ctx = getContext();
 				int wc = d.getWordsCount();
 				int dir = d.getDirProgress();
@@ -759,8 +785,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 					}
 					setSubtitle(sb);
 				}).ifNotDone(() -> setSubtitle(null));
-			} else if (item instanceof Translation) {
-				Translation t = (Translation) item;
+			} else if (item instanceof Translation t) {
 				StringBuilder sb = new StringBuilder();
 				setIcon(0);
 				setProgress(0, 0);
@@ -773,8 +798,7 @@ public class FelexListView extends RecyclerView implements Closeable,
 					if (it.hasNext()) sb.append('\n');
 				}
 				setSubtitle(sb);
-			} else if (item instanceof Example) {
-				Example e = (Example) item;
+			} else if (item instanceof Example e) {
 				setIcon(0);
 				setProgress(0, 0);
 				title.setText(e.getSentence());

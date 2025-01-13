@@ -3,7 +3,6 @@ package me.aap.fermata.media.service;
 import static android.Manifest.permission.POST_NOTIFICATIONS;
 import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
-import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_ERROR;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_NONE;
@@ -25,7 +24,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -63,7 +61,6 @@ import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.util.Utils;
 import me.aap.utils.app.App;
-import me.aap.utils.function.BiFunction;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 
@@ -113,8 +110,6 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 	private Action actionFavRm;
 	private Bitmap defaultAudioIcon;
 	private Bitmap defaultVideoIcon;
-	private Uri defaultAudioIconUri;
-	private Uri defaultVideoIconUri;
 
 	public MediaLib getLib() {
 		return lib;

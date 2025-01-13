@@ -1,11 +1,13 @@
 package me.aap.fermata.addon.felex.media;
 
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
+import static me.aap.fermata.util.Utils.getResourceUri;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.function.Cancellable.CANCELED;
 import static me.aap.utils.function.ResultConsumer.Cancel.isCancellation;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.view.ViewGroup;
@@ -13,8 +15,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import me.aap.fermata.addon.felex.R;
 import me.aap.fermata.addon.felex.tutor.DictTutor;
 import me.aap.fermata.media.engine.MediaEngineBase;
+import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.service.MediaSessionCallback;
@@ -26,6 +30,7 @@ import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Cancellable;
 
 public class FelexMediaEngine extends MediaEngineBase implements BiConsumer<String, String> {
+	private static Bitmap iconBitmap;
 	private final MediaSessionCompat session;
 	private Cancellable loading = CANCELED;
 	@Nullable
@@ -179,7 +184,7 @@ public class FelexMediaEngine extends MediaEngineBase implements BiConsumer<Stri
 		}
 		if ((source != null) && (session != null)) {
 			var dict = source.getParent();
-			var icon = dict.iconBitmap();
+			var icon = iconBitmap(dict.getLib());
 			var b = new MediaMetadataCompat.Builder();
 			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, text);
 			if (trans != null) b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, trans);
@@ -199,5 +204,15 @@ public class FelexMediaEngine extends MediaEngineBase implements BiConsumer<Stri
 
 	@Override
 	public void unmute(Context ctx) {
+	}
+
+	@Nullable
+	private Bitmap iconBitmap(MediaLib lib) {
+		if (iconBitmap == null) {
+			lib.getBitmap(
+							getResourceUri(lib.getContext(), R.drawable.dictionary_small).toString())
+					.onSuccess(b -> iconBitmap = b);
+		}
+		return iconBitmap;
 	}
 }

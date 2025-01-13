@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="dict_folder">Dossier des dictionnaires</string>
     <string name="cache_folder">Dossier de cache</string>
@@ -9,10 +8,15 @@
     <string name="start_tutor_rev">Traduction inversé</string>
     <string name="start_tutor_mix">Mixte</string>
     <string name="start_tutor_listen">A l\'écoute</string>
+    <string name="offline_mode">Mode hors ligne</string>
     <string name="add_dict">Ajouter un dictionnaire</string>
     <string name="dict_name">Nom du dictionnaire</string>
     <string name="src_lang">Langue source</string>
     <string name="target_lang">Langue cible</string>
+    <string name="ack_phrase">Phrase de réception</string>
+    <string name="ack_phrase_sub">Je sais | Je sais</string>
+    <string name="skip_phrase">Passer une phrase</string>
+    <string name="skip_phrase_sub">Sauter | Je ne sais pas | Suivant | Je ne sais pas</string>
     <string name="no_lang_supported">Aucune langue prise en charge par la synthèse vocale</string>
     <string name="add_word">Ajouter un mot</string>
     <string name="add_trans">Ajouter une traduction</string>
@@ -30,5 +34,5 @@
     <string name="import_dict_q">Importer le dictionnaire %1$s ?</string>
     <string name="import_dict_exist">Ajouter des mots au dictionnaire existant %1$s ?</string>
     <string name="err_invalid_dict_hdr">En-tête de dictionnaire invalide : %1$s ?</string>
+    <string name="err_invalid_name"><![CDATA[Nom invalide : %1$s \?]]></string>
 </resources>
-

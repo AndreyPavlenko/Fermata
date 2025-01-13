@@ -35,4 +35,5 @@
     <string name="import_dict_q">Import dictionary %1$s?</string>
     <string name="import_dict_exist">Add words to existing dictionary %1$s?</string>
     <string name="err_invalid_dict_hdr">Invalid dictionary header: %1$s?</string>
+    <string name="err_invalid_name">Invalid name: %1$s?</string>
 </resources>

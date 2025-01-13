@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="dict_folder">Dosar de dicționare</string>
     <string name="cache_folder">Dosar cache</string>
@@ -9,10 +8,13 @@
     <string name="start_tutor_rev">Traducere inversă</string>
     <string name="start_tutor_mix">Amestecat</string>
     <string name="start_tutor_listen">Ascultare</string>
+    <string name="offline_mode">Modul offline</string>
     <string name="add_dict">Adaugă dicționar</string>
     <string name="dict_name">Nume dicționar</string>
     <string name="src_lang">Limba sursei</string>
     <string name="target_lang">Limba destinație</string>
+    <string name="ack_phrase">Fraza Ack</string>
+    <string name="ack_phrase_sub">stiu | Știu</string>
     <string name="skip_phrase">Fraza de omitere</string>
     <string name="skip_phrase_sub">Omite | Nu cunosc | Skip | I don\'t know</string>
     <string name="no_lang_supported">Nicio limbă acceptată de TTS</string>
@@ -32,4 +34,5 @@
     <string name="import_dict_q">Se importă dicționarul %1$s?</string>
     <string name="import_dict_exist">Adaugi cuvinte în dicționarul existent %1$s?</string>
     <string name="err_invalid_dict_hdr">Antet dicționar nevalid: %1$s?</string>
+    <string name="err_invalid_name">Nume nevalid: %1$s\?</string>
 </resources>

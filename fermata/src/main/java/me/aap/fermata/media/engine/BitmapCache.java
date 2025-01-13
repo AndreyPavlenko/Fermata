@@ -206,8 +206,10 @@ public class BitmapCache {
 					}
 					Drawable d = ResourcesCompat.getDrawable(res, id, ctx.getTheme());
 					if (d != null) {
-						int color = (d instanceof VectorDrawable) ? getLauncherColor() : Color.TRANSPARENT;
-						bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, color);
+						int color = (d instanceof VectorDrawable) ? getLauncherColor() : Color.WHITE;
+						var dims = UiUtils.adjustDims(d.getIntrinsicWidth(), d.getIntrinsicHeight(), size);
+						bm = UiUtils.drawBitmap(d, Color.TRANSPARENT, color, dims[0], dims[1]);
+						size = 0;
 					}
 					break;
 				case "content":
@@ -348,20 +350,14 @@ public class BitmapCache {
 	}
 
 	private static int smallIconSize(Context ctx) {
-		switch (ctx.getResources().getConfiguration().densityDpi) {
-			case DisplayMetrics.DENSITY_LOW:
-				return 32;
-			case DisplayMetrics.DENSITY_MEDIUM:
-				return 48;
-			case DisplayMetrics.DENSITY_HIGH:
-				return 72;
-			case DisplayMetrics.DENSITY_XHIGH:
-				return 96;
-			case DisplayMetrics.DENSITY_XXHIGH:
-				return 144;
-			default:
-				return 192;
-		}
+		return switch (ctx.getResources().getConfiguration().densityDpi) {
+			case DisplayMetrics.DENSITY_LOW -> 32;
+			case DisplayMetrics.DENSITY_MEDIUM -> 48;
+			case DisplayMetrics.DENSITY_HIGH -> 72;
+			case DisplayMetrics.DENSITY_XHIGH -> 96;
+			case DisplayMetrics.DENSITY_XXHIGH -> 144;
+			default -> 192;
+		};
 	}
 
 	String getImageUri(byte[] hash, TextBuilder tb) {

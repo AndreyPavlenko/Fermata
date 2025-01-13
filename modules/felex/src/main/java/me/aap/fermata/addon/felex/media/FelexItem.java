@@ -1,10 +1,7 @@
 package me.aap.fermata.addon.felex.media;
 
-import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ALBUM_ART;
-import static me.aap.fermata.util.Utils.getResourceUri;
 import static me.aap.utils.async.Completed.completed;
 
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.support.v4.media.MediaMetadataCompat;
 
@@ -35,12 +32,14 @@ public interface FelexItem extends MediaLib.Item {
 		if (!SCHEME.equals(scheme)) return null;
 
 		id = id.substring(SCHEME.length() + 1);
-		if (id.startsWith("dict/")) {
-			var name = id.substring(5);
-			return DictMgr.get().getDictionaries().map(l -> {
-				var dict = CollectionUtils.find(l, d -> name.equals(d.getName()));
-				return (dict == null) ? null : new Dict(lib, dict);
-			});
+		if (id.startsWith("mgr/")) {
+			var path = id.substring(4);
+			return DictMgr.get().getChild(path).map(mgr ->
+					(mgr == null) ? null : new Mgr(lib, mgr));
+		} else if (id.startsWith("dict/")) {
+			var path = id.substring(5);
+			return DictMgr.get().getDictionary(path).map(dict ->
+					(dict == null) ? null : new Dict(lib, dict));
 		} else if (id.startsWith("tutor/") && (id.length() > 7) && (id.charAt(7) == '/')) {
 			var mode = id.charAt(6) - '0';
 			if (mode >= DictTutor.Mode.values.size()) return null;
@@ -61,7 +60,6 @@ public interface FelexItem extends MediaLib.Item {
 		public static final String ID = "Felex";
 		private final DefaultMediaLib lib;
 
-
 		public Root(DefaultMediaLib lib) {
 			super(ID, null, null);
 			this.lib = lib;
@@ -69,8 +67,7 @@ public interface FelexItem extends MediaLib.Item {
 
 		@Override
 		protected FutureSupplier<List<MediaLib.Item>> listChildren() {
-			return DictMgr.get().getDictionaries()
-					.map(l -> CollectionUtils.map(l, d -> new Dict(lib, d)));
+			return ls(lib, DictMgr.get());
 		}
 
 		@NonNull
@@ -120,15 +117,59 @@ public interface FelexItem extends MediaLib.Item {
 		public MediaLib.BrowsableItem getRoot() {
 			return this;
 		}
+
+		static FutureSupplier<List<MediaLib.Item>> ls(DefaultMediaLib lib, DictMgr mgr) {
+			return mgr.getChildren().then(mgrs -> mgr.getDictionaries().map(dicts -> {
+				List<MediaLib.Item> list = CollectionUtils.map(mgrs, c -> new Mgr(lib, c));
+				list.addAll(CollectionUtils.map(dicts, d -> new Dict(lib, d)));
+				return list;
+			}));
+		}
+	}
+
+	class Mgr extends BrowsableItemBase implements FelexItem {
+		private final DictMgr mgr;
+
+		public Mgr(DefaultMediaLib lib, DictMgr mgr) {
+			super(SCHEME + ":mgr/" + mgr.getPath(),
+					mgr.getParent() == null ? new Root(lib) : new Mgr(lib, mgr.getParent()), null);
+			this.mgr = mgr;
+		}
+
+		@Override
+		protected FutureSupplier<List<MediaLib.Item>> listChildren() {
+			return Root.ls((DefaultMediaLib) getLib(), mgr);
+		}
+
+		@NonNull
+		@Override
+		public String getName() {
+			return mgr.getName();
+		}
+
+		@Override
+		protected FutureSupplier<String> buildTitle() {
+			return completed(getName());
+		}
+
+		@Override
+		protected FutureSupplier<String> buildSubtitle() {
+			return completed("");
+		}
+
+		@Override
+		public int getIcon() {
+			return R.drawable.library;
+		}
 	}
 
 	class Dict extends BrowsableItemBase implements FelexItem {
 		private final me.aap.fermata.addon.felex.dict.Dict dict;
-		private static String iconUri;
-		private static Bitmap iconBitmap;
 
 		public Dict(DefaultMediaLib lib, me.aap.fermata.addon.felex.dict.Dict dict) {
-			super(SCHEME + ":dict/" + dict.getName(), new Root(lib), null);
+			super(SCHEME + ":dict/" + dict.getPath(),
+					dict.getDictMgr().getParent() == null ? new Root(lib) : new Mgr(lib, dict.getDictMgr()),
+					null);
 			this.dict = dict;
 		}
 
@@ -161,26 +202,7 @@ public interface FelexItem extends MediaLib.Item {
 
 		@Override
 		public int getIcon() {
-			return R.drawable.dictionary_small;
-		}
-
-		@NonNull
-		@Override
-		public FutureSupplier<Uri> getIconUri() {
-			return completed(Uri.parse(iconUri()));
-		}
-
-		String iconUri() {
-			if (iconUri == null) iconUri = getResourceUri(getLib().getContext(), getIcon()).toString();
-			return iconUri;
-		}
-
-		@Nullable
-		public Bitmap iconBitmap() {
-			if (iconBitmap == null) {
-				getLib().getBitmap(iconUri()).onSuccess(b -> iconBitmap = b);
-			}
-			return iconBitmap;
+			return R.drawable.dictionary;
 		}
 	}
 
@@ -188,7 +210,7 @@ public interface FelexItem extends MediaLib.Item {
 		private final DictTutor.Mode mode;
 
 		public Tutor(Dict dict, DictTutor.Mode mode) {
-			super(SCHEME + ":tutor/" + mode.ordinal() + '/' + dict.getName(), dict,
+			super(SCHEME + ":tutor/" + mode.ordinal() + '/' + dict.getDict().getPath(), dict,
 					dict.getDict().getDictFile());
 			this.mode = mode;
 		}
@@ -255,14 +277,11 @@ public interface FelexItem extends MediaLib.Item {
 		protected FutureSupplier<MediaMetadataCompat> loadMeta() {
 			var dict = getParent();
 			var name = dict.getName();
-			var icon = dict.iconBitmap();
 			var b = new MediaMetadataCompat.Builder();
 			b.putString(MediaMetadataCompat.METADATA_KEY_TITLE, name);
 			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, name);
 			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, buildSubtitle().peek());
 			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, buildDescription().peek());
-			b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, dict.iconUri());
-			if (icon != null) b.putBitmap(METADATA_KEY_ALBUM_ART, icon);
 			return completed(b.build());
 		}
 

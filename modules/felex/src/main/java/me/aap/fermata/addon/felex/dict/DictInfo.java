@@ -35,7 +35,7 @@ public class DictInfo {
 	public static final String BATCH_TYPE_RND = "rnd";
 	public static final String BATCH_TYPE_LEAST = "least";
 	public static final String BATCH_TYPE_MIXED = "mixed";
-	private final String name;
+	private final String path;
 	private final Locale sourceLang;
 	private final Locale targetLang;
 	private final List<String> ackPhrase;
@@ -44,10 +44,10 @@ public class DictInfo {
 	private final int batchSize;
 	private final String batchType;
 
-	public DictInfo(String name, String sourceLang, String targetLang, String ackPhrase,
+	public DictInfo(String path, String sourceLang, String targetLang, String ackPhrase,
 									String skipPhrase,
 									String charMap, int batchSize, String batchType) {
-		this(name, Locale.forLanguageTag(sourceLang), Locale.forLanguageTag(targetLang), ackPhrase,
+		this(path, Locale.forLanguageTag(sourceLang), Locale.forLanguageTag(targetLang), ackPhrase,
 				skipPhrase,
 				charMap, batchSize, batchType);
 	}
@@ -60,7 +60,7 @@ public class DictInfo {
 			return CollectionUtils.map(Arrays.asList(p.split("\\|")), (i, s, a) -> a.add(s.trim()),
 					ArrayList::new);
 		};
-		this.name = name.trim();
+		this.path = name.trim();
 		this.sourceLang = sourceLang;
 		this.targetLang = targetLang;
 		this.ackPhrase = phrasesToList.apply(ackPhrase);
@@ -88,10 +88,10 @@ public class DictInfo {
 		}
 	}
 
-	private DictInfo(String name, Locale sourceLang, Locale targetLang, List<String> ackPhrase,
+	private DictInfo(String path, Locale sourceLang, Locale targetLang, List<String> ackPhrase,
 									 List<String> skipPhrase,
 									 List<CharMap> charMap, int batchSize, String batchType) {
-		this.name = name;
+		this.path = path;
 		this.sourceLang = sourceLang;
 		this.targetLang = targetLang;
 		this.ackPhrase = ackPhrase;
@@ -105,7 +105,7 @@ public class DictInfo {
 	public static DictInfo read(InputStream in) throws IOException {
 		Utf8LineReader r = new Utf8LineReader(in);
 		StringBuilder sb = new StringBuilder(64);
-		String name = null;
+		String path = null;
 		String srcLang = null;
 		String targetLang = null;
 		String ackPhrase = null;
@@ -116,7 +116,7 @@ public class DictInfo {
 
 		for (int i = r.readLine(sb, 1024); i != -1; sb.setLength(0), i = r.readLine(sb)) {
 			if ((sb.length() == 0) || sb.charAt(0) != '#') break;
-			if (TextUtils.startsWith(sb, TAG_NAME)) name = sb.substring(TAG_NAME.length()).trim();
+			if (TextUtils.startsWith(sb, TAG_NAME)) path = sb.substring(TAG_NAME.length()).trim();
 			else if (TextUtils.startsWith(sb, TAG_SRC_LANG))
 				srcLang = sb.substring(TAG_SRC_LANG.length()).trim();
 			else if (TextUtils.startsWith(sb, TAG_TARGET_LANG))
@@ -138,8 +138,8 @@ public class DictInfo {
 			}
 		}
 
-		if ((name != null) && (srcLang != null) && (targetLang != null)) {
-			return new DictInfo(name, srcLang, targetLang, ackPhrase, skipPhrase, charMap, batchSize,
+		if ((path != null) && (srcLang != null) && (targetLang != null)) {
+			return new DictInfo(path, srcLang, targetLang, ackPhrase, skipPhrase, charMap, batchSize,
 					batchType);
 		}
 
@@ -161,7 +161,7 @@ public class DictInfo {
 				}
 			}
 		};
-		a.append(TAG_NAME).append("\t\t").append(name).append('\n');
+		a.append(TAG_NAME).append("\t\t").append(path).append('\n');
 		a.append(TAG_SRC_LANG).append('\t').append(sourceLang.toLanguageTag()).append('\n');
 		a.append(TAG_TARGET_LANG).append('\t').append(targetLang.toLanguageTag()).append('\n');
 		writePhrases.accept(TAG_ACK_PHRASE, ackPhrase);
@@ -180,13 +180,18 @@ public class DictInfo {
 		a.append('\n');
 	}
 
-	public DictInfo rename(String name) {
-		return new DictInfo(name, sourceLang, targetLang, ackPhrase, skipPhrase, charMap, batchSize,
+	public DictInfo rename(String path) {
+		return new DictInfo(path, sourceLang, targetLang, ackPhrase, skipPhrase, charMap, batchSize,
 				batchType);
 	}
 
 	public String getName() {
-		return name;
+		int idx = path.lastIndexOf('/');
+		return (idx < 0) ? path : path.substring(idx + 1);
+	}
+
+	public String getPath() {
+		return path;
 	}
 
 	public Locale getSourceLang() {

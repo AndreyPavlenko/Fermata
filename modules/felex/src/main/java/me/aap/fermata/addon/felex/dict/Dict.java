@@ -85,7 +85,7 @@ public class Dict implements Comparable<Dict> {
 
 	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile) {
 		Log.d("Loading dictionary from file ", dictFile);
-		return mgr.queue.enqueue(() -> {
+		return mgr.queue().enqueue(() -> {
 			RandomAccessChannel ch = dictFile.getChannel("r");
 			if (ch == null)
 				throw new IOException("Unable to read dictionary file: " + dictFile.getName());
@@ -102,7 +102,7 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	public static FutureSupplier<Dict> create(DictMgr mgr, VirtualFile dictFile, DictInfo info) {
-		return mgr.queue.enqueue(() -> {
+		return mgr.queue().enqueue(() -> {
 			RandomAccessChannel ch = dictFile.getChannel("rw");
 			if (ch == null)
 				throw new IOException("Unable to create dictionary file: " + dictFile.getName());
@@ -139,6 +139,15 @@ public class Dict implements Comparable<Dict> {
 		return getInfo().getName();
 	}
 
+	public String getPath() {
+		var path = mgr.getPath();
+		return path.isEmpty() ? getName() : path + '/' + getName();
+	}
+
+	public DictMgr getDictMgr() {
+		return mgr;
+	}
+
 	public Locale getSourceLang() {
 		return getInfo().getSourceLang();
 	}
@@ -170,12 +179,13 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	FutureSupplier<VirtualFile> getCacheFile(boolean create) {
-		return FelexAddon.get().getCacheFolder().then(dir -> {
-			String name = dictFile.getName();
-			int i = name.lastIndexOf('.');
-			if (i != -1) name = name.substring(0, i) + CACHE_EXT;
-			return create ? dir.createFile(name) : dir.getChild(name).cast();
-		});
+		return FelexAddon.get().getCacheFolder().then(dir -> dir.createFolder(mgr.getPath()))
+				.then(dir -> {
+					String name = dictFile.getName();
+					int i = name.lastIndexOf('.');
+					if (i != -1) name = name.substring(0, i) + CACHE_EXT;
+					return create ? dir.createFile(name) : dir.getChild(name).cast();
+				});
 	}
 
 	public FutureSupplier<List<Word>> getWords() {
@@ -213,10 +223,12 @@ public class Dict implements Comparable<Dict> {
 				return s;
 			}
 
+			int off = dest.size();
 			var heap = MinMaxPriorityQueue.orderedBy(
 					CollectionUtils.comparingInt(getProgress)).expectedSize(max).maximumSize(max).create();
 			heap.addAll(words);
 			dest.addAll(heap);
+			if ((off > 0) && (dest.get(off - 1).equals(dest.get(off)))) swap(dest, off, s - 1);
 			return max;
 		});
 	}
@@ -371,7 +383,7 @@ public class Dict implements Comparable<Dict> {
 			sb = null;
 			return null;
 		})).main().onCompletion((r2, err2) -> {
-			if (err2 != null) Log.e(err2, "Failed to close dictionary: ", getName());
+			if (err2 != null) Log.e(err2, "Failed to close dictionary: ", getPath());
 			words = null;
 			closed = true;
 		});
@@ -488,7 +500,7 @@ public class Dict implements Comparable<Dict> {
 	private <T> FutureSupplier<T> editWords(LongObjectFunction<List<Word>, T> func) {
 		assertMainThread();
 		return enqueue(channel::size).main().then(size -> {
-			if (!mgr.queue.isEmpty()) return editWords(func);
+			if (!mgr.queue().isEmpty()) return editWords(func);
 			List<Word> w = getWords().peek();
 			return (w != null) ? completed(func.apply(size, w)) : editWords(func);
 		});
@@ -561,7 +573,7 @@ public class Dict implements Comparable<Dict> {
 					return null;
 				} catch (Throwable ex) {
 					cacheChannel = null;
-					Log.e(ex, "Failed to access cache file ", getName(), ". Retrying...");
+					Log.e(ex, "Failed to access cache file ", getPath(), ". Retrying...");
 				}
 			}
 
@@ -635,7 +647,7 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	private FutureSupplier<List<Word>> writeWords(List<Word> words) {
-		Log.i("Saving dictionary ", getName(), " to ", dictFile);
+		Log.i("Saving dictionary ", getPath(), " to ", dictFile);
 		Promise<List<Word>> p = new Promise<>();
 		enqueue(() -> dictFile.getParent()
 				.then(parent -> parent.createTempFile(dictFile.getName() + '-', ".tmp")).then(tmp -> {
@@ -667,8 +679,8 @@ public class Dict implements Comparable<Dict> {
 				}));
 
 		p.onCompletion((r, err) -> {
-			if (err != null) Log.e(err, "Failed to save dictionary: ", getName());
-			else Log.i("Dictionary has been saved: ", getName());
+			if (err != null) Log.e(err, "Failed to save dictionary: ", getPath());
+			else Log.i("Dictionary has been saved: ", getPath());
 		});
 		return p;
 	}
@@ -676,7 +688,7 @@ public class Dict implements Comparable<Dict> {
 	private FutureSupplier<CacheHeader> readCacheHeader() {
 		return useCache(false, ch -> (ch == null) ? new CacheHeader() :
 				readCacheHeader(ch, ByteBuffer.allocate(CacheHeader.SIZE))).ifFail(err -> {
-			Log.e(err, "Failed to read dictionary cache file: ", getName());
+			Log.e(err, "Failed to read dictionary cache file: ", getPath());
 			return new CacheHeader();
 		});
 	}
@@ -684,7 +696,7 @@ public class Dict implements Comparable<Dict> {
 	private CacheHeader readCacheHeader(RandomAccessChannel ch, ByteBuffer bb) throws IOException {
 		bb.position(0).limit(CacheHeader.SIZE);
 		if (ch.read(bb, 0) != bb.limit()) {
-			Log.e("Dictionary ", getName(), " cache corrupted - resetting.");
+			Log.e("Dictionary ", getPath(), " cache corrupted - resetting.");
 			bb.position(0);
 			new CacheHeader().put(bb);
 			bb.flip();
@@ -721,7 +733,7 @@ public class Dict implements Comparable<Dict> {
 				byte rev = (byte) r.read();
 
 				if ((dir < 0) || (rev < 0)) {
-					Log.e("Dictionary cache corrupted: " + getName());
+					Log.e("Dictionary cache corrupted: " + getPath());
 					ch.truncate(start);
 					break;
 				}
@@ -824,7 +836,7 @@ public class Dict implements Comparable<Dict> {
 	}
 
 	private <T> FutureSupplier<T> enqueue(CheckedSupplier<T, Throwable> task) {
-		return mgr.queue.enqueue(task);
+		return mgr.queue().enqueue(task);
 	}
 
 	/*

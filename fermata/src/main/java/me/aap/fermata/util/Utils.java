@@ -17,6 +17,8 @@ import androidx.annotation.Nullable;
 import com.google.android.play.core.splitcompat.SplitCompat;
 
 import java.io.File;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
@@ -36,19 +38,25 @@ import me.aap.utils.ui.notif.HttpDownloadStatusListener;
  * @author Andrey Pavlenko
  */
 public class Utils {
+	private static final Map<Integer, Uri> resourceUriCache = new ConcurrentHashMap<>();
 
 	public static Uri getResourceUri(int resourceId) {
 		return getResourceUri(App.get(), resourceId);
 	}
 
 	public static Uri getResourceUri(Context ctx, int resourceId) {
-		Resources res = ctx.getResources();
-		return new Uri.Builder()
-				.scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
-				.authority(res.getResourcePackageName(resourceId))
-				.appendPath(res.getResourceTypeName(resourceId))
-				.appendPath(res.getResourceEntryName(resourceId))
-				.build();
+		Uri uri = resourceUriCache.get(resourceId);
+		if (uri == null) {
+			Resources res = ctx.getResources();
+			uri = new Uri.Builder()
+					.scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+					.authority(res.getResourcePackageName(resourceId))
+					.appendPath(res.getResourceTypeName(resourceId))
+					.appendPath(res.getResourceEntryName(resourceId))
+					.build();
+			resourceUriCache.put(resourceId, uri);
+		}
+		return uri;
 	}
 
 	public static boolean isVideoFile(String fileName) {

@@ -120,7 +120,8 @@ public interface MediaLib {
 
 	void getChildren(String parentMediaId, MediaLibResult<List<MediaItem>> result);
 
-	default void getChildren(String parentMediaId, MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
+	default void getChildren(String parentMediaId,
+													 MediaBrowserServiceCompat.Result<List<MediaItem>> result) {
 		getChildren(parentMediaId, new MediaLibResult.Wrapper<>(result));
 	}
 
@@ -183,33 +184,25 @@ public interface MediaLib {
 
 		default FutureSupplier<MediaDescriptionCompat> getMediaItemDescription() {
 			return getMediaDescription().then(md -> {
-				if (getParent() == null) {
-					MediaLib lib = getLib();
-					return lib.getBitmap(getResourceUri(lib.getContext(), getIcon()).toString(),
-							true, true).map(bm -> {
-						MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
-						b.setMediaId(md.getMediaId());
-						b.setTitle(md.getTitle());
-						b.setSubtitle(md.getSubtitle());
-						b.setIconBitmap(bm);
-						return b.build();
-					});
-				}
-
+				if (md.getIconBitmap() != null) return completed(md);
 
 				Uri uri = md.getIconUri();
-				if (uri == null) return completed(md);
-
 				MediaDescriptionCompat.Builder b = new MediaDescriptionCompat.Builder();
 				b.setMediaId(md.getMediaId());
 				b.setTitle(md.getTitle());
 				b.setSubtitle(md.getSubtitle());
 
-				if (FermataContentProvider.isSupportedFileScheme(uri.getScheme())) {
+				if ((uri != null) && FermataContentProvider.isSupportedFileScheme(uri.getScheme())) {
 					b.setIconUri(FermataContentProvider.toImgUri(uri));
+					return completed(b.build());
 				}
 
-				return completed(b.build());
+				MediaLib lib = getLib();
+				return lib.getBitmap(getResourceUri(lib.getContext(), getIcon()).toString(),
+						true, true).map(bm -> {
+					b.setIconBitmap(bm);
+					return b.build();
+				});
 			});
 		}
 
@@ -226,8 +219,9 @@ public interface MediaLib {
 
 		@NonNull
 		default FutureSupplier<MediaItem> asMediaItem() {
-			return getMediaItemDescription().map(md -> new MediaItem(md, (this instanceof BrowsableItem) ?
-					MediaItem.FLAG_BROWSABLE : MediaItem.FLAG_PLAYABLE));
+			return getMediaItemDescription().map(md -> new MediaItem(md,
+					(this instanceof BrowsableItem) ?
+							MediaItem.FLAG_BROWSABLE : MediaItem.FLAG_PLAYABLE));
 		}
 
 		@NonNull
@@ -280,8 +274,7 @@ public interface MediaLib {
 
 					if (i instanceof PlayableItem) {
 						return completed((PlayableItem) i);
-					} else if (i instanceof BrowsableItem) {
-						BrowsableItem br = (BrowsableItem) i;
+					} else if (i instanceof BrowsableItem br) {
 						return br.getFirstPlayable().then(pi -> {
 							if (pi != null) return completed(pi);
 							else return br.getPlayable(next);
@@ -409,7 +402,8 @@ public interface MediaLib {
 		}
 
 		@Nullable
-		default MediaEngine getMediaEngine(@Nullable MediaEngine current, MediaEngine.Listener listener) {
+		default MediaEngine getMediaEngine(@Nullable MediaEngine current,
+																			 MediaEngine.Listener listener) {
 			return null;
 		}
 	}
@@ -570,18 +564,23 @@ public interface MediaLib {
 		}
 
 		@NonNull
-		default FutureSupplier<List<PlayableItem>> getPlayableChildren(boolean recursive, boolean sorted) {
+		default FutureSupplier<List<PlayableItem>> getPlayableChildren(boolean recursive,
+																																	 boolean sorted) {
 			return getPlayableChildren(recursive, sorted, Integer.MAX_VALUE);
 		}
 
 		@NonNull
-		default FutureSupplier<List<PlayableItem>> getPlayableChildren(boolean recursive, boolean sorted, int max) {
-			return getChildren(recursive, sorted, max, PlayableItem.class::isInstance, PlayableItem.class::cast);
+		default FutureSupplier<List<PlayableItem>> getPlayableChildren(boolean recursive,
+																																	 boolean sorted, int max) {
+			return getChildren(recursive, sorted, max, PlayableItem.class::isInstance,
+					PlayableItem.class::cast);
 		}
 
 		@NonNull
-		default <C extends Item> FutureSupplier<List<C>> getChildren(boolean recursive, boolean sorted, int max,
-																																 Predicate<? super Item> predicate, Function<? super Item, C> map) {
+		default <C extends Item> FutureSupplier<List<C>> getChildren(boolean recursive, boolean sorted,
+																																 int max,
+																																 Predicate<? super Item> predicate,
+																																 Function<? super Item, C> map) {
 			FutureSupplier<List<Item>> list = sorted ? getChildren() : getUnsortedChildren();
 
 			if (!recursive) {
@@ -597,7 +596,8 @@ public interface MediaLib {
 				});
 			}
 
-			List<C> ci = list.isDone() ? new ArrayList<>(list.get(Collections::emptyList).size()) : new ArrayList<>();
+			List<C> ci = list.isDone() ? new ArrayList<>(list.get(Collections::emptyList).size()) :
+					new ArrayList<>();
 			Queue<BrowsableItem> br = new LinkedList<>();
 
 			return list.thenIterate(children -> {
@@ -643,7 +643,8 @@ public interface MediaLib {
 
 		@NonNull
 		default FutureSupplier<PlayableItem> getFirstPlayable() {
-			return getPlayableChildren(true, true, 1).map(items -> items.isEmpty() ? null : items.get(0));
+			return getPlayableChildren(true, true, 1).map(items -> items.isEmpty() ? null :
+					items.get(0));
 		}
 
 		@NonNull

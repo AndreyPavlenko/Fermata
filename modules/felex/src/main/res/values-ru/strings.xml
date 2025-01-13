@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="dict_folder">Папка хранения словарей</string>
     <string name="cache_folder">Папка хранения кэша</string>
@@ -9,10 +8,13 @@
     <string name="start_tutor_rev">Обратный перевод</string>
     <string name="start_tutor_mix">Смешанный</string>
     <string name="start_tutor_listen">Прослушивание</string>
+    <string name="offline_mode">Офлайн-режим</string>
     <string name="add_dict">Добавить словарь</string>
     <string name="dict_name">Название словаря</string>
     <string name="src_lang">Исходный язык</string>
     <string name="target_lang">Язык перевода</string>
+    <string name="ack_phrase">Подтверждающая фраза</string>
+    <string name="ack_phrase_sub">я знаю | Я знаю</string>
     <string name="skip_phrase">Фраза для пропуска</string>
     <string name="skip_phrase_sub">Пропустить | Не знаю | Skip | I don\'t know</string>
     <string name="no_lang_supported">Нет языков, поддерживаемых TTS</string>
@@ -32,4 +34,5 @@
     <string name="import_dict_q">Импортировать словарь %1$s?</string>
     <string name="import_dict_exist">Добавить слова в существующий словарь %1$s?</string>
     <string name="err_invalid_dict_hdr">Невалидный заголовок словаря: %1$s?</string>
+    <string name="err_invalid_name">Невалидное имя: %1$s\?</string>
 </resources>
