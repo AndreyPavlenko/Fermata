@@ -1,5 +1,5 @@
 ext {
-    VERSION_CODE = 256
+    VERSION_CODE = 264
     VERSION_NAME = "2.0.0"
     SDK_MIN_VERSION = 29
     SDK_TARGET_VERSION = 36
@@ -161,4 +161,8 @@ gradle.projectsEvaluated {
 
 tasks.register('clean', Delete) {
     delete rootProject.layout.buildDirectory
+}
+
+if (file('build-custom.gradle').exists()) {
+    apply from: 'build-custom.gradle'
 }

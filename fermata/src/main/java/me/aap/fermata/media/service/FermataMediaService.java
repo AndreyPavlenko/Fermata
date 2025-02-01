@@ -307,14 +307,12 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 				.setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this,
 						PlaybackStateCompat.ACTION_STOP)).setMediaSession(session.getSessionToken());
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			NotificationChannel nc =
-					new NotificationChannel(NOTIF_CHANNEL_ID, getString(R.string.media_service_name),
-							NotificationManager.IMPORTANCE_LOW);
-			NotificationManager nmgr =
-					(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			if (nmgr != null) nmgr.createNotificationChannel(nc);
-		}
+		NotificationChannel nc =
+				new NotificationChannel(NOTIF_CHANNEL_ID, getString(R.string.media_service_name),
+						NotificationManager.IMPORTANCE_LOW);
+		NotificationManager nmgr =
+				(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		if (nmgr != null) nmgr.createNotificationChannel(nc);
 
 		intentReceiver = new BroadcastReceiver() {
 			@Override
@@ -347,8 +345,12 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 		filter.addAction(INTENT_FAVORITE_ADD);
 		filter.addAction(INTENT_FAVORITE_REMOVE);
 
-		ContextCompat.registerReceiver(this, intentReceiver, filter,
-				ContextCompat.RECEIVER_NOT_EXPORTED);
+		try {
+			ContextCompat.registerReceiver(this, intentReceiver, filter,
+					ContextCompat.RECEIVER_NOT_EXPORTED);
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to register notification receiver");
+		}
 	}
 
 	private PendingIntent pi(String action) {
