@@ -25,7 +25,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -50,6 +49,7 @@ import androidx.media.session.MediaButtonReceiver;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import me.aap.fermata.BuildConfig;
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
 import me.aap.fermata.addon.AddonManager;
@@ -164,11 +164,24 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public IBinder onBind(Intent intent) {
+		if (BuildConfig.D || !intent.hasExtra(INTENT_ATTR_NOTIF_COLOR)) {
+			var poi = FermataApplication.get().getAddonManager().getAddon("poi");
+			if (poi != null) poi.start();
+		}
 		if (ACTION_MEDIA_SERVICE.equals(intent.getAction())) {
 			notifColor = intent.getIntExtra(INTENT_ATTR_NOTIF_COLOR, notifColor);
 			return new ServiceBinder();
 		}
 		return super.onBind(intent);
+	}
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		if (BuildConfig.D || !intent.hasExtra(INTENT_ATTR_NOTIF_COLOR)) {
+			var poi = FermataApplication.get().getAddonManager().getAddon("poi");
+			if (poi != null) poi.stop();
+		}
+		return super.onUnbind(intent);
 	}
 
 	@Override

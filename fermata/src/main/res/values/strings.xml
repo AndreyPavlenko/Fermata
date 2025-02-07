@@ -34,6 +34,7 @@
     <string name="addon_name_whisper" translatable="false">Whisper</string>
     <string name="addon_name_mlkit" translatable="false">ML Kit</string>
     <string name="addon_name_mlkit_translate" translatable="false">ML Kit Translate</string>
+    <string name="addon_name_poi" translatable="false">POI</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -381,4 +382,5 @@
     <string name="err_failed_install_module">Failed to install module: %1$s</string>
     <string name="err_failed_to_download">Failed to download %1$s</string>
     <string name="err_no_audio_record_perm">Audio recording permission is not granted</string>
+    <string name="err_failed_start_service">Failed to start service: %s</string>
 </resources>

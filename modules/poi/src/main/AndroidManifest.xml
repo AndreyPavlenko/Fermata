@@ -1,11 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:dist="http://schemas.android.com/apk/distribution"
-    split="felex"
+    split="assist"
     android:isFeatureSplit="true">
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
 
     <dist:module
         dist:instant="false"
-        dist:title="@string/addon_name_felex">
+        dist:title="@string/addon_name_poi">
         <dist:delivery>
             <dist:on-demand />
             <dist:install-time>
@@ -17,3 +21,4 @@
         <dist:fusing dist:include="true" />
     </dist:module>
 </manifest>
+

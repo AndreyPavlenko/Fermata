@@ -104,7 +104,7 @@ dependencies {
     implementation 'com.google.android.play:asset-delivery:2.3.0'
     implementation 'com.google.android.play:app-update:2.1.0'
     implementation 'androidx.tvprovider:tvprovider:1.1.0'
-    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation "androidx.annotation:annotation:$ANDROIDX_ANNOTATION_VERSION"
     implementation "androidx.legacy:legacy-support-core-utils:1.0.0"
     implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
     implementation "com.google.android.datatransport:transport-api:4.0.0"

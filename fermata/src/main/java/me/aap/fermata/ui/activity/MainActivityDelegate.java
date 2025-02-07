@@ -187,16 +187,15 @@ public class MainActivityDelegate extends ActivityDelegate
 		return (FutureSupplier<MainActivityDelegate>) ActivityDelegate.getActivityDelegate(ctx);
 	}
 
-	public static void attachBaseContext(Context ctx) {
+	public static Context attachBaseContext(Context ctx) {
 		MainActivityPrefs prefs = Prefs.instance;
-		if (!prefs.hasPref(LOCALE)) return;
+		if (!prefs.hasPref(LOCALE)) return ctx;
 
-		Resources res = ctx.getResources();
-		Configuration cfg = res.getConfiguration();
-		Locale loc = prefs.getLocalePref();
+		var cfg = ctx.getResources().getConfiguration();
+		var loc = prefs.getLocalePref();
 		cfg.setLocale(loc);
 		Locale.setDefault(loc);
-		res.updateConfiguration(cfg, res.getDisplayMetrics());
+		return ctx.createConfigurationContext(cfg);
 	}
 
 	public static Uri toIntentUri(String action, String itemId) {

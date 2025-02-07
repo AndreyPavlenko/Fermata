@@ -45,6 +45,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	public AddonManager(PreferenceStore store) {
 		for (AddonInfo i : BuildConfig.ADDONS) {
+			if (!BuildConfig.AUTO && i.isAuto) continue;
 			if (!store.getBooleanPref(i.enabledPref)) continue;
 			try {
 				FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();

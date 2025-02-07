@@ -1,5 +1,5 @@
 ext {
-    VERSION_CODE = 264
+    VERSION_CODE = 266
     VERSION_NAME = "2.0.0"
     SDK_MIN_VERSION = 29
     SDK_TARGET_VERSION = 36
@@ -9,6 +9,7 @@ ext {
     ANDROID_MATERIAL_VERSION = '1.13.0'
     ANDROID_PLAY_CORE_FD_VERSION = '2.1.0'
     ANDROIDX_CORE_VERSION = '1.12.0'
+    ANDROIDX_ANNOTATION_VERSION = '1.9.1'
     ANDROIDX_MEDIA_VERSION = '1.7.1'
     ANDROIDX_APPCOMPAT_VERSION = '1.7.1'
     ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.2.1'
@@ -40,7 +41,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.0.0'
+        classpath 'com.android.tools.build:gradle:9.0.1'
         classpath 'com.google.gms:google-services:4.4.4'
     }
 }
@@ -150,7 +151,7 @@ gradle.projectsEvaluated {
                 "\"${it.get('module', name)}\", \"${it['class']}\", " +
                 "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
                 "${it['order']}, ${it['hasSettings']}, ${it['enabled']}, " +
-                "\"${it.get('depends', "")}\"),\n")
+                "${it.get('auto', false)}, \"${it.get('depends', "")}\"),\n")
     }
 
     def infoStr = addonInfo.append('})').toString()
