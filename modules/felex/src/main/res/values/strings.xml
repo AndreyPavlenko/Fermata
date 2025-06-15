@@ -2,6 +2,7 @@
 <resources>
     <string name="dict_folder">Dictionaries folder</string>
     <string name="cache_folder">Cache folder</string>
+    <string name="stt_service">Speech to text service</string>
     <string name="dict_sub1">Words: %1$d</string>
     <string name="dict_sub2">Words: %1$d. Progress: %2$d/%3$d.</string>
     <string name="start_tutor">Start tutor</string>

@@ -69,7 +69,7 @@ public class WordMatcher {
 			while (off < len) {
 				int cp = str.codePointAt(off++);
 				switch (cp) {
-					case '.', ',', '?', '!', ':', ';', '"', '\'' -> {
+					case '.', ',', '?', '!', ':', ';', '"', '\'', '/', '\\', '(', ')' -> {
 						// ignore
 					}
 					case ' ' -> {

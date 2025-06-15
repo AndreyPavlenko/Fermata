@@ -105,7 +105,7 @@ dependencies {
     implementation "com.google.android.play:feature-delivery:${ANDROID_PLAY_CORE_FD_VERSION}"
     implementation 'com.google.android.play:asset-delivery:2.3.0'
     implementation 'com.google.android.play:app-update:2.1.0'
-    implementation 'androidx.tvprovider:tvprovider:1.0.0'
+    implementation 'androidx.tvprovider:tvprovider:1.1.0'
     implementation 'androidx.annotation:annotation:1.9.1'
     implementation "androidx.car.app:app:1.4.0"
 }

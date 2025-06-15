@@ -190,7 +190,7 @@ public class Dict implements Comparable<Dict> {
 
 	public FutureSupplier<List<Word>> getWords() {
 		assertMainThread();
-		if (isClosed()) throw new IllegalStateException();
+		if (isClosed()) return failed(new IllegalStateException("Dictionary is closed: " + this));
 
 		if (words == null) {
 			words = readWords(wordsCount).then(words -> readCache(words).main().then(h -> {
@@ -228,7 +228,7 @@ public class Dict implements Comparable<Dict> {
 					CollectionUtils.comparingInt(getProgress)).expectedSize(max).maximumSize(max).create();
 			heap.addAll(words);
 			dest.addAll(heap);
-			if ((off > 0) && (dest.get(off - 1).equals(dest.get(off)))) swap(dest, off, s - 1);
+			if ((off > 0) && (dest.get(off - 1).equals(dest.get(off)))) swap(dest, off, dest.size() - 1);
 			return max;
 		});
 	}
@@ -256,7 +256,7 @@ public class Dict implements Comparable<Dict> {
 
 			s = dest.size();
 			shuffle(dest.subList(off, s), rnd);
-			if ((off > 0) && (dest.get(off - 1).equals(dest.get(off)))) swap(dest, off, s - 1);
+			if ((off > 0) && (dest.get(off - 1).equals(dest.get(off)))) swap(dest, off, dest.size() - 1);
 			assert (s - off <= max);
 			return s - off;
 		});

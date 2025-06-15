@@ -4,6 +4,8 @@ import static android.Manifest.permission.RECORD_AUDIO;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.speech.RecognizerIntent.EXTRA_LANGUAGE;
 import static android.speech.RecognizerIntent.EXTRA_PREFER_OFFLINE;
+import static android.speech.RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS;
+import static android.speech.RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS;
 import static java.util.Collections.unmodifiableList;
 import static me.aap.fermata.R.string.err_no_audio_record_perm;
 import static me.aap.utils.async.Completed.completed;
@@ -36,6 +38,7 @@ import me.aap.utils.async.Async;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Cancellable;
+import me.aap.utils.function.Function;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.function.ToIntFunction;
 import me.aap.utils.io.IoUtils;
@@ -73,22 +76,23 @@ public class DictTutor implements Closeable {
 		this.mode = mode;
 		this.dirTts = dirTts;
 		this.revTts = revTts;
-		stt = new SpeechToText(ctx);
+		stt = new SpeechToText(ctx, null, FelexAddon.get().getSttServiceName());
 		rnd = new Random();
-		queueSize = dictInfo.getBatchSize() * 2;
+		queueSize = (mode == Mode.LISTENING) ? 100 : dictInfo.getBatchSize() * 2;
 		queue = new ArrayList<>(queueSize);
 
 		ToIntFunction<Word> getProgress =
 				(mode == Mode.DIRECT || mode == Mode.LISTENING) ? Word::getDirProgress :
 						(mode == Mode.REVERSE) ? Word::getRevProgress : Word::getProgress;
+		var batchType = (mode == Mode.LISTENING) ? DictInfo.BATCH_TYPE_RND : dictInfo.getBatchType();
 
-		if (dictInfo.getBatchType().equals(DictInfo.BATCH_TYPE_RND)) {
+		if (batchType.equals(DictInfo.BATCH_TYPE_RND)) {
 			batchFunc = () -> dict.getRandomWords(rnd, queue, dictInfo.getBatchSize(), getProgress);
-		} else if (dictInfo.getBatchType().equals(DictInfo.BATCH_TYPE_LEAST)) {
+		} else if (batchType.equals(DictInfo.BATCH_TYPE_LEAST)) {
 			batchFunc = () -> dict.getLeastProgressWords(queue, dictInfo.getBatchSize(), getProgress);
 		} else {
 			ToIntFunction<Dict> getDictProgress =
-					(mode == Mode.DIRECT || mode == Mode.LISTENING) ? Dict::getDirProgress :
+					mode == Mode.DIRECT ? Dict::getDirProgress :
 							(mode == Mode.REVERSE) ? Dict::getRevProgress : Dict::getProgress;
 			batchFunc = () -> {
 				if (getDictProgress.applyAsInt(dict) < 80) {
@@ -229,9 +233,11 @@ public class DictTutor implements Closeable {
 
 	private void recognize(Task t) {
 		var lang = t.direct ? dict.getTargetLang() : dict.getSourceLang();
-		stt.getRecognizerIntent().putExtra(EXTRA_LANGUAGE, lang.toLanguageTag());
-		stt.getRecognizerIntent()
-				.putExtra(EXTRA_PREFER_OFFLINE, offlineSupported && FelexAddon.get().isOfflineMode());
+		var intent = stt.getRecognizerIntent();
+		intent.putExtra(EXTRA_LANGUAGE, lang.toLanguageTag());
+		intent.putExtra(EXTRA_PREFER_OFFLINE, offlineSupported && FelexAddon.get().isOfflineMode());
+		intent.putExtra(EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 5000);
+		intent.putExtra(EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000);
 		var f = stt.recognize(t).onProgress(this::incompleteRecognitionHandler)
 				.onCompletion(this::recognizeHandler);
 		run(f);
@@ -239,7 +245,24 @@ public class DictTutor implements Closeable {
 
 	private void incompleteRecognitionHandler(SpeechToText.Result<Task> incomplete, int ignore1,
 																						int ignore2) {
-		setText(incomplete.getData().speak, incomplete.getText());
+		var t = incomplete.getData();
+		var text = incomplete.getText();
+		var matched = match(text, t::validTranslation);
+
+		if ((matched != null) || ((matched = match(text, dictInfo::isAckPhrase)) != null)) {
+			setText(t.speak, matched);
+			stt.stop();
+			curTask = null;
+			t.w.incrProgress(dict, t.direct, 10);
+			schedule(this::nextTask, 1000);
+		} else if ((matched = match(text, dictInfo::isSkipPhrase)) != null) {
+			setText(t.speak, matched);
+			stt.stop();
+			t.attempt = 2;
+			retry(t);
+		} else {
+			setText(t.speak, text.get(0));
+		}
 	}
 
 	private void recognizeHandler(@Nullable SpeechToText.Result<Task> r, @Nullable Throwable err) {
@@ -283,23 +306,34 @@ public class DictTutor implements Closeable {
 			}
 		} else {
 			assert r != null;
-			Task t = r.getData();
-			String text = r.getText();
-			setText(t.speak, text);
+			var t = r.getData();
+			var text = r.getText();
+			var matched = match(text, t::validTranslation);
 
-			if (t.validTranslation(text) || dictInfo.isAckPhrase(text)) {
+			if ((matched != null) || ((matched = match(text, dictInfo::isAckPhrase)) != null)) {
+				setText(t.speak, matched);
 				curTask = null;
 				t.w.incrProgress(dict, t.direct, 10);
 				schedule(this::nextTask, 1000);
+			} else if ((matched = match(text, dictInfo::isSkipPhrase)) != null) {
+				setText(t.speak, matched);
+				t.attempt = 2;
+				retry(t);
 			} else {
-				if (dictInfo.isSkipPhrase(text)) {
-					t.attempt = 2;
-					retry(t);
-				} else {
-					schedule(() -> retry(t), 1000);
-				}
+				setText(t.speak, text.get(0));
+				t.attempt++;
+				schedule(() -> retry(t), 1000);
 			}
 		}
+	}
+
+	@Nullable
+	private String match(List<String> text, Function<String, Boolean> f) {
+		for (var t : text) {
+			if (t == null) continue;
+			if (f.apply(t)) return t;
+		}
+		return null;
 	}
 
 	private void retry(Task t) {
@@ -388,7 +422,6 @@ public class DictTutor implements Closeable {
 		}
 
 		boolean validTranslation(String text) {
-			attempt++;
 			if (text == null) return false;
 			if (direct) {
 				for (Translation t : trans) {
