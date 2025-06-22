@@ -22,35 +22,42 @@ Supported features:
 * Pluggable media engines: MediaPlayer, ExoPlayer and VLC
 * Video player with support for subtitles and audio streams (VLC Engine only)
 
-## Building APK
-* Download and install the latest Android NDK from https://developer.android.com/ndk/downloads/
+## Building the project
 * Download and install the latest Android SDK or Android Studio from https://developer.android.com/studio/
 * Set the environment variable ANDROID_SDK_ROOT pointing to the SDK directory
+```bash
+export ANDROID_SDK_ROOT=<path to android SDK>
+```
 
 ### Clone the repository
-```
+```bash
 git clone --recurse-submodules https://github.com/AndreyPavlenko/Fermata.git
-```
-
-### Build ExoPlayer extensions (optional)
-```
-cd Fermata/depends
-./build.sh <path to Android NDK directory>
-```
-
-### Build Fermata Auto and Fermata Control
-```
 cd Fermata
-export ANDROID_SDK_ROOT=<path to android SDK>
-./gradlew packageAutoReleaseUniversalApk -PABI=arm64-v8a
-./gradlew packageAutoReleaseUniversalApk -PABI=armeabi-v7a
-./gradlew control:assembleRelease
 ```
 
-To build the apks with a dirrenent package name, use the APP_ID property:
+### Build AAB
+```bash
+./gradlew bundleAutoRelease -PAPP_ID_SFX=.type.your.pkg.sfx.here
+find $PWD -name *.aab
 ```
-./gradlew packageAutoReleaseUniversalApk -PABI=arm64-v8a -PAPP_ID=my.app.name
+
+### Build APK
+```bash
+./gradlew bundleAutoRelease -PAPP_ID_SFX=.type.your.pkg.sfx.here
+find $PWD -name *.apk
 ```
+
+### Building in docker
+```bash
+docker run -ti --name Fermata andreypavlenko/fermata
+```
+Enter the requested key alias and password, when prompted.
+Build the required package using the above commands.
+To copy the built package to the host machine, open a new terminal and run:
+```bash
+docker cp Fermata:/home/mobiledevops/Fermata/fermata/build/outputs/bundle/autoRelease/ .
+```
+
 
 ## Donation
 If you like the application, please consider making a donation:

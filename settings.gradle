@@ -4,14 +4,21 @@ gradle.ext.localProps = new Properties()
 gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
         && file('fermata/google-services.json').isFile()
 def localPropsFile = file('local.properties')
-
 if (localPropsFile.isFile()) {
     gradle.ext.localProps.load(localPropsFile.newDataInputStream())
-} else {
-    gradle.ext.localProps.setProperty('storeFile', file('res/test.ks').absolutePath)
-    gradle.ext.localProps.setProperty('keyAlias', 'test')
-    gradle.ext.localProps.setProperty('keyPassword', 'fermata')
-    gradle.ext.localProps.setProperty('storePassword', 'fermata')
+}
+
+if ((gradle.ext.localProps['storeFile'] == null ||
+        !file(gradle.ext.localProps['storeFile']).isFile())) {
+    def localProps = gradle.ext.localProps
+    localProps.putIfAbsent('storeFile', "${rootDir}/res/fermata.jks".toString())
+    localProps.putIfAbsent('keyAlias', 'fermata')
+    localProps.putIfAbsent('keyPassword', 'fermata')
+    localProps.putIfAbsent('storePassword', localProps['keyPassword'])
+    apply from: "${rootDir}/res/build_jks.gradle"
+    localPropsFile.withOutputStream { out ->
+        localProps.store(out, null)
+    }
 }
 
 rootProject.name = 'Fermata Music Player'

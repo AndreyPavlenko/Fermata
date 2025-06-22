@@ -1,0 +1,58 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.bouncycastle:bcpkix-jdk18on:1.81'
+    }
+}
+
+
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
+
+import javax.security.auth.x500.X500Principal
+import java.security.*
+import java.security.cert.X509Certificate
+
+Security.addProvider(new BouncyCastleProvider())
+
+def localProps = gradle.ext.localProps
+def alias = localProps['keyAlias']
+def keyPassword = localProps['keyPassword']
+def storePassword = localProps['storePassword']
+def rnd = SecureRandom.getInstance("SHA1PRNG")
+rnd.setSeed(MessageDigest.getInstance("SHA-256")
+        .digest("${alias}:${keyPassword}:${storePassword}".bytes))
+
+// Generate deterministic RSA keypair
+def keyPairGen = KeyPairGenerator.getInstance("RSA", "BC")
+keyPairGen.initialize(2048, rnd)
+def keyPair = keyPairGen.generateKeyPair()
+
+// Build certificate
+def calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"))
+calendar.set(Calendar.MILLISECOND, 0)
+calendar.set(2025, Calendar.JANUARY, 1, 0, 0, 0)
+def startDate = calendar.time
+calendar.set(2125, Calendar.JANUARY, 1, 0, 0, 0)
+def endDate = calendar.time
+def subjectDN = new X500Principal("CN=Fermata")
+def signer = new JcaContentSignerBuilder("SHA256withRSA")
+        .setProvider("BC").build(keyPair.private)
+def certBuilder = new JcaX509v3CertificateBuilder(subjectDN, new BigInteger(64, rnd),
+        startDate, endDate, subjectDN, keyPair.public)
+def certHolder = certBuilder.build(signer)
+def certificate = new JcaX509CertificateConverter()
+        .setProvider("BC")
+        .getCertificate(certHolder)
+
+// Build JKS keystore
+def ks = KeyStore.getInstance("JKS")
+ks.load(null, null)
+ks.setKeyEntry(alias, keyPair.private, keyPassword.toCharArray(), [certificate] as X509Certificate[])
+file(localProps['storeFile']).withOutputStream { os ->
+    ks.store(os, storePassword.toCharArray())
+}

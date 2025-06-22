@@ -11,3 +11,4 @@ depends/ffmpeg/
 local.properties
 google-services.json
 TODO
+res/*.jks
