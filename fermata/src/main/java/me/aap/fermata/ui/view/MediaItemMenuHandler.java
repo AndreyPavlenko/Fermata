@@ -14,6 +14,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.VIDEO_SCALE;
 import static me.aap.fermata.media.pref.PlayableItemPrefs.BOOKMARKS;
 import static me.aap.fermata.media.pref.PlayableItemPrefs.bookmarkTime;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addAudioPrefs;
+import static me.aap.fermata.ui.fragment.SettingsFragment.addAutoSubPrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addDelayPrefs;
 import static me.aap.fermata.ui.fragment.SettingsFragment.addSubtitlePrefs;
 import static me.aap.utils.async.Completed.completed;
@@ -28,6 +29,7 @@ import java.util.List;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
+import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineManager;
 import me.aap.fermata.media.lib.FileItem;
@@ -51,7 +53,9 @@ import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.BasicPreferenceStore;
+import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
@@ -238,6 +242,7 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	protected void buildSubtitlesMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
+		addAutoSubPrefs(getContext(), prefSet, item.getPrefs(), null, false);
 		addDelayPrefs(prefSet, item.getPrefs(), MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay,
 				null);
 		prefSet.addToMenu(b, true);
@@ -480,7 +485,8 @@ public class MediaItemMenuHandler implements OverlayMenu.SelectionHandler {
 
 	private void buildSubtitlePrefsMenu(OverlayMenu.Builder b) {
 		PreferenceSet prefSet = new PreferenceSet();
-		addSubtitlePrefs(prefSet, item.getPrefs(), getMainActivity().isCarActivityNotMirror());
+		addSubtitlePrefs(getContext(), prefSet, item.getPrefs(),
+				getMainActivity().isCarActivityNotMirror());
 		b.setTitle(R.string.subtitles);
 		prefSet.addToMenu(b, true);
 	}

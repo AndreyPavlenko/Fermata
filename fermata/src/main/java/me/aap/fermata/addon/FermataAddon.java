@@ -1,5 +1,6 @@
 package me.aap.fermata.addon;
 
+import android.content.Context;
 import android.content.Intent;
 
 import androidx.annotation.IdRes;
@@ -22,7 +23,8 @@ public interface FermataAddon {
 	@NonNull
 	AddonInfo getInfo();
 
-	default void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
+	default void contributeSettings(Context ctx, PreferenceStore store, PreferenceSet set,
+																	ChangeableCondition visibility) {
 	}
 
 	default void install() {
@@ -37,8 +39,9 @@ public interface FermataAddon {
 
 	@NonNull
 	static AddonInfo findAddonInfo(String name) {
+		boolean cn = name.indexOf('.') > 0;
 		for (AddonInfo ai : BuildConfig.ADDONS) {
-			if (ai.className.equals(name)) return ai;
+			if (name.equals(cn ? ai.className : ai.moduleName)) return ai;
 		}
 		throw new RuntimeException("Addon not found: " + name);
 	}

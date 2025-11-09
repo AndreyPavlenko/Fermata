@@ -10,6 +10,7 @@ import static me.aap.fermata.util.Utils.isSafSupported;
 import static me.aap.utils.io.FileUtils.getFileExtension;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
@@ -175,7 +176,7 @@ public class FelexAddon implements MediaLibAddon, FermataContentAddon {
 	}
 
 	@Override
-	public void contributeSettings(PreferenceStore store, PreferenceSet set,
+	public void contributeSettings(Context ctx, PreferenceStore store, PreferenceSet set,
 																 ChangeableCondition visibility) {
 		contributeFolder(DICT_FOLDER, R.string.dict_folder, set, visibility);
 		contributeFolder(CACHE_FOLDER, R.string.cache_folder, set, visibility);

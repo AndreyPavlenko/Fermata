@@ -2,7 +2,6 @@ package me.aap.fermata.ui.view;
 
 import static androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY;
 import static androidx.core.text.HtmlCompat.fromHtml;
-import static java.util.Collections.newSetFromMap;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.L_SPLIT_PERCENT_SUB;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.P_SPLIT_PERCENT_SUB;
@@ -25,14 +24,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.WeakHashMap;
 
 import me.aap.fermata.R;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.DoubleSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore.Pref;
 
 /**
@@ -77,8 +75,8 @@ public class SubtitlesView extends SplitLayout
 		if (subtitles == null) return;
 		var leftAdapter = (left == null) ? null : (SubAdapter) left.getAdapter();
 		var rightAdapter = (right == null) ? null : (SubAdapter) right.getAdapter();
-		var leftActive = (leftAdapter == null) ? -1 : leftAdapter.active;
-		var rightActive = (rightAdapter == null) ? -1 : rightAdapter.active;
+		var leftActive = (leftAdapter == null) ? null : leftAdapter.active;
+		var rightActive = (rightAdapter == null) ? null : rightAdapter.active;
 		left = right = null;
 		setSubtitles(subtitles, leftActive, rightActive);
 	}
@@ -107,14 +105,16 @@ public class SubtitlesView extends SplitLayout
 		} else {
 			List<Subtitles> list = new ArrayList<>(2);
 			for (var e : sg) {
-				if (!e.getValue().isEmpty()) list.add(e.getValue());
+				var s = e.getValue();
+				if (s instanceof Subtitles.Stream || !s.isEmpty()) list.add(e.getValue());
 			}
 			subtitles = list;
-			setSubtitles(list, -1, -1);
+			setSubtitles(list, null, null);
 		}
 	}
 
-	private void setSubtitles(List<Subtitles> list, int leftActive, int rightActive) {
+	private void setSubtitles(List<Subtitles> list, Subtitles.Text leftActive,
+														Subtitles.Text rightActive) {
 		switch (list.size()) {
 			case 0:
 				list.add(new Subtitles.Builder().build());
@@ -135,12 +135,16 @@ public class SubtitlesView extends SplitLayout
 		}
 	}
 
-	private void setAdapter(RecyclerView v, Subtitles subtitles, int active) {
+	private void setAdapter(RecyclerView v, Subtitles subtitles, Subtitles.Text active) {
+		if (v.getAdapter() instanceof SubAdapter a && a.subtitles instanceof Subtitles.Stream s) {
+			s.removeListener(a);
+		}
+
 		var a = new SubAdapter(subtitles, active);
 		v.setAdapter(a);
 
-		if (active != -1) {
-			v.scrollToPosition(active);
+		if (active != null) {
+			scrollToItem(v, active.getIndex());
 			return;
 		}
 
@@ -150,10 +154,17 @@ public class SubtitlesView extends SplitLayout
 		eng.getPosition().main().onSuccess(time -> {
 			var next = subtitles.getNext(time);
 			if (next == null) return;
-			var idx = next.getIndex();
-			a.setActive(idx);
-			v.scrollToPosition(idx);
+			a.setActive(next);
+			scrollToItem(v, next.getIndex());
 		});
+	}
+
+	private void scrollToItem(RecyclerView v, int idx) {
+		if (v.getLayoutManager() instanceof LinearLayoutManager mgr) {
+			mgr.scrollToPositionWithOffset(idx, v.getHeight() / 2);
+		} else {
+			v.scrollToPosition(idx);
+		}
 	}
 
 	@Override
@@ -166,13 +177,8 @@ public class SubtitlesView extends SplitLayout
 	private void showText(RecyclerView list, Subtitles.Text text) {
 		var a = (SubAdapter) list.getAdapter();
 		if (a == null) return;
-
-		if (text == null) {
-			a.setActive(-1);
-		} else {
-			a.setActive(text.getIndex());
-			list.scrollToPosition(text.getIndex());
-		}
+		a.setActive(text);
+		if (text != null) scrollToItem(list, text.getIndex());
 	}
 
 	private void showHideRight(int visibility) {
@@ -188,37 +194,38 @@ public class SubtitlesView extends SplitLayout
 		gl.setLayoutParams(lp);
 	}
 
-	private final class SubAdapter extends RecyclerView.Adapter<SubAdapter.Holder> {
-		private final Set<Holder> holders = newSetFromMap(new WeakHashMap<>());
+	private final class SubAdapter extends RecyclerView.Adapter<SubAdapter.Holder>
+			implements Subtitles.Stream.Listener {
 		private final Subtitles subtitles;
-		int active;
+		Subtitles.Text active;
 
-		SubAdapter(Subtitles subtitles, int active) {
+		SubAdapter(Subtitles subtitles, Subtitles.Text active) {
 			this.subtitles = subtitles;
 			this.active = active;
+			if (subtitles instanceof Subtitles.Stream s) {
+				s.addListener(this);
+			}
 		}
 
-		void setActive(int idx) {
-			active = idx;
-			for (var h : holders) h.itemView.setSelected(h.index == active);
+		void setActive(Subtitles.Text text) {
+			if (text == active) return;
+			var old = active;
+			active = text;
+			Log.d("Active: ", active);
+			if (old != null) notifyItemChanged(old.getIndex());
+			if (active != null) notifyItemChanged(active.getIndex());
 		}
 
 		@NonNull
 		@Override
 		public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 			var v = LayoutInflater.from(getContext()).inflate(R.layout.list_item, parent, false);
-			var h = new Holder(v);
-			holders.add(h);
-			return h;
+			return new Holder(v);
 		}
 
 		@Override
 		public void onBindViewHolder(@NonNull Holder holder, int position) {
-			var i = (TextView) holder.itemView;
-			var t = subtitles.get(position);
-			holder.index = t.getIndex();
-			i.setSelected(holder.index == active);
-			i.setText(fromHtml(t.getText(), FROM_HTML_MODE_LEGACY));
+			holder.bind(position);
 		}
 
 		@Override
@@ -226,8 +233,19 @@ public class SubtitlesView extends SplitLayout
 			return subtitles.size();
 		}
 
+		@Override
+		public void subStreamChanged(Subtitles.Stream stream, int removed, int added) {
+			if (added == 0) { // Clear case
+				notifyItemRangeRemoved(0, removed);
+			} else {
+				int inserted = added - removed;
+				if (inserted != 0) notifyItemRangeInserted(stream.size() - added, inserted);
+				notifyItemRangeChanged(0, stream.size() - inserted);
+			}
+		}
+
 		private final class Holder extends RecyclerView.ViewHolder implements OnClickListener {
-			int index = -1;
+			Subtitles.Text text;
 
 			public Holder(@NonNull View v) {
 				super(v);
@@ -236,10 +254,17 @@ public class SubtitlesView extends SplitLayout
 
 			@Override
 			public void onClick(View v) {
-				if (index == -1) return;
+				if (text == null) return;
 				var cb = getActivity().getMediaSessionCallback();
-				cb.onSeekTo(subtitles.get(index).getTime());
+				cb.onSeekTo(text.getTime());
 				cb.onPlay();
+			}
+
+			void bind(int position) {
+				var i = (TextView) itemView;
+				text = subtitles.get(position);
+				i.setSelected(text == active);
+				i.setText(fromHtml(text.getText(), FROM_HTML_MODE_LEGACY));
 			}
 		}
 	}

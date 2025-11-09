@@ -2,6 +2,8 @@ package me.aap.fermata.addon.chat;
 
 import static me.aap.fermata.util.Utils.openUrl;
 
+import android.content.Context;
+
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.core.text.HtmlCompat;
@@ -71,7 +73,7 @@ public class ChatAddon implements FermataFragmentAddon {
 	}
 
 	@Override
-	public void contributeSettings(PreferenceStore store, PreferenceSet set,
+	public void contributeSettings(Context ctx, PreferenceStore store, PreferenceSet set,
 																 ChangeableCondition visibility) {
 		set.addStringPref(o -> {
 			String keyUrl = "https://platform.openai.com/api-keys";

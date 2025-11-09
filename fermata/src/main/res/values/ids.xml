@@ -36,6 +36,8 @@
     <item name="felex_fragment" type="id" />
     <item name="cast_addon" type="id" />
     <item name="chat_addon" type="id" />
+    <item name="subgen_addon" type="id" />
+    <item name="whisper_addon" type="id" />
 
     <item name="nav_got_to_current" type="id" />
     <item name="nav_donate" type="id" />
@@ -96,6 +98,7 @@
 
     <item name="subtitle_delay" type="id" />
     <item name="subtitle_prefs" type="id" />
+    <item name="subtitle_auto" type="id" />
     <item name="select_subtitles" type="id" />
     <item name="select_subtitle_stream" type="id" />
 

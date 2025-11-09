@@ -65,11 +65,14 @@ public class FloatingButtonMediator implements BackMenu {
 		if (direction == FOCUS_RIGHT) {
 			Context ctx = fb.getContext();
 			NavBarView n = MainActivityDelegate.get(ctx).getNavBar();
-			return (isVisible(n) && n.isRight()) ? n.focusSearch() : MediaItemListView.focusSearchLast(ctx, fb);
+			return (isVisible(n) && n.isRight()) ? n.focusSearch() :
+					MediaItemListView.focusSearchLast(ctx, fb);
 		} else if (direction == FOCUS_LEFT) {
 			return MediaItemListView.focusSearchActive(fb.getContext(), fb);
 		} else if (direction == FOCUS_UP) {
-			ToolBarView tb = MainActivityDelegate.get(fb.getContext()).getToolBar();
+			var a = MainActivityDelegate.get(fb.getContext());
+			if (a.getActiveMenu() instanceof View v) return v.findFocus();
+			var tb = a.getToolBar();
 			if (isVisible(tb)) return tb.focusSearch();
 		}
 

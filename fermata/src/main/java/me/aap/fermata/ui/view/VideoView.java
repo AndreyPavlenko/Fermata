@@ -272,12 +272,14 @@ public class VideoView extends FrameLayout
 			if (sv == null) return;
 			var h = sv.getHolder();
 			var c = h.lockCanvas();
+			var cs = c.save();
 			try {
 				subDrawer.clr(c);
 				subDrawer.draw(c);
 			} catch (Exception err) {
 				Log.e(err);
 			} finally {
+				c.restoreToCount(cs);
 				h.unlockCanvasAndPost(c);
 			}
 		});
@@ -510,8 +512,13 @@ public class VideoView extends FrameLayout
 
 	private static abstract class SubDrawer {
 		final float textScale;
+		final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-		SubDrawer(float textScale) {this.textScale = textScale;}
+		SubDrawer(float textScale) {
+			this.textScale = textScale;
+			bgPaint.setColor(Color.BLACK);
+			bgPaint.setAlpha(180);
+		}
 
 		abstract boolean setText(SubGrid.Position position, @Nullable Subtitles.Text text);
 
@@ -521,8 +528,8 @@ public class VideoView extends FrameLayout
 			canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 		}
 
-		float textSize(int canvasHeight) {
-			return textScale * canvasHeight / 25;
+		float textSize(int canvasHeight, int canvasWidth) {
+			return textScale * Math.min(canvasHeight, canvasWidth) / 20;
 		}
 
 		static TextPaint paint(Paint.Align align) {
@@ -543,6 +550,18 @@ public class VideoView extends FrameLayout
 		static StaticLayout layout(CharSequence text, TextPaint paint, int width) {
 			return StaticLayout.Builder.obtain(text, 0, text.length(), paint, width).setMaxLines(10)
 					.setEllipsize(TextUtils.TruncateAt.END).setIncludePad(true).build();
+		}
+
+		void draw(Canvas canvas, StaticLayout sl) {
+			float pad = 20f;
+			float w = 0f;
+			for (int i = 0, n = sl.getLineCount(); i < n; i++) {
+				w = Math.max(w, sl.getLineWidth(i));
+			}
+			w = w / 2f + pad;
+			canvas.translate(0, -pad);
+			canvas.drawRoundRect(-w, -pad, w, sl.getHeight() + pad, pad, pad, bgPaint);
+			sl.draw(canvas);
 		}
 	}
 
@@ -573,7 +592,7 @@ public class VideoView extends FrameLayout
 		public void draw(Canvas canvas) {
 			var ch = canvas.getHeight();
 			var cw = canvas.getWidth();
-			var ts = textSize(ch);
+			var ts = textSize(ch, cw);
 			var x = new int[]{0, cw / 2, cw};
 			var y = new int[]{ch, ch / 2, 0};
 
@@ -611,7 +630,7 @@ public class VideoView extends FrameLayout
 					var sl = layout(t, paint[j], w[j]);
 					canvas.save();
 					canvas.translate(x[j], y[i] - sl.getHeight() * yoff[i]);
-					sl.draw(canvas);
+					draw(canvas, sl);
 					canvas.restore();
 				}
 			}
@@ -645,9 +664,10 @@ public class VideoView extends FrameLayout
 				center = true;
 				var t = (text == null) ? null : text.getText();
 				var trans = (text == null) ? null : text.getTranslation();
-				if (center && Objects.equals(this.text, t) && Objects.equals(translation, trans))
+				var c = position != SubGrid.Position.BOTTOM_CENTER;
+				if (center == c && Objects.equals(this.text, t) && Objects.equals(translation, trans))
 					return false;
-				center = true;
+				center = c;
 				this.text = t;
 				translation = trans;
 			}
@@ -696,17 +716,17 @@ public class VideoView extends FrameLayout
 					var sh = sl.getHeight();
 					if (sh < ch) {
 						canvas.translate(x, (ch - sl.getHeight()) / 2f);
-						sl.draw(canvas);
+						draw(canvas, sl);
 						break;
 					} else {
 						size *= 0.9f;
 					}
 				}
 			} else {
-				paint.setTextSize(textSize(ch));
+				paint.setTextSize(textSize(ch, cw));
 				var sl = layout(sub, paint, cw);
 				canvas.translate(x, ch - sl.getHeight());
-				sl.draw(canvas);
+				draw(canvas, sl);
 			}
 		}
 	}

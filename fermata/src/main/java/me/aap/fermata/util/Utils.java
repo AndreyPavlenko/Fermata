@@ -94,7 +94,7 @@ public class Utils {
 
 	public static File getAddonsFileDir(AddonInfo i) {
 		Context ctx = App.get();
-		String name = "addons/" + i.getModuleName();
+		String name = "addons/" + i.moduleName;
 		File f = ctx.getExternalFilesDir(name);
 		return ((f == null) ? new File(ctx.getFilesDir(), name) : f);
 	}
@@ -102,7 +102,7 @@ public class Utils {
 	public static File getAddonsCacheDir(AddonInfo i) {
 		Context ctx = App.get();
 		File f = ctx.getExternalCacheDir();
-		return new File((f == null) ? ctx.getCacheDir() : f, "addons/" + i.getModuleName());
+		return new File((f == null) ? ctx.getCacheDir() : f, "addons/" + i.moduleName);
 	}
 
 	public static void send(ActivityDelegate a, Uri uri, String title, String mime) {

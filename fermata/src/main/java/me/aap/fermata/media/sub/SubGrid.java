@@ -6,6 +6,7 @@ import static me.aap.utils.collection.CollectionUtils.putIfAbsent;
 import androidx.annotation.NonNull;
 
 import java.util.AbstractCollection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,6 +19,10 @@ import me.aap.utils.function.Consumer;
 public class SubGrid extends AbstractCollection<Map.Entry<SubGrid.Position, Subtitles>> {
 	public static final SubGrid EMPTY = new SubGrid(emptyMap());
 	private final Map<Position, Subtitles> subtitles;
+
+	public SubGrid(Subtitles subtitles) {
+		this.subtitles = Collections.singletonMap(Position.BOTTOM_CENTER, subtitles);
+	}
 
 	private SubGrid(Map<Position, Subtitles> subtitles) {
 		this.subtitles = subtitles;
@@ -46,7 +51,7 @@ public class SubGrid extends AbstractCollection<Map.Entry<SubGrid.Position, Subt
 	}
 
 	public void move(Position from, Position to) {
-		subtitles.put(to,subtitles.remove(from));
+		subtitles.put(to, subtitles.remove(from));
 	}
 
 	@Override

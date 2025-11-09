@@ -9,10 +9,8 @@ android {
         base.archivesName = "fermata-$versionName"
 
         ndk {
-            def abi = project.properties['ABI']
-            abi = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']
             //noinspection ChromeOsAbiSupport
-            abiFilters = abi
+            abiFilters = gradle.ext.abiFilters
         }
     }
 
@@ -107,5 +105,7 @@ dependencies {
     implementation 'com.google.android.play:app-update:2.1.0'
     implementation 'androidx.tvprovider:tvprovider:1.1.0'
     implementation 'androidx.annotation:annotation:1.9.1'
-    implementation "androidx.car.app:app:1.4.0"
+    implementation "androidx.car.app:app:1.7.0"
+    implementation "androidx.legacy:legacy-support-core-utils:1.0.0"
+    implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
 }

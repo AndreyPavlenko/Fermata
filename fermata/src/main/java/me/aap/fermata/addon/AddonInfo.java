@@ -16,22 +16,20 @@ public class AddonInfo implements Comparable<AddonInfo> {
 	public final int addonName;
 	@DrawableRes
 	public final int icon;
-	public final PreferenceStore.Pref<BooleanSupplier> enabledPref;
 	public final int order;
+	public final boolean hasSettings;
+	public final PreferenceStore.Pref<BooleanSupplier> enabledPref;
 
 	public AddonInfo(String moduleName, String className, int addonName, int icon,
-									 Integer order, Boolean enabled) {
+									 Integer order, Boolean hasSettings, Boolean enabled) {
 		this.moduleName = moduleName;
 		this.className = className;
 		this.addonName = addonName;
 		this.icon = icon;
-		this.order = (order == null) ? 0 : order;
+		this.order = (order == null) ? 1000 : order;
+		this.hasSettings = (hasSettings == null) || hasSettings;
 		enabledPref = PreferenceStore.Pref.b(className + "_enabled",
 				(enabled == null) ? this::isInstalled : () -> enabled);
-	}
-
-	public String getModuleName() {
-		return moduleName;
 	}
 
 	public boolean isInstalled() {
@@ -45,6 +43,7 @@ public class AddonInfo implements Comparable<AddonInfo> {
 
 	@Override
 	public int compareTo(AddonInfo ai) {
-		return Integer.compare(order, ai.order);
+		var cmp = Integer.compare(order, ai.order);
+		return cmp == 0 ? moduleName.compareTo(ai.moduleName) : cmp;
 	}
 }

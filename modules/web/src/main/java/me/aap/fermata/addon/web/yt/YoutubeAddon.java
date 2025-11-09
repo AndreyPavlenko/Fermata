@@ -2,6 +2,8 @@ package me.aap.fermata.addon.web.yt;
 
 import static me.aap.fermata.BuildConfig.AUTO;
 
+import android.content.Context;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -78,8 +80,9 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	}
 
 	@Override
-	public void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
-		super.contributeSettings(store, set, visibility);
+	public void contributeSettings(Context ctx, PreferenceStore store, PreferenceSet set,
+																 ChangeableCondition visibility) {
+		super.contributeSettings(ctx, store, set, visibility);
 		getPreferenceStore().addBroadcastListener(this);
 		MainActivityPrefs.get().addBroadcastListener(this);
 		FermataApplication.get().getPreferenceStore().addBroadcastListener(this);

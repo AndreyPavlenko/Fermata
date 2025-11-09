@@ -80,7 +80,8 @@ public class WebBrowserAddon implements FermataFragmentAddon, SharedPreferenceSt
 	}
 
 	@Override
-	public void contributeSettings(PreferenceStore store, PreferenceSet set, ChangeableCondition visibility) {
+	public void contributeSettings(Context ctx, PreferenceStore store, PreferenceSet set,
+																 ChangeableCondition visibility) {
 		getPreferenceStore().addBroadcastListener(this::onPreferenceChanged);
 		FermataApplication.get().getPreferenceStore().addBroadcastListener(this::onPreferenceChanged);
 		MainActivityPrefs.get().addBroadcastListener(this::onPreferenceChanged);

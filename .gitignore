@@ -6,6 +6,7 @@
 .classpath
 build/
 dist/
+.cxx/
 depends/ffmpeg/
 *.iml
 local.properties

@@ -11,7 +11,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import me.aap.utils.event.BasicEventBroadcaster;
+import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.Consumer;
+import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
@@ -151,7 +154,7 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 		private final long time;
 		private int duration;
 		private String translation;
-		private int index;
+		protected int index;
 
 		public Text(String text, long time, int duration) {
 			this.text = text;
@@ -189,9 +192,122 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 		}
 
 		public int compareTime(long time) {
-			if (time == this.time) return 0;
-			if (time < this.time) return -1;
+			if (time <= this.time) return (time == this.time) ? 0 : -1;
 			return time < this.time + duration ? 0 : 1;
+		}
+
+		@NonNull
+		@Override
+		public String toString() {
+			return "Text{" +
+					"text='" + text + '\'' +
+					", time=" + time +
+					", duration=" + duration +
+					", index=" + index +
+					'}';
+		}
+	}
+
+	public static final class Stream extends Subtitles {
+		private final Text[] subtitles;
+		private final EventBroadcaster<Listener> broadcaster = new BasicEventBroadcaster<>();
+		private long cursor;
+
+		public Stream() {
+			this(1024);
+		}
+
+		public Stream(int windowSize) {
+			super(emptyList());
+			subtitles = new Text[windowSize];
+		}
+
+		public void addListener(Listener listener) {
+			broadcaster.addBroadcastListener(listener);
+		}
+
+		public void removeListener(Listener listener) {
+			broadcaster.removeBroadcastListener(listener);
+		}
+
+		@Nullable
+		@Override
+		public Text getNext(long time) {
+			Text next = null;
+			for (int i = size() - 1; i >= 0; i--) {
+				var t = get(i);
+				var cmp = t.compareTime(time);
+				if (cmp == 0) return t;
+				if (cmp > 0) break;
+				next = t;
+			}
+			return next;
+		}
+
+		@Override
+		public Text get(int idx) {
+			if (cursor >= subtitles.length)
+				idx = (int) ((cursor + idx - subtitles.length) % subtitles.length);
+			return subtitles[idx];
+		}
+
+		@Override
+		public int size() {
+			return cursor < subtitles.length ? (int) cursor : subtitles.length;
+		}
+
+		public void add(List<Text> sub) {
+			int added = sub.size();
+			if (added > subtitles.length) {
+				sub = sub.subList(added - subtitles.length, added);
+				added = subtitles.length;
+			}
+			int removed = size() + added;
+			removed = (removed > subtitles.length) ? removed - subtitles.length : 0;
+
+			for (var s : sub) {
+				int idx = (int) (cursor % subtitles.length);
+				subtitles[idx] = new Text(s.getText(), s.getTime(), s.getDuration()) {
+					private final long position = cursor;
+
+					{
+						index = idx;
+						setTranslation(s.getTranslation());
+					}
+
+					@Override
+					public int getIndex() {
+						return cursor < subtitles.length ? index :
+								(int) (subtitles.length + position - cursor);
+					}
+				};
+				cursor++;
+			}
+
+			int a = added;
+			int r = removed;
+			broadcaster.fireBroadcastEvent(l -> l.subStreamChanged(this, r, a));
+		}
+
+		@Override
+		public void clear() {
+			int removed = size();
+			cursor = 0;
+			broadcaster.fireBroadcastEvent(l -> l.subStreamChanged(this, removed, 0));
+		}
+
+		@Override
+		public void mergeWith(Subtitles sg) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean compareTime(Subtitles sg) {
+			throw new UnsupportedOperationException();
+		}
+
+		public interface Listener {
+			void subStreamChanged(Stream stream, int removed, int added);
 		}
 	}
 }

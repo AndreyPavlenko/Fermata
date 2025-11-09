@@ -58,6 +58,7 @@ import me.aap.fermata.action.Key;
 import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
+import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -222,15 +223,17 @@ public class SettingsFragment extends MainActivityFragment
 		}
 	}
 
-	public static void addSubtitlePrefs(PreferenceSet set, PreferenceStore store, boolean isCar) {
+	public static void addSubtitlePrefs(Context ctx, PreferenceSet set, PreferenceStore store,
+																			boolean isCar) {
 		set.addBooleanPref(o -> {
 			o.store = store;
 			o.pref = MediaLibPrefs.SUB_ENABLED;
 			o.title = R.string.display_subtitles;
 		});
 
-		addDelayPrefs(set, store, MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay,
-				PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED));
+		var enabled = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
+		addAutoSubPrefs(ctx, set, store, enabled.copy(), true);
+		addDelayPrefs(set, store, MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay, enabled.copy());
 
 		if (!isCar) {
 			set.addStringPref(o -> {
@@ -238,16 +241,35 @@ public class SettingsFragment extends MainActivityFragment
 				o.pref = MediaLibPrefs.SUB_LANG;
 				o.title = R.string.preferred_sub_lang;
 				o.stringHint = SUB_LANG.getDefaultValue().get();
-				o.visibility = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
+				o.visibility = enabled.copy();
 			});
 			set.addStringPref(o -> {
 				o.store = store;
 				o.pref = MediaLibPrefs.SUB_KEY;
 				o.title = R.string.preferred_sub_key;
 				o.stringHint = "full, forced";
-				o.visibility = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
+				o.visibility = enabled.copy();
 			});
 		}
+	}
+
+	public static void addAutoSubPrefs(Context ctx, PreferenceSet set, PreferenceStore ps,
+																		 ChangeableCondition cond, boolean isGlobalSettings) {
+		var subGen = FermataApplication.get().getAddonManager().getAddon(SubGenAddon.class);
+		if (subGen == null) return;
+
+		var subGenSet = set.subSet(o -> {
+			o.title = R.string.subtitles_auto;
+			o.visibility = cond;
+			if (!isGlobalSettings) o.icon = R.drawable.subgen;
+		});
+		subGenSet.addBooleanPref(o -> {
+			o.store = ps;
+			o.title = R.string.enable;
+			o.pref = SubGenAddon.ENABLED;
+		});
+		subGen.contributeSettings(ctx, ps, subGenSet, PrefCondition.create(ps, SubGenAddon.ENABLED),
+				false);
 	}
 
 	private PreferenceViewAdapter createAdapter(MainActivityDelegate a) {
@@ -590,7 +612,7 @@ public class SettingsFragment extends MainActivityFragment
 		});
 
 		sub1 = set.subSet(o -> o.title = R.string.subtitles);
-		addSubtitlePrefs(sub1, mediaPrefs, isCar);
+		addSubtitlePrefs(a.getContext(), sub1, mediaPrefs, isCar);
 
 		addAddons(set);
 
@@ -728,6 +750,7 @@ public class SettingsFragment extends MainActivityFragment
 		PreferenceStore store = FermataApplication.get().getPreferenceStore();
 
 		for (AddonInfo addon : BuildConfig.ADDONS) {
+			if (!addon.hasSettings) continue;
 			AddonPrefsBuilder b = new AddonPrefsBuilder(amgr, addon, store);
 			PreferenceSet sub1 = sub.subSet(b);
 			sub1.configure(b::configure);
@@ -919,7 +942,7 @@ public class SettingsFragment extends MainActivityFragment
 		}
 	}
 
-	private static final class AddonPrefsBuilder
+	private final class AddonPrefsBuilder
 			implements Consumer<PreferenceView.Opts>, AddonManager.Listener {
 		private final AddonManager amgr;
 		private final AddonInfo info;
@@ -946,7 +969,7 @@ public class SettingsFragment extends MainActivityFragment
 
 			if (a != null) {
 				ChangeableCondition cond = PrefCondition.create(store, info.enabledPref);
-				a.contributeSettings(store, set, cond);
+				a.contributeSettings(getContext(), store, set, cond);
 			}
 		}
 

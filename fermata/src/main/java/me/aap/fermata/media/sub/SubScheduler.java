@@ -8,6 +8,7 @@ import me.aap.fermata.media.sub.SubGrid.Position;
 import me.aap.utils.concurrent.HandlerExecutor;
 import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Cancellable;
+import me.aap.utils.function.LongSupplier;
 
 /**
  * @author Andrey Pavlenko
@@ -16,6 +17,7 @@ public class SubScheduler {
 	private final HandlerExecutor executor;
 	private final SubGrid subtitles;
 	private final BiConsumer<Position, Subtitles.Text> consumer;
+	private final LongSupplier clock;
 	private final ArrayList<Worker> workers;
 	private long time;
 	private long syncTime;
@@ -24,12 +26,19 @@ public class SubScheduler {
 
 	public SubScheduler(HandlerExecutor executor, SubGrid subtitles,
 											BiConsumer<Position, Subtitles.Text> consumer) {
+		this(executor, subtitles, consumer, System::currentTimeMillis);
+	}
+
+	public SubScheduler(HandlerExecutor executor, SubGrid subtitles,
+											BiConsumer<Position, Subtitles.Text> consumer, LongSupplier clock) {
 		this.executor = executor;
 		this.subtitles = subtitles;
 		this.consumer = consumer;
+		this.clock = clock;
 		workers = new ArrayList<>(9);
 		for (var e : subtitles) {
-			if (!e.getValue().isEmpty()) {
+			var s = e.getValue();
+			if (s instanceof Subtitles.Stream || !s.isEmpty()) {
 				workers.add(new Worker(e.getKey(), e.getValue()));
 			}
 		}
@@ -62,7 +71,7 @@ public class SubScheduler {
 		if (!started) return;
 		this.time = time + delay;
 		this.speed = speed;
-		syncTime = System.currentTimeMillis();
+		syncTime = clock.getAsLong();
 		for (var w : workers) {
 			if (!w.isStarted()) w.start();
 		}
@@ -118,9 +127,8 @@ public class SubScheduler {
 		}
 
 		private long time() {
-			return time + (long) (speed * (System.currentTimeMillis() - syncTime));
+			return time + (long) (speed * (clock.getAsLong() - syncTime));
 		}
-
 
 		private void sched(long delay) {
 			if (!started) return;

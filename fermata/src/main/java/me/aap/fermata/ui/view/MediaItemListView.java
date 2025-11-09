@@ -261,6 +261,8 @@ public class MediaItemListView extends RecyclerView implements PreferenceStore.L
 	@Override
 	public View focusSearch(@Nullable View focused, int direction) {
 		if (!(focused instanceof MediaItemView) || (focused.getParent() != this)) return focused;
+		if (MainActivityDelegate.get(focused.getContext()).getActiveMenu() instanceof View v)
+			return v.findFocus();
 
 		if (grid) {
 			if (direction == FOCUS_LEFT) {

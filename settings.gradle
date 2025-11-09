@@ -1,5 +1,7 @@
 gradle.ext.modules = []
-gradle.ext.addonInfo = new StringBuilder(512)
+def abi = gradle.startParameter.projectProperties.get('ABI')
+gradle.ext.abiFilters = (abi != null) ? abi.split(",") : ['arm64-v8a', 'armeabi-v7a', 'x86_64']
+
 gradle.ext.localProps = new Properties()
 gradle.ext.enableGoogleServices = (System.getenv('NO_GS') == null)
         && file('fermata/google-services.json').isFile()

@@ -9,6 +9,5 @@ android {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
-    implementation 'androidx.appcompat:appcompat:' + ANDROIDX_APPCOMPAT_VERSION
-    implementation 'org.videolan.android:libvlc-all:3.6.2'
+    implementation 'org.videolan.android:libvlc-all:3.6.5'
 }

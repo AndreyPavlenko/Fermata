@@ -7,7 +7,9 @@ import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_CENTER;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_LEFT;
 import static me.aap.fermata.media.sub.SubGrid.Position.BOTTOM_RIGHT;
 import static me.aap.utils.async.Completed.cancelled;
+import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedEmptyList;
+import static me.aap.utils.async.Completed.completedVoid;
 import static me.aap.utils.collection.CollectionUtils.comparing;
 import static me.aap.utils.text.TextUtils.timeToString;
 
@@ -61,6 +63,15 @@ public abstract class MediaEngineBase implements MediaEngine {
 
 	protected boolean isPaused() {
 		return state == STATE_PAUSED;
+	}
+
+	protected FutureSupplier<Long> getSubtitlePosition() {
+		return getPosition();
+	}
+
+	protected long subSchedulerClock() {
+		var pos = getSubtitlePosition();
+		return pos.isDoneNotFailed() ? pos.getOrThrow() : System.currentTimeMillis();
 	}
 
 	public FutureSupplier<List<SubtitleStreamInfo>> getSubtitleStreamInfo() {
@@ -147,6 +158,10 @@ public abstract class MediaEngineBase implements MediaEngine {
 		if (subMgr != null) subMgr.removeSubtitleConsumer(consumer);
 	}
 
+	protected  Subtitles.Stream createSubStream() {
+		return new Subtitles.Stream();
+	}
+
 	@CallSuper
 	@Override
 	public void close() {
@@ -211,7 +226,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 			if (delay == milliseconds) return;
 			delay = milliseconds;
 			if (sub != null) {
-				getPosition().then(pos -> getSpeed().main().onSuccess(speed -> {
+				getSubtitlePosition().then(pos -> getSpeed().main().onSuccess(speed -> {
 					if (sub != null) {
 						sub.stop(false);
 						sub.start(getSubtitleDelay(), getSubtitleDelay(), speed);
@@ -243,9 +258,9 @@ public abstract class MediaEngineBase implements MediaEngine {
 		void addSubtitleConsumer(@NonNull BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {
 			if (consumers.contains(consumer)) return;
 			consumers.add(consumer);
+			if (consumer == videoView) prepareDrawer(videoView);
 			if (sub == null) load();
 			else if ((state == STATE_PLAYING) && !sub.isStarted()) start();
-			else if (consumer == videoView) prepareDrawer(videoView);
 		}
 
 		void removeSubtitleConsumer(@NonNull BiConsumer<SubGrid.Position, Subtitles.Text> consumer) {
@@ -257,41 +272,52 @@ public abstract class MediaEngineBase implements MediaEngine {
 		private FutureSupplier<SubScheduler> load() {
 			if (!loading.isCancelled()) return loading;
 			var inf = streamInfo;
-			if ((inf == null) || inf.getFiles().isEmpty()) return loading;
+			if (inf == null) return loading;
 
-			return loading = App.get().execute(() -> {
-				var src = getSource();
-				if (src == null) return null;
+			FutureSupplier<SubGrid> load;
 
-				var files = inf.getFiles();
-				var sg = FileSubtitles.load(files.get(0));
+			if (inf instanceof SubtitleStreamInfo.Generated) {
+				load = completed(new SubGrid(createSubStream()));
+			} else if (!inf.getFiles().isEmpty()) {
+				load = App.get().execute(() -> {
+					var src = getSource();
+					if (src == null) return null;
 
-				if (files.size() == 1) {
-					if (!src.isVideo()) sg.mergeAtPosition(BOTTOM_LEFT);
-					return sg;
-				}
+					var files = inf.getFiles();
+					var sg = FileSubtitles.load(files.get(0));
 
-				var sg1 = FileSubtitles.load(files.get(1));
-				sg.mergeAtPosition(BOTTOM_LEFT);
-				sg1.mergeAtPosition(BOTTOM_RIGHT);
-				sg.mergeWith(sg1);
-
-				if (src.isVideo()) {
-					var s1 = sg.get(BOTTOM_LEFT);
-					var s2 = sg.get(BOTTOM_RIGHT);
-					if (s1.compareTime(s2)) {
-						for (int i = 0, n = s1.size(); i < n; i++) {
-							s1.get(i).setTranslation(s2.get(i).getText());
-						}
-						sg.remove(BOTTOM_RIGHT);
-						sg.move(BOTTOM_LEFT, BOTTOM_CENTER);
+					if (files.size() == 1) {
+						if (!src.isVideo()) sg.mergeAtPosition(BOTTOM_LEFT);
+						return sg;
 					}
-				}
 
-				return sg;
-			}).main().map(sg -> {
+					var sg1 = FileSubtitles.load(files.get(1));
+					sg.mergeAtPosition(BOTTOM_LEFT);
+					sg1.mergeAtPosition(BOTTOM_RIGHT);
+					sg.mergeWith(sg1);
+
+					if (src.isVideo()) {
+						var s1 = sg.get(BOTTOM_LEFT);
+						var s2 = sg.get(BOTTOM_RIGHT);
+						if (s1.compareTime(s2)) {
+							for (int i = 0, n = s1.size(); i < n; i++) {
+								s1.get(i).setTranslation(s2.get(i).getText());
+							}
+							sg.remove(BOTTOM_RIGHT);
+							sg.move(BOTTOM_LEFT, BOTTOM_CENTER);
+						}
+					}
+
+					return sg;
+				});
+			} else {
+				return loading;
+			}
+
+			return loading = load.main().map(sg -> {
 				if ((sg == null) || (sub != null) || (inf != streamInfo)) return null;
-				sub = new SubScheduler(App.get().getHandler(), sg, this);
+				sub = new SubScheduler(App.get().getHandler(), sg, this,
+						MediaEngineBase.this::subSchedulerClock);
 				if ((state == STATE_PLAYING) && !consumers.isEmpty()) start();
 				return sub;
 			});
@@ -302,7 +328,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 			for (var c : consumers) c.accept(position, text);
 
 			if (BuildConfig.D) {
-				getPosition().onSuccess(t -> {
+				getSubtitlePosition().onSuccess(t -> {
 					String time = timeToString((int) (t / 1000));
 
 					if (text == null) {
@@ -320,7 +346,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 		void start() {
 			SubScheduler sub = this.sub;
 			if (sub == null) return;
-			getPosition().then(pos -> getSpeed().main().onSuccess(speed -> {
+			getSubtitlePosition().then(pos -> getSpeed().main().onSuccess(speed -> {
 				if (sub != this.sub) return;
 				for (@NonNull var c : consumers) {
 					if (c == videoView) {
@@ -358,7 +384,9 @@ public abstract class MediaEngineBase implements MediaEngine {
 		}
 
 		private void prepareDrawer(VideoView videoView) {
-			videoView.prepareSubDrawer((streamInfo != null) && (streamInfo.getFiles().size() == 2));
+			boolean dbl = (streamInfo != null) && (streamInfo.getFiles().size() == 2) ||
+					(streamInfo instanceof SubtitleStreamInfo.Generated);
+			videoView.prepareSubDrawer(dbl);
 		}
 	}
 }

@@ -1,19 +1,27 @@
 ext {
-    VERSION_CODE = 254
-    VERSION_NAME = "1.9.10"
+    VERSION_CODE = 255
+    VERSION_NAME = "2.0.0"
     SDK_MIN_VERSION = 23
     SDK_TARGET_VERSION = 35
     SDK_COMPILE_VERSION = 35
     localProps = gradle.ext.localProps
 
-    ANDROID_MATERIAL_VERSION = '1.12.0'
+    ANDROID_MATERIAL_VERSION = '1.13.0'
     ANDROID_PLAY_CORE_FD_VERSION = '2.1.0'
     ANDROIDX_CORE_VERSION = '1.12.0'
-    ANDROIDX_MEDIA_VERSION = '1.7.0'
+    ANDROIDX_MEDIA_VERSION = '1.7.1'
     ANDROIDX_APPCOMPAT_VERSION = '1.7.1'
     ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.2.1'
     ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = '1.1.0'
-    GUAVA_VERSION = '33.4.0-android'
+    GUAVA_VERSION = '33.5.0-android'
+
+    addons = [
+            [
+                    name   : 'subgen',
+                    icon   : 'subgen',
+                    class  : 'me.aap.fermata.addon.SubGenAddon',
+            ]
+    ]
 }
 
 buildscript {
@@ -25,8 +33,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.10.1'
-        classpath 'com.google.gms:google-services:4.4.2'
+        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'com.google.gms:google-services:4.4.4'
     }
 }
 
@@ -52,7 +60,7 @@ subprojects {
 
     android {
         compileSdk SDK_COMPILE_VERSION
-        ndkVersion = "25.2.9519653"
+        ndkVersion = '29.0.14206865'
 
         defaultConfig {
             minSdkVersion SDK_MIN_VERSION
@@ -98,8 +106,8 @@ subprojects {
 
     dependencies {
         testImplementation 'junit:junit:4.13.2'
-        androidTestImplementation 'androidx.test.ext:junit:1.2.1'
-        androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+        androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+        androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     }
 
     configurations.configureEach {
@@ -115,27 +123,31 @@ subprojects {
 }
 
 gradle.projectsEvaluated {
+    def addons = new ArrayList<HashMap>(ext.addons)
     gradle.ext.modules.forEach {
         def p = project(it)
-
         if (p.ext.has('addons')) {
             p.ext.addons.forEach {
-                if (gradle.ext.addonInfo.length() == 0) {
-                    gradle.ext.addonInfo.append('me.aap.utils.collection.CollectionUtils.sort(new me.aap.fermata.addon.AddonInfo[] {\n')
-                } else {
-                    gradle.ext.addonInfo.append(',\n')
-                }
-
-                gradle.ext.addonInfo.append("new me.aap.fermata.addon.AddonInfo(\"${p.name}\", \"${it['class']}\", R.string.addon_name_${it['name']}, R.drawable.${it['icon']}, ${it['order']}, ${it['enabled']})")
+                def info = new HashMap(it)
+                info['module'] = p.name
+                addons.add(info)
             }
         }
     }
 
-    if (gradle.ext.addonInfo.length() != 0) {
-        gradle.ext.addonInfo.append('\n})')
-        project(':fermata').android.productFlavors.forEach {
-            it.buildConfigField 'me.aap.fermata.addon.AddonInfo[]', 'ADDONS', gradle.ext.addonInfo.toString()
-        }
+    def addonInfo = new StringBuilder(1024)
+    addonInfo.append('me.aap.utils.collection.CollectionUtils.sort(new me.aap.fermata.addon.AddonInfo[] {\n')
+    addons.forEach {
+        def name = it['name']
+        addonInfo.append("  new me.aap.fermata.addon.AddonInfo(" +
+                "\"${it.get('module', name)}\", \"${it['class']}\", " +
+                "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
+                "${it['order']}, ${it['hasSettings']}, ${it['enabled']}),\n")
+    }
+
+    def infoStr = addonInfo.append('})').toString()
+    project(':fermata').android.productFlavors.forEach {
+        it.buildConfigField 'me.aap.fermata.addon.AddonInfo[]', 'ADDONS', infoStr
     }
 }
 

@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.R;
+import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.engine.MediaEngine.Listener;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -114,7 +115,12 @@ public class MediaEngineManager implements PreferenceStore.Listener {
 		}
 
 		PlayableItemPrefs pref = i.getPrefs();
-		int id = i.isVideo() ? pref.getVideoEnginePref() : pref.getAudioEnginePref();
+		int id;
+		if (pref.getBooleanPref(SubGenAddon.ENABLED) && isExoPlayerSupported()) {
+			id = MEDIA_ENG_EXO;
+		} else {
+			id = i.isVideo() ? pref.getVideoEnginePref() : pref.getAudioEnginePref();
+		}
 
 		if (current != null) {
 			if (current.getId() == id) return create(null, current, i, listener);
