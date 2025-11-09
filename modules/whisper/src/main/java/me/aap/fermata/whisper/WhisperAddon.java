@@ -19,6 +19,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.SubGenAddon;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.PreferenceSet;
@@ -27,6 +28,8 @@ import me.aap.utils.pref.PreferenceStore;
 @Keep
 @SuppressWarnings("unused")
 public class WhisperAddon extends SubGenAddon {
+	public static final PreferenceStore.Pref<BooleanSupplier>
+			SINGLE_SEGMENT = PreferenceStore.Pref.b("SG_WHISPER_SINGLE_SEGMENT", false);
 	public static final PreferenceStore.Pref<Supplier<String>> MODEL =
 			PreferenceStore.Pref.s("SG_WHISPER_MODEL", "tiny-q5_1");
 	private static final AddonInfo info = FermataAddon.findAddonInfo(WhisperAddon.class.getName());
@@ -63,17 +66,21 @@ public class WhisperAddon extends SubGenAddon {
 			o.formatSubtitle = true;
 			o.visibility = visibility.copy();
 		});
-
-		if (isGlobalSettings) {
-			set.addButton(o -> {
-				o.title = me.aap.fermata.R.string.sub_gen_cleanup;
-				o.onClick = () -> {
-					var deleted = Whisper.cleanUp(ctx, ps);
-					showInfo(ctx, ctx.getString(me.aap.fermata.R.string.sub_gen_cleanup_done, deleted));
-				};
-				o.visibility = visibility.copy();
-			});
-		}
+		set.addBooleanPref(o -> {
+			o.store = ps;
+			o.pref = SINGLE_SEGMENT;
+			o.title = me.aap.fermata.R.string.sub_gen_single;
+			o.subtitle = me.aap.fermata.R.string.sub_gen_single_sub;
+			o.visibility = visibility.copy();
+		});
+		set.addButton(o -> {
+			o.title = me.aap.fermata.R.string.sub_gen_cleanup;
+			o.onClick = () -> {
+				var deleted = Whisper.cleanUp(ctx, ps);
+				showInfo(ctx, ctx.getString(me.aap.fermata.R.string.sub_gen_cleanup_done, deleted));
+			};
+			o.visibility = visibility.copy();
+		});
 	}
 
 	@Override

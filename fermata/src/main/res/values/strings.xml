@@ -29,8 +29,11 @@
     <string name="addon_name_felex" translatable="false">Felex</string>
     <string name="addon_name_cast" translatable="false">Google Cast</string>
     <string name="addon_name_chat" translatable="false">ChatGPT</string>
+    <string name="addon_name_translate" translatable="false">Language translator</string>
     <string name="addon_name_subgen" translatable="false">Subtitles generator</string>
     <string name="addon_name_whisper" translatable="false">Whisper</string>
+    <string name="addon_name_mlkit" translatable="false">ML Kit</string>
+    <string name="addon_name_mlkit_translate" translatable="false">ML Kit Translate</string>
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -56,6 +59,7 @@
 
     <string name="show_track_icons">Show track icons</string>
     <string name="lang">Language</string>
+    <string name="trans_lang">Translation language</string>
     <string name="hide_bars">Hide bars</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
@@ -65,6 +69,7 @@
     <string name="tool_bar_size">Tool bar size</string>
     <string name="control_panel_size">Control panel size</string>
     <string name="text_icon_size">Text and icons size</string>
+    <string name="subtitles_size">Subtitles size</string>
 
     <string name="key_bindings">Key bindings</string>
     <string name="key_on_click">On click</string>
@@ -180,7 +185,9 @@
     <string name="sub_gen_chunk">Chunk length</string>
     <string name="sub_gen_chunk_sub">Process the buffer in chunks of the specified duration</string>
     <string name="sub_gen_model">Model</string>
-    <string name="sub_gen_translate_en">Translate to english</string>
+    <string name="sub_gen_translate">Translate</string>
+    <string name="sub_gen_single">Single segment</string>
+    <string name="sub_gen_single_sub">Transcribe the entire chunk as a single segment</string>
     <string name="sub_gen_downloading">Please wait while the model is downloaded.</string>
     <string name="sub_gen_download_fail">Failed to download the model: %s!</string>
     <string name="sub_gen_cleanup">Delete other downloaded models from cache</string>

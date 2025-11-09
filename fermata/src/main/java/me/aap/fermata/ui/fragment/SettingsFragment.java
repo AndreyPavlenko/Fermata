@@ -10,6 +10,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_DEFAULT;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_SYSTEM;
 import static me.aap.fermata.media.pref.MediaPrefs.MEDIA_SCANNER_VLC;
 import static me.aap.fermata.media.pref.MediaPrefs.SUB_LANG;
+import static me.aap.fermata.media.pref.MediaPrefs.SUB_SIZE;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_LANG;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROL_SUBST;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.VOICE_CONTROl_ENABLED;
@@ -59,6 +60,7 @@ import me.aap.fermata.addon.AddonInfo;
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.SubGenAddon;
+import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
@@ -199,6 +201,20 @@ public class SettingsFragment extends MainActivityFragment
 		});
 	}
 
+	public static void addSubSizePrefs(PreferenceSet set, PreferenceStore store,
+																		 ChangeableCondition visibility) {
+		if (store instanceof MediaLib.PlayableItem p && !p.isVideo()) return;
+		set.addFloatPref(o -> {
+			o.store = store;
+			o.pref = SUB_SIZE;
+			o.title = R.string.subtitles_size;
+			o.scale = 0.05f;
+			o.seekMin = 10;
+			o.seekMax = 40;
+			o.visibility = visibility;
+		});
+	}
+
 	public static void addAudioPrefs(PreferenceSet set, PreferenceStore store, boolean isCar) {
 		addDelayPrefs(set, store, MediaLibPrefs.AUDIO_DELAY, R.string.audio_delay, null);
 
@@ -234,6 +250,7 @@ public class SettingsFragment extends MainActivityFragment
 		var enabled = PrefCondition.create(store, MediaLibPrefs.SUB_ENABLED);
 		addAutoSubPrefs(ctx, set, store, enabled.copy(), true);
 		addDelayPrefs(set, store, MediaLibPrefs.SUB_DELAY, R.string.subtitle_delay, enabled.copy());
+		addSubSizePrefs(set, store, enabled.copy());
 
 		if (!isCar) {
 			set.addStringPref(o -> {

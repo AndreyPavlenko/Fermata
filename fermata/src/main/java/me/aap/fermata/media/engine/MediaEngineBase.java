@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.sub.FileSubtitles;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.SubScheduler;
@@ -158,8 +159,8 @@ public abstract class MediaEngineBase implements MediaEngine {
 		if (subMgr != null) subMgr.removeSubtitleConsumer(consumer);
 	}
 
-	protected  Subtitles.Stream createSubStream() {
-		return new Subtitles.Stream();
+	protected SubGrid createSubStreamGrid() {
+		return new SubGrid(new Subtitles.Stream()) ;
 	}
 
 	@CallSuper
@@ -181,6 +182,9 @@ public abstract class MediaEngineBase implements MediaEngine {
 		if (videoView != null) {
 			if (subMgr != null) subMgr.addSubtitleConsumer(videoView);
 			else selectSubtitleStream();
+		} else {
+			var src = getSource();
+			if (src != null && src.getPrefs().getBooleanPref(SubGenAddon.ENABLED)) selectSubtitleStream();
 		}
 	}
 
@@ -212,7 +216,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 
 	private final class SubMgr implements BiConsumer<SubGrid.Position, Subtitles.Text> {
 		private final List<BiConsumer<SubGrid.Position, Subtitles.Text>> consumers =
-				new ArrayList<>(2);
+				new ArrayList<>(3);
 		private int delay;
 		private SubScheduler sub;
 		private SubtitleStreamInfo streamInfo;
@@ -277,7 +281,7 @@ public abstract class MediaEngineBase implements MediaEngine {
 			FutureSupplier<SubGrid> load;
 
 			if (inf instanceof SubtitleStreamInfo.Generated) {
-				load = completed(new SubGrid(createSubStream()));
+				load = completed(createSubStreamGrid());
 			} else if (!inf.getFiles().isEmpty()) {
 				load = App.get().execute(() -> {
 					var src = getSource();

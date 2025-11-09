@@ -118,10 +118,13 @@ import me.aap.fermata.media.pref.MediaLibPrefs;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlayableItemPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
+import me.aap.fermata.media.sub.SubGrid;
+import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
+import me.aap.utils.function.BiConsumer;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.holder.Holder;
 import me.aap.utils.log.Log;
@@ -136,7 +139,7 @@ import me.aap.utils.ui.activity.ActivityDelegate;
 public class MediaSessionCallback extends MediaSessionCompat.Callback
 		implements MediaSessionCallbackAssistant, MediaEngine.Listener,
 		AudioManager.OnAudioFocusChangeListener, EventBroadcaster<MediaSessionCallback.Listener>,
-		Closeable {
+		BiConsumer<SubGrid.Position, Subtitles.Text>, Closeable {
 	public static final String EXTRA_POS = "me.aap.fermata.extra.pos";
 	private static final String CUSTOM_ACTION_RW = "me.aap.fermata.action.rewind";
 	private static final String CUSTOM_ACTION_FF = "me.aap.fermata.action.fastForward";
@@ -183,6 +186,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Queue<Prioritized<VideoView>> videoView;
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
+	private MediaMetadataCompat metadata;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
 															MediaLib lib,
@@ -413,6 +417,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
 		removeBroadcastListeners();
+		metadata = null;
 	}
 
 	@Override
@@ -432,7 +437,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			if (i == null) return completedVoid();
 			if (i.isVideo() || !i.isSeekable()) {
 				setPlaybackState(createPlayingState(i, STATE_STOPPED, 0, 0, 1f));
-				return i.getMediaData().onSuccess(session::setMetadata).cast();
+				return i.getMediaData().onSuccess(this::setMetadata).cast();
 			}
 
 			engine = getEngineManager().createEngine(engine, i, this);
@@ -1061,6 +1066,49 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, msg).build();
 		setPlaybackState(state);
 		onStop();
+	}
+
+	@Override
+	public void accept(SubGrid.Position position, Subtitles.Text text) {
+		if (metadata == null ||
+				(position != SubGrid.Position.BOTTOM_CENTER && position != SubGrid.Position.BOTTOM_LEFT))
+			return;
+
+		if (text == null) {
+			session.setMetadata(metadata);
+			return;
+		}
+
+		String t1;
+		String t2;
+		if (text.getTranslation() != null) {
+			t1 = text.getText();
+			t2 = text.getTranslation();
+		} else {
+			var txt = text.getText().trim();
+			int idx = txt.lastIndexOf(' ', txt.length() / 2);
+			if (idx == -1) {
+				t1 = txt;
+				t2 = "";
+			} else {
+				t1 = txt.substring(0, idx);
+				t2 = txt.substring(idx + 1);
+			}
+		}
+
+		var t = metadata.getText(METADATA_KEY_DISPLAY_TITLE);
+		var s = metadata.getText(METADATA_KEY_DISPLAY_SUBTITLE);
+		if (t1.equals(t == null ? "" : t.toString()) && t2.equals(s == null ? "" : s.toString()))
+			return;
+		var b = new MediaMetadataCompat.Builder(metadata);
+		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, t1);
+		b.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, t2);
+		setMetadata(b.build());
+	}
+
+	private void setMetadata(MediaMetadataCompat metadata) {
+		this.metadata = metadata;
+		session.setMetadata(metadata);
 	}
 
 	@Override

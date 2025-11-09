@@ -17,6 +17,7 @@ import static me.aap.fermata.media.pref.MediaPrefs.SCALE_4_3;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_BEST;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_FILL;
 import static me.aap.fermata.media.pref.MediaPrefs.SCALE_ORIGINAL;
+import static me.aap.fermata.media.pref.MediaPrefs.SUB_SIZE;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.ui.UiUtils.isVisible;
 import static me.aap.utils.ui.UiUtils.toIntPx;
@@ -209,12 +210,15 @@ public class VideoView extends FrameLayout
 	public void prepareSubDrawer(boolean dbl) {
 		MainActivityDelegate a = getActivity().peek();
 		if (a == null) return;
+		var src = a.getMediaSessionCallback().getCurrentItem();
+		var ps = (src != null) ? src.getPrefs() : a.getLib().getPrefs();
+		var scale = ps.getFloatPref(SUB_SIZE);
 		if (dbl) {
-			if (subDrawer instanceof DoubleSubDrawer) return;
-			subDrawer = new DoubleSubDrawer(a.getPrefs().getTextIconSizePref(a));
+			if (subDrawer instanceof DoubleSubDrawer && subDrawer.textScale == scale) return;
+			subDrawer = new DoubleSubDrawer(scale);
 		} else {
-			if (subDrawer instanceof GridDrawer) return;
-			subDrawer = new GridDrawer(a.getPrefs().getTextIconSizePref(a));
+			if (subDrawer instanceof GridDrawer && subDrawer.textScale == scale) return;
+			subDrawer = new GridDrawer(scale);
 		}
 	}
 
@@ -529,7 +533,8 @@ public class VideoView extends FrameLayout
 		}
 
 		float textSize(int canvasHeight, int canvasWidth) {
-			return textScale * Math.min(canvasHeight, canvasWidth) / 20;
+			var s = textScale * canvasWidth / 25f;
+			return canvasHeight > canvasWidth ? s * canvasHeight / canvasWidth : s;
 		}
 
 		static TextPaint paint(Paint.Align align) {

@@ -1,0 +1,25 @@
+android {
+    namespace = 'me.aap.fermata.mlkit'
+    defaultConfig {
+        versionCode 1
+        versionName '1.0'
+    }
+}
+
+ext {
+    addons = [
+            [
+                    name : 'mlkit_translate',
+                    icon : 'translate',
+                    class: 'me.aap.fermata.mlkit.MlkitTranslateAddon',
+                    hasSettings: false
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation 'com.google.mlkit:translate:17.0.3'
+    implementation 'androidx.annotation:annotation:1.9.1'
+}

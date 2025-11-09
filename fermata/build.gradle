@@ -108,4 +108,10 @@ dependencies {
     implementation "androidx.car.app:app:1.7.0"
     implementation "androidx.legacy:legacy-support-core-utils:1.0.0"
     implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
+    implementation "com.google.android.datatransport:transport-api:4.0.0"
+    implementation "com.google.android.datatransport:transport-backend-cct:4.0.0"
+    implementation "com.google.android.datatransport:transport-runtime:4.0.0"
+    implementation "com.google.firebase:firebase-encoders-json:18.0.1"
+    implementation "com.google.firebase:firebase-encoders:17.0.0"
+    implementation "javax.inject:javax.inject:1"
 }

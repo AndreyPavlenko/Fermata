@@ -14,7 +14,6 @@ import java.util.List;
 import me.aap.utils.event.BasicEventBroadcaster;
 import me.aap.utils.event.EventBroadcaster;
 import me.aap.utils.function.Consumer;
-import me.aap.utils.log.Log;
 
 /**
  * @author Andrey Pavlenko
@@ -199,12 +198,9 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 		@NonNull
 		@Override
 		public String toString() {
-			return "Text{" +
-					"text='" + text + '\'' +
-					", time=" + time +
-					", duration=" + duration +
-					", index=" + index +
-					'}';
+			var s = "[" + time + " + " + duration + "] " + text;
+			if (translation != null) s += "\n" + translation;
+			return s;
 		}
 	}
 
@@ -256,18 +252,24 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 			return cursor < subtitles.length ? (int) cursor : subtitles.length;
 		}
 
-		public void add(List<Text> sub) {
+		public boolean add(Text sub) {
+			add(Collections.singletonList(sub));
+			return true;
+		}
+
+		public List<Text> add(List<Text> sub) {
 			int added = sub.size();
 			if (added > subtitles.length) {
 				sub = sub.subList(added - subtitles.length, added);
 				added = subtitles.length;
 			}
+			var addedSubs = new ArrayList<Text>(sub.size());
 			int removed = size() + added;
 			removed = (removed > subtitles.length) ? removed - subtitles.length : 0;
 
 			for (var s : sub) {
 				int idx = (int) (cursor % subtitles.length);
-				subtitles[idx] = new Text(s.getText(), s.getTime(), s.getDuration()) {
+				var t = new Text(s.getText(), s.getTime(), s.getDuration()) {
 					private final long position = cursor;
 
 					{
@@ -281,12 +283,15 @@ public class Subtitles extends AbstractCollection<Subtitles.Text> {
 								(int) (subtitles.length + position - cursor);
 					}
 				};
+				subtitles[idx] = t;
+				addedSubs.add(t);
 				cursor++;
 			}
 
 			int a = added;
 			int r = removed;
 			broadcaster.fireBroadcastEvent(l -> l.subStreamChanged(this, r, a));
+			return addedSubs;
 		}
 
 		@Override

@@ -12,11 +12,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import me.aap.fermata.addon.SubGenAddon.Transcriptor;
-import me.aap.fermata.media.sub.Subtitles;
 import me.aap.utils.app.App;
-import me.aap.utils.function.Consumer;
 import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
+
 
 @UnstableApi
 public final class AudioTranscriptProcessor implements AudioProcessor {
@@ -28,7 +27,6 @@ public final class AudioTranscriptProcessor implements AudioProcessor {
 	private RingBuffer buffer = new RingBuffer();
 	private int bytesPerSample;
 	private boolean isTranscribing;
-
 
 	AudioTranscriptProcessor(ExoPlayerEngine.Accessor player, Transcriptor transcriptor,
 													 int bufLen, int chunkLen) {
@@ -109,17 +107,14 @@ public final class AudioTranscriptProcessor implements AudioProcessor {
 
 			var subtitles = transcriptor.transcribe(player.getSubGenTimeOffset());
 			if (subtitles.isEmpty()) continue;
+			var lang = transcriptor.getLang();
 
-			getSubStream(s -> {
+			App.get().run(() -> {
 				if (ringBuf != buffer) return;
-				s.add(subtitles);
 				player.drainBuffer();
+				player.addSubtitles(lang, subtitles);
 			});
 		}
-	}
-
-	private void getSubStream(Consumer<Subtitles.Stream> c) {
-		App.get().run(() -> c.accept(player.getSubStream()));
 	}
 
 	@Override
@@ -157,14 +152,12 @@ public final class AudioTranscriptProcessor implements AudioProcessor {
 	public synchronized void flush() {
 		transcriptor.reset();
 		buffer = buffer.clear();
-		getSubStream(Subtitles.Stream::clear);
 	}
 
 	@Override
 	public synchronized void reset() {
 		transcriptor.reset();
 		buffer = buffer.clear();
-		getSubStream(Subtitles.Stream::clear);
 		audioFormat = AudioFormat.NOT_SET;
 	}
 

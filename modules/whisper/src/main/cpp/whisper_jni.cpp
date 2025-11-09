@@ -23,13 +23,12 @@
 
 struct WhisperSession {
 	explicit WhisperSession(struct whisper_context *ctx, std::string &vadPath, std::string &lang,
-													bool translate)
+													bool singleSegment)
 			: ctx(ctx), vadPath(vadPath), lang(lang),
 				params(whisper_full_default_params(WHISPER_SAMPLING_GREEDY)) {
 		reset();
 		params.n_threads = std::max(4, static_cast<int>(std::thread::hardware_concurrency()));
-		params.translate = translate;
-		params.single_segment = false;
+		params.single_segment = singleSegment;
 		params.print_special = false;
 		params.print_progress = false;
 		params.print_realtime = false;
@@ -38,12 +37,6 @@ struct WhisperSession {
 		if (!this->vadPath.empty()) {
 			params.vad = true;
 			params.vad_model_path = this->vadPath.c_str();
-			params.vad_params.threshold = 0.65f;
-			params.vad_params.min_speech_duration_ms = 800;
-			params.vad_params.min_silence_duration_ms = 700;
-			params.vad_params.max_speech_duration_s = 25.0f;
-			params.vad_params.speech_pad_ms = 300;
-			params.vad_params.samples_overlap = 0.25f;
 		}
 	}
 
@@ -196,13 +189,13 @@ Java_me_aap_fermata_whisper_Whisper_create(JNIEnv *env, jclass, jstring jModelPa
 
 extern "C" JNIEXPORT void JNICALL
 Java_me_aap_fermata_whisper_Whisper_reconfigure(JNIEnv *env, jclass, jlong sessionPtr,
-																								jstring jlang, jboolean translate) {
+																								jstring jlang, jboolean singleSegment) {
 	assert(sessionPtr);
 	auto session = reinterpret_cast<WhisperSession *>(sessionPtr);
 	auto chars = env->GetStringUTFChars(jlang, nullptr);
 	session->lang = chars;
 	env->ReleaseStringUTFChars(jlang, chars);
-	session->params.translate = translate;
+	session->params.single_segment = singleSegment;
 	session->reset();
 }
 
@@ -277,7 +270,6 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 	auto session = reinterpret_cast<WhisperSession *>(sessionPtr);
 	if (session->size == 0) return 0;
 
-
 	whisper_full_params &params = session->params;
 	if (whisper_full(session->ctx, params, session->samples, static_cast<int>(session->size)) != 0) {
 		env->ThrowNew(env->FindClass("java/lang/RuntimeException"), "Failed to transcribe");
@@ -289,6 +281,7 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 		if (params.language) {
 			params.detect_language = false;
 			session->lang = params.language;
+			LOGI("Detected language: %s", params.language);
 		}
 	}
 
@@ -296,6 +289,13 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 	unsigned consumed;
 
 	if (segments > 0) {
+		for (int i = 0; i < segments; ++i) {
+			auto dur =
+					whisper_full_get_segment_t1(session->ctx, i) -
+					whisper_full_get_segment_t1(session->ctx, i);
+			if (dur > 50) break;
+			segments--;
+		}
 		auto end = static_cast<unsigned>(whisper_full_get_segment_t1(session->ctx, segments - 1) *
 																		 WHISPER_SAMPLE_RATE / 100);
 		consumed = std::min(session->size, end);
@@ -339,6 +339,17 @@ Java_me_aap_fermata_whisper_Whisper_end(JNIEnv *, jclass, jlong sessionPtr, jint
 	auto session = reinterpret_cast<WhisperSession *>(sessionPtr);
 	auto t = session->timestampOffset + whisper_full_get_segment_t1(session->ctx, segmentIdx) * 10;
 	return static_cast<jlong>(t);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_me_aap_fermata_whisper_Whisper_lang(JNIEnv *env, jclass, jlong sessionPtr) {
+	assert(sessionPtr);
+	auto session = reinterpret_cast<WhisperSession *>(sessionPtr);
+	auto lang = session->params.language;
+	if (lang == nullptr || std::strcmp("auto", lang) == 0) {
+		lang = whisper_lang_str(whisper_full_lang_id(session->ctx));
+	}
+	return env->NewStringUTF(lang == nullptr ? "" : lang);
 }
 
 extern "C" JNIEXPORT void JNICALL

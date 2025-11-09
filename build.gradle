@@ -17,10 +17,17 @@ ext {
 
     addons = [
             [
+                    name       : 'translate',
+                    icon       : 'translate',
+                    class      : 'me.aap.fermata.addon.TranslateAddon',
+                    hasSettings: false
+            ],
+            [
                     name   : 'subgen',
                     icon   : 'subgen',
                     class  : 'me.aap.fermata.addon.SubGenAddon',
-            ]
+                    depends: 'exoplayer,translate'
+            ],
     ]
 }
 
@@ -142,7 +149,8 @@ gradle.projectsEvaluated {
         addonInfo.append("  new me.aap.fermata.addon.AddonInfo(" +
                 "\"${it.get('module', name)}\", \"${it['class']}\", " +
                 "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
-                "${it['order']}, ${it['hasSettings']}, ${it['enabled']}),\n")
+                "${it['order']}, ${it['hasSettings']}, ${it['enabled']}, " +
+                "\"${it.get('depends', "")}\"),\n")
     }
 
     def infoStr = addonInfo.append('})').toString()

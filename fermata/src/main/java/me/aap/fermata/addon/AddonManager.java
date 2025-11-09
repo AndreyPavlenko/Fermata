@@ -39,16 +39,16 @@ import me.aap.utils.ui.fragment.ActivityFragment;
 public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 		implements PreferenceStore.Listener {
 	private static final String CHANNEL_ID = "fermata.addon.install";
-	private final Map<String, FermataAddon> addons = new HashMap<>();
+	private final Map<Object, FermataAddon> map = new HashMap<>();
+	private final List<FermataAddon> addons = new ArrayList<>(BuildConfig.ADDONS.length);
 	private final Map<String, FutureSupplier<?>> installing = new HashMap<>();
 
 	public AddonManager(PreferenceStore store) {
 		for (AddonInfo i : BuildConfig.ADDONS) {
 			if (!store.getBooleanPref(i.enabledPref)) continue;
-
 			try {
 				FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();
-				addons.put(i.className, a);
+				add(a);
 			} catch (Exception ignore) {
 			}
 		}
@@ -62,14 +62,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	@Nullable
 	public synchronized FermataAddon getAddon(String moduleOrClassName) {
-		if (moduleOrClassName.indexOf('.') < 0) {
-			for (FermataAddon a : addons.values()) {
-				if (a.getInfo().moduleName.equals(moduleOrClassName)) return a;
-			}
-		} else {
-			return addons.get(moduleOrClassName);
-		}
-		return null;
+		return map.get(moduleOrClassName);
 	}
 
 	public <A extends FermataAddon> FutureSupplier<A> getOrInstallAddon(Class<A> c) {
@@ -95,41 +88,35 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	@SuppressWarnings("unchecked")
 	@Nullable
 	public synchronized <A extends FermataAddon> A getAddon(Class<A> c) {
-		return (A) addons.get(c.getName());
+		return (A) map.get(c.getName());
 	}
 
 	public synchronized Collection<FermataAddon> getAddons() {
-		return new ArrayList<>(addons.values());
+		return new ArrayList<>(addons);
 	}
 
 	/**
 	 * @noinspection unchecked
 	 */
 	public synchronized <A extends FermataAddon> List<A> getAddons(Class<A> c) {
-		return (List<A>) CollectionUtils.filter(addons.values(), c::isInstance);
+		return (List<A>) CollectionUtils.filter(addons, c::isInstance);
 	}
 
 	public synchronized boolean hasAddon(@IdRes int id) {
-		for (FermataAddon a : addons.values()) {
-			if (a.getAddonId() == id) return true;
-		}
-		return false;
+		return map.containsKey(id);
 	}
 
 	@Nullable
 	public synchronized ActivityFragment createFragment(@IdRes int id) {
-		for (FermataAddon a : addons.values()) {
-			if (a instanceof FermataFragmentAddon) {
-				if (a.getAddonId() == id) return ((FermataFragmentAddon) a).createFragment();
-			}
-		}
+		FermataAddon a = map.get(id);
+		if (a instanceof FermataFragmentAddon fa) return fa.createFragment();
 		return null;
 	}
 
 	@Nullable
 	public synchronized FutureSupplier<? extends Item>
 	getItem(DefaultMediaLib lib, @Nullable String scheme, String id) {
-		for (FermataAddon a : addons.values()) {
+		for (FermataAddon a : addons) {
 			if (a instanceof MediaLibAddon) {
 				FutureSupplier<? extends Item> i = ((MediaLibAddon) a).getItem(lib, scheme, id);
 				if (i != null) return i;
@@ -141,7 +128,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	@Nullable
 	public synchronized MediaLibAddon getMediaLibAddon(Item i) {
-		for (FermataAddon a : addons.values()) {
+		for (FermataAddon a : addons) {
 			if (a instanceof MediaLibAddon mla) {
 				if (mla.isSupportedItem(i)) return mla;
 			}
@@ -162,6 +149,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 
 	private synchronized void install(AddonInfo i) {
 		if (loadAddon(i) || installing.containsKey(i.className)) return;
+		for (String dep : i.depends) install(FermataAddon.findAddonInfo(dep));
 
 		var task = ActivityBase.create(App.get(), CHANNEL_ID, i.moduleName, i.icon, i.moduleName, null,
 				MainActivity.class).then(a -> createInstaller(a, i).install(i.moduleName)).onSuccess(v -> {
@@ -185,12 +173,12 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	}
 
 	private synchronized boolean loadAddon(AddonInfo i) {
-		if (addons.containsKey(i.className)) return true;
+		if (map.containsKey(i.className)) return true;
 		try {
 			FermataAddon a = (FermataAddon) Class.forName(i.className).newInstance();
 			PreferenceStore prefs = FermataApplication.get().getPreferenceStore();
 			a.install();
-			addons.put(i.className, a);
+			add(a);
 			fireBroadcastEvent(c -> c.onAddonChanged(this, i, true));
 			prefs.fireBroadcastEvent(l -> l.onPreferenceChanged(prefs, singletonList(i.enabledPref)));
 			Log.i("Addon loaded: ", i.className);
@@ -217,7 +205,7 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 	private synchronized void uninstall(AddonInfo i) {
 		var task = installing.get(i.className);
 		if (task != null) task.cancel();
-		var removed = addons.remove(i.className);
+		var removed = remove(i);
 
 		if (removed != null) {
 			removed.uninstall();
@@ -235,6 +223,23 @@ public class AddonManager extends BasicEventBroadcaster<AddonManager.Listener>
 				inst.uninstall(i.moduleName).onSuccess(v -> Log.i("Module uninstalled: ", i.moduleName));
 			});
 		}
+	}
+
+	private synchronized void add(FermataAddon a) {
+		var info = a.getInfo();
+		addons.add(a);
+		map.put(a.getAddonId(), a);
+		map.put(info.className, a);
+		map.put(info.moduleName, a);
+	}
+
+	private synchronized FermataAddon remove(AddonInfo info) {
+		FermataAddon a = map.remove(info.className);
+		if (a == null) return null;
+		addons.remove(a);
+		map.remove(a.getAddonId());
+		map.remove(info.moduleName);
+		return a;
 	}
 
 	private static DynamicModuleInstaller createInstaller(Activity a, AddonInfo ai) {

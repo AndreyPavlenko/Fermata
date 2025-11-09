@@ -12,6 +12,7 @@ import me.aap.utils.ui.activity.AppActivity;
  */
 public interface FermataActivity extends AppActivity {
 
+
 	boolean isCarActivity();
 
 	void setRequestedOrientation(int requestedOrientation);

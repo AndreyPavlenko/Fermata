@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import me.aap.fermata.FermataApplication;
 import me.aap.fermata.R;
@@ -25,6 +26,7 @@ import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.log.Log;
 import me.aap.utils.misc.ChangeableCondition;
+import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
@@ -40,6 +42,8 @@ public class SubGenAddon implements FermataAddon {
 	public static final Pref<IntSupplier> CHUNK_LEN = Pref.i("SG_CHUNK_LEN", 5);
 	public static final PreferenceStore.Pref<BooleanSupplier> TRANSLATE =
 			PreferenceStore.Pref.b("SG_TRANSLATE", false);
+	public static final Pref<Supplier<String>> TRANSLATE_LANG = Pref.s("SG_TRANSLATE_LANG",
+			() -> Locale.getDefault().getLanguage());
 	private static final AddonInfo info = FermataAddon.findAddonInfo(SubGenAddon.class.getName());
 	private final CacheMap<Object, Transcriptor> cache = new CacheMap<>(30);
 
@@ -73,6 +77,12 @@ public class SubGenAddon implements FermataAddon {
 			}
 		}
 
+		set.addBooleanPref(o -> {
+			o.store = ps;
+			o.pref = TRANSLATE;
+			o.title = me.aap.fermata.R.string.sub_gen_translate;
+			o.visibility = visibility.copy();
+		});
 		set.addListPref(o -> {
 			o.setStringValues(mps, LANG, getSupportedLanguages());
 			o.title = R.string.lang;
@@ -80,11 +90,16 @@ public class SubGenAddon implements FermataAddon {
 			o.formatSubtitle = true;
 			o.visibility = visibility.copy();
 		});
-		set.addBooleanPref(o -> {
-			o.store = ps;
-			o.pref = TRANSLATE;
-			o.title = me.aap.fermata.R.string.sub_gen_translate_en;
-			o.visibility = visibility.copy();
+		set.addListPref(o -> {
+			var a = TranslateAddon.get().peek();
+			var langs = a != null ? a.getSupportedLanguages() :
+					Collections.singletonList(new Pair<>(Locale.getDefault().getLanguage(),
+							ctx.getString(R.string.loading)));
+			o.setStringValues(mps, TRANSLATE_LANG, langs);
+			o.title = R.string.trans_lang;
+			o.subtitle = R.string.string_format;
+			o.formatSubtitle = true;
+			o.visibility = visibility.copy().and(PrefCondition.create(mps, TRANSLATE));
 		});
 		set.addIntPref(o -> {
 			o.store = mps;
@@ -181,6 +196,8 @@ public class SubGenAddon implements FermataAddon {
 
 		List<Subtitles.Text> transcribe(long timeOffset);
 
+		String getLang();
+
 		void reset();
 
 		void release();
@@ -215,6 +232,11 @@ public class SubGenAddon implements FermataAddon {
 		}
 
 		@Override
+		public String getLang() {
+			return get().getLang();
+		}
+
+		@Override
 		public synchronized void reset() {
 			get().reset();
 		}
@@ -235,6 +257,5 @@ public class SubGenAddon implements FermataAddon {
 			if (transcriptor == null) throw new IllegalStateException("Transcriptor released!");
 			return transcriptor;
 		}
-
 	}
 }

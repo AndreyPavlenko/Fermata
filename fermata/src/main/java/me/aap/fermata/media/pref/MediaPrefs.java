@@ -63,6 +63,7 @@ public interface MediaPrefs extends PreferenceStore {
 
 	Pref<BooleanSupplier> SUB_ENABLED = Pref.b("SUB_ENABLED", true);
 	Pref<IntSupplier> SUB_DELAY = Pref.i("SUB_DELAY", 0);
+	Pref<DoubleSupplier> SUB_SIZE = Pref.f("SUB_SIZE", 1f);
 	Pref<Supplier<String>> SUB_LANG = Pref.s("SUB_LANG", () -> {
 		Locale locale = Locale.getDefault();
 		var lang = locale.getLanguage();

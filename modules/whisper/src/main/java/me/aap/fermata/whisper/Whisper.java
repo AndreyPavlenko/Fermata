@@ -95,7 +95,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	public static FutureSupplier<Whisper> create(PreferenceStore ps) {
 		var modelNameOrPath = ps.getStringPref(WhisperAddon.MODEL);
 		var lang = ps.getStringPref(WhisperAddon.LANG);
-		var translate = ps.getBooleanPref(WhisperAddon.TRANSLATE);
+		var singleSegment = ps.getBooleanPref(WhisperAddon.SINGLE_SEGMENT);
 		var app = App.get();
 		var cacheDir = cacheDir(app);
 		var vadFile = new File(cacheDir, VAD_FILE_NAME);
@@ -135,13 +135,13 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 		}
 
 		return load.map(
-				v -> new Whisper(create(modelPath, vadFile.getAbsolutePath(), lang, translate)));
+				v -> new Whisper(create(modelPath, vadFile.getAbsolutePath(), lang, singleSegment)));
 	}
 
 	@Override
 	public boolean reconfigure(PreferenceStore ps) {
 		reconfigure(sessionPtr, ps.getStringPref(WhisperAddon.LANG),
-				ps.getBooleanPref(WhisperAddon.TRANSLATE));
+				ps.getBooleanPref(WhisperAddon.SINGLE_SEGMENT));
 		return true;
 	}
 
@@ -172,6 +172,11 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 			subtitles.add(t);
 		}
 		return subtitles;
+	}
+
+	@Override
+	public String getLang() {
+		return lang(sessionPtr);
 	}
 
 	public void reset() {
@@ -216,9 +221,9 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	}
 
 	private static native long create(String modelPath, String vadPath, String lang,
-																		boolean translate);
+																		boolean singleSegment);
 
-	private static native void reconfigure(long sessionPtr, String lang, boolean translate);
+	private static native void reconfigure(long sessionPtr, String lang, boolean singleSegment);
 
 	private static native int resample(long sessionPtr, ByteBuffer buf, int chunkLen,
 																		 int bytesPerSample, int channels, int frameRate);
@@ -230,6 +235,8 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	private static native long start(long sessionPtr, int segmentIdx);
 
 	private static native long end(long sessionPtr, int segmentIdx);
+
+	private static native String lang(long sessionPtr);
 
 	private static native void reset(long sessionPtr);
 

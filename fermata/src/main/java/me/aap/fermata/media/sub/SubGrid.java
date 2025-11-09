@@ -24,7 +24,7 @@ public class SubGrid extends AbstractCollection<Map.Entry<SubGrid.Position, Subt
 		this.subtitles = Collections.singletonMap(Position.BOTTOM_CENTER, subtitles);
 	}
 
-	private SubGrid(Map<Position, Subtitles> subtitles) {
+	public SubGrid(Map<Position, Subtitles> subtitles) {
 		this.subtitles = subtitles;
 	}
 
