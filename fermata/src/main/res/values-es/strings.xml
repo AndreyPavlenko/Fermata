@@ -1,0 +1,385 @@
+<resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    <string name="addons">Complementos</string>
+    <string name="addon_name_tv">TELEVISIÓN</string>
+    <string name="addon_name_web_browser">Navegador</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    <string name="interface_prefs">Interfaz</string>
+    <string name="interface_prefs_aa">Android Auto</string>
+    <string name="playback_settings">Configuración de reproducción</string>
+    <string name="playback_control">Control de reproducción</string>
+    <string name="engine_prefs">Motor de medios</string>
+
+    <string name="theme">Tema de la aplicación</string>
+    <string name="theme_sub">Tema actual: %1$s</string>
+    <string name="theme_light">Luz</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_black">Negro</string>
+    <string name="theme_star_wars">Guerra de las galaxias</string>
+    <string name="theme_purple">Morado</string>
+    <string name="theme_classic">Clásico</string>
+
+    <string name="nav_bar_pos">Posición de la barra de navegación</string>
+    <string name="nav_bar_pos_sub">Posición actual: %1$s</string>
+    <string name="nav_bar_pos_bottom">Fondo</string>
+    <string name="nav_bar_pos_left">Izquierda</string>
+    <string name="nav_bar_pos_right">Derecha</string>
+
+    <string name="show_track_icons">Mostrar iconos de pista</string>
+    <string name="lang">Idioma</string>
+    <string name="trans_lang">Idioma de traducción</string>
+    <string name="hide_bars">Ocultar barras</string>
+    <string name="hide_bars_sub">Ocultar las barras superior e inferior cuando aparece el panel de control</string>
+    <string name="show_pg_up_down">Mostrar botones de página arriba/abajo</string>
+    <string name="use_dpad_cursor">Usar el cursor para la navegación del D-pad</string>
+    <string name="fullscreen_mode">Modo de pantalla completa</string>
+    <string name="nav_bar_size">Tamaño de la barra de navegación</string>
+    <string name="tool_bar_size">Tamaño de la barra de herramientas</string>
+    <string name="control_panel_size">Tamaño del panel de control</string>
+    <string name="text_icon_size">Tamaño del texto y los iconos</string>
+    <string name="subtitles_size">Tamaño del texto de los subtítulos</string>
+
+    <string name="key_bindings">Atajos de teclado</string>
+    <string name="key_on_click">Al hacer clic</string>
+    <string name="key_on_long_click">Al hacer clic largo</string>
+    <string name="key_on_dbl_click">Al hacer doble clic</string>
+    <string name="action_stop">Parar</string>
+    <string name="action_play">Jugar</string>
+    <string name="action_pause">Pausa</string>
+    <string name="action_play_pause">Reproducir/Pausar</string>
+    <string name="action_prev">Jugar anterior</string>
+    <string name="action_next">Jugar siguiente</string>
+    <string name="action_rw">Rebobinar</string>
+    <string name="action_ff">Avance rápido</string>
+    <string name="action_vol_up">Sube volumen</string>
+    <string name="action_vol_down">Bajar volumen</string>
+    <string name="action_vol_mute_unmute">Silenciar/Activar el sonido</string>
+    <string name="action_activate_voice_ctrl">Activar el control por voz</string>
+    <string name="action_menu">Menú</string>
+    <string name="action_cp_menu">Menú del panel de control</string>
+    <string name="action_back_or_exit">Atrás o salir</string>
+    <string name="action_exit">Salida</string>
+    <string name="action_default">Predeterminado</string>
+    <string name="action_none">Ninguno</string>
+
+    <string name="play_next_on_completion">Juega a continuación al finalizar</string>
+
+    <string name="rw_ff_click">RW/FF - haga clic en</string>
+    <string name="rw_ff_long_click">RW/FF - clic largo</string>
+    <string name="prev_next_long_click">Anterior/Siguiente - clic largo</string>
+    <string name="play_pause_stop">Detener al reproducir/pausar clic largo</string>
+
+    <string name="time">Hora</string>
+    <string name="time_unit">Unidad de tiempo</string>
+    <string name="time_unit_sub">Valor actual: %1$s</string>
+    <string name="time_unit_second">Segundo</string>
+    <string name="time_unit_minute">Minuto</string>
+    <string name="time_unit_percent">Por ciento</string>
+
+    <string name="video_control">Control de vídeo</string>
+    <string name="video_control_start_delay">Mostrar al inicio</string>
+    <string name="video_control_touch_delay">Mostrar al tacto</string>
+    <string name="video_control_seek_delay">Mostrar en busca</string>
+    <string name="video_aa_show_status">Mostrar barra de estado en Android Auto</string>
+
+    <string name="enable_exoplayer">Habilitar ExoPlayer</string>
+    <string name="enable_vlcplayer">Habilitar VLC</string>
+    <string name="preferred_audio_engine">Motor de audio preferido</string>
+    <string name="preferred_video_engine">Motor de video preferido</string>
+    <string name="engine_installed">Motor de medios instalado: %1$s</string>
+    <string name="engine_uninstalled">Motor de medios desinstalado: %1$s</string>
+
+    <string name="preferred_media_scanner">Escáner de medios preferido</string>
+    <string name="preferred_media_scanner_default">Predeterminado</string>
+    <string name="preferred_media_scanner_system">Sistema</string>
+
+    <string name="voice_search">Búsqueda por voz</string>
+    <string name="voice_control">Control por voz</string>
+    <string name="voice_control_fb">Botón flotante</string>
+    <string name="voice_control_sub_long">Activar el control por voz en una pulsación larga</string>
+    <string name="voice_control_subst">Sustitución de palabras</string>
+    <string name="voice_control_subst_sub">Reemplazar una palabra por otra palabra o frase</string>
+    <string name="voice_control_subst_hint">Activado: Reproducir
+Apagado: pausa</string>
+
+    <string name="module_installation">Instalación del módulo: %1$s</string>
+    <string name="install_pending">Instalación pendiente: %1$s</string>
+    <string name="downloading">Descargando %1$s</string>
+    <string name="installing">Instalación de %1$s</string>
+
+    <string name="speed">Velocidad</string>
+    <string name="audio_effects">Efectos de audio</string>
+    <string name="equalier">Igualador</string>
+    <string name="preset_name">Nombre del preajuste</string>
+    <string name="virtualizer">Virtualizador</string>
+    <string name="auto">Coche</string>
+    <string name="binaural">Binaural</string>
+    <string name="transaural">Transaural</string>
+    <string name="bass_boost">Refuerzo de graves</string>
+    <string name="vol_boost">Aumento de volumen</string>
+    <string name="strength">Fuerza</string>
+    <string name="apply_to">Aplicar a</string>
+
+    <string name="video">Vídeo</string>
+    <string name="video_settings">Configuración de video</string>
+    <string name="video_scaling">Escalado de video</string>
+    <string name="hw_accel">Aceleración de hardware</string>
+    <string name="hw_accel_auto">Coche</string>
+    <string name="hw_accel_full">Lleno</string>
+    <string name="hw_accel_decoding">Descodificación</string>
+    <string name="hw_accel_disabled">Deshabilitado</string>
+    <string name="video_scaling_best">Mejor ajuste</string>
+    <string name="video_scaling_fill">Pantalla de relleno</string>
+    <string name="video_scaling_orig">Tamaño original</string>
+    
+    
+
+    <string name="audio">Audio</string>
+    <string name="audio_delay">Retraso de audio</string>
+    <string name="audio_delay_aa">Retraso de audio - Android Auto</string>
+    <string name="preferred_audio_lang">Idiomas preferidos de transmisión de audio</string>
+    <string name="preferred_audio_key">Prefiera la transmisión de audio con palabras clave</string>
+    <string name="select_audio_stream">Seleccionar transmisión de audio</string>
+
+    <string name="subtitles">Subtítulos</string>
+    <string name="subtitles_auto">Generado automáticamente</string>
+    <string name="subtitle_delay">Retraso de los subtítulos</string>
+    <string name="display_subtitles">Mostrar subtítulos</string>
+    <string name="preferred_sub_lang">Idiomas preferidos de subtítulos</string>
+    <string name="preferred_sub_key">Prefiere subtítulos con palabras clave</string>
+    <string name="select_subtitles">Seleccionar subtítulos</string>
+
+    <string name="sub_gen_buf">Longitud del búfer</string>
+    <string name="sub_gen_buf_sub">Precargue con anticipación el número especificado de segundos</string>
+    <string name="sub_gen_chunk">Longitud del fragmento</string>
+    <string name="sub_gen_chunk_sub">Procesar el búfer en fragmentos de la duración especificada</string>
+    <string name="sub_gen_model">Modelo</string>
+    <string name="sub_gen_translate">Traducir</string>
+    <string name="sub_gen_single">Segmento único</string>
+    <string name="sub_gen_single_sub">Transcribir todo el fragmento como un solo segmento</string>
+    <string name="sub_gen_downloading">Espere mientras se descarga el modelo.</string>
+    <string name="sub_gen_download_fail">No se pudo descargar el modelo: %s!</string>
+    <string name="sub_gen_cleanup">Eliminar otros modelos descargados de la caché</string>
+    <string name="sub_gen_cleanup_done">Eliminado: %s</string>
+
+    
+    <string name="eq_hz">%1$s Hz</string>
+    <string name="eq_khz">%1$s kHz</string>
+
+    <string name="current_track">Trayectoria actual</string>
+    <string name="current_folder">Carpeta actual</string>
+
+    <string name="folders">Carpetas</string>
+    <string name="favorites">Favoritos</string>
+    <string name="playlists">Listas de reproducción</string>
+    <string name="search">Buscar</string>
+    <string name="filter">Filtro</string>
+    <string name="settings">Configuración</string>
+    <string name="menu">Menú</string>
+    <string name="exit">Salida</string>
+    <string name="cancel">Cancelar</string>
+    <string name="got_to_current">Trayectoria actual</string>
+
+    <string name="view">Vista</string>
+    <string name="title">Título</string>
+    <string name="subtitle">Subtítulo</string>
+    <string name="seq_num">Número de secuencia</string>
+    <string name="track_name">Nombre</string>
+    <string name="file_name">Nombre de archivo</string>
+    <string name="date">Fecha</string>
+    <string name="random">Aleatorio</string>
+    <string name="descending">Descendente</string>
+    <string name="album">Álbum</string>
+    <string name="artist">Artista</string>
+    <string name="duration">Duración</string>
+
+    <string name="sort_by">Ordenar por</string>
+    <string name="do_not_sort">No ordenar</string>
+
+    <string name="play">Jugar</string>
+    <string name="pause">Pausa</string>
+    <string name="stop">Parar</string>
+    <string name="prev">Anterior</string>
+    <string name="next">Próximo</string>
+    <string name="rewind">Rebobinar</string>
+    <string name="fast_forward">Avance rápido</string>
+    <string name="repeat">Repetir</string>
+    <string name="repeat_disable">No repita</string>
+    <string name="shuffle">Aleatorio</string>
+    <string name="shuffle_disable">No barajar</string>
+    <string name="programme_guide">Programa guiado</string>
+    <string name="favorites_add">Agregar a Favoritos</string>
+    <string name="favorites_remove">Eliminar de favoritos</string>
+    <string name="mark_watched">Marcar como observado</string>
+    <string name="mark_unwatched">Marcar como no vigilado</string>
+    <string name="preferred_media_engine">Motor de medios preferido</string>
+    <string name="by_default">Predeterminado</string>
+
+    <string name="playlist_add">Añadir a la lista de reproducción</string>
+    <string name="playlist_remove_item">Eliminar de la lista de reproducción</string>
+    <string name="playlist_create">Crear lista de reproducción</string>
+    <string name="playlist_remove">Eliminar lista de reproducción</string>
+    <string name="playlist_name">Nombre de la lista de reproducción</string>
+
+    <string name="bookmarks">Marcadores</string>
+    <string name="create_bookmark">Crear marcador</string>
+    <string name="remove_bookmark">Eliminar marcador</string>
+    <string name="remove_all_bookmarks">Eliminar todos los marcadores</string>
+    <string name="bookmark_name">Nombre</string>
+    <string name="bookmark_time">Hora</string>
+
+    <string name="folder_subtitle">Archivos: %1$d. Carpetas: %2$d.</string>
+    <string name="browsable_subtitle">Pistas: %1$d.</string>
+    <string name="add_folder">Agregar carpeta</string>
+    <string name="remove_folder">Eliminar carpeta</string>
+    <string name="select">Escoger</string>
+    <string name="select_all">Seleccionar todo</string>
+    <string name="unselect_all">Anular la selección de todo</string>
+    <string name="refresh">Actualizar</string>
+    <string name="rescan">Reescaneo</string>
+    <string name="share">Compartir</string>
+    <string name="edit">Editar</string>
+    <string name="delete">Borrar</string>
+    <string name="delete_confirm">¿Eliminar %1$s\?</string>
+    <string name="delete_file_title">Eliminar archivo</string>
+    <string name="delete_file_question">¿Estás seguro de que quieres eliminar un archivo\?</string>
+    <string name="delete_file_failed">No se pudo eliminar el archivo %1$s</string>
+    <string name="loading">Carga…</string>
+    <string name="press_back_again">Presione el botón Atrás nuevamente para salir.</string>
+    <string name="please_restart_app">Reinicie la aplicación.</string>
+    <string name="use_phone_to_grant_perm">Utilice su teléfono para otorgar los permisos necesarios.</string>
+
+    <string name="vfs_content">Contenido</string>
+    <string name="vfs_file_system">Sistema de archivos</string>
+    <string name="vfs_gdrive">Unidad de Google</string>
+    
+    
+    <string name="m3u_playlist">Lista de reproducción M3U</string>
+    <string name="m3u_playlist_name">Nombre</string>
+    <string name="m3u_playlist_location">Ubicación</string>
+    <string name="m3u_playlist_location_hint">URL de archivo o http(s)</string>
+    
+    
+    <string name="m3u_playlist_video">Lista de reproducción de videos</string>
+
+    <string name="eq_manual">Manual</string>
+    <string name="eq_normal">Normal</string>
+    <string name="eq_classical">Clásico</string>
+    <string name="eq_dance">Bailar</string>
+    <string name="eq_flat">Plano</string>
+    <string name="eq_folk">Gente</string>
+    <string name="eq_heavy_metal">Metal pesado</string>
+    <string name="eq_hip_hop">Hip Hop</string>
+    <string name="eq_jazz">Jazz</string>
+    <string name="eq_pop">Pop</string>
+    <string name="eq_rock">Roca</string>
+
+    <string name="host">Anfitrión</string>
+    <string name="port">Puerto</string>
+    <string name="path">Camino</string>
+    <string name="share_name">Nombre del recurso compartido</string>
+    <string name="domain">Dominio</string>
+    <string name="username">Nombre de usuario</string>
+    <string name="password">Contraseña</string>
+    <string name="private_key">Clave privada</string>
+    <string name="private_key_pass">Contraseña de clave privada</string>
+
+    <string name="donate">Café para el desarrollador</string>
+    <string name="donate_text">Si te gusta la aplicación, considera invitarme a un café.</string>
+    <string name="use_phone_for_donation">Por favor, use su teléfono para comprar un café.</string>
+
+    <string name="timer">Horas</string>
+    <string name="hours">Horas</string>
+    <string name="minutes">Acta</string>
+
+    <string name="enable">Habilitar</string>
+    <string name="move_left">Mover a la izquierda</string>
+    <string name="move_right">Muévete a la derecha</string>
+    <string name="move_up">Desplazar hacia arriba</string>
+    <string name="move_down">Desplazar hacia abajo</string>
+
+    <string name="sys_bars_on_video_touch">Mostrar barras del sistema en el toque de vídeo</string>
+    <string name="play_video_landscape">Reproducción de vídeo en modo horizontal</string>
+    <string name="clock_pos">Posición del reloj</string>
+    <string name="clock_pos_none">Ninguno</string>
+    <string name="clock_pos_left">Izquierda</string>
+    <string name="clock_pos_right">Derecha</string>
+    <string name="clock_pos_center">Centro</string>
+    <string name="change_brightness">Cambiar el brillo mientras se reproduce el vídeo</string>
+    <string name="video_brightness">Brillo de video</string>
+    <string name="change_brightness_sub">El brillo también se puede cambiar con un desplazamiento de dos dedos</string>
+    <string name="watched_threshold">Umbral de vigilancia</string>
+    <string name="watched_threshold_sub">Vídeo marcado como visto, si se ha visto más de este número de porcentajes</string>
+
+    <string name="other">Otro</string>
+    <string name="check_updates">Buscar actualizaciones sobre el inicio</string>
+    <string name="update">Actualizar</string>
+    <string name="update_question">Nueva versión %1$s está disponible.
+¿Te gustaría actualizar la aplicación\?</string>
+    <string name="export_prefs">Exportar preferencias a archivo</string>
+    <string name="export_prefs_sub">Exportar configuraciones, carpetas, listas de reproducción, etc. a un archivo</string>
+    <string name="export_prefs_ok">Las preferencias se han guardado en el archivo %1$s.</string>
+    <string name="export_prefs_failed">Error al exportar las preferencias: %1$s</string>
+    <string name="import_prefs">Importar preferencias desde el archivo</string>
+    <string name="import_prefs_sub">Importar, previamente exportado, preferencias desde el archivo</string>
+    <string name="import_prefs_ok">Las preferencias se han importado correctamente.
+Por favor, reinicie la aplicación.</string>
+    <string name="import_prefs_failed">Error al importar preferencias: %1$s</string>
+    <string name="prefs_not_found">No se han encontrado preferencias</string>
+    <string name="open_log">Abrir archivo de registro</string>
+    <string name="unlock_phone_and_grant">Desbloquee el teléfono y otorgue los permisos solicitados.</string>
+    <string name="screen_capture_rejected">Solicitud de captura de pantalla rechazada.</string>
+    <string name="accessibility_dsc">El servicio de accesibilidad es utilizado por Fermata Mirror para simular eventos de pantalla táctil.</string>
+    <string name="media_projection_action_text">Empieza ahora</string>
+
+    <string name="about">Acerca de</string>
+    <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
+        <p>Fermata Media Player es un reproductor de audio y vídeo gratuito y de código abierto con
+        una interfaz sencilla e intuitiva.</p>
+        <p><b>Autor:</b> Andrey Pavlenko</p>
+        <p><b>Versión:</b> %1$s (%2$d)</p>
+        <p><b>Página principal:</b> <a href="%3$s">%3$s</a></p>
+        ]]></string>
+
+    <string name="err_failed_to_play">No se pudo jugar %s</string>
+    <string name="err_failed_to_play_cause">Error al jugar %1$s: %2$s</string>
+    <string name="err_unsupported_source_type">Tipo de fuente no admitido: %s</string>
+    <string name="err_playlist_exists">La lista de reproducción ya existe: %1$s</string>
+    <string name="err_invalid_playlist_name">Nombre de lista de reproducción no válido: %1$s</string>
+    <string name="err_failed_add_folder">No se pudo agregar la carpeta: %1$s</string>
+    <string name="err_failed_open_url">No se pudo abrir la URL: %1$s</string>
+    <string name="err_failed_install_module">Error al instalar el módulo: %1$s</string>
+    <string name="err_failed_to_download">No se pudo descargar %1$s</string>
+    <string name="err_no_audio_record_perm">No se concede permiso de grabación de audio</string>
+</resources>

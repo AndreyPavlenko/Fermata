@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Дополнения</string>
     <string name="addon_name_tv">ТВ</string>
     <string name="addon_name_web_browser">Веб браузер</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Интерфейс</string>
     <string name="interface_prefs_aa">Андроид Авто</string>
     <string name="playback_settings">Настройки воспроизведения</string>
@@ -26,6 +58,7 @@
 
     <string name="show_track_icons">Показывать иконки треков</string>
     <string name="lang">Язык</string>
+    <string name="trans_lang">Язык перевода</string>
     <string name="hide_bars">Скрывать панели</string>
     <string name="hide_bars_sub">Скрывать верхнюю и нижнюю панель, когда появляется панель управления</string>
     <string name="show_pg_up_down">Показывать кнопки вверх/вниз</string>
@@ -35,6 +68,7 @@
     <string name="tool_bar_size">Размер панели инструментов</string>
     <string name="control_panel_size">Размер панели управления</string>
     <string name="text_icon_size">Размер текста и иконок</string>
+    <string name="subtitles_size">Размер текста субтитров</string>
 
     <string name="key_bindings">Привязки клавиш</string>
     <string name="key_on_click">При нажатии</string>
@@ -127,6 +161,9 @@
     <string name="video_scaling_best">Наиболее подходящее</string>
     <string name="video_scaling_fill">Заполнить экран</string>
     <string name="video_scaling_orig">Оригинальный размер</string>
+    
+    
+
     <string name="audio">Аудио</string>
     <string name="audio_delay">Задержка аудио</string>
     <string name="audio_delay_aa">Задержка аудио - Android Auto</string>
@@ -135,12 +172,27 @@
     <string name="select_audio_stream">Выбрать аудио дорожку</string>
 
     <string name="subtitles">Субтитры</string>
+    <string name="subtitles_auto">Автоматически сгенерированные</string>
     <string name="subtitle_delay">Задержка субтитров</string>
     <string name="display_subtitles">Показывать субтитры</string>
     <string name="preferred_sub_lang">Предпочитаемые языки субтитров</string>
     <string name="preferred_sub_key">Предпочитать субтитры с ключевыми словами</string>
     <string name="select_subtitles">Выбрать субтитры</string>
 
+    <string name="sub_gen_buf">Длина буфера</string>
+    <string name="sub_gen_buf_sub">Предварительная загрузка вперед на указанное количество секунд</string>
+    <string name="sub_gen_chunk">Длина блока</string>
+    <string name="sub_gen_chunk_sub">Обрабатывать буфер блоками указанной продолжительности</string>
+    <string name="sub_gen_model">Модель</string>
+    <string name="sub_gen_translate">Переводить</string>
+    <string name="sub_gen_single">Один сегмент</string>
+    <string name="sub_gen_single_sub">Распознавать весь фрагмент как один сегмент</string>
+    <string name="sub_gen_downloading">Пожалуйста, подождите, пока модель загрузится.</string>
+    <string name="sub_gen_download_fail">Не удалось загрузить модель: %s!</string>
+    <string name="sub_gen_cleanup">Удалить другие загруженные модели из кеша</string>
+    <string name="sub_gen_cleanup_done">Удалено: %s</string>
+
+    
     <string name="eq_hz">%1$s Гц</string>
     <string name="eq_khz">%1$s кГц</string>
 
@@ -230,10 +282,14 @@
     <string name="vfs_content">Контент</string>
     <string name="vfs_file_system">Файловая система</string>
     <string name="vfs_gdrive">Google диск</string>
+    
+    
     <string name="m3u_playlist">M3U плейлист</string>
     <string name="m3u_playlist_name">Название</string>
     <string name="m3u_playlist_location">Расположение</string>
     <string name="m3u_playlist_location_hint">Файл или http(s) URL</string>
+    
+    
     <string name="m3u_playlist_video">Видео плейлист</string>
 
     <string name="eq_manual">Ручные</string>

@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Addons</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Browser</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Benutzeroberfläche</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Wiedergabeeinstellungen</string>
@@ -26,6 +58,7 @@
 
     <string name="show_track_icons">Titelsymbol anzeigen</string>
     <string name="lang">Sprachen</string>
+    <string name="trans_lang">Übersetzungssprache</string>
     <string name="hide_bars">Navigationsbalken ausblenden</string>
     <string name="hide_bars_sub">Den oberen und unteren Navigationsbalken ausblenden, wenn das Bedienfeld erscheint</string>
     <string name="show_pg_up_down">Seite nach oben/unten anzeigen</string>
@@ -35,6 +68,7 @@
     <string name="tool_bar_size">Werkzeugleiste - Größe</string>
     <string name="control_panel_size">Bedienfeld - Größe</string>
     <string name="text_icon_size">Text &amp; Icons - Größe</string>
+    <string name="subtitles_size">Untertiteltextgröße</string>
 
     <string name="key_bindings">Tastenbelegungen</string>
     <string name="key_on_click">Auf Klick</string>
@@ -127,6 +161,9 @@
     <string name="video_scaling_best">Bestmögliche Auflösung</string>
     <string name="video_scaling_fill">Bildschirm ausfüllen</string>
     <string name="video_scaling_orig">Original Größe</string>
+    
+    
+
     <string name="audio">Audio</string>
     <string name="audio_delay">Audio Verzögerung</string>
     <string name="audio_delay_aa">Audio Verzögerung - Android Auto</string>
@@ -135,12 +172,27 @@
     <string name="select_audio_stream">Audiostream auswählen</string>
 
     <string name="subtitles">Untertitel</string>
+    <string name="subtitles_auto">Automatisch generiert</string>
     <string name="subtitle_delay">Untertitel Verzögerung</string>
     <string name="display_subtitles">Untertitel anzeigen</string>
     <string name="preferred_sub_lang">Bevorzugte Untertitelsprachen</string>
     <string name="preferred_sub_key">Untertitel mit Schlüsselwörtern bevorzugen</string>
     <string name="select_subtitles">Untertitel auswählen</string>
 
+    <string name="sub_gen_buf">Pufferlänge</string>
+    <string name="sub_gen_buf_sub">Vorladen für die angegebene Anzahl von Sekunden</string>
+    <string name="sub_gen_chunk">Blöcklänge</string>
+    <string name="sub_gen_chunk_sub">Der Puffer wird in Blöcken der angegebenen Dauer verarbeitet</string>
+    <string name="sub_gen_model">Modell</string>
+    <string name="sub_gen_translate">Übersetzen</string>
+    <string name="sub_gen_single">Einzelnes Segment</string>
+    <string name="sub_gen_single_sub">Transkribieren Sie den gesamten Block als ein einzelnes Segment</string>
+    <string name="sub_gen_downloading">Bitte warten Sie, während das Modell heruntergeladen wird.</string>
+    <string name="sub_gen_download_fail">Das Modell konnte nicht heruntergeladen werden: %s!</string>
+    <string name="sub_gen_cleanup">Löschen die andere heruntergeladene Modelle aus dem Cache</string>
+    <string name="sub_gen_cleanup_done">Gelöscht: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -230,10 +282,14 @@
     <string name="vfs_content">SD-Card / System</string>
     <string name="vfs_file_system">Dateisystem</string>
     <string name="vfs_gdrive">Google Drive</string>
+    
+    
     <string name="m3u_playlist">M3U Playlist</string>
     <string name="m3u_playlist_name">Name</string>
     <string name="m3u_playlist_location">Speicherort</string>
     <string name="m3u_playlist_location_hint">Datei oder Http(s) URL</string>
+    
+    
     <string name="m3u_playlist_video">Video Playlist?</string>
 
     <string name="eq_manual">Anleitung</string>
@@ -306,11 +362,11 @@
 
     <string name="about">Über Fermata</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player is a free, open source audio and video player with a simple and
-        intuitive interface.</p>
-        <p><b>Author:</b> Andrey Pavlenko</p>
+        <p>Fermata Media Player ist ein kostenloser Open-Source-Audio- und Videoplayer mit einer
+        einfachen und intuitiven Benutzeroberfläche.</p>
+        <p><b>Autor:</b> Andrey Pavlenko</p>
         <p><b>Version:</b> %1$s (%2$d)</p>
-        <p><b>Home page:</b> <a href="%3$s">%3$s</a></p>
+        <p><b>Homepage:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
 
     <string name="err_failed_to_play">Abspielen fehlgeschlagen %s</string>

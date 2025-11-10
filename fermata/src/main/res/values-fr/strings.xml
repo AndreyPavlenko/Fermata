@@ -1,22 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile_release">Fermata</string>
-    <string name="app_name_auto_release">Fermata Auto</string>
-    <string name="app_name_mobile_debug">Debug Fermata</string>
-    <string name="app_name_auto_debug">Debug Fermata Auto</string>
-    <string name="media_service_name_auto_release">Fermata Media Service</string>
-    <string name="media_service_name_auto_debug">Debug Fermata Media Service</string>
-    <string name="engine_mp_name">MediaPlayer</string>
-    <string name="engine_exo_name">ExoPlayer</string>
-    <string name="engine_vlc_name">VLC</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    <string name="module_name_gdrive">Google Drive</string>
-    <string name="module_name_sftp">SFTP</string>
-    <string name="module_name_smb">SMB</string>
-    <string name="module_name_web">Web</string>
-    <string name="module_name_tv">TV</string>
+    
+    
+    
+    
+    
 
     <string name="addons">Addons</string>
+    <string name="addon_name_tv">TV</string>
+    <string name="addon_name_web_browser">Navigateur Internet</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Paramètres de lecture</string>
@@ -41,6 +58,7 @@
 
     <string name="show_track_icons">Afficher les icônes de piste</string>
     <string name="lang">Langue</string>
+    <string name="trans_lang">Langue de traduction</string>
     <string name="hide_bars">Masquer les barres</string>
     <string name="hide_bars_sub">Masquer les barres supérieure et inférieure lorsque le panneau de contrôle apparaît</string>
     <string name="show_pg_up_down">Afficher les boutons de page haut/bas</string>
@@ -50,6 +68,7 @@
     <string name="tool_bar_size">Taille de la barre d\'outils</string>
     <string name="control_panel_size">Taille du panneau de contrôle</string>
     <string name="text_icon_size">Taille du texte et des icônes</string>
+    <string name="subtitles_size">Taille des sous-titres</string>
 
     <string name="key_bindings">Raccourcis clavier</string>
     <string name="key_on_click">Sur clic</string>
@@ -142,6 +161,8 @@
     <string name="video_scaling_best">Meilleur ajustement</string>
     <string name="video_scaling_fill">Remplir l\'écran</string>
     <string name="video_scaling_orig">Taille d\'origine</string>
+    
+    
 
     <string name="audio">Audio</string>
     <string name="audio_delay">Délai audio</string>
@@ -151,12 +172,27 @@
     <string name="select_audio_stream">Sélectionner le flux audio</string>
 
     <string name="subtitles">Sous-titres</string>
+    <string name="subtitles_auto">Généré automatiquement</string>
     <string name="subtitle_delay">Délai des sous-titres</string>
     <string name="display_subtitles">Afficher les sous-titres</string>
     <string name="preferred_sub_lang">Langues préférées des sous-titres</string>
     <string name="preferred_sub_key">Préférer les sous-titres avec des mots-clés</string>
     <string name="select_subtitles">Sélectionner les sous-titres</string>
 
+    <string name="sub_gen_buf">Longueur du tampon</string>
+    <string name="sub_gen_buf_sub">Précharger à l\'avance le nombre de secondes spécifié</string>
+    <string name="sub_gen_chunk">Longueur du morceau</string>
+    <string name="sub_gen_chunk_sub">Traitez le tampon en morceaux de la durée spécifiée</string>
+    <string name="sub_gen_model">Modèle</string>
+    <string name="sub_gen_translate">Traduire</string>
+    <string name="sub_gen_single">Segment unique</string>
+    <string name="sub_gen_single_sub">Transcrire le morceau entier en un seul segment</string>
+    <string name="sub_gen_downloading">Veuillez patienter pendant que le modèle est téléchargé.</string>
+    <string name="sub_gen_download_fail"><![CDATA[Échec du téléchargement du modèle : %s !]]></string>
+    <string name="sub_gen_cleanup">Supprimer les autres modèles téléchargés du cache</string>
+    <string name="sub_gen_cleanup_done"><![CDATA[Supprimé : %s]]></string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -246,10 +282,14 @@
     <string name="vfs_content">Contenu</string>
     <string name="vfs_file_system">Système de fichiers</string>
     <string name="vfs_gdrive">Google Drive</string>
+    
+    
     <string name="m3u_playlist">Liste de lecture M3U</string>
     <string name="m3u_playlist_name">Nom</string>
     <string name="m3u_playlist_location">Emplacement</string>
     <string name="m3u_playlist_location_hint">Fichier ou URL http(s)</string>
+    
+    
     <string name="m3u_playlist_video">Liste de lecture vidéo</string>
 
     <string name="eq_manual">Manuel</string>

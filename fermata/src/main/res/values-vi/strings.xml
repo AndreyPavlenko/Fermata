@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Tiện ích</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Trình duyệt</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Giao diện</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Cài đặt phát lại</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">Hệ thống</string>
     <string name="theme_black">Đen</string>
     <string name="theme_star_wars">Chiến tranh giữa các vì sao</string>
+    <string name="theme_purple">Màu tím</string>
+    <string name="theme_classic">Cổ điển</string>
 
     <string name="nav_bar_pos">Vị trí thanh điều hướng</string>
     <string name="nav_bar_pos_sub">Vị trí hiện tại: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">Hiển thị biểu tượng bản nhạc</string>
     <string name="lang">Ngôn Ngữ</string>
+    <string name="trans_lang">Ngôn ngữ dịch</string>
     <string name="hide_bars">Ẩn thanh điều hướng</string>
     <string name="hide_bars_sub">Ẩn thanh điều hướng trên và dưới khi bảng điều khiển xuất hiện</string>
     <string name="show_pg_up_down">Hiển thị nút lên/xuống trang</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">Kích thước thanh công cụ</string>
     <string name="control_panel_size">Kích thước bảng điều khiển</string>
     <string name="text_icon_size">Kích thước văn bản và biểu tượng</string>
+    <string name="subtitles_size">Kích thước phụ đề</string>
 
     <string name="key_bindings">Tổ hợp phím</string>
     <string name="key_on_click">Khi nhấn</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">Phù hợp nhất</string>
     <string name="video_scaling_fill">Lấp đầy màn hình</string>
     <string name="video_scaling_orig">Giữ nguyên kích thước</string>
+    
+    
+
     <string name="audio">Âm thanh</string>
     <string name="audio_delay">Độ trễ âm thanh</string>
     <string name="audio_delay_aa">Độ trễ âm thanh trong Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">Chọn luồng âm thanh</string>
 
     <string name="subtitles">Phụ đề</string>
+    <string name="subtitles_auto">Tự động tạo</string>
     <string name="subtitle_delay">Độ trễ của phụ đề</string>
     <string name="display_subtitles">Hiển thị phụ đề</string>
     <string name="preferred_sub_lang">Phụ đề theo ngôn ngữ ưa thích</string>
     <string name="preferred_sub_key">Phụ đề theo từ khóa</string>
     <string name="select_subtitles">Chọn phụ đề</string>
 
+    <string name="sub_gen_buf">Chiều dài bộ đệm</string>
+    <string name="sub_gen_buf_sub">Tải trước số giây được chỉ định</string>
+    <string name="sub_gen_chunk">Chiều dài khối</string>
+    <string name="sub_gen_chunk_sub">Xử lý bộ đệm theo từng phần trong khoảng thời gian được chỉ định</string>
+    <string name="sub_gen_model">Mẫu</string>
+    <string name="sub_gen_translate">Dịch</string>
+    <string name="sub_gen_single">Phân đoạn đơn</string>
+    <string name="sub_gen_single_sub">Phiên âm toàn bộ đoạn dưới dạng một phân đoạn duy nhất</string>
+    <string name="sub_gen_downloading">Vui lòng đợi trong khi mô hình được tải xuống.</string>
+    <string name="sub_gen_download_fail">Không tải xuống mô hình: %s!</string>
+    <string name="sub_gen_cleanup">Xóa các mô hình đã tải xuống khác khỏi bộ nhớ cache</string>
+    <string name="sub_gen_cleanup_done">Đã xóa: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">Nội dung</string>
     <string name="vfs_file_system">Tệp tin hệ thống</string>
     <string name="vfs_gdrive">Google drive</string>
+    
+    
     <string name="m3u_playlist">Danh sách phát M3U</string>
     <string name="m3u_playlist_name">Tên</string>
     <string name="m3u_playlist_location">Vị trí</string>
     <string name="m3u_playlist_location_hint">Tệp tin hoặc liên kết (https)</string>
+    
+    
     <string name="m3u_playlist_video">Danh sách phát video</string>
 
     <string name="eq_manual">Thủ công</string>

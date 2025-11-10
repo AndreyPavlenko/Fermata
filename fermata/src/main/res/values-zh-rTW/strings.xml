@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">擴充功能</string>
     <string name="addon_name_tv">電視</string>
     <string name="addon_name_web_browser">網頁瀏覽器</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">選項</string>
     <string name="interface_prefs_aa">Android Auto模式選項</string>
     <string name="playback_settings">播放設定</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">系统</string>
     <string name="theme_black">黑</string>
     <string name="theme_star_wars">星際大戰</string>
+    <string name="theme_purple">紫色</string>
+    <string name="theme_classic">古</string>
 
     <string name="nav_bar_pos">選單位置</string>
     <string name="nav_bar_pos_sub">目前位置: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">顯示播放圖示</string>
     <string name="lang">語言</string>
+    <string name="trans_lang">翻譯語言</string>
     <string name="hide_bars">隱藏工具列</string>
     <string name="hide_bars_sub">控制面板出現時隱藏工具列</string>
     <string name="show_pg_up_down">顯示上移/下移按鈕</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">工具列尺寸</string>
     <string name="control_panel_size">控制面板尺寸</string>
     <string name="text_icon_size">文字圖示尺寸</string>
+    <string name="subtitles_size">字幕大小</string>
 
     <string name="key_bindings">快速鍵設定</string>
     <string name="key_on_click">點擊</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">最符合螢幕大小</string>
     <string name="video_scaling_fill">全螢幕</string>
     <string name="video_scaling_orig">原始</string>
+    
+    
+
     <string name="audio">音效</string>
     <string name="audio_delay">音效延遲</string>
     <string name="audio_delay_aa">音效延遲 - Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">選擇音訊串流</string>
 
     <string name="subtitles">字幕</string>
+    <string name="subtitles_auto">自動生成</string>
     <string name="subtitle_delay">字幕延遲</string>
     <string name="display_subtitles">顯示字幕</string>
     <string name="preferred_sub_lang">預設字幕語言</string>
     <string name="preferred_sub_key">預設字幕關鍵字</string>
     <string name="select_subtitles">選擇字幕</string>
 
+    <string name="sub_gen_buf">緩衝區長度</string>
+    <string name="sub_gen_buf_sub">提前預載指定的秒數</string>
+    <string name="sub_gen_chunk">區塊長度</string>
+    <string name="sub_gen_chunk_sub">以指定持續時間的區塊處理緩衝區</string>
+    <string name="sub_gen_model">型</string>
+    <string name="sub_gen_translate">譯</string>
+    <string name="sub_gen_single">單一區段</string>
+    <string name="sub_gen_single_sub">將整個區塊轉錄為單一區段</string>
+    <string name="sub_gen_downloading">下載模型後請稍候。</string>
+    <string name="sub_gen_download_fail">無法下載模型：%s！</string>
+    <string name="sub_gen_cleanup">從快取中刪除其他下載的模型</string>
+    <string name="sub_gen_cleanup_done">已刪除：%s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">內容</string>
     <string name="vfs_file_system">檔案系統</string>
     <string name="vfs_gdrive">Google雲端硬碟</string>
+    
+    
     <string name="m3u_playlist">M3U 播放列表</string>
     <string name="m3u_playlist_name">名稱</string>
     <string name="m3u_playlist_location">位置</string>
     <string name="m3u_playlist_location_hint">網址</string>
+    
+    
     <string name="m3u_playlist_video">影片播放清單</string>
 
     <string name="eq_manual">手動</string>

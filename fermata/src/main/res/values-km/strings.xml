@@ -1,22 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name_mobile_release">Fermata</string>
-    <string name="app_name_auto_release">Fermata Auto</string>
-    <string name="app_name_mobile_debug">Debug Fermata</string>
-    <string name="app_name_auto_debug">Debug Fermata Auto</string>
-    <string name="media_service_name_auto_release">Fermata Media Service</string>
-    <string name="media_service_name_auto_debug">Debug Fermata Media Service</string>
-    <string name="engine_mp_name">MediaPlayer</string>
-    <string name="engine_exo_name">ExoPlayer</string>
-    <string name="engine_vlc_name">VLC</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    <string name="module_name_gdrive">Google Drive</string>
-    <string name="module_name_sftp">SFTP</string>
-    <string name="module_name_smb">SMB</string>
-    <string name="module_name_web">Web</string>
-    <string name="module_name_tv">TV</string>
+    
+    
+    
+    
+    
 
     <string name="addons">Addons</string>
+    <string name="addon_name_tv">ទូរទស្សន៍</string>
+    <string name="addon_name_web_browser">Web កម្មវិធីរុករក</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">ការកំណត់ការចាក់សារថ្មី</string>
@@ -27,9 +44,11 @@
     <string name="theme_sub">រូបរាង​បច្ចុប្បន្ន៖ %1$s</string>
     <string name="theme_light">ពន្លឺ</string>
     <string name="theme_dark">ងងឹត</string>
-    <string name="theme_day_night">ថ្ងៃ/យប់</string>
+    <string name="theme_system">ប្រព័ន្ធ</string>
     <string name="theme_black">ខ្មៅ</string>
     <string name="theme_star_wars">សង្គ្រាមផ្កាយ</string>
+    <string name="theme_purple">ពណ៌ស្វាយ</string>
+    <string name="theme_classic">បុរាណ</string>
 
     <string name="nav_bar_pos">ទីតាំង Navbar</string>
     <string name="nav_bar_pos_sub">ទីតាំងបច្ចុប្បន្ន៖ %1$s</string>
@@ -39,6 +58,7 @@
 
     <string name="show_track_icons">បង្ហាញ​រូបតំណាង​បទ</string>
     <string name="lang">ភាសា</string>
+    <string name="trans_lang">ភាសាបកប្រែ</string>
     <string name="hide_bars">លាក់​របារ</string>
     <string name="hide_bars_sub">លាក់របារខាងលើ និងខាងក្រោម នៅពេលផ្ទាំងបញ្ជាលេចឡើង</string>
     <string name="show_pg_up_down">បង្ហាញទំព័រឡើង/ចុះក្រោម</string>
@@ -48,6 +68,7 @@
     <string name="tool_bar_size">ទំហំរបារឧបករណ៍</string>
     <string name="control_panel_size">ទំហំផ្ទាំងបញ្ជា</string>
     <string name="text_icon_size">ទំហំអត្ថបទ និងរូបតំណាង</string>
+    <string name="subtitles_size">ទំហំចំណងជើងរង</string>
 
     <string name="key_bindings">ផ្លូវកាត់ក្តារចុច</string>
     <string name="key_on_click">ចុច</string>
@@ -72,7 +93,7 @@
     <string name="action_default">លំនាំដើម</string>
     <string name="action_none">គ្មាន</string>
 
-    <<string name="play_next_on_completion">ចាក់​បទ​បន្ទាប់​ដោយ​ស្វ័យ​ប្រវត្តិ</string>
+    <string name="play_next_on_completion">ចាក់​បទ​បន្ទាប់​ដោយ​ស្វ័យ​ប្រវត្តិ</string>
 
     <string name="rw_ff_click">RW/FF - ចុច</string>
     <string name="rw_ff_long_click">RW/FF - ចុចឱ្យយូរ</string>
@@ -111,11 +132,6 @@
     <string name="voice_control_subst_sub">ជំនួស​ពាក្យ​ដោយ​ពាក្យ ឬ​ឃ្លា​ផ្សេង</string>
     <string name="voice_control_subst_hint">បើក៖ លេង\noff៖ ផ្អាក</string>
 
-    <string name="module_installation">Installation du module : %1$s</string>
-    <string name="install_pending">Installation en attente : %1$s</string>
-    <string name="downloading">Téléchargement de %1$s</string>
-    <string name="installing">Installation de %1$s</string>
-
     <string name="module_installation">ការដំឡើងម៉ូឌុល៖ %1$s</string>
     <string name="install_pending">ការ​ដំឡើង​កំពុង​រង់ចាំ៖ %1$s</string>
     <string name="downloading">កំពុងទាញយក %1$s</string>
@@ -145,6 +161,8 @@
     <string name="video_scaling_best">ការធ្វើមាត្រដ្ឋានល្អបំផុត</string>
     <string name="video_scaling_fill">បំពេញអេក្រង់</string>
     <string name="video_scaling_orig">ទំហំដើម</string>
+    
+    
 
     <string name="audio">អូឌីយ៉ូ</string>
     <string name="audio_delay">ពន្យាពេល​សំឡេង</string>
@@ -154,12 +172,27 @@
     <string name="select_audio_stream">ជ្រើសរើស​ស្ទ្រីម​អូឌីយ៉ូ</string>
 
     <string name="subtitles">ចំណងជើងរង</string>
+    <string name="subtitles_auto">បង្កើតដោយស្វ័យប្រវត្តិ</string>
     <string name="subtitle_delay">ការពន្យារពេលចំណងជើងរង</string>
     <string name="display_subtitles">បង្ហាញចំណងជើងរង</string>
     <string name="preferred_sub_lang">ភាសាចំណងជើងរងដែលពេញចិត្ត</string>
     <string name="preferred_sub_key">ចូលចិត្តចំណងជើងរងដែលមានពាក្យគន្លឹះ</string>
     <string name="select_subtitles">ជ្រើសរើសចំណងជើងរង</string>
 
+    <string name="sub_gen_buf">ប្រវែងសតិបណ្ដោះអាសន្ន</string>
+    <string name="sub_gen_buf_sub">ផ្ទុកជាមុនចំនួនវិនាទីដែលបានបញ្ជាក់</string>
+    <string name="sub_gen_chunk">ប្រវែងដុំ</string>
+    <string name="sub_gen_chunk_sub">ដំណើរការសតិបណ្ដោះអាសន្នជាបំណែកនៃរយៈពេលដែលបានបញ្ជាក់</string>
+    <string name="sub_gen_model">គំរូ</string>
+    <string name="sub_gen_translate">បកប្រែ</string>
+    <string name="sub_gen_single">ផ្នែកតែមួយ</string>
+    <string name="sub_gen_single_sub">ចម្លងបំណែកទាំងមូលជាផ្នែកតែមួយ</string>
+    <string name="sub_gen_downloading">សូមរង់ចាំខណៈពេលដែលគំរូត្រូវបានទាញយក។</string>
+    <string name="sub_gen_download_fail">បានបរាជ័យក្នុងការទាញយកម៉ូដែល៖ %s!</string>
+    <string name="sub_gen_cleanup">លុបម៉ូដែលដែលបានទាញយកផ្សេងទៀតចេញពីឃ្លាំងសម្ងាត់</string>
+    <string name="sub_gen_cleanup_done">បានលុប៖ %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -204,7 +237,7 @@
     <string name="repeat_disable">កុំធ្វើម្តងទៀត</string>
     <string name="shuffle">ចៃដន្យ</string>
     <string name="shuffle_disable">បិទការសាប់</string>
-    <string name="program_guide">ការណែនាំអំពីកម្មវិធី</string>
+    <string name="programme_guide">កម្មវិធីណែនាំ</string>
     <string name="favorites_add">បន្ថែម​ទៅ​ចំណូលចិត្ត</string>
     <string name="favorites_remove">លុប​ចេញ​ពី​សំណព្វ</string>
     <string name="mark_watched">សម្គាល់​ថា​បាន​ឃើញ</string>
@@ -243,17 +276,20 @@
     <string name="delete_file_failed">មិន​អាច​លុប​ឯកសារ %1$s</string>
     <string name="loading">កំពុង​ផ្ទុក…</string>
     <string name="press_back_again">ចុចប៊ូតុងថយក្រោយម្តងទៀតដើម្បីចេញ។</string>
-    <string name="press_x_again">ចុចប៊ូតុង X ម្តងទៀតដើម្បីចេញ។</string>
     <string name="please_restart_app">សូមចាប់ផ្តើមកម្មវិធីឡើងវិញ។</string>
     <string name="use_phone_to_grant_perm">សូម​ប្រើ​ទូរសព្ទ​របស់​អ្នក​ដើម្បី​ផ្តល់​ការ​អនុញ្ញាត​ដែលត្រូវការ។</string>
 
     <string name="vfs_content">មាតិកា</string>
     <string name="vfs_file_system">ប្រព័ន្ធ​ឯកសារ</string>
     <string name="vfs_gdrive">Google Drive</string>
+    
+    
     <string name="m3u_playlist">បញ្ជីចាក់ M3U</string>
     <string name="m3u_playlist_name">ឈ្មោះ</string>
     <string name="m3u_playlist_location">ទីតាំង</string>
     <string name="m3u_playlist_location_hint">ឯកសារ ឬ URL http</string>
+    
+    
     <string name="m3u_playlist_video">បញ្ជីចាក់វីដេអូ</string>
 
     <string name="eq_manual">សៀវភៅដៃ</string>
@@ -325,13 +361,7 @@
     <string name="media_projection_action_text">ចាប់ផ្តើមឥឡូវនេះ</string>
 
     <string name="about">អំពី</string>
-    <string name="about_html"><![CDATA[<H1 align="center">កម្មវិធីចាក់មេឌៀហ្វឺម៉ាតា</H1>
-        <p>កម្មវិធីចាក់មេឌៀ Ferrata គឺជាកម្មវិធីចាក់អូឌីយ៉ូ និងវីដេអូប្រភពបើកចំហ និងឥតគិតថ្លៃ ដែលមានចំណុចប្រទាក់សាមញ្ញ និង
-        វិចារណញាណ។</p>
-        <p><b>អ្នកនិពន្ធ៖</b> Thorn Chrean </p>
-        <p><b>កំណែ៖</b> %1$s (%2$d)</p>
-        <p><b>ទំព័រដើម៖</b> <a href="%3$s">%3$s</a></p>
-        ]]></string>
+    
 
     <string name="err_failed_to_play">បាន​បរាជ័យ​ក្នុង​ការ​លេង %s</string>
     <string name="err_failed_to_play_cause">បាន​បរាជ័យ​ក្នុង​ការ​លេង %1$s៖ %2$s</string>

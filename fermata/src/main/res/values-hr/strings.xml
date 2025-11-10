@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Dodaci</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web preglednik</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Sučelje</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Postavke reprodukcije</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">Sistem</string>
     <string name="theme_black">Crna</string>
     <string name="theme_star_wars">Ratovi zvijezda</string>
+    <string name="theme_purple">Ljubičasta</string>
+    <string name="theme_classic">klasična</string>
 
     <string name="nav_bar_pos">Pozicija navigacijske trake</string>
     <string name="nav_bar_pos_sub">Trenutna pozicija: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">Prikaži ikone trake</string>
     <string name="lang">Jezik</string>
+    <string name="trans_lang">Jezik prijevoda</string>
     <string name="hide_bars">Sakrij trake</string>
     <string name="hide_bars_sub">Sakrij gornje i donje trake kada se pojavi kontrolna ploča</string>
     <string name="show_pg_up_down">Prikaži gumbe za stranicu gore/dolje</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">Veličina alatne trake</string>
     <string name="control_panel_size">Veličina kontrolne ploče</string>
     <string name="text_icon_size">Veličina teksta i ikona</string>
+    <string name="subtitles_size">Veličina titlova</string>
 
     <string name="key_bindings">Tipkovni prečaci</string>
     <string name="key_on_click">Na klik</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">Najbolje prilagođeno</string>
     <string name="video_scaling_fill">Cijeli zaslon</string>
     <string name="video_scaling_orig">Originalna veličina</string>
+    
+    
+
     <string name="audio">Audio</string>
     <string name="audio_delay">Zakašnjenje zvuka</string>
     <string name="audio_delay_aa">Zakašnjenje zvuka - Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">Odaberi audio zapis</string>
 
     <string name="subtitles">Titlovi</string>
+    <string name="subtitles_auto">Automatski generirano</string>
     <string name="subtitle_delay">Zakašnjenje titlova</string>
     <string name="display_subtitles">Prikaži titlove</string>
     <string name="preferred_sub_lang">Preferirani jezici titlova</string>
     <string name="preferred_sub_key">Preferiraj titlove s ključnim riječima</string>
     <string name="select_subtitles">Odaberi titlove</string>
 
+    <string name="sub_gen_buf">Duljina međuspremnika</string>
+    <string name="sub_gen_buf_sub">Prethodno učitaj unaprijed određeni broj sekundi</string>
+    <string name="sub_gen_chunk">Duljina komada</string>
+    <string name="sub_gen_chunk_sub">Obradite međuspremnik u dijelovima određenog trajanja</string>
+    <string name="sub_gen_model">Model</string>
+    <string name="sub_gen_translate">Prevesti</string>
+    <string name="sub_gen_single">Pojedinačni segment</string>
+    <string name="sub_gen_single_sub">Prepišite cijeli dio kao jedan segment</string>
+    <string name="sub_gen_downloading">Pričekajte dok se model ne preuzme.</string>
+    <string name="sub_gen_download_fail">Nije uspjelo preuzimanje modela: %s!</string>
+    <string name="sub_gen_cleanup">Izbrišite ostale preuzete modele iz predmemorije</string>
+    <string name="sub_gen_cleanup_done">Izbrisano: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">Sadržaj</string>
     <string name="vfs_file_system">Datotečni sustav</string>
     <string name="vfs_gdrive">Google Drive</string>
+    
+    
     <string name="m3u_playlist">M3U popis za reprodukciju</string>
     <string name="m3u_playlist_name">Naziv</string>
     <string name="m3u_playlist_location">Lokacija</string>
     <string name="m3u_playlist_location_hint">Datoteka ili http(s) URL</string>
+    
+    
     <string name="m3u_playlist_video">Popis za reprodukciju videa</string>
 
     <string name="eq_manual">Ručno</string>

@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">애드온</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">웹브라우저</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">인터페이스</string>
     <string name="interface_prefs_aa">안드로이드 오토</string>
     <string name="playback_settings">재생설정</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">체계</string>
     <string name="theme_black">검정</string>
     <string name="theme_star_wars">스타워즈</string>
+    <string name="theme_purple">보라</string>
+    <string name="theme_classic">권위 있는</string>
 
     <string name="nav_bar_pos">네비게이션바 위치</string>
     <string name="nav_bar_pos_sub">현재 위치: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">트랙 아이콘의 표시</string>
     <string name="lang">언어</string>
+    <string name="trans_lang">번역 언어</string>
     <string name="hide_bars">바 숨기기</string>
     <string name="hide_bars_sub">재생 컨트롤 패널이 열리면 위, 아래 바를 숨김</string>
     <string name="show_pg_up_down">페이지 업/다운 버튼을 표시</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">도구 바 사이즈</string>
     <string name="control_panel_size">재생 컨트롤 패널 사이즈</string>
     <string name="text_icon_size">텍스트와 아이콘의 크기</string>
+    <string name="subtitles_size">자막 크기</string>
 
     <string name="key_bindings">조작키 설정</string>
     <string name="key_on_click">한번 클릭시</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">최대 크기</string>
     <string name="video_scaling_fill">화면 채움</string>
     <string name="video_scaling_orig">원본 크기</string>
+    
+    
+
     <string name="audio">오디오</string>
     <string name="audio_delay">오디오 재생지연</string>
     <string name="audio_delay_aa">오디오 재생지연 - 안드로이드 오토</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">오디오 스트림 선택</string>
 
     <string name="subtitles">자막</string>
+    <string name="subtitles_auto">자동 생성됨</string>
     <string name="subtitle_delay">자막 지연속도</string>
     <string name="display_subtitles">자막 활성화</string>
     <string name="preferred_sub_lang">선호하는 자막 언어</string>
     <string name="preferred_sub_key">선호하는 키워드 자막</string>
     <string name="select_subtitles">자막 선택</string>
 
+    <string name="sub_gen_buf">버퍼 길이</string>
+    <string name="sub_gen_buf_sub">지정된 시간(초)보다 먼저 미리 로드</string>
+    <string name="sub_gen_chunk">청크 길이</string>
+    <string name="sub_gen_chunk_sub">지정된 기간 동안 버퍼를 청크로 처리합니다.</string>
+    <string name="sub_gen_model">모델</string>
+    <string name="sub_gen_translate">번역하다</string>
+    <string name="sub_gen_single">단일 세그먼트</string>
+    <string name="sub_gen_single_sub">전체 청크를 단일 세그먼트로 복사</string>
+    <string name="sub_gen_downloading">모델을 다운로드하는 동안 잠시 기다려 주세요.</string>
+    <string name="sub_gen_download_fail">모델을 다운로드하지 못했습니다: %s!</string>
+    <string name="sub_gen_cleanup">캐시에서 다운로드한 다른 모델 삭제</string>
+    <string name="sub_gen_cleanup_done">삭제됨: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">컨텐츠</string>
     <string name="vfs_file_system">파일 시스템</string>
     <string name="vfs_gdrive">구글 드라이브</string>
+    
+    
     <string name="m3u_playlist">M3U 재생목록</string>
     <string name="m3u_playlist_name">이름</string>
     <string name="m3u_playlist_location">장소</string>
     <string name="m3u_playlist_location_hint">파일 또는 http(s) URL 주소</string>
+    
+    
     <string name="m3u_playlist_video">비디오 목록</string>
 
     <string name="eq_manual">수동</string>
@@ -304,7 +362,7 @@
 
     <string name="about">앱정보</string>
     <string name="about_html"><![CDATA[<H1 align="center">Fermata Media Player</H1>
-        <p>Fermata Media Player (페르마타 미디어 플레이어)는 간결하고 직관적인 
+        <p>Fermata Media Player (페르마타 미디어 플레이어)는 간결하고 직관적인
         무료 오픈소스 오디오, 비디오 플레이어 입니다.</p>
         <p><b>제작자:</b> Andrey Pavlenko</p>
         <p><b>앱버전:</b> %1$s (%2$d)</p>

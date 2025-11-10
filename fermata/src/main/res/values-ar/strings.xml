@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">إضافات</string>
     <string name="addon_name_tv">تلفزيون</string>
     <string name="addon_name_web_browser">متصفح الإنترنت</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">تفضيلات واجهه المستخدم</string>
     <string name="interface_prefs_aa">أندرويد أوتو</string>
     <string name="playback_settings">إعدادات التشغيل</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">نظام</string>
     <string name="theme_black">أسود</string>
     <string name="theme_star_wars">حرب النجوم</string>
+    <string name="theme_purple">أرجواني</string>
+    <string name="theme_classic">كلاسيكي</string>
 
     <string name="nav_bar_pos">موضع شريط التنقل</string>
     <string name="nav_bar_pos_sub">عرض ايقونات التنقل على الجهة:</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">إظهار أيقونات المسار</string>
     <string name="lang">اللغة</string>
+    <string name="trans_lang">لغة الترجمة</string>
     <string name="hide_bars">إخفاء الأشرطة</string>
     <string name="hide_bars_sub">إخفاء الأشرطة العلوية والسفلية عند ظهور لوحة التحكم</string>
     <string name="show_pg_up_down">إظهار أزرار الصفحة لأعلى/لأسفل</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">حجم شريط الأدوات</string>
     <string name="control_panel_size">حجم لوحة التحكم</string>
     <string name="text_icon_size">حجم النص والأيقونات</string>
+    <string name="subtitles_size">حجم الترجمة</string>
 
     <string name="key_bindings">إرتباطات المفاتيح</string>
     <string name="key_on_click">عند النقر</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">الأنسب</string>
     <string name="video_scaling_fill">ملء الشاشة</string>
     <string name="video_scaling_orig">الحجم الأصلي</string>
+    
+    
+
     <string name="audio">الصوت</string>
     <string name="audio_delay">تأخير الصوت</string>
     <string name="audio_delay_aa">تأخير صوت - Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">تحديد صوت البث</string>
 
     <string name="subtitles">الترجمة</string>
+    <string name="subtitles_auto">تم إنشاؤها تلقائيًا</string>
     <string name="subtitle_delay">تأخير الترجمة</string>
     <string name="display_subtitles">عرض الترجمة</string>
     <string name="preferred_sub_lang">لغات الترجمة المفضلة</string>
     <string name="preferred_sub_key">تفضيل الترجمة:</string>
     <string name="select_subtitles">تحديد الترجمة</string>
 
+    <string name="sub_gen_buf">طول المخزن المؤقت</string>
+    <string name="sub_gen_buf_sub">التحميل المسبق لعدد محدد من الثواني</string>
+    <string name="sub_gen_chunk">طول القطعة</string>
+    <string name="sub_gen_chunk_sub">معالجة المخزن المؤقت في أجزاء من المدة المحددة</string>
+    <string name="sub_gen_model">نموذج</string>
+    <string name="sub_gen_translate">يترجم</string>
+    <string name="sub_gen_single">شريحة واحدة</string>
+    <string name="sub_gen_single_sub">قم بنسخ القطعة بأكملها كقطعة واحدة</string>
+    <string name="sub_gen_downloading">الرجاء الانتظار حتى يتم تنزيل النموذج.</string>
+    <string name="sub_gen_download_fail">فشل تحميل النموذج: %s!</string>
+    <string name="sub_gen_cleanup">احذف النماذج الأخرى التي تم تنزيلها من ذاكرة التخزين المؤقت</string>
+    <string name="sub_gen_cleanup_done">محذوف: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">Content</string>
     <string name="vfs_file_system">إضافة من الجهاز </string>
     <string name="vfs_gdrive">Google drive</string>
+    
+    
     <string name="m3u_playlist">M3U playlist</string>
     <string name="m3u_playlist_name">الاسم</string>
     <string name="m3u_playlist_location">الموقع</string>
     <string name="m3u_playlist_location_hint">File or http(s) URL</string>
+    
+    
     <string name="m3u_playlist_video">قائمة تشغيل الفيديو</string>
 
     <string name="eq_manual">Manual</string>

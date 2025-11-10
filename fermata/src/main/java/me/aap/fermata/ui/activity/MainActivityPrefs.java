@@ -258,6 +258,8 @@ public interface MainActivityPrefs
 		FR(Locale.FRENCH),
     RO,
 		AR,
+		ES,
+		KM,
     ;
 
 		private static final List<Lang> values = List.of(values());

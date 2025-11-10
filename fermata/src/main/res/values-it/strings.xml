@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Addon</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web browser</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Interfaccia</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Impostazioni riproduzione</string>
@@ -26,6 +58,7 @@
 
     <string name="show_track_icons">Mostra icone traccia</string>
     <string name="lang">Lingua</string>
+    <string name="trans_lang">Lingua di traduzione</string>
     <string name="hide_bars">Nascondi barre</string>
     <string name="hide_bars_sub">Nascondi barre superiore ed inferiore con pannello di controllo</string>
     <string name="show_pg_up_down">Mostra pulsanti pagina su/giù</string>
@@ -35,6 +68,7 @@
     <string name="tool_bar_size">Dimensione barra strumenti</string>
     <string name="control_panel_size">Dimensione pannello di controllo</string>
     <string name="text_icon_size">Dimensione testo ed icone</string>
+    <string name="subtitles_size">Dimensioni dei sottotitoli</string>
 
     <string name="key_bindings">Mappatura tasti</string>
     <string name="key_on_click">Un click</string>
@@ -127,6 +161,9 @@
     <string name="video_scaling_best">Adatta</string>
     <string name="video_scaling_fill">Ritaglia</string>
     <string name="video_scaling_orig">Originale</string>
+    
+    
+
     <string name="audio">Audio</string>
     <string name="audio_delay">Ritardo audio</string>
     <string name="audio_delay_aa">Ritardo audio - Android Auto</string>
@@ -135,12 +172,27 @@
     <string name="select_audio_stream">Seleziona lingua audio</string>
 
     <string name="subtitles">Sottotitoli</string>
+    <string name="subtitles_auto">Generato automaticamente</string>
     <string name="subtitle_delay">Ritardo sottotitoli</string>
     <string name="display_subtitles">Mostra sottotitoli</string>
     <string name="preferred_sub_lang">Lingue preferite per i sottotitoli</string>
     <string name="preferred_sub_key">Preferisci i sottotitoli con parole chiave</string>
     <string name="select_subtitles">Seleziona sottotitoli</string>
 
+    <string name="sub_gen_buf">Lunghezza del buffer</string>
+    <string name="sub_gen_buf_sub">Precarica in anticipo il numero di secondi specificato</string>
+    <string name="sub_gen_chunk">Lunghezza del pezzo</string>
+    <string name="sub_gen_chunk_sub">Elabora il buffer in blocchi della durata specificata</string>
+    <string name="sub_gen_model">Modello</string>
+    <string name="sub_gen_translate">Tradurre</string>
+    <string name="sub_gen_single">Segmento singolo</string>
+    <string name="sub_gen_single_sub">Trascrivi l\'intero pezzo come un singolo segmento</string>
+    <string name="sub_gen_downloading">Si prega di attendere mentre il modello viene scaricato.</string>
+    <string name="sub_gen_download_fail">Impossibile scaricare il modello: %s!</string>
+    <string name="sub_gen_cleanup">Elimina gli altri modelli scaricati dalla cache</string>
+    <string name="sub_gen_cleanup_done">Eliminato: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -230,10 +282,14 @@
     <string name="vfs_content">Contenuto</string>
     <string name="vfs_file_system">File system</string>
     <string name="vfs_gdrive">Google drive</string>
+    
+    
     <string name="m3u_playlist">Playlist M3U</string>
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Posizione</string>
     <string name="m3u_playlist_location_hint">URL file o http(s)</string>
+    
+    
     <string name="m3u_playlist_video">Playlist video</string>
 
     <string name="eq_manual">Manuale</string>

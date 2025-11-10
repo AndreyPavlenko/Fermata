@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Eklentiler</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Web tarayıcı</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Arayüz</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Oynatma ayarları</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">Sistem</string>
     <string name="theme_black">Siyah</string>
     <string name="theme_star_wars">Yıldız Savaşları</string>
+    <string name="theme_purple">Mor</string>
+    <string name="theme_classic">Klasik</string>
 
     <string name="nav_bar_pos">Gezinme çubuğu konumu</string>
     <string name="nav_bar_pos_sub">Mevcut konum: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">Parça simgeleri göster</string>
     <string name="lang">Diller</string>
+    <string name="trans_lang">Çeviri dili</string>
     <string name="hide_bars">Çubukları gizle</string>
     <string name="hide_bars_sub">Kontrol paneli göründüğünde üst ve alt çubukları gizleyin</string>
     <string name="show_pg_up_down">Sayfa yukarı/aşağı düğmeleri göster</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">Araç çubuğu boyutu</string>
     <string name="control_panel_size">Kontrol paneli boyutu</string>
     <string name="text_icon_size">Metin ve simge boyutu</string>
+    <string name="subtitles_size">Altyazı boyutu</string>
 
     <string name="key_bindings">Anahtar bağlamalar</string>
     <string name="key_on_click">Tıklamada</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">En uygun</string>
     <string name="video_scaling_fill">Ekranı doldur</string>
     <string name="video_scaling_orig">Orjinal boyut</string>
+    
+    
+
     <string name="audio">Ses</string>
     <string name="audio_delay">Ses gecikmesi</string>
     <string name="audio_delay_aa">Ses gecikmesi - Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">Ses akışı seç</string>
 
     <string name="subtitles">Alt yazılar</string>
+    <string name="subtitles_auto">Otomatik oluşturuldu</string>
     <string name="subtitle_delay">Altyazı gecikmesi</string>
     <string name="display_subtitles">Altyazıları görüntüle</string>
     <string name="preferred_sub_lang">Tercih edilen altyazı dilleri</string>
     <string name="preferred_sub_key">Anahtar kelimelerle altyazılar</string>
     <string name="select_subtitles">Altyazı seçin</string>
 
+    <string name="sub_gen_buf">Arabellek uzunluğu</string>
+    <string name="sub_gen_buf_sub">Belirtilen sayıda saniye kadar önceden yükleme yapın</string>
+    <string name="sub_gen_chunk">Parça uzunluğu</string>
+    <string name="sub_gen_chunk_sub">Tamponu belirtilen süre boyunca parçalar halinde işleyin</string>
+    <string name="sub_gen_model">Modeli</string>
+    <string name="sub_gen_translate">Çevir</string>
+    <string name="sub_gen_single">Tek segment</string>
+    <string name="sub_gen_single_sub">Tüm parçayı tek bir parça olarak yazıya dök</string>
+    <string name="sub_gen_downloading">Model indirilirken lütfen bekleyin.</string>
+    <string name="sub_gen_download_fail">Model indirilemedi: %s!</string>
+    <string name="sub_gen_cleanup">İndirilen diğer modelleri önbellekten silin</string>
+    <string name="sub_gen_cleanup_done">Silindi: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">İçerik</string>
     <string name="vfs_file_system">Dosyalar</string>
     <string name="vfs_gdrive">Google drive</string>
+    
+    
     <string name="m3u_playlist">M3U oynatma listesi</string>
     <string name="m3u_playlist_name">Adı</string>
     <string name="m3u_playlist_location">Konum</string>
     <string name="m3u_playlist_location_hint">"Dosya veya Http URL'si"</string>
+    
+    
     <string name="m3u_playlist_video">Video oynatma listesi</string>
 
     <string name="eq_manual">Elle</string>

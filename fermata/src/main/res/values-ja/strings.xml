@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">アドイン</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Webブラウザ</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">インターフェース</string>
     <string name="interface_prefs_aa">Android Autoの設定</string>
     <string name="playback_settings">再生設定</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">システム</string>
     <string name="theme_black">黒</string>
     <string name="theme_star_wars">スターウォーズ</string>
+    <string name="theme_purple">紫</string>
+    <string name="theme_classic">クラシック</string>
 
     <string name="nav_bar_pos">ナビゲーションバーの位置</string>
     <string name="nav_bar_pos_sub">現在の位置: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">トラックアイコンを表示</string>
     <string name="lang">言語</string>
+    <string name="trans_lang">翻訳言語</string>
     <string name="hide_bars">バーを隠す</string>
     <string name="hide_bars_sub">コントロールパネルが表示されたときに上部と下部のバーを非表示にします</string>
     <string name="show_pg_up_down">ページアップ/ページダウンボタンを表示</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">ツールバー サイズ</string>
     <string name="control_panel_size">コントロールパネル サイズ</string>
     <string name="text_icon_size">テキスト・アイコン サイズ</string>
+    <string name="subtitles_size">字幕サイズ</string>
 
     <string name="key_bindings">キーの割り当て</string>
     <string name="key_on_click">クリック</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">ベストフィット</string>
     <string name="video_scaling_fill">フルスクリーン</string>
     <string name="video_scaling_orig">オリジナルサイズ</string>
+    
+    
+
     <string name="audio">オーディオ</string>
     <string name="audio_delay">オーディオ遅延設定</string>
     <string name="audio_delay_aa">オーディオ遅延設定 - Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">オーディオストリームを選択</string>
 
     <string name="subtitles">字幕</string>
+    <string name="subtitles_auto">自動生成</string>
     <string name="subtitle_delay">字幕遅延設定</string>
     <string name="display_subtitles">字幕を表示</string>
     <string name="preferred_sub_lang">優先される字幕言語</string>
     <string name="preferred_sub_key">キーワードを含む字幕を優先</string>
     <string name="select_subtitles">字幕を選択</string>
 
+    <string name="sub_gen_buf">バッファ長</string>
+    <string name="sub_gen_buf_sub">指定された秒数だけ先行してプリロードします</string>
+    <string name="sub_gen_chunk">チャンクの長さ</string>
+    <string name="sub_gen_chunk_sub">指定された期間のチャンクでバッファを処理します</string>
+    <string name="sub_gen_model">モデル</string>
+    <string name="sub_gen_translate">翻訳する</string>
+    <string name="sub_gen_single">単一セグメント</string>
+    <string name="sub_gen_single_sub">チャンク全体を 1 つのセグメントとして転写する</string>
+    <string name="sub_gen_downloading">モデルがダウンロードされるまでお待ちください。</string>
+    <string name="sub_gen_download_fail">モデルのダウンロードに失敗しました: %s!</string>
+    <string name="sub_gen_cleanup">ダウンロードした他のモデルをキャッシュから削除する</string>
+    <string name="sub_gen_cleanup_done">削除されました: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">コンテンツ</string>
     <string name="vfs_file_system">ファイルシステム</string>
     <string name="vfs_gdrive">Google drive</string>
+    
+    
     <string name="m3u_playlist">M3U プレイリスト</string>
     <string name="m3u_playlist_name">名前</string>
     <string name="m3u_playlist_location">ロケーション</string>
     <string name="m3u_playlist_location_hint">ファイル または http(s) URL</string>
+    
+    
     <string name="m3u_playlist_video">ビデオ プレイリスト</string>
 
     <string name="eq_manual">マニュアル</string>

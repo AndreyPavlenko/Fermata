@@ -1,7 +1,39 @@
 <resources>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
     <string name="addons">Extras</string>
     <string name="addon_name_tv">TV</string>
     <string name="addon_name_web_browser">Navegador</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
     <string name="playback_settings">Definições de Reprodução</string>
@@ -15,6 +47,8 @@
     <string name="theme_system">Sistema</string>
     <string name="theme_black">Preto</string>
     <string name="theme_star_wars">Guerra das Estrelas</string>
+    <string name="theme_purple">Roxo</string>
+    <string name="theme_classic">Clássico</string>
 
     <string name="nav_bar_pos">Posição da Barra de Navegação</string>
     <string name="nav_bar_pos_sub">Posição Atual: %1$s</string>
@@ -24,6 +58,7 @@
 
     <string name="show_track_icons">Mostrar Icones da Faixa</string>
     <string name="lang">Idioma</string>
+    <string name="trans_lang">Idioma de tradução</string>
     <string name="hide_bars">Escoder Barras</string>
     <string name="hide_bars_sub">Hide top and bottom bars when the control panel appears</string>
     <string name="show_pg_up_down">Show page up/down buttons</string>
@@ -33,6 +68,7 @@
     <string name="tool_bar_size">Tamanho da barra de ferramentas</string>
     <string name="control_panel_size">Tamanho do Painel de Controlo</string>
     <string name="text_icon_size">Tamanho de Icones e Texto</string>
+    <string name="subtitles_size">Tamanho das legendas</string>
 
     <string name="key_bindings">Ligações de teclas</string>
     <string name="key_on_click">Ao clicar</string>
@@ -125,6 +161,9 @@
     <string name="video_scaling_best">Melhor Ajuste</string>
     <string name="video_scaling_fill">Preencher Ecrã</string>
     <string name="video_scaling_orig">Tamanho Original</string>
+    
+    
+
     <string name="audio">Audio</string>
     <string name="audio_delay">Atraso do áudio</string>
     <string name="audio_delay_aa">Atraso do áudio - Android Auto</string>
@@ -133,12 +172,27 @@
     <string name="select_audio_stream">Selecionar faixa de áudio</string>
 
     <string name="subtitles">Legendas</string>
+    <string name="subtitles_auto">Gerado automaticamente</string>
     <string name="subtitle_delay">Atraso das Legendas</string>
     <string name="display_subtitles">Mostrar Legendas</string>
     <string name="preferred_sub_lang">Línguas preferidas para as legendas</string>
     <string name="preferred_sub_key">Preferir legendas com palavras-chave</string>
     <string name="select_subtitles">Selecionar legendas</string>
 
+    <string name="sub_gen_buf">Comprimento do buffer</string>
+    <string name="sub_gen_buf_sub">Pré-carregar antecipadamente o número especificado de segundos</string>
+    <string name="sub_gen_chunk">Comprimento do pedaço</string>
+    <string name="sub_gen_chunk_sub">Processe o buffer em partes da duração especificada</string>
+    <string name="sub_gen_model">Modelo</string>
+    <string name="sub_gen_translate">Traduzir</string>
+    <string name="sub_gen_single">Segmento único</string>
+    <string name="sub_gen_single_sub">Transcreva o pedaço inteiro como um único segmento</string>
+    <string name="sub_gen_downloading">Aguarde enquanto o modelo é baixado.</string>
+    <string name="sub_gen_download_fail">Falha ao baixar o modelo: %s!</string>
+    <string name="sub_gen_cleanup">Exclua outros modelos baixados do cache</string>
+    <string name="sub_gen_cleanup_done">Excluído: %s</string>
+
+    
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
 
@@ -228,10 +282,14 @@
     <string name="vfs_content">Conteúdo</string>
     <string name="vfs_file_system">Sistema de Ficheiros</string>
     <string name="vfs_gdrive">Google drive</string>
+    
+    
     <string name="m3u_playlist">Lista M3U</string>
     <string name="m3u_playlist_name">Nome</string>
     <string name="m3u_playlist_location">Localização</string>
     <string name="m3u_playlist_location_hint">Ficheiro ou http(s) URL</string>
+    
+    
     <string name="m3u_playlist_video">Lista de reprodução de vídeo</string>
 
     <string name="eq_manual">Manual</string>
