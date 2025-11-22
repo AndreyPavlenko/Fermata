@@ -92,10 +92,14 @@ public class YoutubeWebView extends FermataWebView {
 				"  if (v.getAttribute('FermataAttached') === 'true') return;\n" +
 				"  v.setAttribute('FermataAttached', 'true');\n" +
 				"  v.setAttribute('style', 'object-fit:" + scale + "');\n" + debug +
-				"  if ((v.currentTime > 0) && !v.paused && !v.ended) " + JS_EVENT + "(" + JS_VIDEO_PLAYING + ", v.currentSrc);\n" +
-				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING + ", v.currentSrc);});\n" +
-				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PAUSED + ", v.currentSrc);});\n" +
-				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED + ", null);});\n" +
+				"  if ((v.currentTime > 0) && !v.paused && !v.ended) " + JS_EVENT + "(" + JS_VIDEO_PLAYING +
+				", v.currentSrc);\n" +
+				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING +
+				", v.currentSrc);});\n" +
+				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PAUSED +
+				", v.currentSrc);});\n" +
+				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED +
+				", null);});\n" +
 				"}\n" +
 				"function findVideo() {\n" +
 				"  var video = document.querySelectorAll('video');" +
@@ -127,62 +131,24 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void prev() {
-		prevNext(0);
+		prevNext(false);
 	}
 
 	void next() {
-		prevNext(1);
+		prevNext(true);
 	}
 
-	private void prevNext(int plIdx) {
+	private void prevNext(boolean next) {
 		FermataChromeClient chrome = getWebChromeClient();
 		if (chrome == null) return;
-
-		String url = chrome.getWebView().getUrl();
-		chrome.exitFullScreen().thenRun(() -> loadUrl("""
-			javascript:
-			function changeSong() {
-				var currentURL ='""" + url + """
-				';var videoID = currentURL.substring(currentURL.indexOf("v=") + 2, currentURL.indexOf("&"));
-					
-				var playlist = document.getElementsByClassName('ytm-playlist-panel-video-renderer-v2');
-				var currentlySelected;
-				for (song of playlist) {
-					if (song.querySelector(`a[href*='${videoID}']`)) {
-						currentlySelected = song;
-						break;
-					}
+		chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
+				function prevNextVideo() {
+				  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
+				  console.log('Prev/Next buttons:', buttons);
+				  if (buttons) buttons[%d].click();
 				}
-				
-				if (currentlySelected) {
-					""" + (plIdx == 0 ? """
-					var prevSong = currentlySelected.previousSibling;
-					if (prevSong !== null) prevSong.getElementsByTagName('a')[0].click();
-					""" : """
-					var nextSong = currentlySelected.nextSibling;
-					if (nextSong !== null) nextSong.getElementsByTagName('a')[0].click();
-					""") + """
-				}
-			}
-			
-			if (document.getElementsByTagName('ytm-playlist-engagement-panel').length > 0) {
-				if (document.body.getAttribute('engagement-panel-open') === null) {
-					setTimeout(() => {document.querySelector('[aria-label="Show playlist videos"]').click();}, 600);
-					setTimeout(() => { changeSong(); }, 600);
-				}
-				
-				changeSong();
-			} else {
-				var playerControls = document.getElementsByClassName('player-controls-middle-core-buttons');
-				if (playerControls.length > 0) {
-				""" + (plIdx == 0 ? """
-					playerControls[0].querySelector('[aria-label="Previous video"]').click();
-				""" : """
-					playerControls[0].querySelector('[aria-label="Next video"]').click();
-				""") + """
-				}
-			}
-		"""));
+				setTimeout(prevNextVideo, 600);
+				""".formatted(next ? 1 : 0), null));
 	}
 
 	FutureSupplier<Long> getDuration() {
@@ -219,12 +185,14 @@ public class YoutubeWebView extends FermataWebView {
 				"    result += options[i].innerText;\n" +
 				"  }\n" +
 				"  " + JS_EVENT + '(' + JS_VIDEO_QUALITIES + ", result);\n" +
-				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('.c3-material-button-button').click();}, 100);\n" +
+				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('" +
+				".c3-material-button-button').click();}, 100);\n" +
 				"  return result;\n" +
 				"}\n" +
 				"getVideoQualities(0, true);");
 		return p;
 	}
+
 	void setVideoQuality(int idx) {
 		loadUrl("javascript:\n" +
 				"function retrySetVideoQuality(idx, attempt, openMenu) {\n" +
@@ -247,7 +215,8 @@ public class YoutubeWebView extends FermataWebView {
 				"  select.selectedIndex = idx;\n" +
 				"  options[idx].selected = true;\n" +
 				"  select.dispatchEvent(evt);\n" +
-				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('.c3-material-button-button').click();}, 100);\n" +
+				"  setTimeout(()=> {settings.parentNode.parentNode.querySelector('" +
+				".c3-material-button-button').click();}, 100);\n" +
 				"  return true;\n" +
 				"}\n" +
 				"setVideoQuality(" + idx + ", 0, true);");
@@ -256,7 +225,8 @@ public class YoutubeWebView extends FermataWebView {
 	private FutureSupplier<Long> getMilliseconds(String value) {
 		Promise<Long> p = new Promise<>();
 		evaluateJavascript(
-				"(function(){var v = document.querySelector('video'); return (v != null) ? v." + value + " : 0})();",
+				"(function(){var v = document.querySelector('video'); return (v != null) ? v." + value +
+						" : 0})();",
 				v -> {
 					try {
 						p.complete((long) (Double.parseDouble(v) * 1000));
@@ -270,13 +240,17 @@ public class YoutubeWebView extends FermataWebView {
 
 	void setPosition(long position) {
 		double pos = position / 1000f;
-		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.currentTime = " + pos + ";");
+		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.currentTime = " +
+				pos + ";");
 	}
 
 	FutureSupplier<Float> getSpeed() {
 		Promise<Float> p = new Promise<>();
 		evaluateJavascript(
-				"(function(){var v = document.querySelector('video'); return (v != null) ? v.playbackRate : 0})();",
+				"(function(){var v = document.querySelector('video'); return (v != null) ? v" +
+						".playbackRate" +
+						" " +
+						": 0})();",
 				v -> {
 					try {
 						p.complete(Float.parseFloat(v));
@@ -289,7 +263,9 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void setSpeed(float speed) {
-		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.playbackRate = " + speed + ";");
+		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.playbackRate =" +
+				" " +
+				speed + ";");
 	}
 
 	FutureSupplier<String> getVideoTitle() {
