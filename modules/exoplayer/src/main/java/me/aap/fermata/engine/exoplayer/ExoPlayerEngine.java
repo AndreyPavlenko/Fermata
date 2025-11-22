@@ -104,6 +104,10 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 		MediaSource.Factory msFactory =
 				new DefaultMediaSourceFactory(ctx).setDataSourceFactory(dsFactory);
 		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx) {
+			{
+				setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON);
+			}
+
 			@Override
 			protected AudioSink buildAudioSink(@NonNull Context context,
 																				 boolean enableFloatOutput,

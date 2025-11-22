@@ -859,6 +859,15 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name="me.aap.fermata.service.SpeechRecognitionService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VOICE_INTERACTION">
+            <intent-filter>
+                <action android:name="android.speech.RecognitionService"/>
+            </intent-filter>
+        </service>
+
         <receiver
             android:name="androidx.media.session.MediaButtonReceiver"
             android:exported="false">

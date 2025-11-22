@@ -143,8 +143,12 @@ public class SubGenAddon implements FermataAddon {
 			var key = impl.createCacheKey(ps);
 			var cached = cache.remove(key);
 			if (cached != null) {
-				Log.d("Returning cached transcriptor: ", key);
-				return completed(new CachedTranscriptor(key, cached));
+				if (cached.reconfigure(ps)) {
+					Log.d("Returning cached transcriptor: ", key);
+					return completed(new CachedTranscriptor(key, cached));
+				} else {
+					cached.release();
+				}
 			}
 		}
 
@@ -193,6 +197,8 @@ public class SubGenAddon implements FermataAddon {
 		boolean reconfigure(PreferenceStore ps);
 
 		boolean read(ByteBuffer buf, int chunkLen, int bytesPerSample, int channels, int frameRate);
+
+		default List<Subtitles.Text> transcribe() {return transcribe(0);}
 
 		List<Subtitles.Text> transcribe(long timeOffset);
 

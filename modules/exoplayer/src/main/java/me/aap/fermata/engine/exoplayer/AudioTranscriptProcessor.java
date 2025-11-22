@@ -120,6 +120,11 @@ public final class AudioTranscriptProcessor implements AudioProcessor {
 	@Override
 	public synchronized void queueEndOfStream() {
 		buffer.eos();
+		if (!isTranscribing && buffer.hasForTranscriptor()) {
+			Log.d("Starting transcription...");
+			isTranscribing = true;
+			App.get().getExecutor().submit(this::transcribe);
+		}
 	}
 
 	@NonNull
@@ -204,25 +209,27 @@ public final class AudioTranscriptProcessor implements AudioProcessor {
 		}
 
 		public boolean hasForTranscriptor() {
-			return (writer.pos - transcriptorReader.pos) >= chunkLen || eos;
+			var available = writer.pos - transcriptorReader.pos;
+			return available >= chunkLen || (eos && available > 0);
 		}
+
+		public boolean hasForAudioSink() {
+			long available = transcriptorReader.pos - audioSinkReader.pos;
+			return available >= bufLen || (eos && transcriptorReader.pos > audioSinkReader.pos);
+		}
+
 
 		public ByteBuffer getForTranscriptor() {
 			return hasForTranscriptor() ? get(transcriptorReader, chunkLen) : EMPTY_BUFFER;
 		}
 
-		public boolean hasForAudioSink() {
-			long available = transcriptorReader.pos - audioSinkReader.pos;
-			return available >= bufLen || (eos && writer.pos > transcriptorReader.pos);
+		public ByteBuffer getForAudioSink() {
+			return hasForAudioSink() ? get(audioSinkReader, bytesPerSecond) : EMPTY_BUFFER;
 		}
 
 		public boolean readInterrupt() {
 			return !eos && (++readInterrupt % 2 == 0) &&
 					(audioSinkReader.pos + buffer.capacity() - writer.pos != 0);
-		}
-
-		public ByteBuffer getForAudioSink() {
-			return hasForAudioSink() ? get(audioSinkReader, bytesPerSecond) : EMPTY_BUFFER;
 		}
 
 		private ByteBuffer get(Accessor reader, int maxLen) {
@@ -292,7 +299,7 @@ public final class AudioTranscriptProcessor implements AudioProcessor {
 		}
 
 		public void eos() {
-			Log.d("End of stream");
+			Log.d("End of stream: ", this);
 			eos = true;
 		}
 

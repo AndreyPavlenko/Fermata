@@ -86,6 +86,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 
 	private Whisper(long sessionPtr) {
 		this.sessionPtr = sessionPtr;
+		Log.d("Session created: ", sessionPtr);
 	}
 
 	static List<Pair<String, String>> getModelNames() {
@@ -188,6 +189,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 		if (!released) {
 			released = true;
 			release(sessionPtr);
+			Log.d("Session released: ", sessionPtr);
 		}
 	}
 

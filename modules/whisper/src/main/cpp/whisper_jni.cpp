@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <functional>
 #include <jni.h>
 #include <map>
 #include <string>
@@ -68,11 +69,9 @@ using SampleType = std::conditional_t<
 
 template<unsigned S, typename T = SampleType<S>>
 struct SampleBuffer {
-	SampleBuffer(JNIEnv *env, jobject byteBuf) : data(
-			static_cast<T *>(env->GetDirectBufferAddress(byteBuf))),
-																							 size(static_cast<size_t>(
-																												env->GetDirectBufferCapacity(byteBuf) /
-																												S)) {
+	SampleBuffer(JNIEnv *env, jobject byteBuf) :
+			data(static_cast<T *>(env->GetDirectBufferAddress(byteBuf))),
+			size(static_cast<size_t>(env->GetDirectBufferCapacity(byteBuf) / S)) {
 		static_assert(S >= 1 && S <= 4, "Unsupported sample size");
 	}
 
@@ -95,26 +94,48 @@ struct SampleBuffer {
 
 	static size_t
 	copy(JNIEnv *env, jobject src, WhisperSession *dst, unsigned channels, size_t frameRate) {
+		std::function<size_t(size_t)> idxFn;
+		if ((channels * frameRate) % WHISPER_SAMPLE_RATE) {
+			float ratio = static_cast<float>(channels * frameRate) /
+										static_cast<float>(WHISPER_SAMPLE_RATE);
+			idxFn = [ratio](size_t idx) {
+				return static_cast<size_t>(static_cast<float>(idx) * ratio);
+			};
+		} else {
+			size_t ratio = (channels * frameRate) / WHISPER_SAMPLE_RATE;
+			idxFn = [ratio](size_t idx) {
+				return idx * ratio;
+			};
+		}
+
 		SampleBuffer<S> buf(env, src);
-		size_t w = std::min(static_cast<size_t>(1),
-												channels * frameRate / WHISPER_SAMPLE_RATE);
-		size_t n = std::min(buf.size / w, sizeof(dst->samples) - dst->size);
+		size_t frameWidth = std::max(1UL, channels * frameRate / WHISPER_SAMPLE_RATE);
+		std::function<float(size_t)> convertFn = [&buf, &idxFn, frameWidth](size_t idx) {
+			auto frameIdx = idxFn(idx);
+			float sum = 0.0f;
+			for (size_t i = 0; i < frameWidth; ++i) {
+				sum += buf[frameIdx + i];
+			}
+			return sum / static_cast<float>(frameWidth);
+		};
+
+
+		size_t n = std::min(buf.size * WHISPER_SAMPLE_RATE / channels / frameRate,
+												sizeof(dst->samples) - dst->size);
 		auto samples = dst->samples + dst->size;
 		for (size_t i = 0; i < n; ++i) {
-			auto j = i * w;
-			float sum = buf.data[j];
-			for (size_t end = j + w; ++j < end;) {
-				sum += buf[j];
-			}
-			samples[i] = sum / static_cast<float>(w);
+			samples[i] = convertFn(i);
 		}
 		dst->size += n;
-		return S * n * w;
+		return idxFn(n) * S;
 	}
 };
 
-template<unsigned S, unsigned C, size_t R,
-		unsigned W = std::max(1U, static_cast<unsigned>(C * R / WHISPER_SAMPLE_RATE))>
+template<unsigned C, size_t R>
+using SampleRatioType = std::conditional_t<((C * R) % WHISPER_SAMPLE_RATE) == 0, size_t, float>;
+
+template<unsigned S, unsigned C, size_t R, typename Srt = SampleRatioType<C, R>,
+		Srt Ratio = static_cast<Srt>(C * R) / static_cast<Srt>(WHISPER_SAMPLE_RATE)>
 struct FrameBuffer {
 	FrameBuffer(JNIEnv *env, jobject byteBuf)
 			: buf(env, byteBuf) {
@@ -124,23 +145,40 @@ struct FrameBuffer {
 
 	SampleBuffer<S> buf;
 
-	size_t size() { return buf.size * WHISPER_SAMPLE_RATE / C / R; }
+	size_t size() {
+		return static_cast<size_t>(static_cast<Srt>(buf.size) / Ratio);
+	}
 
 	// Convert a single frame at idx to a whisper sample, scaling the frame rate R proportionally
 	float operator[](size_t idx) {
-		if constexpr (W == 1) {
-			return buf[idx];
-		} else if constexpr (W == 2) {
-			idx *= 2;
-			return 0.5f * (buf[idx] + buf[idx + 1]);
-		} else {
-			idx *= W;
-			float sum = 0.0f;
-			for (size_t i = 0; i < W; ++i) {
-				sum += buf[idx + i];
+		if constexpr (std::is_same_v<Srt, size_t>) {
+			if constexpr (Ratio == 1) { // 16kHz mono
+				return buf[idx];
+			} else if constexpr (Ratio == 2) { // 16kHz stereo
+				idx *= 2;
+				return 0.5f * (buf[idx] + buf[idx + 1]);
+			} else if constexpr (Ratio == 3) { // 48kHz mono
+				return buf[idx * 3 + 1]; // Take the middle sample
+			} else if constexpr (Ratio == 6) { // 48kHz stereo
+				idx *= 6;
+				return 0.5f * (buf[idx + 2] + buf[idx + 3]); // Take mid of L and R
 			}
-			return sum / static_cast<float>(W);
+		} else if constexpr (R == 44100) {
+			idx = static_cast<size_t>(static_cast<Srt>(idx) * Ratio);
+			if constexpr (C == 1) { // 44.1kHz mono
+				return buf[idx + 1];
+			} else { // 44.1kHz stereo
+				return 0.5f * (buf[idx + 2] + buf[idx + 3]);
+			}
 		}
+
+		constexpr auto frameWidth = static_cast<size_t>(Ratio) == 0 ? 1 : static_cast<size_t>(Ratio);
+		idx = static_cast<size_t>(static_cast<Srt>(idx) * Ratio);
+		float sum = 0.0f;
+		for (size_t i = 0; i < frameWidth; ++i) {
+			sum += buf[idx + i];
+		}
+		return sum / static_cast<float>(frameWidth);
 	}
 
 	static size_t copy(JNIEnv *env, jobject src, WhisperSession *dst) {
@@ -151,7 +189,10 @@ struct FrameBuffer {
 			samples[i] = buf[i];
 		}
 		dst->size += n;
-		return S * n * W;
+		auto nBytes = static_cast<size_t>(static_cast<Srt>(n) * Ratio * S);
+		LOGD("Resampled %zu frames, consumed %zu: %u bytes per sample, %u channels, %zu Hz",
+				 n, nBytes, S, C, R);
+		return nBytes;
 	}
 };
 
@@ -203,7 +244,6 @@ extern "C" JNIEXPORT jint JNICALL
 Java_me_aap_fermata_whisper_Whisper_resample(JNIEnv *env, jclass, jlong sessionPtr, jobject byteBuf,
 																						 jint chunkLen, jint bytesPerSample, jint channels,
 																						 jint frameRate) {
-	LOGD("Resample: bps=%d, ch=%d, fr=%d", bytesPerSample, channels, frameRate);
 	assert(sessionPtr);
 	static auto resamplers = std::map<std::tuple<jint, jint, jint>, size_t (*)(JNIEnv *, jobject,
 																																						 WhisperSession *)>{
@@ -271,9 +311,19 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 	if (session->size == 0) return 0;
 
 	whisper_full_params &params = session->params;
+	transcribe:
 	if (whisper_full(session->ctx, params, session->samples, static_cast<int>(session->size)) != 0) {
 		env->ThrowNew(env->FindClass("java/lang/RuntimeException"), "Failed to transcribe");
 		return 0;
+	}
+
+	auto segments = whisper_full_n_segments(session->ctx);
+	auto hasSegments = segments != 0;
+	for (; segments > 0; --segments) {
+		auto dur =
+				whisper_full_get_segment_t1(session->ctx, segments - 1) -
+				whisper_full_get_segment_t0(session->ctx, segments - 1);
+		if (dur > 50) break;
 	}
 
 	if (params.detect_language) {
@@ -282,21 +332,20 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 			params.detect_language = false;
 			session->lang = params.language;
 			LOGI("Detected language: %s", params.language);
+			if (segments == 0) {
+				LOGD("No segments detected. Retrying after language detection.");
+				goto transcribe;
+			}
 		}
 	}
 
-	auto segments = whisper_full_n_segments(session->ctx);
 	unsigned consumed;
-
 	if (segments > 0) {
-		for (int i = 0; i < segments; ++i) {
-			auto dur =
-					whisper_full_get_segment_t1(session->ctx, i) -
-					whisper_full_get_segment_t1(session->ctx, i);
-			if (dur > 50) break;
-			segments--;
-		}
 		auto end = static_cast<unsigned>(whisper_full_get_segment_t1(session->ctx, segments - 1) *
+																		 WHISPER_SAMPLE_RATE / 100);
+		consumed = std::min(session->size, end);
+	} else if (hasSegments) {
+		auto end = static_cast<unsigned>(whisper_full_get_segment_t0(session->ctx, 0) *
 																		 WHISPER_SAMPLE_RATE / 100);
 		consumed = std::min(session->size, end);
 	} else {
