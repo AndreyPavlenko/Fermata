@@ -139,17 +139,47 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void prevNext(boolean next) {
-		FermataChromeClient chrome = getWebChromeClient();
-		if (chrome == null) return;
-		chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
-				function prevNextVideo() {
-				  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
-				  console.log('Prev/Next buttons:', buttons);
-				  if (buttons) buttons[%d].click();
-				}
-				setTimeout(prevNextVideo, 600);
-				""".formatted(next ? 1 : 0), null));
-	}
+        FermataChromeClient chrome = getWebChromeClient();
+        if (chrome == null) return;
+
+        // Script thông minh: Tự dò tìm nút Next trên cả giao diện Desktop và Mobile
+        String jsCommand = String.format(
+            "javascript:(function() {" +
+            "   function tryClick() {" +
+            "       var isNext = %s;" +
+            "       console.log('Fermata: Trying to click ' + (isNext ? 'Next' : 'Prev'));" +
+            
+            // 1. THỬ TÌM NÚT CỦA GIAO DIỆN DESKTOP / IPAD (Class: .ytp-next-button)
+            "       var desktopBtn = document.querySelector(isNext ? '.ytp-next-button' : '.ytp-prev-button');" +
+            "       if (desktopBtn && desktopBtn.offsetParent !== null) {" + // Kiểm tra nút có đang hiện không
+            "           desktopBtn.click();" +
+            "           return;" +
+            "       }" +
+
+            // 2. THỬ TÌM NÚT CỦA GIAO DIỆN MOBILE (Class cũ trong code gốc)
+            "       var mobileBtns = document.querySelectorAll('button.player-middle-controls-prev-next-button');" +
+            "       if (mobileBtns.length > 1) {" +
+            "           mobileBtns[isNext ? 1 : 0].click();" +
+            "           return;" +
+            "       }" +
+
+            // 3. THỬ TÌM NÚT BẰNG ICON (Dự phòng cho giao diện mới)
+            "       var iconBtn = document.querySelector(isNext ? 'button[aria-label*=\"Next\"]' : 'button[aria-label*=\"Previous\"]');" +
+            "       if (iconBtn) { iconBtn.click(); return; }" +
+
+            // 4. BƯỚC CÙNG ĐƯỜNG: Nếu là Next mà không thấy nút, ta tua hết bài để nó tự nhảy
+            "       if (isNext) {" +
+            "           var v = document.querySelector('video');" +
+            "           if (v) v.currentTime = v.duration;" +
+            "       }" +
+            "   }" +
+            "   setTimeout(tryClick, 200);" + // Chờ 200ms cho ổn định rồi bấm
+            "})()", 
+            next ? "true" : "false"
+        );
+
+        chrome.exitFullScreen().thenRun(() -> evaluateJavascript(jsCommand, null));
+    }
 
 	FutureSupplier<Long> getDuration() {
 		return getMilliseconds("duration");
