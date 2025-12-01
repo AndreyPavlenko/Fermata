@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">지정된 기간 동안 버퍼를 청크로 처리합니다.</string>
     <string name="sub_gen_model">모델</string>
     <string name="sub_gen_translate">번역하다</string>
+    <string name="sub_gen_use_gpu">GPU 사용</string>
     <string name="sub_gen_single">단일 세그먼트</string>
     <string name="sub_gen_single_sub">전체 청크를 단일 세그먼트로 복사</string>
     <string name="sub_gen_downloading">모델을 다운로드하는 동안 잠시 기다려 주세요.</string>

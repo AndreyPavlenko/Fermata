@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Obradite međuspremnik u dijelovima određenog trajanja</string>
     <string name="sub_gen_model">Model</string>
     <string name="sub_gen_translate">Prevesti</string>
+    <string name="sub_gen_use_gpu">Korištenje GPU-a</string>
     <string name="sub_gen_single">Pojedinačni segment</string>
     <string name="sub_gen_single_sub">Prepišite cijeli dio kao jedan segment</string>
     <string name="sub_gen_downloading">Pričekajte dok se model ne preuzme.</string>

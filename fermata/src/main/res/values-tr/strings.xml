@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Tamponu belirtilen süre boyunca parçalar halinde işleyin</string>
     <string name="sub_gen_model">Modeli</string>
     <string name="sub_gen_translate">Çevir</string>
+    <string name="sub_gen_use_gpu">GPU\'yu kullan</string>
     <string name="sub_gen_single">Tek segment</string>
     <string name="sub_gen_single_sub">Tüm parçayı tek bir parça olarak yazıya dök</string>
     <string name="sub_gen_downloading">Model indirilirken lütfen bekleyin.</string>

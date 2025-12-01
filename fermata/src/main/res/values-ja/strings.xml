@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">指定された期間のチャンクでバッファを処理します</string>
     <string name="sub_gen_model">モデル</string>
     <string name="sub_gen_translate">翻訳する</string>
+    <string name="sub_gen_use_gpu">GPUを使う</string>
     <string name="sub_gen_single">単一セグメント</string>
     <string name="sub_gen_single_sub">チャンク全体を 1 つのセグメントとして転写する</string>
     <string name="sub_gen_downloading">モデルがダウンロードされるまでお待ちください。</string>

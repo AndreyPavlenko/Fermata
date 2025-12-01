@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Xử lý bộ đệm theo từng phần trong khoảng thời gian được chỉ định</string>
     <string name="sub_gen_model">Mẫu</string>
     <string name="sub_gen_translate">Dịch</string>
+    <string name="sub_gen_use_gpu">Sử dụng GPU</string>
     <string name="sub_gen_single">Phân đoạn đơn</string>
     <string name="sub_gen_single_sub">Phiên âm toàn bộ đoạn dưới dạng một phân đoạn duy nhất</string>
     <string name="sub_gen_downloading">Vui lòng đợi trong khi mô hình được tải xuống.</string>

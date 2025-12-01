@@ -186,6 +186,7 @@ Apagado: pausa</string>
     <string name="sub_gen_chunk_sub">Procesar el búfer en fragmentos de la duración especificada</string>
     <string name="sub_gen_model">Modelo</string>
     <string name="sub_gen_translate">Traducir</string>
+    <string name="sub_gen_use_gpu">Usa la GPU</string>
     <string name="sub_gen_single">Segmento único</string>
     <string name="sub_gen_single_sub">Transcribir todo el fragmento como un solo segmento</string>
     <string name="sub_gen_downloading">Espere mientras se descarga el modelo.</string>

@@ -71,6 +71,28 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en-q8_0.bin");
 		nameToUrl.put("small.en (488 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin");
+		nameToUrl.put("medium-q5_0 (539 MB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q5_0.bin");
+		nameToUrl.put("medium-q8_0 (823 MB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q8_0.bin");
+		nameToUrl.put("medium (1.53 GB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin");
+		nameToUrl.put("medium.en-q5_0 (539 MB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en-q5_0.bin");
+		nameToUrl.put("medium.en-q8_0 (823 MB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en-q8_0.bin");
+		nameToUrl.put("medium.en (1.53 GB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin");
+		nameToUrl.put("large-v3-q5_0 (1.08 GB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-q5_0.bin");
+		nameToUrl.put("large-v3 (3.1 GB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin");
+		nameToUrl.put("large-v3-turbo-q5_0 (574 MB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin");
+		nameToUrl.put("large-v3-turbo-q8_0 (874 MB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q8_0.bin");
+		nameToUrl.put("large-v3-turbo (1.62 GB)",
+				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin");
 		displayNames = new ArrayList<>(nameToUrl.size());
 
 		for (var entry : nameToUrl.entrySet()) {
@@ -96,6 +118,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	public static FutureSupplier<Whisper> create(PreferenceStore ps) {
 		var modelNameOrPath = ps.getStringPref(WhisperAddon.MODEL);
 		var lang = ps.getStringPref(WhisperAddon.LANG);
+		var useGpu = ps.getBooleanPref(WhisperAddon.USE_GPU);
 		var singleSegment = ps.getBooleanPref(WhisperAddon.SINGLE_SEGMENT);
 		var app = App.get();
 		var cacheDir = cacheDir(app);
@@ -136,7 +159,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 		}
 
 		return load.map(
-				v -> new Whisper(create(modelPath, vadFile.getAbsolutePath(), lang, singleSegment)));
+				v -> new Whisper(create(modelPath, vadFile.getAbsolutePath(), lang, useGpu, singleSegment)));
 	}
 
 	@Override
@@ -223,7 +246,7 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	}
 
 	private static native long create(String modelPath, String vadPath, String lang,
-																		boolean singleSegment);
+																		boolean useGpu, boolean singleSegment);
 
 	private static native void reconfigure(long sessionPtr, String lang, boolean singleSegment);
 

@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Обрабатывать буфер блоками указанной продолжительности</string>
     <string name="sub_gen_model">Модель</string>
     <string name="sub_gen_translate">Переводить</string>
+    <string name="sub_gen_use_gpu">Использовать графический процессор</string>
     <string name="sub_gen_single">Один сегмент</string>
     <string name="sub_gen_single_sub">Распознавать весь фрагмент как один сегмент</string>
     <string name="sub_gen_downloading">Пожалуйста, подождите, пока модель загрузится.</string>

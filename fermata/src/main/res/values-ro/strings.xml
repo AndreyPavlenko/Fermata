@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Procesați tamponul în bucăți de durata specificată</string>
     <string name="sub_gen_model">Model</string>
     <string name="sub_gen_translate">Traduce</string>
+    <string name="sub_gen_use_gpu">Utilizați GPU</string>
     <string name="sub_gen_single">Un singur segment</string>
     <string name="sub_gen_single_sub">Transcrie întreaga bucată ca un singur segment</string>
     <string name="sub_gen_downloading">Vă rugăm să așteptați până când modelul este descărcat.</string>
@@ -368,6 +369,7 @@
         <p><b>Versiune:</b> %1$s (%2$d)</p>
         <p><b>Pagina principală:</b> <a href="%3$s">%3$s</a></p>
         ]]></string>
+
     <string name="err_failed_to_play">Redare eșuată %s</string>
     <string name="err_failed_to_play_cause">Redare eșuată %1$s: %2$s</string>
     <string name="err_unsupported_source_type">Tip sursă neacceptat: %s</string>

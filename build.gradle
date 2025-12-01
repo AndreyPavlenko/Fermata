@@ -1,9 +1,9 @@
 ext {
     VERSION_CODE = 255
     VERSION_NAME = "2.0.0"
-    SDK_MIN_VERSION = 23
-    SDK_TARGET_VERSION = 35
-    SDK_COMPILE_VERSION = 35
+    SDK_MIN_VERSION = 29
+    SDK_TARGET_VERSION = 36
+    SDK_COMPILE_VERSION = 36
     localProps = gradle.ext.localProps
 
     ANDROID_MATERIAL_VERSION = '1.13.0'

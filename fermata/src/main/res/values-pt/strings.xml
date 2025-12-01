@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Processe o buffer em partes da duração especificada</string>
     <string name="sub_gen_model">Modelo</string>
     <string name="sub_gen_translate">Traduzir</string>
+    <string name="sub_gen_use_gpu">Usar GPU</string>
     <string name="sub_gen_single">Segmento único</string>
     <string name="sub_gen_single_sub">Transcreva o pedaço inteiro como um único segmento</string>
     <string name="sub_gen_downloading">Aguarde enquanto o modelo é baixado.</string>

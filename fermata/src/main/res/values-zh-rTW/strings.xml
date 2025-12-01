@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">以指定持續時間的區塊處理緩衝區</string>
     <string name="sub_gen_model">型</string>
     <string name="sub_gen_translate">譯</string>
+    <string name="sub_gen_use_gpu">使用GPU</string>
     <string name="sub_gen_single">單一區段</string>
     <string name="sub_gen_single_sub">將整個區塊轉錄為單一區段</string>
     <string name="sub_gen_downloading">下載模型後請稍候。</string>

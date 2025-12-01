@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">Traitez le tampon en morceaux de la durée spécifiée</string>
     <string name="sub_gen_model">Modèle</string>
     <string name="sub_gen_translate">Traduire</string>
+    <string name="sub_gen_use_gpu">Utiliser le GPU</string>
     <string name="sub_gen_single">Segment unique</string>
     <string name="sub_gen_single_sub">Transcrire le morceau entier en un seul segment</string>
     <string name="sub_gen_downloading">Veuillez patienter pendant que le modèle est téléchargé.</string>

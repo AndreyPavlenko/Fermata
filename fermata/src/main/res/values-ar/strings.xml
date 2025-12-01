@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">معالجة المخزن المؤقت في أجزاء من المدة المحددة</string>
     <string name="sub_gen_model">نموذج</string>
     <string name="sub_gen_translate">يترجم</string>
+    <string name="sub_gen_use_gpu">استخدم بطاقة الرسوميات</string>
     <string name="sub_gen_single">شريحة واحدة</string>
     <string name="sub_gen_single_sub">قم بنسخ القطعة بأكملها كقطعة واحدة</string>
     <string name="sub_gen_downloading">الرجاء الانتظار حتى يتم تنزيل النموذج.</string>

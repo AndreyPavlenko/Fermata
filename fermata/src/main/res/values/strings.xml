@@ -186,6 +186,7 @@
     <string name="sub_gen_chunk_sub">Process the buffer in chunks of the specified duration</string>
     <string name="sub_gen_model">Model</string>
     <string name="sub_gen_translate">Translate</string>
+    <string name="sub_gen_use_gpu">Use GPU</string>
     <string name="sub_gen_single">Single segment</string>
     <string name="sub_gen_single_sub">Transcribe the entire chunk as a single segment</string>
     <string name="sub_gen_downloading">Please wait while the model is downloaded.</string>

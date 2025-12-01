@@ -185,8 +185,9 @@
     <string name="sub_gen_chunk_sub">Der Puffer wird in Blöcken der angegebenen Dauer verarbeitet</string>
     <string name="sub_gen_model">Modell</string>
     <string name="sub_gen_translate">Übersetzen</string>
+    <string name="sub_gen_use_gpu">GPU verwenden</string>
     <string name="sub_gen_single">Einzelnes Segment</string>
-    <string name="sub_gen_single_sub">Transkribieren Sie den gesamten Block als ein einzelnes Segment</string>
+    <string name="sub_gen_single_sub">Transkribieren den gesamten Block als ein einzelnes Segment</string>
     <string name="sub_gen_downloading">Bitte warten Sie, während das Modell heruntergeladen wird.</string>
     <string name="sub_gen_download_fail">Das Modell konnte nicht heruntergeladen werden: %s!</string>
     <string name="sub_gen_cleanup">Löschen die andere heruntergeladene Modelle aus dem Cache</string>

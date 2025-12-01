@@ -185,6 +185,7 @@
     <string name="sub_gen_chunk_sub">ដំណើរការសតិបណ្ដោះអាសន្នជាបំណែកនៃរយៈពេលដែលបានបញ្ជាក់</string>
     <string name="sub_gen_model">គំរូ</string>
     <string name="sub_gen_translate">បកប្រែ</string>
+    <string name="sub_gen_use_gpu">ប្រើ GPU</string>
     <string name="sub_gen_single">ផ្នែកតែមួយ</string>
     <string name="sub_gen_single_sub">ចម្លងបំណែកទាំងមូលជាផ្នែកតែមួយ</string>
     <string name="sub_gen_downloading">សូមរង់ចាំខណៈពេលដែលគំរូត្រូវបានទាញយក។</string>
@@ -361,7 +362,12 @@
     <string name="media_projection_action_text">ចាប់ផ្តើមឥឡូវនេះ</string>
 
     <string name="about">អំពី</string>
-    
+    <string name="about_html"><![CDATA[<H1 តម្រឹម = \"មជ្ឈមណ្ឌល\"> កម្មវិធីចាក់មេឌៀហ្វឺម៉ាហ្គាតា </ h1>
+        <p> អ្នកលេងមេឌៀហ្វូម៉ាតាគឺជាកម្មវិធីចាក់អូឌីយ៉ូប្រភពនិងវីដេអូឥតគិតថ្លៃដែលមានលក្ខណៈសាមញ្ញនិង
+        ចំណុចប្រទាក់វិចារណញាណ។ </ p>
+        <p> <b> អ្នកនិពន្ធ: </ b> andrey pavlenko </ p>
+        <p> <p> ព្រីនៈ </ b>% 1 $ s (% 2 $ d) </ p>
+        <p> <b> ទំព័រដើម: </ b> <A HREF = \"% 3 $ s\">% 3 $ s </a> </ p>]]></string>
 
     <string name="err_failed_to_play">បាន​បរាជ័យ​ក្នុង​ការ​លេង %s</string>
     <string name="err_failed_to_play_cause">បាន​បរាជ័យ​ក្នុង​ការ​លេង %1$s៖ %2$s</string>
