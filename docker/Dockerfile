@@ -1,8 +1,6 @@
-FROM mobiledevops/android-sdk-image:latest
+FROM cimg/android:2025.11.1-ndk
 
 COPY entrypoint.sh /etc/entrypoint.sh
-
-RUN echo '[ -z "$FERMATA_PROJ_DIR" ] && . /etc/entrypoint.sh' >> /etc/bash.bashrc
 
 ENTRYPOINT ["/etc/entrypoint.sh"]
 CMD /bin/bash

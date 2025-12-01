@@ -109,7 +109,7 @@ struct SampleBuffer {
 		}
 
 		SampleBuffer<S> buf(env, src);
-		size_t frameWidth = std::max(1UL, channels * frameRate / WHISPER_SAMPLE_RATE);
+		size_t frameWidth = std::max(static_cast<size_t>(1), channels * frameRate / WHISPER_SAMPLE_RATE);
 		std::function<float(size_t)> convertFn = [&buf, &idxFn, frameWidth](size_t idx) {
 			auto frameIdx = idxFn(idx);
 			float sum = 0.0f;
