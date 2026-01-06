@@ -22,6 +22,7 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
@@ -183,14 +184,17 @@ public class MirrorActivity extends CarActivity implements SurfaceHolder.Callbac
 			setY(pad);
 
 			var iconPad = iconSize / 4;
-			var icons = new int[]{R.drawable.home_btn, R.drawable.back_btn};
+			var icons = new int[]{R.drawable.home, R.drawable.back};
 			for (var icon : icons) {
 				var v = new AppCompatImageView(ctx);
 				addView(v);
 				v.setId(icon);
 				v.setImageResource(icon);
+				v.setBackgroundResource(R.drawable.oval_bg);
 				v.setPadding(iconPad, iconPad, iconPad, iconPad);
 				v.setLayoutParams(new LinearLayout.LayoutParams(iconSize, iconSize));
+				v.setAdjustViewBounds(true);
+				v.setScaleType(ImageView.ScaleType.FIT_CENTER);
 			}
 
 			moveTolerance = toPx(ctx, 10);

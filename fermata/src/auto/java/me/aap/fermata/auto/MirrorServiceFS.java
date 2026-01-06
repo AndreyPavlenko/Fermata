@@ -153,10 +153,10 @@ public class MirrorServiceFS extends CarAppService {
 		public Template onGetTemplate() {
 			var homeButton = new Action.Builder().setIcon(
 							new CarIcon.Builder(createWithResource(getCarContext(), R.drawable.home)).build())
-					.setEnabled(false).setOnClickListener(MirrorActivity::onHomeButtonClick).build();
+					.setOnClickListener(MirrorActivity::onHomeButtonClick).build();
 			var backButton = new Action.Builder().setIcon(
 							new CarIcon.Builder(createWithResource(getCarContext(), R.drawable.back)).build())
-					.setEnabled(false).setOnClickListener(MirrorActivity::onBackButtonClick).build();
+					.setOnClickListener(MirrorActivity::onBackButtonClick).build();
 			return new NavigationTemplate.Builder().setActionStrip(
 							new ActionStrip.Builder().addAction(homeButton).addAction(backButton).build())
 					.setMapActionStrip(new ActionStrip.Builder().addAction(Action.PAN).build()).build();
