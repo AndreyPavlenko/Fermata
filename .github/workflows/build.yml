@@ -23,7 +23,7 @@ jobs:
           -w /workspace \
           -e NO_GS=true \
           andreypavlenko/fermata:latest \
-          bash -c "chmod +x gradlew && ./gradlew assembleDebug"
+          bash -c "apt-get update && apt-get install -y ninja-build && chmod +x gradlew && ./gradlew assembleDebug"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
