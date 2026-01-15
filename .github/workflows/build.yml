@@ -25,12 +25,7 @@ jobs:
           -e NO_GS=true \
           andreypavlenko/fermata:latest \
           -c "apt-get update && apt-get install -y ninja-build && \
-              cat > local.properties << 'EOFPROP'
-storeFile=/workspace/res/fermata.jks
-keyAlias=fermata
-keyPassword=fermata
-storePassword=fermata
-EOFPROP
+              printf 'storeFile=/workspace/res/fermata.jks\nkeyAlias=fermata\nkeyPassword=fermata\nstorePassword=fermata\n' > local.properties && \
               chmod +x gradlew && ./gradlew assembleDebug"
 
     - name: Upload APK
