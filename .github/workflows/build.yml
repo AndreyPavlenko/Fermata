@@ -16,23 +16,22 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Create local.properties for non-interactive build
-      run: |
-        cat > local.properties << 'EOF'
-        storeFile=/workspace/res/fermata.jks
-        keyAlias=fermata
-        keyPassword=fermata
-        storePassword=fermata
-        EOF
-
     - name: Build in Docker container
       run: |
         docker run --rm \
+          --entrypoint bash \
           -v "$PWD:/workspace" \
           -w /workspace \
           -e NO_GS=true \
           andreypavlenko/fermata:latest \
-          bash -c "apt-get update && apt-get install -y ninja-build && chmod +x gradlew && ./gradlew assembleDebug"
+          -c "apt-get update && apt-get install -y ninja-build && \
+              cat > local.properties << 'EOFPROP'
+storeFile=/workspace/res/fermata.jks
+keyAlias=fermata
+keyPassword=fermata
+storePassword=fermata
+EOFPROP
+              chmod +x gradlew && ./gradlew assembleDebug"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
