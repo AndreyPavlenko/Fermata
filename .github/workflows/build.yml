@@ -19,6 +19,7 @@ jobs:
     - name: Build in Docker container
       run: |
         docker run --rm \
+          --user root \
           --entrypoint bash \
           -v "$PWD:/workspace" \
           -w /workspace \
