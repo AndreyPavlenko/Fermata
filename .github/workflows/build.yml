@@ -9,11 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: andreypavlenko/fermata:latest
-
-    env:
-      NO_GS: true
 
     steps:
     - name: Checkout code
@@ -21,11 +16,14 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+    - name: Build in Docker container
+      run: |
+        docker run --rm \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          -e NO_GS=true \
+          andreypavlenko/fermata:latest \
+          bash -c "chmod +x gradlew && ./gradlew assembleDebug"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
