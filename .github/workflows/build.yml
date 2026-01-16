@@ -10,34 +10,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      NO_GS: true
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         submodules: recursive
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Install NDK
+    - name: Build in Docker container
       run: |
-        echo "y" | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;29.0.14206865"
+        docker run --rm \
+          --user root \
+          --entrypoint bash \
+          -v "$PWD:/workspace" \
+          -w /workspace \
+          -e NO_GS=true \
+          andreypavlenko/fermata:latest \
+          -c "apt-get update && apt-get install -y ninja-build && \
+              printf 'storeFile=/workspace/res/fermata.jks\nkeyAlias=fermata\nkeyPassword=fermata\nstorePassword=fermata\n' > local.properties && \
+              chmod +x gradlew && ./gradlew assembleDebug"
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Build with Gradle
-      run: ./gradlew build
-
-    - name: Run tests
-      run: ./gradlew test
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-apk
+        path: fermata/build/outputs/apk/auto/debug/*.apk
+        retention-days: 7
