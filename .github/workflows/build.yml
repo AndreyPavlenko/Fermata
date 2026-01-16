@@ -1,5 +1,10 @@
 name: Android CI
-# Test cache effectiveness
+
+# Cache scoping note: GitHub Actions caches are branch-scoped. Feature branches can only
+# access caches from the same branch or the default branch (master). To enable cache
+# sharing, ensure the master branch workflow runs first to create base caches that
+# feature branches can restore from. The 'save-always: true' option ensures caches
+# are saved even if the build fails.
 
 on:
   push:
@@ -27,6 +32,7 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+        save-always: true
 
     - name: Cache Android build outputs
       uses: actions/cache@v4
@@ -37,6 +43,7 @@ jobs:
         key: ${{ runner.os }}-build-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-build-
+        save-always: true
 
     - name: Build in Docker container
       run: |
