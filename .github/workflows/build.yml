@@ -16,18 +16,40 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          .gradle
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Cache Android build outputs
+      uses: actions/cache@v4
+      with:
+        path: |
+          .cxx
+          **/build
+        key: ${{ runner.os }}-build-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+
     - name: Build in Docker container
       run: |
         docker run --rm \
           --user root \
           --entrypoint bash \
           -v "$PWD:/workspace" \
+          -v "$HOME/.gradle:/root/.gradle" \
           -w /workspace \
           -e NO_GS=true \
           andreypavlenko/fermata:latest \
           -c "apt-get update && apt-get install -y ninja-build && \
               printf 'storeFile=/workspace/res/fermata.jks\nkeyAlias=fermata\nkeyPassword=fermata\nstorePassword=fermata\n' > local.properties && \
-              chmod +x gradlew && ./gradlew assembleDebug"
+              chmod +x gradlew && ./gradlew assembleDebug --daemon --parallel --build-cache"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
