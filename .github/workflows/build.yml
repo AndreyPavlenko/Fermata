@@ -47,10 +47,11 @@ jobs:
           -v "$HOME/.gradle:/root/.gradle" \
           -w /workspace \
           -e NO_GS=true \
+          -e GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError" \
           andreypavlenko/fermata:latest \
           -c "apt-get update && apt-get install -y ninja-build && \
               printf 'storeFile=/workspace/res/fermata.jks\nkeyAlias=fermata\nkeyPassword=fermata\nstorePassword=fermata\n' > local.properties && \
-              chmod +x gradlew && ./gradlew assembleDebug --daemon --parallel --build-cache"
+              chmod +x gradlew && ./gradlew assembleDebug --build-cache"
 
     - name: Fix cache permissions
       run: |
