@@ -51,6 +51,11 @@ jobs:
               printf 'storeFile=/workspace/res/fermata.jks\nkeyAlias=fermata\nkeyPassword=fermata\nstorePassword=fermata\n' > local.properties && \
               chmod +x gradlew && ./gradlew assembleDebug --daemon --parallel --build-cache"
 
+    - name: Fix cache permissions
+      run: |
+        sudo chown -R $USER:$USER $HOME/.gradle || true
+        sudo chown -R $USER:$USER .gradle .cxx */build || true
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
