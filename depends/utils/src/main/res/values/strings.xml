@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="move_left" />
+    <string name="move_right" />
+    <string name="move_up" />
+    <string name="move_down" />
+</resources>

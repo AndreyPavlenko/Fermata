@@ -1,0 +1,90 @@
+buildscript {
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace = "me.aap.utils"
+    compileSdk SDK_COMPILE_VERSION
+
+    defaultConfig {
+        minSdkVersion 23
+        targetSdkVersion 35
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            buildConfigField "boolean", 'D', 'false'
+            buildConfigField "boolean", 'FUTURE_TRACE', 'false'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            debuggable true
+            buildConfigField "boolean", 'D', 'true'
+            buildConfigField "boolean", 'FUTURE_TRACE', 'false'
+        }
+    }
+
+    testOptions {
+        unitTests.all {
+            it.useJUnitPlatform()
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:${ANDROIDX_APPCOMPAT_VERSION}"
+    implementation "androidx.constraintlayout:constraintlayout:${ANDROIDX_CONSTRAINTLAYOUT_VERSION}"
+    implementation "com.google.android.play:feature-delivery:${ANDROID_PLAY_CORE_FD_VERSION}"
+    implementation "com.google.android.material:material:${ANDROID_MATERIAL_VERSION}"
+
+    implementation 'com.github.mwiede:jsch:2.27.5'
+    implementation 'com.hierynomus:smbj:0.14.0'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.82'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.82'
+
+    implementation 'com.google.android.gms:play-services-auth:21.4.0'
+    implementation 'com.google.android.gms:play-services-base:18.9.0'
+    implementation 'com.google.http-client:google-http-client-gson:2.0.2'
+    implementation('com.google.api-client:google-api-client-android:2.8.1') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation('com.google.apis:google-api-services-drive:v3-rev197-1.25.0') {
+        exclude group: 'org.apache.httpcomponents'
+        exclude group: 'com.google.guava'
+    }
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.0.0'
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:6.0.0"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:6.0.0"
+    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+}
