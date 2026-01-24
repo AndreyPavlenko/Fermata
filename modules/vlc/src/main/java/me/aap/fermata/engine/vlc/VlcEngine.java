@@ -213,6 +213,11 @@ public class VlcEngine extends MediaEngineBase
 		return completed(pos);
 	}
 
+	@Override
+	protected FutureSupplier<Long> getSubtitlePosition() {
+		return completed(pos());
+	}
+
 	private long pos() {
 		Source src = source;
 		if ((src == Source.NULL) || !src.isSeekable()) return 0L;

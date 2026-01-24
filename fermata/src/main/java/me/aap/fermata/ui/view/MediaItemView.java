@@ -454,11 +454,13 @@ public class MediaItemView extends ConstraintLayout
 			}
 		}
 
-		if (item.equals(a.getCurrentPlayable())) {
+		var cur = a.getCurrentPlayable();
+		if (item.equals(cur)) {
 			setSelected(true);
 			setState(Typeface.BOLD, true);
 		} else {
-			boolean last = ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed());
+			boolean last =
+					(cur == null) && ((item instanceof PlayableItem) && ((PlayableItem) item).isLastPlayed());
 			int type = last ? Typeface.BOLD : Typeface.NORMAL;
 			setSelected(false);
 			setState(type, last);

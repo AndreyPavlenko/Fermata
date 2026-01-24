@@ -1,5 +1,6 @@
 package me.aap.fermata.media.service;
 
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_BUFFERING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
 import static android.view.View.GONE;
 import static android.view.View.INVISIBLE;
@@ -85,7 +86,7 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 
 	public boolean isPlaying() {
 		PlaybackStateCompat st = mediaController.getPlaybackState();
-		return (st != null) && (st.getState() == PlaybackStateCompat.STATE_PLAYING);
+		return (st != null) && (st.getState() == STATE_PLAYING || st.getState() == STATE_BUFFERING);
 	}
 
 	@Nullable
@@ -306,42 +307,36 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		public void onPlaybackStateChanged(PlaybackStateCompat state) {
 			if ((state == null) || !bound) return;
 
-			int st = state.getState();
-			boolean fireEvent = true;
-
-			switch (st) {
+			switch (state.getState()) {
 				case PlaybackStateCompat.STATE_PAUSED:
-				case PlaybackStateCompat.STATE_PLAYING:
-					playPause(st);
+				case STATE_PLAYING:
+					playPause(state.getState());
 					break;
 				case PlaybackStateCompat.STATE_ERROR:
 					String err = state.getErrorMessage().toString();
 					fireBroadcastEvent(l -> l.onPlaybackError(err));
 				case PlaybackStateCompat.STATE_NONE:
 				case PlaybackStateCompat.STATE_STOPPED:
+					fireBroadcastEvent(Listener::onPlaybackStopped);
 					resetProgressBar();
 					showPanel(false);
 					break;
 				case PlaybackStateCompat.STATE_FAST_FORWARDING:
 				case PlaybackStateCompat.STATE_REWINDING:
-				case PlaybackStateCompat.STATE_BUFFERING: // TODO: implement
-				case PlaybackStateCompat.STATE_CONNECTING: // TODO: implement
+				case PlaybackStateCompat.STATE_BUFFERING:
+				case PlaybackStateCompat.STATE_CONNECTING:
 				case PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS:
 				case PlaybackStateCompat.STATE_SKIPPING_TO_NEXT:
 				case PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM:
 					showPanel(true);
-					fireEvent = false;
 					break;
 			}
 
-			if (fireEvent) {
-				PlayableItem i = sessionCallback.getCurrentItem();
-
-				if (!Objects.equals(currentItem, i)) {
-					PlayableItem old = currentItem;
-					currentItem = i;
-					fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
-				}
+			PlayableItem i = sessionCallback.getCurrentItem();
+			if (!Objects.equals(currentItem, i)) {
+				PlayableItem old = currentItem;
+				currentItem = i;
+				fireBroadcastEvent(l -> l.onPlayableChanged(old, i));
 			}
 		}
 
@@ -544,6 +539,9 @@ public class FermataServiceUiBinder extends BasicEventBroadcaster<FermataService
 		void onPlayableChanged(PlayableItem oldItem, PlayableItem newItem);
 
 		default void onPlaybackError(String message) {
+		}
+
+		default void onPlaybackStopped() {
 		}
 
 		default void onDurationChanged(PlayableItem i) {

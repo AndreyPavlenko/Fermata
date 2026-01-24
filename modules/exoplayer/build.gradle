@@ -10,9 +10,9 @@ dependencies {
     implementation project(':utils')
     implementation project(':fermata')
     implementation "androidx.media:media:${ANDROIDX_MEDIA_VERSION}"
-    implementation("androidx.media3:media3-exoplayer:1.8.0")
-    implementation("androidx.media3:media3-exoplayer-hls:1.8.0")
-    implementation("androidx.media3:media3-exoplayer-dash:1.8.0")
-    implementation("androidx.media3:media3-datasource-cronet:1.8.0")
-    implementation("androidx.media3:media3-transformer:1.8.0")
+    implementation "androidx.media3:media3-exoplayer:1.9.0"
+    implementation "androidx.media3:media3-exoplayer-hls:1.9.0"
+    implementation "androidx.media3:media3-exoplayer-dash:1.9.0"
+    implementation "androidx.media3:media3-datasource-cronet:1.9.0"
+    implementation "androidx.media3:media3-transformer:1.9.0"
 }

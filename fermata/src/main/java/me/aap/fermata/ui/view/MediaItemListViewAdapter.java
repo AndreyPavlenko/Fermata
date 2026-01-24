@@ -235,6 +235,7 @@ public class MediaItemListViewAdapter extends MovableRecyclerViewAdapter<MediaIt
 		return getList().size();
 	}
 
+	@Override
 	public boolean isLongPressDragEnabled() {
 		return filter == null;
 	}

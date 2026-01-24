@@ -189,10 +189,8 @@ public abstract class MediaEngineBase implements MediaEngine {
 	}
 
 	protected void stopped(boolean paused) {
-		if (state == STATE_STOPPED) return;
-
 		if (paused) {
-			if (state == STATE_PAUSED) return;
+			if (state == STATE_PAUSED || state == STATE_STOPPED) return;
 			state = STATE_PAUSED;
 			if (subMgr != null) subMgr.stop(true);
 		} else {

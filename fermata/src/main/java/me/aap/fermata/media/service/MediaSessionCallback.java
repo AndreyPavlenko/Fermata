@@ -29,6 +29,8 @@ import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_N
 import static android.support.v4.media.session.PlaybackStateCompat.REPEAT_MODE_ONE;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_ALL;
 import static android.support.v4.media.session.PlaybackStateCompat.SHUFFLE_MODE_NONE;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_BUFFERING;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_CONNECTING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_ERROR;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_FAST_FORWARDING;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_NONE;
@@ -848,6 +850,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	@Override
+	public void onEngineBuffering(MediaEngine engine, int percent) {
+		if (isPlaying()) return;
+		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+				.setState(STATE_BUFFERING, 0, 1.0f).build();
+		setPlaybackState(state);
+	}
+
+	@Override
 	public void onEnginePrepared(MediaEngine engine) {
 		playerTask.cancel();
 		PlayableItem i = engine.getSource();
@@ -1148,6 +1158,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	public void playItem(PlayableItem i, long pos) {
 		playerTask.cancel();
+		setLastPlayed(i, pos);
+		PlaybackStateCompat state = new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+				.setState(STATE_CONNECTING, 0, 1.0f).build();
+		setPlaybackState(state);
 		playerTask = prepareItem(i).onSuccess(pi -> playPreparedItem(i, pos));
 	}
 
@@ -1403,7 +1417,14 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void setLastPlayed(PlayableItem i, long position) {
-		if ((position < 0) || i.isExternal()) return;
+		if (i.isExternal()) return;
+
+		if (position < 0) {
+			var id = i.getId();
+			lib.getPrefs().setLastPlayedItemPref(id);
+			i.getParent().getPrefs().setLastPlayedItemPref(id);
+			return;
+		}
 
 		i.getDuration().main().onSuccess(dur -> {
 			String id;

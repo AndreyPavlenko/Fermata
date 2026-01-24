@@ -1,5 +1,5 @@
 ext {
-    VERSION_CODE = 255
+    VERSION_CODE = 256
     VERSION_NAME = "2.0.0"
     SDK_MIN_VERSION = 29
     SDK_TARGET_VERSION = 36
@@ -12,7 +12,7 @@ ext {
     ANDROIDX_MEDIA_VERSION = '1.7.1'
     ANDROIDX_APPCOMPAT_VERSION = '1.7.1'
     ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.2.1'
-    ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = '1.1.0'
+    ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = '1.2.0'
     GUAVA_VERSION = '33.5.0-android'
 
     addons = [
@@ -40,7 +40,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.1'
+        classpath 'com.android.tools.build:gradle:9.0.0'
         classpath 'com.google.gms:google-services:4.4.4'
     }
 }

@@ -167,10 +167,6 @@ public class FloatingButton extends FloatingActionButton implements ActivityList
 				return super.onTouchEvent(e);
 
 			case MotionEvent.ACTION_MOVE:
-				if ((downX == e.getRawX()) && (downY == e.getRawY())) {
-					return super.onTouchEvent(e);
-				}
-
 				int w = getWidth();
 				int h = getHeight();
 

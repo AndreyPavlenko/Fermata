@@ -20,6 +20,8 @@ ext {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
-    implementation 'com.google.mlkit:translate:17.0.3'
     implementation 'androidx.annotation:annotation:1.9.1'
+    implementation('com.google.mlkit:translate:17.0.3') {
+        exclude group: 'com.squareup.okio', module: 'okio'
+    }
 }

@@ -54,6 +54,8 @@ import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.addon.TranslateAddon;
 import me.aap.fermata.addon.TranslateAddon.Translator;
 import me.aap.fermata.media.engine.AudioEffects;
+import me.aap.fermata.media.engine.AudioStreamInfo;
+import me.aap.fermata.media.engine.MediaEngine;
 import me.aap.fermata.media.engine.MediaEngineBase;
 import me.aap.fermata.media.engine.SubtitleStreamInfo;
 import me.aap.fermata.media.lib.MediaLib.PlayableItem;
@@ -105,6 +107,7 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 				new DefaultMediaSourceFactory(ctx).setDataSourceFactory(dsFactory);
 		player = new ExoPlayer.Builder(ctx, new DefaultRenderersFactory(ctx) {
 			{
+				setEnableDecoderFallback(true);
 				setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON);
 			}
 
@@ -151,7 +154,8 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	@SuppressLint("SwitchIntDef")
 	@Override
 	public void prepare(PlayableItem source) {
-		stopped(false);
+		if (this.source == null) stopped(false);
+		else stop();
 		this.source = source;
 		accessor.sourceChanged(source);
 		preparing = true;
@@ -287,6 +291,18 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
+	public FutureSupplier<SubGrid> getCurrentSubtitles() {
+		var cur = super.getCurrentSubtitles();
+		if (cur != NO_SUBTITLES) return cur;
+		var src = getSource();
+		if (src == null) return cur;
+		var ps = src.getPrefs();
+		if (!ps.getBooleanPref(SubGenAddon.ENABLED)) return cur;
+		setCurrentSubtitleStream(new SubtitleStreamInfo.Generated(ps.getStringPref(SubGenAddon.LANG)));
+		return super.getCurrentSubtitles();
+	}
+
+	@Override
 	public FutureSupplier<List<SubtitleStreamInfo>> getSubtitleStreamInfo() {
 		return super.getSubtitleStreamInfo().main().map(subFiles -> {
 			var src = getSource();
@@ -303,11 +319,62 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 	}
 
 	@Override
+	public List<AudioStreamInfo> getAudioStreamInfo() {
+		var groups = player.getCurrentTracks().getGroups();
+		var streams = new ArrayList<AudioStreamInfo>();
+		for (int i = 0, n = groups.size(); i < n; i++) {
+			var group = groups.get(i);
+			if (group.getType() != C.TRACK_TYPE_AUDIO) continue;
+			for (int j = 0; j < group.length; j++) {
+				var fmt = group.getTrackFormat(j);
+				streams.add(new AudioStreamInfo(i * 1000L + j, fmt.language, fmt.label));
+			}
+		}
+		return streams;
+	}
+
+	@Nullable
+	@Override
+	public AudioStreamInfo getCurrentAudioStreamInfo() {
+		var groups = player.getCurrentTracks().getGroups();
+		for (int i = 0, n = groups.size(); i < n; i++) {
+			var group = groups.get(i);
+			if (group.getType() != C.TRACK_TYPE_AUDIO) continue;
+			for (int j = 0; j < group.length; j++) {
+				if (group.isTrackSelected(j)) {
+					var fmt = group.getTrackFormat(j);
+					return new AudioStreamInfo(i * 1000L + j, fmt.language, fmt.label);
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void setCurrentAudioStream(@Nullable AudioStreamInfo info) {
+		if (info == null) return;
+
+		var groups = player.getCurrentTracks().getGroups();
+		for (int i = 0, n = groups.size(); i < n; i++) {
+			var group = groups.get(i);
+			if (group.getType() != C.TRACK_TYPE_AUDIO) continue;
+			for (int j = 0; j < group.length; j++) {
+				if (info.getId() != (i * 1000L + j)) continue;
+				player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+						.setOverrideForType(new androidx.media3.common.TrackSelectionOverride(
+								group.getMediaTrackGroup(), j)).build());
+				return;
+			}
+		}
+	}
+
+	@Override
 	public void close() {
 		stop();
 		super.close();
 		drainBuffer = null;
 		accessor.player = null;
+		player.removeListener(this);
 		player.release();
 		source = null;
 		if (audioEffects != null) audioEffects.release();
@@ -339,6 +406,10 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 				if (off > 0) player.seekTo(off);
 				accessor.setSubGenTimeOffset(this);
 				listener.onEnginePrepared(this);
+				var prefs = source.getPrefs();
+				MediaEngine.selectMediaStream(prefs::getAudioIdPref, prefs::getAudioLangPref,
+						prefs::getAudioKeyPref, () -> completed(getAudioStreamInfo()),
+						this::setCurrentAudioStream);
 			}
 		} else if (playbackState == Player.STATE_ENDED) {
 			stopped(false);
@@ -426,7 +497,8 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 				}
 				translator.main().onSuccess(tr -> {
 					if (tr == null || !targetLang.equals(transLang)) return;
-					batchTranslate(tr, targetLang, added);
+					if (useBatchTranslate) batchTranslate(tr, targetLang, added);
+					else perItemTranslate(tr, targetLang, added);
 				});
 			});
 		}

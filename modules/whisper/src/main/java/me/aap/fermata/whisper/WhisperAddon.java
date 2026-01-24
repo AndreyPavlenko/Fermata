@@ -54,7 +54,7 @@ public class WhisperAddon extends SubGenAddon {
 
 	@Override
 	protected Object createCacheKey(PreferenceStore ps) {
-		return ps.getStringPref(MODEL) + ps.getBooleanPref(USE_GPU);
+		return ps.getStringPref(MODEL) + "|" + ps.getBooleanPref(USE_GPU);
 	}
 
 	@Override

@@ -624,7 +624,7 @@ public class ControlPanelView extends ConstraintLayout
 					eng.setCurrentAudioStream(null);
 				} else {
 					eng.setCurrentAudioStream(ai);
-					pi.getPrefs().setSubIdPref(ai.getId());
+					pi.getPrefs().setAudioIdPref(ai.getId());
 				}
 			}
 			return true;

@@ -121,6 +121,11 @@ public class MediaPlayerEngine extends MediaEngineBase
 		return completed(pos);
 	}
 
+	@Override
+	protected FutureSupplier<Long> getSubtitlePosition() {
+		return completed(pos());
+	}
+
 	private long pos() {
 		return (source != null) ? (player.getCurrentPosition() - source.getOffset()) : 0;
 	}

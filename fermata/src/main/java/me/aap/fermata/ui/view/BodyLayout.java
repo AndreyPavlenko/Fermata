@@ -3,6 +3,7 @@ package me.aap.fermata.ui.view;
 import static me.aap.fermata.R.id.subtitles_fragment;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.L_SPLIT_PERCENT;
 import static me.aap.fermata.ui.activity.MainActivityPrefs.P_SPLIT_PERCENT;
+import static me.aap.utils.async.Completed.completedVoid;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -25,9 +26,10 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.activity.MainActivityListener;
 import me.aap.fermata.ui.fragment.MainActivityFragment;
-import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.fragment.SubtitlesFragment;
 import me.aap.utils.app.App;
+import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.async.Promise;
 import me.aap.utils.function.DoubleSupplier;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -39,6 +41,7 @@ public class BodyLayout extends SplitLayout
 		implements SwipeRefreshLayout.OnRefreshListener, SwipeRefreshLayout.OnChildScrollUpCallback,
 		MainActivityListener, FermataServiceUiBinder.Listener, MediaSessionCallback.Listener {
 	private Mode mode;
+	private FutureSupplier<?> startingPlayback = completedVoid();
 
 	public BodyLayout(@NonNull Context ctx, @Nullable AttributeSet attrs) {
 		super(ctx, attrs);
@@ -170,8 +173,30 @@ public class BodyLayout extends SplitLayout
 		}
 	}
 
+	public void playItem(MediaLib.PlayableItem i) {
+		startingPlayback.cancel();
+		MainActivityDelegate a = getActivity();
+
+		if (i.isVideo() && !getVideoView().isSurfaceCreated() &&
+				!a.getMediaSessionCallback().hasCustomEngineProvider()) {
+			setMode(BodyLayout.Mode.VIDEO);
+			getVideoView().onSurfaceCreated(() -> playItem(i));
+			return;
+		}
+
+		FermataServiceUiBinder b = a.getMediaServiceBinder();
+		MediaLib.PlayableItem cur = b.getCurrentItem();
+		startingPlayback = new Promise<Void>().thenRun(() -> startingPlayback = completedVoid());
+		a.setContentLoading(startingPlayback);
+		b.playItem(i);
+		MediaEngine eng = b.getCurrentEngine();
+		if (i.equals(cur) && (eng != null) && eng.isVideoModeRequired())
+			setMode(BodyLayout.Mode.VIDEO);
+	}
+
 	@Override
 	public void onPlayableChanged(MediaLib.PlayableItem oldItem, MediaLib.PlayableItem newItem) {
+		startingPlayback.cancel();
 		MainActivityDelegate a = getActivity();
 		if (!(a.getActiveFragment() instanceof MainActivityFragment f)) return;
 		if (f instanceof SubtitlesFragment) a.goToCurrent();
@@ -209,7 +234,15 @@ public class BodyLayout extends SplitLayout
 
 	@Override
 	public void onPlaybackError(String message) {
+		onPlaybackStopped();
 		Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+	}
+
+	@Override
+	public void onPlaybackStopped() {
+		startingPlayback.cancel();
+		var a = getActivity();
+		if (a.getActiveFragment() instanceof SubtitlesFragment) a.goToCurrent();
 	}
 
 	@Override

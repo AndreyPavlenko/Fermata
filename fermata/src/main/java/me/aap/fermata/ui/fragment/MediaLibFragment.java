@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import me.aap.fermata.R;
@@ -96,7 +97,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 	@Nullable
 	@Override
-	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+													 @Nullable Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.media_items_list_view, container, false);
 	}
 
@@ -287,7 +289,8 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 
 		if (a.getListView().isSelectionActive()) {
 			b.addItem(R.id.nav_select_all, me.aap.utils.R.drawable.check_box, R.string.select_all);
-			b.addItem(R.id.nav_unselect_all, me.aap.utils.R.drawable.check_box_blank, R.string.unselect_all);
+			b.addItem(R.id.nav_unselect_all, me.aap.utils.R.drawable.check_box_blank,
+					R.string.unselect_all);
 		} else {
 			b.addItem(R.id.nav_select, me.aap.utils.R.drawable.check_box, R.string.select);
 		}
@@ -368,18 +371,19 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		}));
 	}
 
-	private static final Set<PreferenceStore.Pref<?>> reloadOnPrefChange = new HashSet<>(Arrays.asList(
-			BrowsableItemPrefs.TITLE_SEQ_NUM,
-			BrowsableItemPrefs.TITLE_NAME,
-			BrowsableItemPrefs.TITLE_FILE_NAME,
-			BrowsableItemPrefs.SUBTITLE_NAME,
-			BrowsableItemPrefs.SUBTITLE_FILE_NAME,
-			BrowsableItemPrefs.SUBTITLE_ALBUM,
-			BrowsableItemPrefs.SUBTITLE_ARTIST,
-			BrowsableItemPrefs.SUBTITLE_DURATION,
-			BrowsableItemPrefs.SORT_BY,
-			BrowsableItemPrefs.SORT_DESC
-	));
+	private static final Set<PreferenceStore.Pref<?>> reloadOnPrefChange =
+			new HashSet<>(Arrays.asList(
+					BrowsableItemPrefs.TITLE_SEQ_NUM,
+					BrowsableItemPrefs.TITLE_NAME,
+					BrowsableItemPrefs.TITLE_FILE_NAME,
+					BrowsableItemPrefs.SUBTITLE_NAME,
+					BrowsableItemPrefs.SUBTITLE_FILE_NAME,
+					BrowsableItemPrefs.SUBTITLE_ALBUM,
+					BrowsableItemPrefs.SUBTITLE_ARTIST,
+					BrowsableItemPrefs.SUBTITLE_DURATION,
+					BrowsableItemPrefs.SORT_BY,
+					BrowsableItemPrefs.SORT_DESC
+			));
 
 	@Override
 	public void onActivityEvent(MainActivityDelegate a, long e) {
@@ -629,21 +633,18 @@ public abstract class MediaLibFragment extends MainActivityFragment implements M
 		}
 
 		private void onClick(PlayableItem i) {
-			MainActivityDelegate a = getMainActivity();
+			var a = getMainActivity();
+			var cur = a.getCurrentPlayable();
+			if (Objects.equals(cur, i)) return;
+			a.getBody().playItem(i);
+			getAdapter().getListView().refreshState();
+			if (i.isVideo()) return;
 
-			if (i.isVideo() && !a.getBody().getVideoView().isSurfaceCreated() &&
-					!a.getMediaSessionCallback().hasCustomEngineProvider()) {
-				a.getBody().setMode(BodyLayout.Mode.VIDEO);
-				a.getBody().getVideoView().onSurfaceCreated(() -> onClick(i));
-				return;
+			var eng = a.getMediaSessionCallback().getEngine();
+			if ((eng != null) && (eng.getSource() == i) &&
+					(eng.getCurrentSubtitles() != NO_SUBTITLES)) {
+				a.showFragment(R.id.subtitles_fragment);
 			}
-
-			FermataServiceUiBinder b = a.getMediaServiceBinder();
-			PlayableItem cur = b.getCurrentItem();
-			b.playItem(i);
-			MediaEngine eng = b.getCurrentEngine();
-			if (i.equals(cur) && (eng != null) && eng.isVideoModeRequired())
-				a.getBody().setMode(BodyLayout.Mode.VIDEO);
 		}
 
 		@Override
