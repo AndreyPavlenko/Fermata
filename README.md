@@ -1,3 +1,6 @@
+## !!!Be aware of scam!!! The sites like https://fermata-auto.com/ are 100% scam. This app is free and opensource!
+
+
 ## Fermata Media Player
 [<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png">](https://play.google.com/store/apps/details?id=me.aap.fermata)
 
