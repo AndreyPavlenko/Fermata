@@ -394,6 +394,10 @@ public class SharedTextBuilder implements TextBuilder, AutoCloseable {
 		return sb.length();
 	}
 
+	public boolean isEmpty() {
+		return length() == 0;
+	}
+
 	public void setCharAt(int index, char ch) {
 		assertTrue(inUse);
 		assertSame(thread, Thread.currentThread());
