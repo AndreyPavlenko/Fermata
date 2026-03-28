@@ -8,15 +8,11 @@ android {
                 arguments '-DCMAKE_BUILD_TYPE=Release'
             }
         }
-        ndk {
-            //noinspection ChromeOsAbiSupport
-            abiFilters = gradle.ext.abiFilters
-        }
     }
     buildTypes {
         debug {
             ndk {
-                debugSymbolLevel 'FULL'
+                debugSymbolLevel = 'FULL'
             }
             packagingOptions {
                 doNotStrip '**/*.so'
@@ -25,8 +21,8 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path 'src/main/cpp/CMakeLists.txt'
-            version '4.1.2'
+            path = 'src/main/cpp/CMakeLists.txt'
+            version = '4.1.2'
         }
     }
 }
@@ -45,5 +41,5 @@ ext {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
-    implementation "androidx.annotation:annotation:$ANDROIDX_ANNOTATION_VERSION"
+    implementation libs.androidxAnnotation
 }
