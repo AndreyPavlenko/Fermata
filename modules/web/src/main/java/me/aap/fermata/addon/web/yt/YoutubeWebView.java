@@ -224,63 +224,63 @@ public class YoutubeWebView extends FermataWebView {
 
 	void setHighestVideoQuality() {
 		loadUrl("javascript:\n" +
-				"function retrySetHighestVideoQuality(attempt, openMenu) {\n" +
-				"  if (attempt < 10) setTimeout(setHighestVideoQuality, 100, attempt + 1, openMenu);\n" +
-				"  return false;\n" +
-				"}\n" +
-				"function getVideoQualityRank(label) {\n" +
-				"  if (label == null) return -1;\n" +
-				"  label = label.trim();\n" +
-				"  if (!label || /^auto\\b/i.test(label)) return -1;\n" +
-				"  var match = label.match(/(\\d+)\\s*p/i);\n" +
-				"  if (match != null) return parseInt(match[1], 10);\n" +
-				"  match = label.match(/(\\d+)\\s*k/i);\n" +
-				"  if (match != null) return parseInt(match[1], 10) * 540;\n" +
-				"  return 0;\n" +
-				"}\n" +
-				"function closeVideoQualityMenu(settings) {\n" +
-				"  var close = settings.parentNode.parentNode.querySelector('.c3-material-button-button');\n" +
-				"  if (close != null) close.click();\n" +
-				"}\n" +
-				"function setHighestVideoQuality(attempt, openMenu) {\n" +
-				"  if (openMenu) {\n" +
-				"    var b = document.querySelector('.player-settings-icon');\n" +
-				"    if (b == null) return retrySetHighestVideoQuality(attempt, true);\n" +
-				"    b.click();\n" +
-				"    return retrySetHighestVideoQuality(attempt, false);\n" +
+				"(function() {\n" +
+				"  var observer = null;\n" +
+				"  var timeout = null;\n" +
+				"  function cleanup() {\n" +
+				"    if (observer) { observer.disconnect(); observer = null; }\n" +
+				"    if (timeout) { clearTimeout(timeout); timeout = null; }\n" +
 				"  }\n" +
-				"  var settings = document.querySelector('.player-quality-settings');\n" +
-				"  if (settings == null) return retrySetHighestVideoQuality(attempt, false);\n" +
-				"  var select = settings.querySelector('.select');\n" +
-				"  if (select == null) return retrySetHighestVideoQuality(attempt, false);\n" +
-				"  var options = select.querySelectorAll('.option');\n" +
-				"  if ((options == null) || (options.length == 0)) return retrySetHighestVideoQuality(attempt, false);\n" +
-				"  var bestIdx = -1;\n" +
-				"  var bestRank = -1;\n" +
-				"  for (let i = 0; i < options.length; i++) {\n" +
-				"    var rank = getVideoQualityRank(options[i].innerText);\n" +
-				"    if (rank > bestRank) {\n" +
-				"      bestRank = rank;\n" +
-				"      bestIdx = i;\n" +
+				"  function getVideoQualityRank(label) {\n" +
+				"    if (label == null) return -1;\n" +
+				"    label = label.trim();\n" +
+				"    if (!label || /^auto\\\\b/i.test(label)) return -1;\n" +
+				"    var match = label.match(/(\\\\d+)\\\\s*p/i);\n" +
+				"    if (match != null) return parseInt(match[1], 10);\n" +
+				"    match = label.match(/(\\\\d+)\\\\s*k/i);\n" +
+				"    if (match != null) return parseInt(match[1], 10) * 540;\n" +
+				"    return 0;\n" +
+				"  }\n" +
+				"  function closeMenu(settings) {\n" +
+				"    var close = settings.parentNode.parentNode.querySelector('.c3-material-button-button');\n" +
+				"    if (close != null) close.click();\n" +
+				"  }\n" +
+				"  function trySetHighestQuality() {\n" +
+				"    var settings = document.querySelector('.player-quality-settings');\n" +
+				"    if (settings == null) return false;\n" +
+				"    var select = settings.querySelector('.select');\n" +
+				"    if (select == null) return false;\n" +
+				"    var options = select.querySelectorAll('.option');\n" +
+				"    if (!options || options.length == 0) return false;\n" +
+				"    cleanup();\n" +
+				"    var bestIdx = -1;\n" +
+				"    var bestRank = -1;\n" +
+				"    for (var i = 0; i < options.length; i++) {\n" +
+				"      var rank = getVideoQualityRank(options[i].innerText);\n" +
+				"      if (rank > bestRank) { bestRank = rank; bestIdx = i; }\n" +
 				"    }\n" +
-				"  }\n" +
-				"  if (bestIdx < 0) {\n" +
-				"    closeVideoQualityMenu(settings);\n" +
-				"    return false;\n" +
-				"  }\n" +
-				"  if (bestIdx == select.selectedIndex) {\n" +
-				"    closeVideoQualityMenu(settings);\n" +
+				"    if (bestIdx < 0 || bestIdx == select.selectedIndex) {\n" +
+				"      closeMenu(settings);\n" +
+				"      return true;\n" +
+				"    }\n" +
+				"    var evt = document.createEvent('HTMLEvents');\n" +
+				"    evt.initEvent('change', true, true);\n" +
+				"    select.selectedIndex = bestIdx;\n" +
+				"    options[bestIdx].selected = true;\n" +
+				"    select.dispatchEvent(evt);\n" +
+				"    setTimeout(function() { closeMenu(settings); }, 100);\n" +
 				"    return true;\n" +
 				"  }\n" +
-				"  var evt = document.createEvent(\"HTMLEvents\");\n" +
-				"  evt.initEvent(\"change\", true, true);\n" +
-				"  select.selectedIndex = bestIdx;\n" +
-				"  options[bestIdx].selected = true;\n" +
-				"  select.dispatchEvent(evt);\n" +
-				"  setTimeout(function() { closeVideoQualityMenu(settings); }, 100);\n" +
-				"  return true;\n" +
-				"}\n" +
-				"setHighestVideoQuality(0, true);");
+				"  if (trySetHighestQuality()) return;\n" +
+				"  var btn = document.querySelector('.player-settings-icon');\n" +
+				"  if (btn == null) return;\n" +
+				"  observer = new MutationObserver(function() {\n" +
+				"    if (trySetHighestQuality()) cleanup();\n" +
+				"  });\n" +
+				"  observer.observe(document.body, { childList: true, subtree: true });\n" +
+				"  timeout = setTimeout(cleanup, 3000);\n" +
+				"  btn.click();\n" +
+				"})();");
 	}
 
 	private FutureSupplier<Long> getMilliseconds(String value) {
