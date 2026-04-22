@@ -6,7 +6,11 @@ import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.text.TextUtils.indexOfChar;
 
+import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -80,7 +84,18 @@ public class M3uItem extends BrowsableItemBase {
 			return new Data(m3uFile.getName(), "", emptyList(), emptyMap(), null);
 		}
 
-		Log.i("Parsing M3U file: ", localFile, " (", localFile.length(), " bytes)");
+		long fileSize = localFile.length();
+		Log.i("Parsing M3U file: ", localFile, " (", fileSize, " bytes)");
+
+		// Notify the user when starting a large playlist (>5 MB ~= roughly 20K+ entries)
+		// so they know the upcoming wait is expected.
+		boolean largePlaylist = fileSize > 5L * 1024 * 1024;
+		long parseStart = System.currentTimeMillis();
+		if (largePlaylist) {
+			showToast("Loading playlist " + m3uFile.getName() + " (" + (fileSize / (1024 * 1024))
+					+ " MB) — this may take a moment\u2026");
+		}
+
 		VirtualFolder dir = m3uFile.getParent().peek();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
@@ -90,6 +105,9 @@ public class M3uItem extends BrowsableItemBase {
 		int skippedNoName = 0;
 		int skippedNoFile = 0;
 		int totalLines = 0;
+		// Pool to deduplicate repeating short strings (group names, catchup-source, tvg-id, etc.).
+		// Drastically cuts heap usage on large Xtream playlists where these fields repeat heavily.
+		Map<String, String> stringPool = new HashMap<>(4096);
 
 		String m3uName = null;
 		String m3uAlbum = null;
@@ -202,28 +220,28 @@ public class M3uItem extends BrowsableItemBase {
 								logo = trim(l.substring(start, i));
 								break;
 							case "tvg-id":
-								tvgId = trim(l.substring(start, i));
+								tvgId = intern(trim(l.substring(start, i)), stringPool);
 								break;
 							case "tvg-name":
 								tvgName = trim(l.substring(start, i));
 								break;
 							case "group-title":
-								group = trim(l.substring(start, i));
+								group = intern(trim(l.substring(start, i)), stringPool);
 								break;
 							case "catchup":
-								trackCatchup = trim(l.substring(start, i));
+								trackCatchup = intern(trim(l.substring(start, i)), stringPool);
 								break;
 							case "tvg-rec":
 							case "catchup-days":
-								trackCatchupDays = trim(l.substring(start, i));
+								trackCatchupDays = intern(trim(l.substring(start, i)), stringPool);
 								break;
 							case "catchup-source":
-								trackCatchupSource = trim(l.substring(start, i));
+								trackCatchupSource = intern(trim(l.substring(start, i)), stringPool);
 								break;
 						}
 					}
 				} else if (l.startsWith("#EXTGRP:")) {
-					group = trim(l.substring(8));
+					group = intern(trim(l.substring(8)), stringPool);
 					continue;
 				} else if (l.startsWith("#PLAYLIST:")) {
 					m3uName = trim(l.substring(10));
@@ -270,6 +288,9 @@ public class M3uItem extends BrowsableItemBase {
 
 				if (totalLines <= 3) {
 					Log.d("Resolving URL #", totalLines, ": '", l, "' -> ", (file != null ? "OK" : "NULL"));
+				} else if ((totalLines % 25000) == 0) {
+					Log.i("M3U parse progress: ", totalLines, " entries (",
+							groups.size(), " groups, ", tracks.size(), " ungrouped tracks)");
 				}
 
 				if (file != null) {
@@ -328,12 +349,24 @@ public class M3uItem extends BrowsableItemBase {
 
 		int ngroups = groups.size();
 		int ntracks = tracks.size();
+		long elapsed = System.currentTimeMillis() - parseStart;
+		// Compute total tracks across groups for the user-facing message
+		int totalTracks = ntracks;
+		for (M3uGroupItem g : groups.values()) totalTracks += g.tracks.size();
+
 		Log.i("Parsed M3U file: ", m3uFile.getName(),
 				" - groups=", ngroups,
-				", tracks=", ntracks,
+				", tracks=", totalTracks,
 				", totalURLs=", totalLines,
 				", skippedNoName=", skippedNoName,
-				", skippedNoFile=", skippedNoFile);
+				", skippedNoFile=", skippedNoFile,
+				", stringPoolSize=", stringPool.size(),
+				", elapsedMs=", elapsed);
+
+		if (largePlaylist) {
+			showToast("Loaded " + m3uFile.getName() + ": " + totalTracks + " channels in "
+					+ ngroups + " groups (" + (elapsed / 1000) + "s)");
+		}
 
 		List<Item> children = new ArrayList<>(ngroups + ntracks);
 
@@ -597,6 +630,34 @@ public class M3uItem extends BrowsableItemBase {
 
 	private static String trim(String s) {
 		return (s == null) || (s = s.trim()).isEmpty() ? null : s;
+	}
+
+	/**
+	 * Deduplicate the given string against the supplied pool. Returns either the existing
+	 * pool entry equal to {@code s} or {@code s} itself (also storing it in the pool).
+	 * Used to drastically reduce memory usage for repeating fields in large playlists
+	 * (e.g. group-title, catchup-source, tvg-id namespaces).
+	 */
+	private static String intern(String s, Map<String, String> pool) {
+		if (s == null) return null;
+		String existing = pool.get(s);
+		if (existing != null) return existing;
+		pool.put(s, s);
+		return s;
+	}
+
+	private static void showToast(CharSequence msg) {
+		try {
+			Context ctx = App.get();
+			if (Looper.myLooper() == Looper.getMainLooper()) {
+				Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show();
+			} else {
+				new Handler(Looper.getMainLooper())
+						.post(() -> Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show());
+			}
+		} catch (Throwable ex) {
+			Log.d(ex, "Failed to show toast: ", msg);
+		}
 	}
 
 	protected static final class Data {
