@@ -227,58 +227,59 @@ public class YoutubeWebView extends FermataWebView {
 				"(function() {\n" +
 				"  var observer = null;\n" +
 				"  var timeout = null;\n" +
+				"  var clickedQuality = false;\n" +
 				"  function cleanup() {\n" +
 				"    if (observer) { observer.disconnect(); observer = null; }\n" +
 				"    if (timeout) { clearTimeout(timeout); timeout = null; }\n" +
 				"  }\n" +
-				"  function getVideoQualityRank(label) {\n" +
-				"    if (label == null) return -1;\n" +
-				"    label = label.trim();\n" +
-				"    if (!label || /^auto\\\\b/i.test(label)) return -1;\n" +
-				"    var match = label.match(/(\\\\d+)\\\\s*p/i);\n" +
-				"    if (match != null) return parseInt(match[1], 10);\n" +
-				"    match = label.match(/(\\\\d+)\\\\s*k/i);\n" +
-				"    if (match != null) return parseInt(match[1], 10) * 540;\n" +
-				"    return 0;\n" +
+				"  function closeMenu() {\n" +
+				"    var close = document.querySelector('bottom-sheet-layout button.hidden-button');\n" +
+				"    if (close) close.click();\n" +
 				"  }\n" +
-				"  function closeMenu(settings) {\n" +
-				"    var close = settings.parentNode.parentNode.querySelector('.c3-material-button-button');\n" +
-				"    if (close != null) close.click();\n" +
+				"  function getQualityRank(label) {\n" +
+				"    if (!label) return -1;\n" +
+				"    if (/^auto/i.test(label)) return -1;\n" +
+				"    var match = label.match(/(\\\\d+)p/i);\n" +
+				"    if (match) return parseInt(match[1], 10);\n" +
+				"    match = label.match(/(\\\\d+)k/i);\n" +
+				"    if (match) return parseInt(match[1], 10) * 540;\n" +
+				"    return -1;\n" +
 				"  }\n" +
-				"  function trySetHighestQuality() {\n" +
-				"    var settings = document.querySelector('.player-quality-settings');\n" +
-				"    if (settings == null) return false;\n" +
-				"    var select = settings.querySelector('.select');\n" +
-				"    if (select == null) return false;\n" +
-				"    var options = select.querySelectorAll('.option');\n" +
-				"    if (!options || options.length == 0) return false;\n" +
-				"    cleanup();\n" +
-				"    var bestIdx = -1;\n" +
+				"  function tryProcess() {\n" +
+				"    var sheet = document.querySelector('bottom-sheet-layout');\n" +
+				"    if (!sheet) return;\n" +
+				"    var items = Array.from(sheet.querySelectorAll('yt-list-item-view-model'));\n" +
+				"    if (!clickedQuality) {\n" +
+				"      var qualityItem = items.find(function(el) {\n" +
+				"        return el.innerText && el.innerText.startsWith('Quality');\n" +
+				"      });\n" +
+				"      if (qualityItem) {\n" +
+				"        clickedQuality = true;\n" +
+				"        qualityItem.click();\n" +
+				"      }\n" +
+				"      return;\n" +
+				"    }\n" +
+				"    var hasAuto = items.some(function(el) {\n" +
+				"      return el.innerText && /^auto/i.test(el.innerText);\n" +
+				"    });\n" +
+				"    if (!hasAuto) return;\n" +
+				"    var bestItem = null;\n" +
 				"    var bestRank = -1;\n" +
-				"    for (var i = 0; i < options.length; i++) {\n" +
-				"      var rank = getVideoQualityRank(options[i].innerText);\n" +
-				"      if (rank > bestRank) { bestRank = rank; bestIdx = i; }\n" +
+				"    items.forEach(function(el) {\n" +
+				"      var rank = getQualityRank(el.innerText || '');\n" +
+				"      if (rank > bestRank) { bestRank = rank; bestItem = el; }\n" +
+				"    });\n" +
+				"    if (bestItem) {\n" +
+				"      cleanup();\n" +
+				"      bestItem.click();\n" +
+				"      setTimeout(closeMenu, 200);\n" +
 				"    }\n" +
-				"    if (bestIdx < 0 || bestIdx == select.selectedIndex) {\n" +
-				"      closeMenu(settings);\n" +
-				"      return true;\n" +
-				"    }\n" +
-				"    var evt = document.createEvent('HTMLEvents');\n" +
-				"    evt.initEvent('change', true, true);\n" +
-				"    select.selectedIndex = bestIdx;\n" +
-				"    options[bestIdx].selected = true;\n" +
-				"    select.dispatchEvent(evt);\n" +
-				"    setTimeout(function() { closeMenu(settings); }, 100);\n" +
-				"    return true;\n" +
 				"  }\n" +
-				"  if (trySetHighestQuality()) return;\n" +
 				"  var btn = document.querySelector('.player-settings-icon');\n" +
-				"  if (btn == null) return;\n" +
-				"  observer = new MutationObserver(function() {\n" +
-				"    if (trySetHighestQuality()) cleanup();\n" +
-				"  });\n" +
+				"  if (!btn) return;\n" +
+				"  observer = new MutationObserver(tryProcess);\n" +
 				"  observer.observe(document.body, { childList: true, subtree: true });\n" +
-				"  timeout = setTimeout(cleanup, 3000);\n" +
+				"  timeout = setTimeout(function() { cleanup(); closeMenu(); }, 5000);\n" +
 				"  btn.click();\n" +
 				"})();");
 	}
