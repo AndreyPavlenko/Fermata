@@ -87,6 +87,9 @@ public class M3uItem extends BrowsableItemBase {
 		Map<String, List<M3uTrackItem>> uriToTrack = new HashMap<>();
 		String idPath = id.substring(getScheme().length());
 		VfsManager vfs = getLib().getVfsManager();
+		int skippedNoName = 0;
+		int skippedNoFile = 0;
+		int totalLines = 0;
 
 		String m3uName = null;
 		String m3uAlbum = null;
@@ -253,10 +256,21 @@ public class M3uItem extends BrowsableItemBase {
 
 					continue;
 				} else if ((name == null) || l.startsWith("#")) {
+					if (name == null && !l.startsWith("#") && !l.isEmpty()) {
+						skippedNoName++;
+						if (skippedNoName <= 3) {
+							Log.d("Skipped line (no name), URL: '", l, "'");
+						}
+					}
 					continue;
 				}
 
+				totalLines++;
 				VirtualResource file = vfs.resolve(l, dir).get(null);
+
+				if (totalLines <= 3) {
+					Log.d("Resolving URL #", totalLines, ": '", l, "' -> ", (file != null ? "OK" : "NULL"));
+				}
 
 				if (file != null) {
 					M3uTrackItem track;
@@ -294,6 +308,11 @@ public class M3uItem extends BrowsableItemBase {
 						values.add(track);
 						return values;
 					});
+				} else {
+					skippedNoFile++;
+					if (skippedNoFile <= 3) {
+						Log.d("Skipped URL (resolve failed): '", l, "'");
+					}
 				}
 
 				name = group = album = artist = genre = logo = tvgId = tvgName = null;
@@ -309,7 +328,12 @@ public class M3uItem extends BrowsableItemBase {
 
 		int ngroups = groups.size();
 		int ntracks = tracks.size();
-		Log.i("Parsed M3U file: ", m3uFile.getName(), " - ", ngroups, " groups, ", ntracks, " tracks");
+		Log.i("Parsed M3U file: ", m3uFile.getName(),
+				" - groups=", ngroups,
+				", tracks=", ntracks,
+				", totalURLs=", totalLines,
+				", skippedNoName=", skippedNoName,
+				", skippedNoFile=", skippedNoFile);
 
 		List<Item> children = new ArrayList<>(ngroups + ntracks);
 

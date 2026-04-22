@@ -6,6 +6,7 @@
     <string name="add_tv_source">Add M3U IPTV source</string>
     <string name="epg" translatable="false">EPG</string>
     <string name="epg_url" translatable="false">XMLTV URL</string>
+    <string name="epg_url_hint_xtream">Auto-derived from Xtream credentials if left blank</string>
     <string name="epg_time_shift">EPG time shift (hours)</string>
     <string name="logo">Channel logos</string>
     <string name="logo_location">Location</string>

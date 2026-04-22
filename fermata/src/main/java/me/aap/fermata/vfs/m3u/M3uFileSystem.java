@@ -78,9 +78,11 @@ public class M3uFileSystem implements VirtualFileSystem {
 		String url = file.getUrl();
 
 		if (url == null) {
-			Log.d("Not an m3u file: ", file);
+			Log.e("M3U file has no URL set: ", file);
 			return completedNull();
 		}
+
+		Log.d("Loading M3U file: url=", url);
 
 		if (url.startsWith("/") || url.startsWith("content://")) {
 			p.complete(file);
@@ -88,13 +90,16 @@ public class M3uFileSystem implements VirtualFileSystem {
 		}
 
 		File cacheFile = file.getLocalFile();
+		Log.d("Cache file: ", cacheFile);
 		Context ctx = App.get();
 		HttpFileDownloader d = createDownloader(ctx,url);
 		d.setReturnExistingOnFail(true);
 		d.download(url, cacheFile, file.getPrefs()).onCompletion((f, err) -> {
 			if (err == null) {
+				Log.i("M3U download completed: ", cacheFile, " (", cacheFile.length(), " bytes)");
 				p.complete(file);
 			} else {
+				Log.e(err, "M3U download failed: ", url);
 				p.completeExceptionally(err);
 			}
 		});

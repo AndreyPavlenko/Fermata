@@ -194,6 +194,15 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.pref = EPG_URL;
 			o.title = R.string.epg_url;
 			o.stringHint = "http://example.com/epg.xml.gz";
+			o.subtitle = R.string.epg_url_hint_xtream;
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_XTREAM);
+		});
+		sub.addStringPref(o -> {
+			o.store = ps;
+			o.pref = EPG_URL;
+			o.title = R.string.epg_url;
+			o.stringHint = "http://example.com/epg.xml.gz";
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_XTREAM, true);
 		});
 		sub.addBooleanPref(o -> {
 			o.store = ps;
@@ -333,8 +342,11 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			xtreamPass = trimToNull(ps.getStringPref(XTREAM_PASS));
 			playlistUrl = buildXtreamPlaylistUrl(xtreamUrl, xtreamUser, xtreamPass);
 			xtreamEpg = buildXtreamEpgUrl(xtreamUrl, xtreamUser, xtreamPass);
+			Log.d("Xtream source configured: server=", xtreamUrl, ", user=", xtreamUser,
+					", playlistUrl=", playlistUrl);
 		} else {
 			playlistUrl = trimToNull(ps.getStringPref(URL));
+			Log.d("URL source configured: ", playlistUrl);
 		}
 
 		KnownProviders.configure(ps, playlistUrl);
@@ -385,12 +397,14 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 
 	private static String buildXtreamPlaylistUrl(String url, String user, String pass) {
 		String base = normalizeXtreamUrl(url);
+		if (base == null || user == null || pass == null) return null;
 		return base + "/get.php?username=" + Uri.encode(user) + "&password=" + Uri.encode(pass) +
 				"&type=m3u_plus&output=ts";
 	}
 
 	private static String buildXtreamEpgUrl(String url, String user, String pass) {
 		String base = normalizeXtreamUrl(url);
+		if (base == null || user == null || pass == null) return null;
 		return base + "/xmltv.php?username=" + Uri.encode(user) + "&password=" + Uri.encode(pass);
 	}
 
@@ -444,21 +458,29 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 	}
 
 	/**
-	 * Condition that monitors SOURCE_TYPE preference and shows field when type matches.
+	 * Condition that monitors SOURCE_TYPE preference and shows field when type matches
+	 * (or doesn't match, when {@code negated} is true).
 	 */
 	private static final class SourceTypeCondition implements ChangeableCondition, PreferenceStore.Listener {
 		private final PreferenceStore store;
 		private final int targetType;
+		private final boolean negated;
 		private Listener listener;
 
 		SourceTypeCondition(PreferenceStore store, int targetType) {
+			this(store, targetType, false);
+		}
+
+		SourceTypeCondition(PreferenceStore store, int targetType, boolean negated) {
 			this.store = store;
 			this.targetType = targetType;
+			this.negated = negated;
 		}
 
 		@Override
 		public boolean get() {
-			return store.getIntPref(SOURCE_TYPE) == targetType;
+			boolean match = store.getIntPref(SOURCE_TYPE) == targetType;
+			return negated != match;
 		}
 
 		@Override
@@ -474,7 +496,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 
 		@Override
 		public ChangeableCondition copy() {
-			return new SourceTypeCondition(store, targetType);
+			return new SourceTypeCondition(store, targetType, negated);
 		}
 
 		@Override
