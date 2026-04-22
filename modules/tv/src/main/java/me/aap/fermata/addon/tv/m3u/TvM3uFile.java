@@ -51,6 +51,10 @@ public class TvM3uFile extends M3uFile {
 	public static final Pref<IntSupplier> CATCHUP_DAYS = Pref.i("CATCHUP_DAYS", 0);
 	public static final Pref<Supplier<String>> LOGO_URL = Pref.s("LOGO_URL");
 	public static final Pref<BooleanSupplier> LOGO_PREFER_EPG = Pref.b("LOGO_PREFER_EPG", true);
+	public static final Pref<Supplier<String>> XTREAM_URL = Pref.s("XTREAM_URL");
+	public static final Pref<Supplier<String>> XTREAM_USER = Pref.s("XTREAM_USER");
+	public static final Pref<Supplier<String>> XTREAM_PASS = Pref.s("XTREAM_PASS");
+	public static final Pref<IntSupplier> STREAM_CACHE_HOURS = Pref.i("STREAM_CACHE_HOURS", 24);
 
 	public TvM3uFile(Rid rid) {
 		super(rid);
@@ -116,6 +120,40 @@ public class TvM3uFile extends M3uFile {
 
 	public void setPreferEpgLogo(boolean prefer) {
 		getPrefs().applyBooleanPref(LOGO_PREFER_EPG, prefer);
+	}
+
+	public String getXtreamUrl() {
+		return getPrefs().getStringPref(XTREAM_URL);
+	}
+
+	public void setXtreamUrl(String url) {
+		getPrefs().applyStringPref(XTREAM_URL, trim(url));
+	}
+
+	public String getXtreamUser() {
+		return getPrefs().getStringPref(XTREAM_USER);
+	}
+
+	public void setXtreamUser(String user) {
+		getPrefs().applyStringPref(XTREAM_USER, trim(user));
+	}
+
+	public String getXtreamPass() {
+		return getPrefs().getStringPref(XTREAM_PASS);
+	}
+
+	public void setXtreamPass(String pass) {
+		getPrefs().applyStringPref(XTREAM_PASS, trim(pass));
+	}
+
+	public int getStreamCacheHours() {
+		return getPrefs().getIntPref(STREAM_CACHE_HOURS);
+	}
+
+	public void setStreamCacheHours(int hours) {
+		if (hours < 0) hours = 0;
+		getPrefs().applyIntPref(STREAM_CACHE_HOURS, hours);
+		setMaxAge(hours * 60 * 60);
 	}
 
 	public long getEpgTimeStamp() {

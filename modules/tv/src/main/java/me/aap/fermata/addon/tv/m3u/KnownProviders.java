@@ -13,7 +13,10 @@ import me.aap.utils.pref.PreferenceStore;
 class KnownProviders {
 
 	static void configure(PreferenceStore ps) {
-		String playlistUrl = ps.getStringPref(URL);
+		configure(ps, ps.getStringPref(URL));
+	}
+
+	static void configure(PreferenceStore ps, String playlistUrl) {
 		if (isNullOrBlank(playlistUrl)) return;
 		String host = Uri.parse(playlistUrl).getHost();
 		if (host == null) return;

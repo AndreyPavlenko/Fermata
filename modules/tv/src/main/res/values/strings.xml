@@ -22,6 +22,11 @@
     <string name="catchup_type_flussonic" translatable="false">Flussonic</string>
     <string name="catchup_days">Number of days</string>
     <string name="connection_settings">Connection settings</string>
+    <string name="stream_list_cache_hours">Stream list cache (hours)</string>
+    <string name="xtream_codes">Xtream Codes</string>
+    <string name="xtream_server_url">Server URL</string>
+    <string name="xtream_username">Username</string>
+    <string name="xtream_password">Password</string>
 
     <string name="err_failed_to_add_tv_source">Failed to add source: %1$s</string>
 </resources>
