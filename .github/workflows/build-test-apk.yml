@@ -48,21 +48,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Debug APKs (Mobile)
+      - name: Build Mobile Debug Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:assembleMobileDebug
+        run: ./gradlew fermata:packageMobileDebugUniversalApk -PABI=arm64-v8a
 
-      - name: Build Debug APKs (Auto)
+      - name: Build Auto Debug Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:assembleAutoDebug
+        run: ./gradlew fermata:packageAutoDebugUniversalApk -PABI=arm64-v8a
 
       - name: Upload Mobile Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: fermata-mobile-debug
-          path: fermata/build/outputs/apk/mobile/debug/*.apk
+          path: fermata/build/outputs/apk_from_bundle/mobileDebug/*.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -70,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fermata-auto-debug
-          path: fermata/build/outputs/apk/auto/debug/*.apk
+          path: fermata/build/outputs/apk_from_bundle/autoDebug/*.apk
           retention-days: 14
           if-no-files-found: error
 
@@ -107,21 +107,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release APKs (Mobile)
+      - name: Build Mobile Release Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:assembleMobileRelease
+        run: ./gradlew fermata:packageMobileReleaseUniversalApk -PABI=arm64-v8a
 
-      - name: Build Release APKs (Auto)
+      - name: Build Auto Release Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:assembleAutoRelease
+        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a
 
       - name: Upload Mobile Release APK
         uses: actions/upload-artifact@v4
         with:
           name: fermata-mobile-release
-          path: fermata/build/outputs/apk/mobile/release/*.apk
+          path: fermata/build/outputs/apk_from_bundle/mobileRelease/*.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -129,6 +129,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fermata-auto-release
-          path: fermata/build/outputs/apk/auto/release/*.apk
+          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
           retention-days: 30
           if-no-files-found: error
