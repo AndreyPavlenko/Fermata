@@ -40,6 +40,8 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<Supplier<String[]>> YT_BOOKMARKS = Pref.sa("YT_BOOKMARKS");
 	private static final Pref<Supplier<String>> VIDEO_SCALE = Pref.s("VIDEO_SCALE", VideoScale.CONTAIN::prefName);
 	private static final Pref<BooleanSupplier> YT_OPEN_ON_START = Pref.b("YT_OPEN_ON_START", false);
+	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
+			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
 	private boolean ignorePrefChange;
 
@@ -91,6 +93,12 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.store = getPreferenceStore();
 			o.pref = YT_OPEN_ON_START;
 			o.title = R.string.open_on_start;
+			o.visibility = visibility;
+		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_AUTO_HIGHEST_QUALITY;
+			o.title = R.string.auto_highest_video_quality;
 			o.visibility = visibility;
 		});
 
@@ -153,6 +161,10 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	void setScale(VideoScale scale) {
 		getPreferenceStore().applyStringPref(VIDEO_SCALE, scale.prefName());
+	}
+
+	boolean autoHighestQuality() {
+		return getPreferenceStore().getBooleanPref(YT_AUTO_HIGHEST_QUALITY);
 	}
 
 	enum VideoScale {
