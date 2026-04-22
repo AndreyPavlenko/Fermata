@@ -1,0 +1,9 @@
+<resources>
+    <string name="poi_file_or_url">POI-Datenbankdatei oder URL</string>
+    <string name="locale">de</string>
+    <string name="speed_unit">km/h</string>
+    <string name="distance_unit">m</string>
+    <string name="speed_limit_i">Die Geschwindigkeitsbegrenzung beträgt ${speed_limit} ${speed_unit}</string>
+    <string name="speed_limit_a">In ${distance} ${distance_unit} gilt die Geschwindigkeitsbegrenzung ${speed_limit} ${speed_unit}</string>
+    <string name="speed_limit_w">Ihre Geschwindigkeit ${speed} ${speed_unit} überschreitet die maximal zulässige Geschwindigkeit von ${speed_limit} ${speed_unit}!</string>
+</resources>

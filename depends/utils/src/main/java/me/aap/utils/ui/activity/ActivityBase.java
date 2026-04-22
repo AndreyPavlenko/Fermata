@@ -125,17 +125,17 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 		delegate.onSuccess(ActivityDelegate::onActivityStart);
 	}
 
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		delegate.onSuccess(d -> d.onActivityNewIntent(intent));
+	}
+
 	@CallSuper
 	@Override
 	protected void onResume() {
 		super.onResume();
 		delegate.onSuccess(ActivityDelegate::onActivityResume);
-	}
-
-	@Override
-	protected void onNewIntent(Intent intent) {
-		super.onNewIntent(intent);
-		delegate.onSuccess(d -> d.onActivityNewIntent(intent));
 	}
 
 

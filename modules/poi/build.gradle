@@ -1,0 +1,29 @@
+android {
+    namespace = "me.aap.fermata.addon.poi"
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+
+ext {
+    addons = [
+            [
+                    name   : 'poi',
+                    icon   : 'poi',
+                    class  : 'me.aap.fermata.addon.poi.PoiAddon',
+                    enabled: false,
+                    auto   : true
+            ]
+    ]
+}
+
+dependencies {
+    implementation project(':utils')
+    implementation project(':fermata')
+    implementation libs.androidxCore
+    implementation libs.androidxAnnotation
+    implementation libs.androidxFragment
+    implementation libs.androidxAppcompat
+}

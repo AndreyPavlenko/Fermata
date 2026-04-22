@@ -1,5 +1,7 @@
 package me.aap.fermata;
 
+import static me.aap.fermata.ui.activity.MainActivityPrefs.LOCALE;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -11,9 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.util.Locale;
 
 import me.aap.fermata.addon.AddonManager;
 import me.aap.fermata.media.engine.BitmapCache;
+import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.fermata.vfs.FermataVfsManager;
 import me.aap.utils.app.App;
 import me.aap.utils.app.NetSplitCompatApp;
@@ -42,6 +46,21 @@ public class FermataApplication extends NetSplitCompatApp {
 		super.onCreate();
 		vfsManager = new FermataVfsManager();
 		bitmapCache = new BitmapCache();
+	}
+
+	@Override
+	protected void attachBaseContext(Context ctx) {
+		var ps = SharedPreferenceStore.create(ctx.getSharedPreferences("fermata", MODE_PRIVATE));
+		if (ps.hasPref(LOCALE)) {
+			var loc = MainActivityPrefs.Lang.get(ps.getIntPref(LOCALE)).locale;
+			var cfg = ctx.getResources().getConfiguration();
+			cfg.setLocale(loc);
+			Locale.setDefault(loc);
+			ctx = ctx.createConfigurationContext(cfg);
+		} else {
+			preferenceStore = ps;
+		}
+		super.attachBaseContext(ctx);
 	}
 
 	public boolean isConnectedToAuto() {

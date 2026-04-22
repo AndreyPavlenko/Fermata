@@ -23,17 +23,17 @@
 #endif
 
 struct WhisperSession {
-	explicit WhisperSession(struct whisper_context *ctx, std::string &vadPath, std::string &lang,
-													bool singleSegment)
+	explicit WhisperSession(struct whisper_context *ctx, std::string &vadPath, std::string &lang)
 			: ctx(ctx), vadPath(vadPath), lang(lang),
 				params(whisper_full_default_params(WHISPER_SAMPLING_GREEDY)) {
 		reset();
 		params.n_threads = std::max(4, static_cast<int>(std::thread::hardware_concurrency()));
-		params.single_segment = singleSegment;
 		params.print_special = false;
 		params.print_progress = false;
 		params.print_realtime = false;
 		params.print_timestamps = false;
+		params.max_len = 1;
+		params.split_on_word = true;
 
 		if (!this->vadPath.empty()) {
 			params.vad = true;
@@ -109,7 +109,8 @@ struct SampleBuffer {
 		}
 
 		SampleBuffer<S> buf(env, src);
-		size_t frameWidth = std::max(static_cast<size_t>(1), channels * frameRate / WHISPER_SAMPLE_RATE);
+		size_t frameWidth = std::max(static_cast<size_t>(1),
+																 channels * frameRate / WHISPER_SAMPLE_RATE);
 		std::function<float(size_t)> convertFn = [&buf, &idxFn, frameWidth](size_t idx) {
 			auto frameIdx = idxFn(idx);
 			float sum = 0.0f;
@@ -199,7 +200,7 @@ struct FrameBuffer {
 extern "C" JNIEXPORT jlong JNICALL
 Java_me_aap_fermata_whisper_Whisper_create(JNIEnv *env, jclass, jstring jModelPath,
 																					 jstring jvadPath, jstring jlang,
-																					 jboolean useGpu, jboolean singleSegment) {
+																					 jboolean useGpu) {
 	const char *modelPath = env->GetStringUTFChars(jModelPath, nullptr);
 	whisper_context_params params = whisper_context_default_params();
 	params.use_gpu = useGpu;
@@ -221,7 +222,7 @@ Java_me_aap_fermata_whisper_Whisper_create(JNIEnv *env, jclass, jstring jModelPa
 				env->ReleaseStringUTFChars(js, chars);
 			}
 		}
-		return reinterpret_cast<jlong>(new WhisperSession(ctx, vadPath, lang, singleSegment));
+		return reinterpret_cast<jlong>(new WhisperSession(ctx, vadPath, lang));
 	} catch (const std::bad_alloc &) {
 		whisper_free(ctx);
 		env->ThrowNew(env->FindClass("java/lang/OutOfMemoryError"),
@@ -232,13 +233,12 @@ Java_me_aap_fermata_whisper_Whisper_create(JNIEnv *env, jclass, jstring jModelPa
 
 extern "C" JNIEXPORT void JNICALL
 Java_me_aap_fermata_whisper_Whisper_reconfigure(JNIEnv *env, jclass, jlong sessionPtr,
-																								jstring jlang, jboolean singleSegment) {
+																								jstring jlang) {
 	assert(sessionPtr);
 	auto session = reinterpret_cast<WhisperSession *>(sessionPtr);
 	auto chars = env->GetStringUTFChars(jlang, nullptr);
 	session->lang = chars;
 	env->ReleaseStringUTFChars(jlang, chars);
-	session->params.single_segment = singleSegment;
 	session->reset();
 }
 
@@ -320,12 +320,40 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 	}
 
 	auto segments = whisper_full_n_segments(session->ctx);
-	auto hasSegments = segments != 0;
-	for (; segments > 0; --segments) {
-		auto dur =
-				whisper_full_get_segment_t1(session->ctx, segments - 1) -
-				whisper_full_get_segment_t0(session->ctx, segments - 1);
-		if (dur > 50) break;
+	unsigned consumed = session->size;
+
+	if (segments) { // Trim to a sentence boundary
+		auto totalSegments = segments;
+		auto dur = whisper_full_get_segment_t1(session->ctx, segments - 1) -
+							 whisper_full_get_segment_t0(session->ctx, 0);
+		for (typeof(dur) trimDur = 0; segments > 0; --segments) {
+			auto seg = segments - 1;
+			trimDur += whisper_full_get_segment_t1(session->ctx, seg) -
+								 whisper_full_get_segment_t0(session->ctx, seg);
+			if (trimDur >= 1000) break; // Do not trim more than 10 seconds
+
+			const char *text = whisper_full_get_segment_text(session->ctx, seg);
+			size_t textLen = text ? std::strlen(text) : 0;
+			for (; textLen > 0 && std::isspace(text[textLen - 1]); --textLen);
+			if (!textLen) continue;
+			char c = text[textLen - 1];
+			if (c == '.' || c == '?' || c == '!' ||
+					((dur - trimDur > 300) && (c == ',' || c == ';' || c == ':' || c == '-'))) {
+				break;
+			}
+		}
+
+		if (segments != totalSegments) {
+			unsigned end;
+			if (segments > 0) {
+				end = static_cast<unsigned>(whisper_full_get_segment_t1(session->ctx, segments - 1) *
+																		WHISPER_SAMPLE_RATE / 100);
+			} else {
+				end = static_cast<unsigned>(whisper_full_get_segment_t0(session->ctx, 0) *
+																		WHISPER_SAMPLE_RATE / 100);
+			}
+			consumed = std::min(session->size, end);
+		}
 	}
 
 	if (params.detect_language) {
@@ -339,19 +367,6 @@ Java_me_aap_fermata_whisper_Whisper_fullTranscribe(JNIEnv *env, jclass, jlong se
 				goto transcribe;
 			}
 		}
-	}
-
-	unsigned consumed;
-	if (segments > 0) {
-		auto end = static_cast<unsigned>(whisper_full_get_segment_t1(session->ctx, segments - 1) *
-																		 WHISPER_SAMPLE_RATE / 100);
-		consumed = std::min(session->size, end);
-	} else if (hasSegments) {
-		auto end = static_cast<unsigned>(whisper_full_get_segment_t0(session->ctx, 0) *
-																		 WHISPER_SAMPLE_RATE / 100);
-		consumed = std::min(session->size, end);
-	} else {
-		consumed = session->size;
 	}
 
 	if (consumed == session->size) {

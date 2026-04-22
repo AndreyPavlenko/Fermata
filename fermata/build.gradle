@@ -2,7 +2,7 @@ if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-servic
 
 android {
     defaultConfig {
-        namespace 'me.aap.fermata'
+        namespace = 'me.aap.fermata'
         applicationId project.getProperties().getOrDefault('APP_ID', 'me.aap.fermata')
         versionCode VERSION_CODE
         versionName VERSION_NAME
@@ -37,7 +37,7 @@ android {
             resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_release"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     '../proguard-rules.pro', '../depends/utils/proguard-rules.pro'
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
             buildConfigField "boolean", 'D', 'false'
         }
 
@@ -50,7 +50,7 @@ android {
             resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_debug"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_debug"
             resValue "string", "mirror_fs_service_name", "@string/mirror_fs_service_name_debug"
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
             buildConfigField "boolean", 'D', 'true'
         }
     }
@@ -90,28 +90,28 @@ android {
 
     dynamicFeatures.addAll(gradle.ext.modules)
 
-    namespace 'me.aap.fermata'
+    namespace = 'me.aap.fermata'
 }
 
 dependencies {
     implementation project(':utils')
-    implementation "androidx.media:media:${ANDROIDX_MEDIA_VERSION}"
-    implementation "androidx.appcompat:appcompat:${ANDROIDX_APPCOMPAT_VERSION}"
-    implementation "com.google.android.material:material:${ANDROID_MATERIAL_VERSION}"
-    implementation "androidx.constraintlayout:constraintlayout:${ANDROIDX_CONSTRAINTLAYOUT_VERSION}"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:${ANDROIDX_SWIPEREFRESHLAYOUT_VERSION}"
-    implementation "com.google.android.play:feature-delivery:${ANDROID_PLAY_CORE_FD_VERSION}"
-    implementation 'com.google.android.play:asset-delivery:2.3.0'
-    implementation 'com.google.android.play:app-update:2.1.0'
-    implementation 'androidx.tvprovider:tvprovider:1.1.0'
-    implementation 'androidx.annotation:annotation:1.9.1'
-    implementation "androidx.car.app:app:1.7.0"
-    implementation "androidx.legacy:legacy-support-core-utils:1.0.0"
-    implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
-    implementation "com.google.android.datatransport:transport-api:4.0.0"
-    implementation "com.google.android.datatransport:transport-backend-cct:4.0.0"
-    implementation "com.google.android.datatransport:transport-runtime:4.0.0"
-    implementation "com.google.firebase:firebase-encoders-json:18.0.1"
-    implementation "com.google.firebase:firebase-encoders:17.0.0"
-    implementation "javax.inject:javax.inject:1"
+    implementation libs.androidxMedia
+    implementation libs.androidxAppcompat
+    implementation libs.androidMaterial
+    implementation libs.androidxConstraintlayout
+    implementation libs.androidxSwiperefreshlayout
+    implementation libs.googlePlayFeatureDelivery
+    implementation libs.googlePlayAssetDelivery
+    implementation libs.googlePlayAppUpdate
+    implementation libs.androidxTvprovider
+    implementation libs.androidxAnnotation
+    implementation libs.androidxLegacySupportCore
+    implementation libs.androidxLocalbroadcastmanager
+    implementation libs.transportApi
+    implementation libs.transportBackendCct
+    implementation libs.transportRuntime
+    implementation libs.firebaseEncodersJson
+    implementation libs.firebaseEncoders
+    implementation libs.javaxInject
+    autoImplementation libs.androidxCarApp
 }

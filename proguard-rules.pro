@@ -10,6 +10,7 @@
 
 -dontwarn com.sun.jna.platform.win32.**
 -dontwarn com.jcraft.jsch.PageantConnector
+-dontwarn okio.*
 
 -keepnames class androidx.media3.exoplayer.ExoPlayerImpl { *; }
 -keepnames class androidx.media3.exoplayer.ExoPlayerImplInternal { *; }
