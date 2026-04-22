@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -67,6 +68,19 @@ public class M3uItem extends BrowsableItemBase {
 	private Data parse() {
 		String id = getId();
 		VirtualFile m3uFile = (VirtualFile) getResource();
+		File localFile = m3uFile.getLocalFile();
+
+		// Check if the local file exists and has content
+		if (localFile == null || !localFile.exists()) {
+			Log.e("M3U file does not exist: ", m3uFile);
+			return new Data(m3uFile.getName(), "", emptyList(), emptyMap(), null);
+		}
+		if (localFile.length() == 0) {
+			Log.e("M3U file is empty: ", localFile);
+			return new Data(m3uFile.getName(), "", emptyList(), emptyMap(), null);
+		}
+
+		Log.i("Parsing M3U file: ", localFile, " (", localFile.length(), " bytes)");
 		VirtualFolder dir = m3uFile.getParent().peek();
 		Map<String, M3uGroupItem> groups = new LinkedHashMap<>();
 		List<M3uTrackItem> tracks = new ArrayList<>();
@@ -295,6 +309,8 @@ public class M3uItem extends BrowsableItemBase {
 
 		int ngroups = groups.size();
 		int ntracks = tracks.size();
+		Log.i("Parsed M3U file: ", m3uFile.getName(), " - ", ngroups, " groups, ", ntracks, " tracks");
+
 		List<Item> children = new ArrayList<>(ngroups + ntracks);
 
 		if (ngroups > 0) {

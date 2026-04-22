@@ -11,6 +11,10 @@ import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_SHIFT;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.EPG_URL;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.LOGO_PREFER_EPG;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.LOGO_URL;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.SOURCE_TYPE;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.SOURCE_TYPE_FILE;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.SOURCE_TYPE_URL;
+import static me.aap.fermata.addon.tv.m3u.TvM3uFile.SOURCE_TYPE_XTREAM;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.STREAM_CACHE_HOURS;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.XTREAM_PASS;
 import static me.aap.fermata.addon.tv.m3u.TvM3uFile.XTREAM_URL;
@@ -74,7 +78,11 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		if (xtreamUser == null) xtreamUser = x.user;
 		if (xtreamPass == null) xtreamPass = x.pass;
 
+		// Detect source type from existing data
+		int sourceType = detectSourceType(url, xtreamUrl, xtreamUser, xtreamPass);
+
 		try (PreferenceStore.Edit e = ps.editPreferenceStore()) {
+			e.setIntPref(SOURCE_TYPE, sourceType);
 			e.setStringPref(NAME, f.getName());
 			e.setStringPref(URL, f.getUrl());
 			e.setStringPref(EPG_URL, f.getEpgUrl());
@@ -107,45 +115,77 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		});
 	}
 
+	private static int detectSourceType(String url, String xtreamUrl, String xtreamUser, String xtreamPass) {
+		// If Xtream credentials are set, it's Xtream type
+		if (hasXtreamCredentials(xtreamUrl, xtreamUser, xtreamPass)) {
+			return SOURCE_TYPE_XTREAM;
+		}
+		// If URL starts with / or content://, it's a local file
+		if (url != null && (url.startsWith("/") || url.startsWith("content://"))) {
+			return SOURCE_TYPE_FILE;
+		}
+		// Default to URL
+		return SOURCE_TYPE_URL;
+	}
+
 	private FutureSupplier<Boolean> requestPrefs(MainActivityDelegate a, PreferenceStore ps) {
 		PreferenceSet prefs = new PreferenceSet();
 		PreferenceSet sub;
 
-		// Condition to check if Xtream credentials are NOT fully provided
-		XtreamCondition noXtream = new XtreamCondition(ps, false);
+		// Source type selector - shown first
+		prefs.addListPref(o -> {
+			o.store = ps;
+			o.pref = SOURCE_TYPE;
+			o.title = R.string.source_type;
+			o.subtitle = R.string.source_type_current;
+			o.formatSubtitle = true;
+			o.values = new int[]{R.string.source_type_url, R.string.source_type_file, R.string.source_type_xtream};
+		});
 
+		// Name - always required
 		prefs.addStringPref(o -> {
 			o.store = ps;
 			o.pref = NAME;
 			o.title = me.aap.fermata.R.string.m3u_playlist_name;
 		});
+
+		// URL field - shown for URL type
+		prefs.addStringPref(o -> {
+			o.store = ps;
+			o.pref = URL;
+			o.title = R.string.source_url;
+			o.stringHint = "http://example.com/playlist.m3u";
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_URL);
+		});
+
+		// File picker - shown for File type
 		prefs.addFilePref(o -> {
 			o.store = ps;
 			o.pref = URL;
 			o.mode = FilePickerFragment.FILE;
-			o.title = me.aap.fermata.R.string.m3u_playlist_location;
-			o.stringHint = a.getString(R.string.m3u_location_hint_xtream);
-			o.visibility = noXtream;
+			o.title = R.string.source_file;
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_FILE);
 		});
-		sub = prefs.subSet(o -> {
-			o.title = R.string.xtream_codes;
-			o.subtitle = R.string.xtream_codes_hint;
-		});
-		sub.addStringPref(o -> {
+
+		// Xtream fields - shown for Xtream type
+		prefs.addStringPref(o -> {
 			o.store = ps;
 			o.pref = XTREAM_URL;
 			o.title = R.string.xtream_server_url;
 			o.stringHint = "http://example.com:8080";
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_XTREAM);
 		});
-		sub.addStringPref(o -> {
+		prefs.addStringPref(o -> {
 			o.store = ps;
 			o.pref = XTREAM_USER;
 			o.title = R.string.xtream_username;
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_XTREAM);
 		});
-		sub.addStringPref(o -> {
+		prefs.addStringPref(o -> {
 			o.store = ps;
 			o.pref = XTREAM_PASS;
 			o.title = R.string.xtream_password;
+			o.visibility = new SourceTypeCondition(ps, SOURCE_TYPE_XTREAM);
 		});
 
 		sub = prefs.subSet(o -> o.title = R.string.epg);
@@ -222,7 +262,10 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		sub.addIntPref(o -> {
 			o.store = ps;
 			o.pref = RESP_TIMEOUT;
-			o.title = me.aap.fermata.R.string.m3u_playlist_timeout;
+			o.seekMin = 10;
+			o.seekMax = 300;
+			o.title = R.string.response_timeout;
+			o.subtitle = R.string.response_timeout_hint;
 		});
 		sub.addIntPref(o -> {
 			o.store = ps;
@@ -236,19 +279,31 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 
 	@Override
 	protected boolean validate(PreferenceStore ps) {
-		boolean hasXtream = hasXtreamInput(ps);
-		boolean useXtream = hasXtreamCredentials(ps);
-		if (hasXtream && !useXtream) return false;
-		if (useXtream) {
-			String name = trimToNull(ps.getStringPref(NAME));
-			if (name == null) return false;
-			String url = normalizeXtreamUrl(ps.getStringPref(XTREAM_URL));
-			if ((url == null) || !(url.startsWith("http://") || url.startsWith("https://"))) return false;
-		} else if (!super.validate(ps)) {
-			return false;
-		}
-		String q;
+		String name = trimToNull(ps.getStringPref(NAME));
+		if (name == null) return false;
 
+		int sourceType = ps.getIntPref(SOURCE_TYPE);
+		switch (sourceType) {
+			case SOURCE_TYPE_URL:
+				String url = trimToNull(ps.getStringPref(URL));
+				if (url == null) return false;
+				if (!url.startsWith("http://") && !url.startsWith("https://")) return false;
+				break;
+			case SOURCE_TYPE_FILE:
+				String file = trimToNull(ps.getStringPref(URL));
+				if (file == null) return false;
+				if (!file.startsWith("/") && !file.startsWith("content://")) return false;
+				break;
+			case SOURCE_TYPE_XTREAM:
+				if (!hasXtreamCredentials(ps)) return false;
+				String xtreamUrl = normalizeXtreamUrl(ps.getStringPref(XTREAM_URL));
+				if (xtreamUrl == null || (!xtreamUrl.startsWith("http://") && !xtreamUrl.startsWith("https://"))) {
+					return false;
+				}
+				break;
+		}
+
+		String q;
 		switch (ps.getIntPref(CATCHUP_TYPE)) {
 			case CATCHUP_TYPE_APPEND:
 				q = ps.getStringPref(CATCHUP_QUERY);
@@ -265,13 +320,17 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 	@Override
 	protected void setPrefs(PreferenceStore ps, M3uFile m3u) {
 		TvM3uFile f = (TvM3uFile) m3u;
-		String xtreamUrl = trimToNull(ps.getStringPref(XTREAM_URL));
-		String xtreamUser = trimToNull(ps.getStringPref(XTREAM_USER));
-		String xtreamPass = trimToNull(ps.getStringPref(XTREAM_PASS));
+		int sourceType = ps.getIntPref(SOURCE_TYPE);
 		String playlistUrl;
+		String xtreamUrl = null;
+		String xtreamUser = null;
+		String xtreamPass = null;
 		String xtreamEpg = null;
 
-		if (hasXtreamCredentials(xtreamUrl, xtreamUser, xtreamPass)) {
+		if (sourceType == SOURCE_TYPE_XTREAM) {
+			xtreamUrl = trimToNull(ps.getStringPref(XTREAM_URL));
+			xtreamUser = trimToNull(ps.getStringPref(XTREAM_USER));
+			xtreamPass = trimToNull(ps.getStringPref(XTREAM_PASS));
 			playlistUrl = buildXtreamPlaylistUrl(xtreamUrl, xtreamUser, xtreamPass);
 			xtreamEpg = buildXtreamEpgUrl(xtreamUrl, xtreamUser, xtreamPass);
 		} else {
@@ -295,7 +354,13 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		f.setLogoUrl(ps.getStringPref(LOGO_URL));
 		f.setPreferEpgLogo(ps.getBooleanPref(LOGO_PREFER_EPG));
 		f.setEpgMaxAge(EPG_FILE_AGE);
-		f.setResponseTimeout(ps.getIntPref(RESP_TIMEOUT));
+
+		// Use higher timeout for Xtream sources (default 120s), or user-specified value
+		int timeout = ps.getIntPref(RESP_TIMEOUT);
+		if (timeout <= 0) {
+			timeout = (sourceType == SOURCE_TYPE_XTREAM) ? 120 : 30;
+		}
+		f.setResponseTimeout(timeout);
 		f.setStreamCacheHours(ps.getIntPref(STREAM_CACHE_HOURS));
 	}
 
@@ -306,16 +371,6 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 
 	protected String getTitle(MainActivityDelegate a) {
 		return a.getString(R.string.add_tv_source);
-	}
-
-	private static boolean hasXtreamInput(PreferenceStore ps) {
-		return hasXtreamInput(trimToNull(ps.getStringPref(XTREAM_URL)),
-				trimToNull(ps.getStringPref(XTREAM_USER)),
-				trimToNull(ps.getStringPref(XTREAM_PASS)));
-	}
-
-	private static boolean hasXtreamInput(String url, String user, String pass) {
-		return (url != null) || (user != null) || (pass != null);
 	}
 
 	private static boolean hasXtreamCredentials(PreferenceStore ps) {
@@ -389,24 +444,21 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 	}
 
 	/**
-	 * Condition that monitors Xtream credentials (URL, User, Pass) and triggers UI updates.
-	 * When showWhenXtream is false, returns true when Xtream is NOT fully configured (show URL field).
-	 * When showWhenXtream is true, returns true when Xtream IS fully configured.
+	 * Condition that monitors SOURCE_TYPE preference and shows field when type matches.
 	 */
-	private static final class XtreamCondition implements ChangeableCondition, PreferenceStore.Listener {
+	private static final class SourceTypeCondition implements ChangeableCondition, PreferenceStore.Listener {
 		private final PreferenceStore store;
-		private final boolean showWhenXtream;
+		private final int targetType;
 		private Listener listener;
 
-		XtreamCondition(PreferenceStore store, boolean showWhenXtream) {
+		SourceTypeCondition(PreferenceStore store, int targetType) {
 			this.store = store;
-			this.showWhenXtream = showWhenXtream;
+			this.targetType = targetType;
 		}
 
 		@Override
 		public boolean get() {
-			boolean hasXtream = hasXtreamCredentials(store);
-			return showWhenXtream == hasXtream;
+			return store.getIntPref(SOURCE_TYPE) == targetType;
 		}
 
 		@Override
@@ -422,14 +474,14 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 
 		@Override
 		public ChangeableCondition copy() {
-			return new XtreamCondition(store, showWhenXtream);
+			return new SourceTypeCondition(store, targetType);
 		}
 
 		@Override
 		public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
 			if (listener == null) return;
 			for (Pref<?> p : prefs) {
-				if (p == XTREAM_URL || p == XTREAM_USER || p == XTREAM_PASS) {
+				if (p == SOURCE_TYPE) {
 					listener.onConditionChanged(this);
 					return;
 				}
