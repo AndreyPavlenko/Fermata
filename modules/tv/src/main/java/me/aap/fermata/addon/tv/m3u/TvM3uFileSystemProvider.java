@@ -23,6 +23,8 @@ import static me.aap.utils.net.http.HttpFileDownloader.RESP_TIMEOUT;
 
 import android.net.Uri;
 
+import androidx.annotation.Nullable;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -33,10 +35,12 @@ import me.aap.fermata.vfs.m3u.M3uFile;
 import me.aap.fermata.vfs.m3u.M3uFileSystemProvider;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.log.Log;
+import me.aap.utils.misc.ChangeableCondition;
 import me.aap.utils.pref.BasicPreferenceStore;
 import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.text.TextUtils;
 import me.aap.utils.ui.fragment.FilePickerFragment;
 import me.aap.utils.vfs.VirtualFileSystem;
@@ -51,7 +55,9 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		PreferenceStore ps = PrefsHolder.instance;
 		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).then(ok -> {
 			if (!ok) return completedNull();
-			return load(ps, TvM3uFileSystem.getInstance()).cast();
+			FutureSupplier<TvM3uFile> loadFuture = load(ps, TvM3uFileSystem.getInstance()).cast();
+			a.setContentLoading(loadFuture);
+			return loadFuture;
 		});
 	}
 
@@ -105,6 +111,9 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		PreferenceSet prefs = new PreferenceSet();
 		PreferenceSet sub;
 
+		// Condition to check if Xtream credentials are NOT fully provided
+		XtreamCondition noXtream = new XtreamCondition(ps, false);
+
 		prefs.addStringPref(o -> {
 			o.store = ps;
 			o.pref = NAME;
@@ -115,9 +124,13 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			o.pref = URL;
 			o.mode = FilePickerFragment.FILE;
 			o.title = me.aap.fermata.R.string.m3u_playlist_location;
-			o.stringHint = a.getString(me.aap.fermata.R.string.m3u_playlist_location_hint);
+			o.stringHint = a.getString(R.string.m3u_location_hint_xtream);
+			o.visibility = noXtream;
 		});
-		sub = prefs.subSet(o -> o.title = R.string.xtream_codes);
+		sub = prefs.subSet(o -> {
+			o.title = R.string.xtream_codes;
+			o.subtitle = R.string.xtream_codes_hint;
+		});
 		sub.addStringPref(o -> {
 			o.store = ps;
 			o.pref = XTREAM_URL;
@@ -372,6 +385,55 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 			base.append(uri.getScheme()).append("://").append(authority);
 			if (!basePath.isEmpty()) base.append(basePath);
 			return new XtreamData(base.toString(), user, pass);
+		}
+	}
+
+	/**
+	 * Condition that monitors Xtream credentials (URL, User, Pass) and triggers UI updates.
+	 * When showWhenXtream is false, returns true when Xtream is NOT fully configured (show URL field).
+	 * When showWhenXtream is true, returns true when Xtream IS fully configured.
+	 */
+	private static final class XtreamCondition implements ChangeableCondition, PreferenceStore.Listener {
+		private final PreferenceStore store;
+		private final boolean showWhenXtream;
+		private Listener listener;
+
+		XtreamCondition(PreferenceStore store, boolean showWhenXtream) {
+			this.store = store;
+			this.showWhenXtream = showWhenXtream;
+		}
+
+		@Override
+		public boolean get() {
+			boolean hasXtream = hasXtreamCredentials(store);
+			return showWhenXtream == hasXtream;
+		}
+
+		@Override
+		public void setListener(@Nullable Listener listener) {
+			if (listener != null) {
+				this.listener = listener;
+				store.addBroadcastListener(this);
+			} else {
+				this.listener = null;
+				store.removeBroadcastListener(this);
+			}
+		}
+
+		@Override
+		public ChangeableCondition copy() {
+			return new XtreamCondition(store, showWhenXtream);
+		}
+
+		@Override
+		public void onPreferenceChanged(PreferenceStore store, List<Pref<?>> prefs) {
+			if (listener == null) return;
+			for (Pref<?> p : prefs) {
+				if (p == XTREAM_URL || p == XTREAM_USER || p == XTREAM_PASS) {
+					listener.onConditionChanged(this);
+					return;
+				}
+			}
 		}
 	}
 

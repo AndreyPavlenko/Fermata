@@ -24,9 +24,11 @@
     <string name="connection_settings">Connection settings</string>
     <string name="stream_list_cache_hours">Stream list cache (hours)</string>
     <string name="xtream_codes">Xtream Codes</string>
+    <string name="xtream_codes_hint">Alternative to file/URL - fill all fields to use</string>
     <string name="xtream_server_url">Server URL</string>
     <string name="xtream_username">Username</string>
     <string name="xtream_password">Password</string>
+    <string name="m3u_location_hint_xtream">File or URL (not required if using Xtream Codes)</string>
 
     <string name="err_failed_to_add_tv_source">Failed to add source: %1$s</string>
 </resources>
