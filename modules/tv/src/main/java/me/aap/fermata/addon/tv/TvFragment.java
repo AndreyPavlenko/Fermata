@@ -21,12 +21,15 @@ import me.aap.fermata.media.lib.DefaultMediaLib;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.lib.MediaLib.BrowsableItem;
 import me.aap.fermata.media.lib.MediaLib.Item;
+import me.aap.fermata.media.lib.MediaLib.PlayableItem;
+import me.aap.fermata.media.lib.SearchFolder;
 import me.aap.fermata.media.service.FermataServiceUiBinder;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.fragment.MediaLibFragment;
 import me.aap.fermata.ui.view.MediaItemMenuHandler;
 import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.function.Function;
 import me.aap.utils.log.Log;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -124,6 +127,15 @@ public class TvFragment extends MediaLibFragment {
 	@Override
 	public void contributeToNavBarMenu(OverlayMenu.Builder builder) {
 		super.contributeToNavBarMenu(builder);
+
+		// Search across all categories of the current source (or across all sources from root).
+		BrowsableItem parent = getAdapter().getParent();
+		if ((parent != null) && !(parent instanceof SearchFolder)) {
+			builder.withSelectionHandler(this::tvNavBarMenuItemSelected)
+					.addItem(me.aap.fermata.R.id.nav_search, me.aap.fermata.R.drawable.search,
+							me.aap.fermata.R.string.search);
+		}
+
 		if (isRootItem()) return;
 		TvAdapter a = getAdapter();
 
@@ -133,6 +145,50 @@ public class TvFragment extends MediaLibFragment {
 					me.aap.fermata.R.string.favorites_add);
 			getMainActivity().addPlaylistMenu(b, completed(a.getSelectedItems()));
 		}
+	}
+
+	private boolean tvNavBarMenuItemSelected(OverlayMenuItem item) {
+		if (item.getItemId() == me.aap.fermata.R.id.nav_search) {
+			promptSearch();
+			return true;
+		}
+		return false;
+	}
+
+	private void promptSearch() {
+		MainActivityDelegate a = getMainActivity();
+		BrowsableItem parent = getAdapter().getParent();
+		if (parent == null) return;
+
+		UiUtils.queryText(getContext(), me.aap.fermata.R.string.search,
+						me.aap.fermata.R.drawable.search)
+				.onSuccess(query -> {
+					if ((query == null) || query.trim().isEmpty()) return;
+					String q = query.trim();
+					BrowsableItem searchParent = getAdapter().getParent();
+					if (searchParent == null) return;
+
+					FermataServiceUiBinder b = a.getMediaServiceBinder();
+					Function<java.util.List<PlayableItem>, BrowsableItem> ps = items -> {
+						PlayableItem cur = b.getCurrentItem();
+						return ((cur == null) || !items.contains(cur)) ? searchParent : cur.getParent();
+					};
+
+					SearchFolder.search(q, ps).main(a.getHandler()).onSuccess(f -> {
+						if (f == null) return;
+						java.util.List<PlayableItem> items = f.getItemsFound();
+						if (items.isEmpty()) {
+							UiUtils.showInfo(getContext(),
+									getString(R.string.tv_search_no_results, q));
+							return;
+						}
+						getAdapter().setParent(f);
+						a.post(() -> getListView().focusTo(items.get(0)));
+					}).onFailure(err -> {
+						Log.e(err, "TV search failed for query: ", q);
+						UiUtils.showAlert(getContext(), err.getLocalizedMessage());
+					});
+				});
 	}
 
 	@Override

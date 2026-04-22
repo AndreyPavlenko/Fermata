@@ -87,6 +87,26 @@ public class M3uItem extends BrowsableItemBase {
 		long fileSize = localFile.length();
 		Log.i("Parsing M3U file: ", localFile, " (", fileSize, " bytes)");
 
+		// Sanity check: peek at the first few hundred bytes so we can tell from logcat whether
+		// the downloaded content is actually an M3U playlist or e.g. an HTML error page from
+		// the Xtream server (wrong credentials, server returning JSON, etc.).
+		try (java.io.InputStream peek = new java.io.FileInputStream(localFile)) {
+			byte[] head = new byte[Math.min(256, (int) Math.min(fileSize, 256))];
+			int n = peek.read(head);
+			if (n > 0) {
+				String headStr = new String(head, 0, n, "UTF-8")
+						.replace('\n', ' ').replace('\r', ' ');
+				Log.i("M3U file head (", n, " bytes): ", headStr);
+				if (!headStr.trim().startsWith("#EXTM3U") && !headStr.trim().startsWith("#EXTINF")) {
+					Log.e("File does not look like an M3U playlist! First bytes: ", headStr);
+					showToast("Playlist content is not valid M3U. Server may have returned an error. "
+							+ "Check the URL/credentials and tap Refresh.");
+				}
+			}
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to peek M3U head: ", localFile);
+		}
+
 		// Notify the user when starting a large playlist (>5 MB ~= roughly 20K+ entries)
 		// so they know the upcoming wait is expected.
 		boolean largePlaylist = fileSize > 5L * 1024 * 1024;
