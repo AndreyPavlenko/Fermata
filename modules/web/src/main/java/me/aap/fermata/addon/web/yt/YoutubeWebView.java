@@ -225,7 +225,7 @@ public class YoutubeWebView extends FermataWebView {
 	void setHighestVideoQuality() {
 		loadUrl("javascript:\n" +
 				"function retrySetHighestVideoQuality(attempt, openMenu) {\n" +
-				"  if (attempt < 10) setTimeout(setHighestVideoQuality, 250, attempt + 1, openMenu);\n" +
+				"  if (attempt < 10) setTimeout(setHighestVideoQuality, 100, attempt + 1, openMenu);\n" +
 				"  return false;\n" +
 				"}\n" +
 				"function getVideoQualityRank(label) {\n" +
@@ -247,6 +247,7 @@ public class YoutubeWebView extends FermataWebView {
 				"    var b = document.querySelector('.player-settings-icon');\n" +
 				"    if (b == null) return retrySetHighestVideoQuality(attempt, true);\n" +
 				"    b.click();\n" +
+				"    return retrySetHighestVideoQuality(attempt, false);\n" +
 				"  }\n" +
 				"  var settings = document.querySelector('.player-quality-settings');\n" +
 				"  if (settings == null) return retrySetHighestVideoQuality(attempt, false);\n" +
