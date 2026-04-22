@@ -17,8 +17,12 @@ env:
 
 jobs:
   build:
-    name: Build Debug APKs
+    name: Build ${{ matrix.variant }} Debug APK
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [Mobile, Auto]
 
     steps:
       - name: Checkout repository
@@ -48,36 +52,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Mobile Debug Universal APK
+      - name: Build ${{ matrix.variant }} Debug Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:packageMobileDebugUniversalApk -PABI=arm64-v8a
+        run: ./gradlew fermata:package${{ matrix.variant }}DebugUniversalApk -PABI=arm64-v8a
 
-      - name: Build Auto Debug Universal APK
-        env:
-          NO_GS: true
-        run: ./gradlew fermata:packageAutoDebugUniversalApk -PABI=arm64-v8a
-
-      - name: Upload Mobile Debug APK
+      - name: Upload ${{ matrix.variant }} Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-mobile-debug
-          path: fermata/build/outputs/apk_from_bundle/mobileDebug/*.apk
-          retention-days: 14
-          if-no-files-found: error
-
-      - name: Upload Auto Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: fermata-auto-debug
-          path: fermata/build/outputs/apk_from_bundle/autoDebug/*.apk
+          name: fermata-${{ matrix.variant }}-debug
+          path: fermata/build/outputs/apk_from_bundle/${{ matrix.variant == 'Mobile' && 'mobileDebug' || 'autoDebug' }}/*.apk
           retention-days: 14
           if-no-files-found: error
 
   build-release:
-    name: Build Release APKs
+    name: Build ${{ matrix.variant }} Release APK
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master'
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [Mobile, Auto]
 
     steps:
       - name: Checkout repository
@@ -107,28 +102,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Mobile Release Universal APK
+      - name: Build ${{ matrix.variant }} Release Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:packageMobileReleaseUniversalApk -PABI=arm64-v8a
+        run: ./gradlew fermata:package${{ matrix.variant }}ReleaseUniversalApk -PABI=arm64-v8a
 
-      - name: Build Auto Release Universal APK
-        env:
-          NO_GS: true
-        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a
-
-      - name: Upload Mobile Release APK
+      - name: Upload ${{ matrix.variant }} Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-mobile-release
-          path: fermata/build/outputs/apk_from_bundle/mobileRelease/*.apk
-          retention-days: 30
-          if-no-files-found: error
-
-      - name: Upload Auto Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: fermata-auto-release
-          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
+          name: fermata-${{ matrix.variant }}-release
+          path: fermata/build/outputs/apk_from_bundle/${{ matrix.variant == 'Mobile' && 'mobileRelease' || 'autoRelease' }}/*.apk
           retention-days: 30
           if-no-files-found: error
