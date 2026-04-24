@@ -225,62 +225,45 @@ public class YoutubeWebView extends FermataWebView {
 	void setHighestVideoQuality() {
 		loadUrl("javascript:\n" +
 				"(function() {\n" +
-				"  var observer = null;\n" +
-				"  var timeout = null;\n" +
-				"  var clickedQuality = false;\n" +
-				"  function cleanup() {\n" +
-				"    if (observer) { observer.disconnect(); observer = null; }\n" +
-				"    if (timeout) { clearTimeout(timeout); timeout = null; }\n" +
+				"  if (window.__fermataQ) {\n" +
+				"    if (window.__fermataQ.timeout) clearTimeout(window.__fermataQ.timeout);\n" +
+				"    if (window.__fermataQ.player && window.__fermataQ.handler) {\n" +
+				"      try { window.__fermataQ.player.removeEventListener('onStateChange', window.__fermataQ.handler); } catch(e) {}\n" +
+				"    }\n" +
 				"  }\n" +
-				"  function closeMenu() {\n" +
-				"    var close = document.querySelector('bottom-sheet-layout button.hidden-button');\n" +
-				"    if (close) close.click();\n" +
+				"  var state = window.__fermataQ = { player: null, handler: null, timeout: null, attempts: 0 };\n" +
+				"  function getPlayer() {\n" +
+				"    return document.querySelector('#movie_player') || document.querySelector('.html5-video-player');\n" +
 				"  }\n" +
-				"  function getQualityRank(label) {\n" +
-				"    if (!label) return -1;\n" +
-				"    if (/^auto/i.test(label)) return -1;\n" +
-				"    var match = label.match(/(\\\\d+)p/i);\n" +
-				"    if (match) return parseInt(match[1], 10);\n" +
-				"    match = label.match(/(\\\\d+)k/i);\n" +
-				"    if (match) return parseInt(match[1], 10) * 540;\n" +
-				"    return -1;\n" +
+				"  function applyHighest(p) {\n" +
+				"    if (!p || typeof p.getAvailableQualityLevels !== 'function') return false;\n" +
+				"    var levels = p.getAvailableQualityLevels();\n" +
+				"    if (!levels || levels.length === 0) return false;\n" +
+				"    var best = null;\n" +
+				"    for (var i = 0; i < levels.length; i++) {\n" +
+				"      if (levels[i] !== 'auto') { best = levels[i]; break; }\n" +
+				"    }\n" +
+				"    if (!best) return false;\n" +
+				"    if (p.getPlaybackQuality && p.getPlaybackQuality() === best) return true;\n" +
+				"    if (typeof p.setPlaybackQualityRange === 'function') p.setPlaybackQualityRange(best, best);\n" +
+				"    else if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(best);\n" +
+				"    else return false;\n" +
+				"    return true;\n" +
 				"  }\n" +
-				"  function tryProcess() {\n" +
-				"    var sheet = document.querySelector('bottom-sheet-layout');\n" +
-				"    if (!sheet) return;\n" +
-				"    var items = Array.from(sheet.querySelectorAll('yt-list-item-view-model'));\n" +
-				"    if (!clickedQuality) {\n" +
-				"      var qualityItem = items.find(function(el) {\n" +
-				"        return el.innerText && el.innerText.startsWith('Quality');\n" +
-				"      });\n" +
-				"      if (qualityItem) {\n" +
-				"        clickedQuality = true;\n" +
-				"        qualityItem.click();\n" +
-				"      }\n" +
+				"  function install() {\n" +
+				"    var p = getPlayer();\n" +
+				"    if (!p || typeof p.addEventListener !== 'function') {\n" +
+				"      if (++state.attempts < 50) state.timeout = setTimeout(install, 200);\n" +
 				"      return;\n" +
 				"    }\n" +
-				"    var hasAuto = items.some(function(el) {\n" +
-				"      return el.innerText && /^auto/i.test(el.innerText);\n" +
-				"    });\n" +
-				"    if (!hasAuto) return;\n" +
-				"    var bestItem = null;\n" +
-				"    var bestRank = -1;\n" +
-				"    items.forEach(function(el) {\n" +
-				"      var rank = getQualityRank(el.innerText || '');\n" +
-				"      if (rank > bestRank) { bestRank = rank; bestItem = el; }\n" +
-				"    });\n" +
-				"    if (bestItem) {\n" +
-				"      cleanup();\n" +
-				"      bestItem.click();\n" +
-				"      setTimeout(closeMenu, 200);\n" +
-				"    }\n" +
+				"    state.player = p;\n" +
+				"    state.handler = function(s) {\n" +
+				"      if ((s === 1) || (s === 3)) applyHighest(getPlayer() || p);\n" +
+				"    };\n" +
+				"    p.addEventListener('onStateChange', state.handler);\n" +
+				"    applyHighest(p);\n" +
 				"  }\n" +
-				"  var btn = document.querySelector('.player-settings-icon');\n" +
-				"  if (!btn) return;\n" +
-				"  observer = new MutationObserver(tryProcess);\n" +
-				"  observer.observe(document.body, { childList: true, subtree: true });\n" +
-				"  timeout = setTimeout(function() { cleanup(); closeMenu(); }, 5000);\n" +
-				"  btn.click();\n" +
+				"  install();\n" +
 				"})();");
 	}
 
