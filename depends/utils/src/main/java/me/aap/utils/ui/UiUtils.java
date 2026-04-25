@@ -83,8 +83,8 @@ public class UiUtils {
 		return size;
 	}
 
-	public static Promise<Void> showAlert(Context ctx, @StringRes int msg) {
-		return showAlert(ctx, ctx.getString(msg));
+	public static Promise<Void> showAlert(Context ctx, @StringRes int msg, Object... args) {
+		return showAlert(ctx, ctx.getString(msg, args));
 	}
 
 	public static Promise<Void> showAlert(Context ctx, String msg) {

@@ -1,20 +1,22 @@
 #!/bin/sh
 set -e
 
-APP_ID_SFX='.dear.google.why'
 DIR="$(cd "$(dirname "$0")"; pwd -P)"
 DEST_DIR="$DIR/dist"
 mkdir -p "$DEST_DIR"
 export NO_GS=true
-CLEAN='clean'
+TASK='apk'
 
 while [ "$1" != "" ]; do
     case "$1" in
-        -nc)
-            unset CLEAN
+        -c)
+            CLEAN='clean'
             ;;
         -a)
             ARM=true
+            ;;
+        -b)
+            TASK='aab'
             ;;
         *)
             echo "Unknown argument: $1"
@@ -40,21 +42,30 @@ fi
 CMAKE_PATH="$(find $ANDROID_SDK_ROOT/cmake/* -maxdepth 1 -type d -name bin | sort -V | tail -1)"
 echo "CMAKE_PATH=$CMAKE_PATH"
 export PATH=$CMAKE_PATH:$PATH
+cd "$DIR"
 
-build_apk() {
-    local sfx='arm64'
-    local abi='arm64-v8a'
+build() {
+  local ext="$TASK"
+  local app_flavor=${APP_ID_SFX:-$(grep -oP "${TASK}Flavor=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
+  local app_sfx=${APP_ID_SFX:-$(grep -oP "${TASK}IdSfx=\K.+" "$DIR/local.properties"  2>/dev/null || true)}
+  [ -z "$app_sfx" ] || local app_sfx="-PAPP_ID_SFX=$app_sfx"
+  if [ $TASK = 'apk' ]; then
+    local task="package${app_flavor}AutoReleaseUniversalApk"
+    local abi="-PABI=$1"
+    [ "$1" = 'arm64-v8a' ] && local sfx='-arm64' || local sfx='-arm'
+  else
+    local task="bundle${app_flavor}AutoRelease"
+  fi
 
-    if [ "$1" = 'arm' ]; then
-        sfx='arm'
-        abi='armeabi-v7a'
-    fi
-
-    ./gradlew $CLEAN fermata:packageAutoReleaseUniversalApk -PABI=$abi -PAPP_ID_SFX=$APP_ID_SFX
-    local path=$(ls ./fermata/build/outputs/apk_from_bundle/autoRelease/fermata-*.apk)
-    local name=${path##*/}
-    mv $path "$DEST_DIR/${name%auto-release-universal.apk}auto-universal-$sfx.apk"
+  ./gradlew $CLEAN fermata:$task $abi $app_sfx
+  for path in $(ls fermata/build/outputs/*/*/fermata*.$ext); do
+    local version=${path##*fermata-}
+    version=${version%%-*}
+    local dst="$DEST_DIR/fermata-auto-${version}${sfx}.$ext"
+    mv "$path" "$dst"
+    echo "Built $dst"
+  done
 }
 
-[ $ARM ] && build_apk 'arm' || true
-build_apk 'arm64'
+[ $ARM ] && [ "$TASK" = 'apk' ] && build 'armeabi-v7a' || true
+build 'arm64-v8a'

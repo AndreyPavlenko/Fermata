@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.view.MotionEvent;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -89,8 +90,7 @@ public class MainActivity extends SplitCompatActivityBase
 
 	@Override
 	protected void attachBaseContext(Context base) {
-		MainActivityDelegate.attachBaseContext(base);
-		super.attachBaseContext(base);
+		super.attachBaseContext(MainActivityDelegate.attachBaseContext(base));
 	}
 
 	@Override
@@ -106,6 +106,12 @@ public class MainActivity extends SplitCompatActivityBase
 		MainActivityDelegate.setTheme(this,
 				isCarActivity() || FermataApplication.get().isMirroringMode());
 		AddonManager.get().addBroadcastListener(this);
+		getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+			@Override
+			public void handleOnBackPressed() {
+				getActivityDelegate().onSuccess(MainActivityDelegate::onBackPressed);
+			}
+		});
 		super.onCreate(savedInstanceState);
 	}
 
@@ -118,18 +124,13 @@ public class MainActivity extends SplitCompatActivityBase
 	@Override
 	protected void onResume() {
 		super.onResume();
-		 activeInstance = this;
+		activeInstance = this;
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		activeInstance = null;
-	}
-
-	@Override
-	public void onBackPressed() {
-		getActivityDelegate().onSuccess(MainActivityDelegate::onBackPressed);
 	}
 
 	@Override

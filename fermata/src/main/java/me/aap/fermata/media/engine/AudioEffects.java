@@ -1,10 +1,14 @@
 package me.aap.fermata.media.engine;
 
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM;
+
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
 import android.media.audiofx.LoudnessEnhancer;
 import android.media.audiofx.Virtualizer;
+import android.os.Build;
 
 import androidx.annotation.Nullable;
 
@@ -37,7 +41,8 @@ public class AudioEffects {
 
 	private AudioEffects(int priority, int audioSessionId) {
 		equalizer = supported(EQUALIZER) ? new Equalizer(priority, audioSessionId) : null;
-		virtualizer = supported(VIRTUALIZER) ? new Virtualizer(priority, audioSessionId) : null;
+		virtualizer = SDK_INT < VANILLA_ICE_CREAM && supported(VIRTUALIZER) ?
+				new Virtualizer(priority, audioSessionId) : null;
 		bassBoost = supported(BASS_BOOST) ? new BassBoost(priority, audioSessionId) : null;
 		loudnessEnhancer = supported(LOUDNESS_ENHANCER) ? new LoudnessEnhancer(audioSessionId) : null;
 	}

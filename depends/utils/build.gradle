@@ -6,7 +6,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath "com.android.tools.build:gradle:${libs.versions.agp.get()}"
     }
 }
 
@@ -59,32 +59,32 @@ android {
 }
 
 dependencies {
-    implementation "androidx.appcompat:appcompat:${ANDROIDX_APPCOMPAT_VERSION}"
-    implementation "androidx.constraintlayout:constraintlayout:${ANDROIDX_CONSTRAINTLAYOUT_VERSION}"
-    implementation "com.google.android.play:feature-delivery:${ANDROID_PLAY_CORE_FD_VERSION}"
-    implementation "com.google.android.material:material:${ANDROID_MATERIAL_VERSION}"
+    implementation libs.androidxAppcompat
+    implementation libs.androidxConstraintlayout
+    implementation libs.googlePlayFeatureDelivery
+    implementation libs.androidMaterial
 
-    implementation 'com.github.mwiede:jsch:2.27.5'
-    implementation 'com.hierynomus:smbj:0.14.0'
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.82'
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.82'
+    implementation libs.jsch
+    implementation libs.smbj
+    implementation libs.bouncycastleProvider
+    implementation libs.bouncycastlePkix
 
-    implementation 'com.google.android.gms:play-services-auth:21.4.0'
-    implementation 'com.google.android.gms:play-services-base:18.9.0'
-    implementation 'com.google.http-client:google-http-client-gson:2.0.2'
-    implementation('com.google.api-client:google-api-client-android:2.8.1') {
+    implementation libs.googlePlayServicesAuth
+    implementation libs.googlePlayServicesBase
+    implementation libs.googleHttpClientGson
+    implementation(libs.googleApiClientAndroid) {
         exclude group: 'org.apache.httpcomponents'
     }
-    implementation('com.google.apis:google-api-services-drive:v3-rev197-1.25.0') {
+    implementation(libs.googleApiServicesDrive) {
         exclude group: 'org.apache.httpcomponents'
         exclude group: 'com.google.guava'
     }
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:6.0.0'
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:6.0.0"
-    testImplementation "org.junit.jupiter:junit-jupiter-params:6.0.0"
-    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+    testImplementation libs.junit5Api
+    testImplementation libs.junit5Engine
+    testImplementation libs.junit5Params
+    androidTestImplementation libs.androidxTestJunit
+    androidTestImplementation libs.androidxTestEspresso
 
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    coreLibraryDesugaring libs.desugarJdkLibs
 }

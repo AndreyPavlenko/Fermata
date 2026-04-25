@@ -6,6 +6,7 @@ import android.util.Pair;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
+import com.google.mlkit.common.MlKit;
 import com.google.mlkit.nl.translate.TranslateLanguage;
 import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.TranslatorOptions;
@@ -27,6 +28,12 @@ import me.aap.utils.collection.CollectionUtils;
 public class MlkitTranslateAddon extends TranslateAddon {
 	private static final AddonInfo info =
 			FermataAddon.findAddonInfo(MlkitTranslateAddon.class.getName());
+
+	static {
+		try {
+			MlKit.initialize(App.get());
+		} catch (Exception ignored) {}
+	}
 
 	public FutureSupplier<Translator> getTranslator(String srcLang, String targetLang) {
 		var translator = Translation.getClient(new TranslatorOptions.Builder()

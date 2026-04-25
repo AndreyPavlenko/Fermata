@@ -1,19 +1,20 @@
 ext {
-    VERSION_CODE = 256
-    VERSION_NAME = "2.0.0"
-    SDK_MIN_VERSION = 29
-    SDK_TARGET_VERSION = 36
-    SDK_COMPILE_VERSION = 36
+    VERSION_CODE = libs.versions.appVersionCode.get().toInteger()
+    VERSION_NAME = libs.versions.appVersionName.get()
+    SDK_MIN_VERSION = libs.versions.sdkMin.get().toInteger()
+    SDK_TARGET_VERSION = libs.versions.sdkTarget.get().toInteger()
+    SDK_COMPILE_VERSION = libs.versions.sdkCompile.get().toInteger()
     localProps = gradle.ext.localProps
 
-    ANDROID_MATERIAL_VERSION = '1.13.0'
-    ANDROID_PLAY_CORE_FD_VERSION = '2.1.0'
-    ANDROIDX_CORE_VERSION = '1.12.0'
-    ANDROIDX_MEDIA_VERSION = '1.7.1'
-    ANDROIDX_APPCOMPAT_VERSION = '1.7.1'
-    ANDROIDX_CONSTRAINTLAYOUT_VERSION = '2.2.1'
-    ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = '1.2.0'
-    GUAVA_VERSION = '33.5.0-android'
+    ANDROID_MATERIAL_VERSION = libs.versions.androidMaterial.get()
+    ANDROID_PLAY_CORE_FD_VERSION = libs.versions.googlePlayFeatureDelivery.get()
+    ANDROIDX_CORE_VERSION = libs.versions.androidxCore.get()
+    ANDROIDX_ANNOTATION_VERSION = libs.versions.androidxAnnotation.get()
+    ANDROIDX_MEDIA_VERSION = libs.versions.androidxMedia.get()
+    ANDROIDX_APPCOMPAT_VERSION = libs.versions.androidxAppcompat.get()
+    ANDROIDX_CONSTRAINTLAYOUT_VERSION = libs.versions.androidxConstraintlayout.get()
+    ANDROIDX_SWIPEREFRESHLAYOUT_VERSION = libs.versions.androidxSwiperefreshlayout.get()
+    GUAVA_VERSION = libs.versions.guava.get()
 
     addons = [
             [
@@ -40,8 +41,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.0.0'
-        classpath 'com.google.gms:google-services:4.4.4'
+        classpath "com.android.tools.build:gradle:${libs.versions.agp.get()}"
+        classpath "com.google.gms:google-services:${libs.versions.googleServices.get()}"
     }
 }
 
@@ -94,6 +95,7 @@ subprojects {
 
         buildFeatures {
             buildConfig = true
+            resValues = true
         }
 
         compileOptions {
@@ -107,14 +109,14 @@ subprojects {
         }
 
         dependencies {
-            coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+            coreLibraryDesugaring libs.desugarJdkLibs
         }
     }
 
     dependencies {
-        testImplementation 'junit:junit:4.13.2'
-        androidTestImplementation 'androidx.test.ext:junit:1.3.0'
-        androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+        testImplementation libs.junit4
+        androidTestImplementation libs.androidxTestJunit
+        androidTestImplementation libs.androidxTestEspresso
     }
 
     configurations.configureEach {
@@ -150,7 +152,7 @@ gradle.projectsEvaluated {
                 "\"${it.get('module', name)}\", \"${it['class']}\", " +
                 "R.string.addon_name_${name}, R.drawable.${it['icon']}, " +
                 "${it['order']}, ${it['hasSettings']}, ${it['enabled']}, " +
-                "\"${it.get('depends', "")}\"),\n")
+                "${it.get('auto', false)}, \"${it.get('depends', "")}\"),\n")
     }
 
     def infoStr = addonInfo.append('})').toString()
@@ -161,4 +163,8 @@ gradle.projectsEvaluated {
 
 tasks.register('clean', Delete) {
     delete rootProject.layout.buildDirectory
+}
+
+if (file('build-custom.gradle').exists()) {
+    apply from: 'build-custom.gradle'
 }
