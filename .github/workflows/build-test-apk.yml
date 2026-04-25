@@ -3,18 +3,9 @@ name: Build Test APK
 on:
   pull_request:
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'APK type to build. Debug is faster and installable; pre-release runs minification.'
-        required: true
-        default: debug
-        type: choice
-        options:
-          - debug
-          - pre-release
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.build_type || 'debug' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -24,7 +15,7 @@ env:
 
 jobs:
   build:
-    name: Build Auto APK
+    name: Build Auto Pre-release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -55,73 +46,25 @@ jobs:
         run: chmod +x gradlew
 
       - name: Create keystore and local.properties
-        env:
-          CI_KEYSTORE: ${{ secrets.CI_KEYSTORE }}
-          CI_ALIAS: ${{ secrets.CI_ALIAS }}
-          CI_KEY_PWD: ${{ secrets.CI_KEY_PWD }}
-          CI_KEYSTORE_PWD: ${{ secrets.CI_KEYSTORE_PWD }}
-        shell: bash
         run: |
-          if [[ -z "$CI_KEYSTORE" || -z "$CI_ALIAS" || -z "$CI_KEY_PWD" || -z "$CI_KEYSTORE_PWD" ]]; then
-            echo "CI signing secrets are not configured; Gradle will use the generated fallback keystore."
-            exit 0
-          fi
+          echo "${{ secrets.CI_KEYSTORE }}" | base64 -d > keystore.jks
 
-          umask 077
-          printf '%s' "$CI_KEYSTORE" | base64 -d > keystore.jks
+          cat > local.properties <<EOF
+          storeFile=$(pwd)/keystore.jks
+          keyAlias=${{ secrets.CI_ALIAS }}
+          keyPassword=${{ secrets.CI_KEY_PWD }}
+          storePassword=${{ secrets.CI_KEYSTORE_PWD }}
+          EOF
 
-          {
-            echo "storeFile=$PWD/keystore.jks"
-            echo "keyAlias=$CI_ALIAS"
-            echo "keyPassword=$CI_KEY_PWD"
-            echo "storePassword=$CI_KEYSTORE_PWD"
-          } > local.properties
-
-          keytool -list \
-            -keystore keystore.jks \
-            -storepass "$CI_KEYSTORE_PWD" \
-            -alias "$CI_ALIAS" >/dev/null
-
-      - name: Select APK type
-        id: apk
-        shell: bash
-        run: |
-          build_type="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'debug' }}"
-
-          case "$build_type" in
-            debug)
-              echo "label=Debug" >> "$GITHUB_OUTPUT"
-              echo "task=fermata:packageAutoDebugUniversalApk" >> "$GITHUB_OUTPUT"
-              echo "artifact=fermata-auto-debug" >> "$GITHUB_OUTPUT"
-              echo "path=fermata/build/outputs/apk_from_bundle/autoDebug/*.apk" >> "$GITHUB_OUTPUT"
-              echo "retention_days=14" >> "$GITHUB_OUTPUT"
-              echo "gradle_args=--build-cache --parallel" >> "$GITHUB_OUTPUT"
-              echo "Selected fast, installable debug APK. Pre-release remains available from workflow_dispatch." >> "$GITHUB_STEP_SUMMARY"
-              ;;
-            pre-release|release)
-              echo "label=Pre-release" >> "$GITHUB_OUTPUT"
-              echo "task=fermata:packageAutoReleaseUniversalApk" >> "$GITHUB_OUTPUT"
-              echo "artifact=fermata-auto-pre-release" >> "$GITHUB_OUTPUT"
-              echo "path=fermata/build/outputs/apk_from_bundle/autoRelease/*.apk" >> "$GITHUB_OUTPUT"
-              echo "retention_days=30" >> "$GITHUB_OUTPUT"
-              echo "gradle_args=--build-cache" >> "$GITHUB_OUTPUT"
-              echo "Selected pre-release APK. This is slower because it runs release minification." >> "$GITHUB_STEP_SUMMARY"
-              ;;
-            *)
-              echo "Unknown build type: $build_type" >&2
-              exit 1
-              ;;
-          esac
-
-      - name: Build Auto ${{ steps.apk.outputs.label }} Universal APK
+      - name: Build Auto Pre-release Universal APK
         env:
           NO_GS: true
-        run: ./gradlew ${{ steps.apk.outputs.task }} -PABI=arm64-v8a ${{ steps.apk.outputs.gradle_args }}
+        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a --build-cache
 
-      - name: Upload Auto ${{ steps.apk.outputs.label }} APK
+      - name: Upload Auto Pre-release APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.apk.outputs.artifact }}
-          path: ${{ steps.apk.outputs.path }}
-          retention-days: ${{ steps.apk.outputs.retention_days }}
+          name: fermata-auto-pre-release
+          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
+          retention-days: 30
           if-no-files-found: error
