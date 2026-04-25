@@ -3,18 +3,28 @@ name: Build Test APK
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'APK type to build. Debug is faster and installable; release runs minification.'
+        required: true
+        default: debug
+        type: choice
+        options:
+          - debug
+          - release
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.build_type || 'debug' }}
   cancel-in-progress: true
 
 env:
   JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'temurin'
+  ANDROID_NDK_VERSION: '29.0.14206865'
 
 jobs:
   build:
-    name: Build Auto Release APK
+    name: Build Auto APK
     runs-on: ubuntu-latest
 
     steps:
@@ -32,28 +42,58 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Cache Gradle packages
+      - name: Cache Android NDK
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          path: /usr/local/lib/android/sdk/ndk/${{ env.ANDROID_NDK_VERSION }}
+          key: ${{ runner.os }}-android-ndk-${{ env.ANDROID_NDK_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Auto Release Universal APK
+      - name: Select APK type
+        id: apk
+        shell: bash
+        run: |
+          build_type="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'debug' }}"
+
+          case "$build_type" in
+            debug)
+              echo "label=Debug" >> "$GITHUB_OUTPUT"
+              echo "task=fermata:packageAutoDebugUniversalApk" >> "$GITHUB_OUTPUT"
+              echo "artifact=fermata-auto-debug" >> "$GITHUB_OUTPUT"
+              echo "path=fermata/build/outputs/apk_from_bundle/autoDebug/*.apk" >> "$GITHUB_OUTPUT"
+              echo "retention_days=14" >> "$GITHUB_OUTPUT"
+              echo "gradle_args=--build-cache --parallel" >> "$GITHUB_OUTPUT"
+              echo "Selected fast, installable debug APK. Release remains available from workflow_dispatch." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            release)
+              echo "label=Release" >> "$GITHUB_OUTPUT"
+              echo "task=fermata:packageAutoReleaseUniversalApk" >> "$GITHUB_OUTPUT"
+              echo "artifact=fermata-auto-release" >> "$GITHUB_OUTPUT"
+              echo "path=fermata/build/outputs/apk_from_bundle/autoRelease/*.apk" >> "$GITHUB_OUTPUT"
+              echo "retention_days=30" >> "$GITHUB_OUTPUT"
+              echo "gradle_args=--build-cache" >> "$GITHUB_OUTPUT"
+              echo "Selected release APK. This is slower because it runs release minification." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "Unknown build type: $build_type" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Build Auto ${{ steps.apk.outputs.label }} Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a
+        run: ./gradlew ${{ steps.apk.outputs.task }} -PABI=arm64-v8a ${{ steps.apk.outputs.gradle_args }}
 
-      - name: Upload Auto Release APK
+      - name: Upload Auto ${{ steps.apk.outputs.label }} APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-auto-release
-          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
-          retention-days: 30
+          name: ${{ steps.apk.outputs.artifact }}
+          path: ${{ steps.apk.outputs.path }}
+          retention-days: ${{ steps.apk.outputs.retention_days }}
           if-no-files-found: error
