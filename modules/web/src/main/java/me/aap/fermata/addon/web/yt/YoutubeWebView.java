@@ -14,6 +14,8 @@ import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
 
+import java.util.List;
+
 import me.aap.fermata.BuildConfig;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataJsInterface;
@@ -23,11 +25,21 @@ import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
+import me.aap.utils.pref.PreferenceStore;
 
 /**
  * @author Andrey Pavlenko
  */
 public class YoutubeWebView extends FermataWebView {
+	private static final String CLEAR_HIGHEST_VIDEO_QUALITY_JS =
+			"function clearFermataQ() {\n" +
+					"  if (!window.__fermataQ) return;\n" +
+					"  if (window.__fermataQ.timeout) clearTimeout(window.__fermataQ.timeout);\n" +
+					"  if (window.__fermataQ.player && window.__fermataQ.handler) {\n" +
+					"    try { window.__fermataQ.player.removeEventListener('onStateChange', window.__fermataQ.handler); } catch(e) {}\n" +
+					"  }\n" +
+					"  window.__fermataQ = null;\n" +
+					"}\n";
 	private YoutubeJsInterface js;
 
 	public YoutubeWebView(Context context) {
@@ -51,6 +63,14 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	public YoutubeAddon getAddon() {
 		return (YoutubeAddon) super.getAddon();
+	}
+
+	@Override
+	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
+		super.onPreferenceChanged(store, prefs);
+		if (!getAddon().autoHighestQualityChanged(prefs)) return;
+		if (getAddon().autoHighestQuality()) setHighestVideoQuality();
+		else clearHighestVideoQuality();
 	}
 
 	@Override
@@ -225,12 +245,8 @@ public class YoutubeWebView extends FermataWebView {
 	void setHighestVideoQuality() {
 		loadUrl("javascript:\n" +
 				"(function() {\n" +
-				"  if (window.__fermataQ) {\n" +
-				"    if (window.__fermataQ.timeout) clearTimeout(window.__fermataQ.timeout);\n" +
-				"    if (window.__fermataQ.player && window.__fermataQ.handler) {\n" +
-				"      try { window.__fermataQ.player.removeEventListener('onStateChange', window.__fermataQ.handler); } catch(e) {}\n" +
-				"    }\n" +
-				"  }\n" +
+				CLEAR_HIGHEST_VIDEO_QUALITY_JS +
+				"  clearFermataQ();\n" +
 				"  var state = window.__fermataQ = { player: null, handler: null, timeout: null, attempts: 0 };\n" +
 				"  function getPlayer() {\n" +
 				"    return document.querySelector('#movie_player') || document.querySelector('.html5-video-player');\n" +
@@ -264,6 +280,14 @@ public class YoutubeWebView extends FermataWebView {
 				"    applyHighest(p);\n" +
 				"  }\n" +
 				"  install();\n" +
+				"})();");
+	}
+
+	void clearHighestVideoQuality() {
+		loadUrl("javascript:\n" +
+				"(function() {\n" +
+				CLEAR_HIGHEST_VIDEO_QUALITY_JS +
+				"  clearFermataQ();\n" +
 				"})();");
 	}
 

@@ -167,6 +167,10 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		return getPreferenceStore().getBooleanPref(YT_AUTO_HIGHEST_QUALITY);
 	}
 
+	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {
+		return prefs.contains(YT_AUTO_HIGHEST_QUALITY);
+	}
+
 	enum VideoScale {
 		FILL, CONTAIN, COVER, NONE;
 
