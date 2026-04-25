@@ -55,6 +55,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	private final YoutubeItem prev;
 	private final YoutubeItem end;
 	private YoutubeItem current;
+	private String qualityUrl;
 	private boolean ignorePause;
 
 	public YoutubeMediaEngine(YoutubeWebView web, MainActivityDelegate a) {
@@ -83,12 +84,19 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 
 		if (url.startsWith("blob:")) url = url.substring(5);
 		current = new Current(url);
+		if (!web.getAddon().autoHighestQuality()) {
+			qualityUrl = null;
+		} else if (!url.isEmpty() && !url.equals(qualityUrl)) {
+			qualityUrl = url;
+			web.setHighestVideoQuality();
+		}
 		cb.setEngine(this);
 		cb.onEngineStarted(this);
 	}
 
 	void ended() {
 		current = end;
+		qualityUrl = null;
 		cb.onEngineEnded(this);
 	}
 
@@ -123,6 +131,7 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	public void stop() {
 		if ((current == null) || (current == end)) return;
 		current = null;
+		qualityUrl = null;
 		web.stop();
 	}
 
