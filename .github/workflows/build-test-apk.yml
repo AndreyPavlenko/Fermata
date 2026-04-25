@@ -1,12 +1,7 @@
-name: Build Test APKs
+name: Build Test APK
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
-    branches:
-      - master
   workflow_dispatch:
 
 concurrency:
@@ -19,12 +14,8 @@ env:
 
 jobs:
   build:
-    name: Build ${{ matrix.variant }} Debug APK
+    name: Build Auto Release APK
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        variant: [Mobile, Auto]
 
     steps:
       - name: Checkout repository
@@ -54,65 +45,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build ${{ matrix.variant }} Debug Universal APK
+      - name: Build Auto Release Universal APK
         env:
           NO_GS: true
-        run: ./gradlew fermata:package${{ matrix.variant }}DebugUniversalApk -PABI=arm64-v8a
+        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a
 
-      - name: Upload ${{ matrix.variant }} Debug APK
+      - name: Upload Auto Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-${{ matrix.variant }}-debug
-          path: fermata/build/outputs/apk_from_bundle/${{ matrix.variant == 'Mobile' && 'mobileDebug' || 'autoDebug' }}/*.apk
-          retention-days: 14
-          if-no-files-found: error
-
-  build-release:
-    name: Build ${{ matrix.variant }} Release APK
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master'
-    strategy:
-      fail-fast: false
-      matrix:
-        variant: [Mobile, Auto]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build ${{ matrix.variant }} Release Universal APK
-        env:
-          NO_GS: true
-        run: ./gradlew fermata:package${{ matrix.variant }}ReleaseUniversalApk -PABI=arm64-v8a
-
-      - name: Upload ${{ matrix.variant }} Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: fermata-${{ matrix.variant }}-release
-          path: fermata/build/outputs/apk_from_bundle/${{ matrix.variant == 'Mobile' && 'mobileRelease' || 'autoRelease' }}/*.apk
+          name: fermata-auto-release
+          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
           retention-days: 30
           if-no-files-found: error
