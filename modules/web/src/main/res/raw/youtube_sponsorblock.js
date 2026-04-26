@@ -12,8 +12,21 @@
     loadedKey: null,
     pendingKey: null,
     segments: [],
-    lastSkipKey: null
+    lastSkipKey: null,
+    intervalId: null
   };
+
+  function isActive() {
+    return state.config.enabled && Array.isArray(state.config.categories) &&
+      (state.config.categories.length !== 0);
+  }
+
+  function resetSkipState() {
+    state.loadedKey = null;
+    state.pendingKey = null;
+    state.segments = [];
+    state.lastSkipKey = null;
+  }
 
   function isVideoId(id) {
     return (typeof id === 'string') && /^[A-Za-z0-9_-]{11}$/.test(id);
@@ -125,7 +138,7 @@
     state.loadedKey = null;
     state.segments = [];
 
-    if (!state.config.enabled || (state.config.categories.length === 0)) {
+    if (!isActive()) {
       state.pendingKey = null;
       state.loadedKey = key;
       return;
@@ -157,7 +170,7 @@
   }
 
   function skipIfNeeded(video) {
-    if (!state.config.enabled || !video || video.ended || (state.segments.length === 0)) return;
+    if (!isActive() || !video || video.ended || (state.segments.length === 0)) return;
 
     const current = video.currentTime;
     if (!Number.isFinite(current)) return;
@@ -177,6 +190,8 @@
   }
 
   function tick() {
+    if (!isActive()) return;
+
     const videoId = findVideoId();
 
     if (videoId !== state.videoId) {
@@ -191,14 +206,27 @@
     skipIfNeeded(document.querySelector('video'));
   }
 
+  function startTicker() {
+    if (state.intervalId == null) state.intervalId = setInterval(tick, 500);
+  }
+
+  function stopTicker() {
+    if (state.intervalId == null) return;
+    clearInterval(state.intervalId);
+    state.intervalId = null;
+  }
+
   window.FermataSponsorBlock = {
     configure(config) {
       state.config = Object.assign({}, state.config, config);
-      state.loadedKey = null;
-      state.pendingKey = null;
-      state.segments = [];
-      state.lastSkipKey = null;
-      tick();
+      resetSkipState();
+
+      if (isActive()) {
+        startTicker();
+        tick();
+      } else {
+        stopTicker();
+      }
     },
     tick
   };
@@ -211,6 +239,4 @@
     if (event.target && (event.target.tagName === 'VIDEO')) setTimeout(tick, 0);
   }, true);
 
-  setInterval(tick, 500);
-  tick();
 })();
