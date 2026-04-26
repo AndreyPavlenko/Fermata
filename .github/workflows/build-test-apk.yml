@@ -1,0 +1,70 @@
+name: Build Test APK
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+  ANDROID_NDK_VERSION: '29.0.14206865'
+
+jobs:
+  build:
+    name: Build Auto Pre-release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Android NDK
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/ndk/${{ env.ANDROID_NDK_VERSION }}
+          key: ${{ runner.os }}-android-ndk-${{ env.ANDROID_NDK_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Create keystore and local.properties
+        run: |
+          echo "${{ secrets.CI_KEYSTORE }}" | base64 -d > keystore.jks
+
+          cat > local.properties <<EOF
+          storeFile=$(pwd)/keystore.jks
+          keyAlias=${{ secrets.CI_ALIAS }}
+          keyPassword=${{ secrets.CI_KEY_PWD }}
+          storePassword=${{ secrets.CI_KEYSTORE_PWD }}
+          EOF
+
+      - name: Build Auto Pre-release Universal APK
+        env:
+          NO_GS: true
+        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a --build-cache
+
+      - name: Upload Auto Pre-release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermata-auto-pre-release
+          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
+          retention-days: 30
+          if-no-files-found: error
