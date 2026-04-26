@@ -56,6 +56,7 @@ jobs:
 
       - name: Create keystore and local.properties
         run: |
+          [ -z "${{ secrets.CI_KEYSTORE }}" ] && exit 0
           echo "${{ secrets.CI_KEYSTORE }}" | base64 -d > keystore.jks
 
           cat > local.properties <<EOF
