@@ -1,6 +1,7 @@
-name: Build Test APK
+name: Build APK
 
 on:
+  push:
   pull_request:
   workflow_dispatch:
 
@@ -11,11 +12,10 @@ concurrency:
 env:
   JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'temurin'
-  ANDROID_NDK_VERSION: '29.0.14206865'
 
 jobs:
   build:
-    name: Build Auto Pre-release APK
+    name: Build Fermata Auto APKs
     runs-on: ubuntu-latest
 
     steps:
@@ -23,6 +23,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Read versions from version catalog
+        run: |
+          ver_file=gradle/libs.versions.toml
+          version() { grep -Po "(?<=$1).+" $ver_file |  sed -e 's/[= "]//g'; }
+          app_version="$(version appVersionName)-$(git rev-parse --short HEAD)"
+          sed -ri "s/appVersionName.+/appVersionName = \"$app_version\"/" $ver_file
+          echo "APP_VERSION=$app_version" >> $GITHUB_ENV
+          echo "ANDROID_NDK_VERSION=$(version ndkVersion)-$git_hash" >> $GITHUB_ENV
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -56,15 +65,29 @@ jobs:
           storePassword=${{ secrets.CI_KEYSTORE_PWD }}
           EOF
 
-      - name: Build Auto Pre-release Universal APK
+      - name: Build APKs
         env:
           NO_GS: true
-        run: ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a --build-cache
+        run: |
+          out=fermata/build/outputs/apk_from_bundle/autoRelease
+          mkdir -p dist/arm64 dist/arm
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a --build-cache
+          mv $out/*.apk dist/arm64/
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a --build-cache
+          mv $out/*.apk dist/arm/
 
-      - name: Upload Auto Pre-release APK
+      - name: Upload arm64 APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-auto-pre-release
-          path: fermata/build/outputs/apk_from_bundle/autoRelease/*.apk
+          name: fermata-auto-${{ env.APP_VERSION }}-arm64
+          path: dist/arm64/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload arm APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermata-auto-${{ env.APP_VERSION }}-arm
+          path: dist/arm/*.apk
           retention-days: 30
           if-no-files-found: error

@@ -1,6 +1,10 @@
 [versions]
+# App
+appVersionCode = "267"
+appVersionName = "2.0.1"
+
 # Build tooling
-agp = "9.1.0"
+agp = "9.1.1"
 googleServices = "4.4.4"
 
 # SDK
@@ -8,12 +12,11 @@ sdkMin = "28"
 sdkTarget = "36"
 sdkCompile = "36"
 
-# App
-appVersionCode = "267"
-appVersionName = "2.0.1"
+# NDK
+ndkVersion = "29.0.14206865"
 
 # AndroidX
-androidxAnnotation = "1.9.1"
+androidxAnnotation = "1.10.0"
 androidxAppcompat = "1.7.1"
 androidxConstraintlayout = "2.2.1"
 androidxCore = "1.18.0"
@@ -38,7 +41,7 @@ googlePlayAssetDelivery = "2.3.0"
 googlePlayAppUpdate = "2.1.0"
 googlePlayServicesAuth = "21.5.1"
 googlePlayServicesBase = "18.10.0"
-googlePlayServicesCast = "22.3.0"
+googlePlayServicesCast = "22.3.1"
 googleMlkitTranslate = "17.0.3"
 
 # Google APIs
@@ -49,19 +52,19 @@ googleApiServicesDrive = "v3-rev197-1.25.0"
 # Firebase / Transport
 firebaseEncodersJson = "18.0.1"
 firebaseEncoders = "17.0.0"
-transportApi = "4.1.0"
-transportBackendCct = "4.1.0"
-transportRuntime = "4.1.0"
+transportApi = "4.1.1"
+transportBackendCct = "4.1.1"
+transportRuntime = "4.1.1"
 
 # Guava
-guava = "33.5.0-android"
+guava = "33.6.0-android"
 
 # Networking
 jsch = "2.28.0"
 smbj = "0.14.0"
 
 # Bouncycastle
-bouncycastle = "1.83"
+bouncycastle = "1.84"
 
 # VLC
 libvlc = "3.7.0"
