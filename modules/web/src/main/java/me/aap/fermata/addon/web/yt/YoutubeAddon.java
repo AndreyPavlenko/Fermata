@@ -110,6 +110,8 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 				o.visibility = visibility;
 			});
 		}
+
+		YoutubeSponsorBlock.contributeSettings(getPreferenceStore(), set, visibility);
 	}
 
 	@Override

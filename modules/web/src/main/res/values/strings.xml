@@ -16,4 +16,18 @@
     <string name="open_on_start">Open on start</string>
     <string name="auto_highest_video_quality">Auto-select highest video quality</string>
     <string name="try_to_skip_ad">Try to skip advertising</string>
+    <string name="sponsorblock" translatable="false">SponsorBlock</string>
+    <string name="sponsorblock_sub">Skip crowd-sourced segments while watching YouTube.</string>
+    <string name="sponsorblock_enable">Enable SponsorBlock</string>
+    <string name="sponsorblock_enable_sub">Fetches segment data from sponsor.ajay.app for the current video.</string>
+    <string name="sponsorblock_cat_sponsor">Sponsor segments</string>
+    <string name="sponsorblock_cat_selfpromo">Self-promotion</string>
+    <string name="sponsorblock_cat_interaction">Interaction reminders</string>
+    <string name="sponsorblock_cat_intro">Intros and intermissions</string>
+    <string name="sponsorblock_cat_outro">Endcards and credits</string>
+    <string name="sponsorblock_cat_preview">Preview and recap</string>
+    <string name="sponsorblock_cat_hook">Hooks</string>
+    <string name="sponsorblock_cat_music_offtopic">Non-music sections</string>
+    <string name="sponsorblock_cat_filler">Filler</string>
+    <string name="sponsorblock_cat_filler_sub">Aggressive category; disabled by default.</string>
 </resources>
