@@ -57,7 +57,7 @@ allprojects {
 subprojects {
     def isDynFeature = false
 
-    if ('fermata' == name) {
+    if ('fermata'.equals(name)) {
         apply plugin: 'com.android.application'
     } else if (gradle.ext.modules.contains(':' + name)) {
         isDynFeature = true
@@ -68,7 +68,7 @@ subprojects {
 
     android {
         compileSdk SDK_COMPILE_VERSION
-        ndkVersion = '29.0.14206865'
+        ndkVersion = libs.versions.ndkVersion.get()
 
         defaultConfig {
             minSdkVersion SDK_MIN_VERSION
