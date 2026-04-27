@@ -49,6 +49,7 @@
     <item name="nav_select" type="id" />
     <item name="nav_select_all" type="id" />
     <item name="nav_unselect_all" type="id" />
+    <item name="nav_search" type="id" />
 
     <item name="folders_add" type="id" />
     <item name="folders_remove" type="id" />

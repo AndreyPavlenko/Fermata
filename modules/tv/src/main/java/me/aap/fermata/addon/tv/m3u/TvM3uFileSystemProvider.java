@@ -176,7 +176,10 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		sub.addIntPref(o -> {
 			o.store = ps;
 			o.pref = RESP_TIMEOUT;
+			o.seekMin = 10;
+			o.seekMax = 300;
 			o.title = me.aap.fermata.R.string.m3u_playlist_timeout;
+			o.subtitle = R.string.response_timeout_hint;
 		});
 
 		return requestPrefs(a, prefs, ps);
@@ -214,7 +217,10 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		f.setLogoUrl(ps.getStringPref(LOGO_URL));
 		f.setPreferEpgLogo(ps.getBooleanPref(LOGO_PREFER_EPG));
 		f.setEpgMaxAge(EPG_FILE_AGE);
-		f.setResponseTimeout(ps.getIntPref(RESP_TIMEOUT));
+		int timeout = ps.getIntPref(RESP_TIMEOUT);
+		// Be forgiving by default for large IPTV playlists; users can still override.
+		if (timeout < 10) timeout = 30;
+		f.setResponseTimeout(timeout);
 	}
 
 	public static void removeSource(TvM3uFile f) {
