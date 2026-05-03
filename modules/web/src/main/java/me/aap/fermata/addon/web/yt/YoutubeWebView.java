@@ -74,7 +74,7 @@ public class YoutubeWebView extends FermataWebView {
 			else clearHighestVideoQuality();
 		}
 
-		if (YoutubeSponsorBlock.isPreferenceChanged(prefs)) configureSponsorBlock();
+		if (YoutubeSponsorBlock.isPreferenceChanged(prefs)) injectSponsorBlock();
 	}
 
 	@Override
@@ -135,8 +135,9 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void injectSponsorBlock() {
-		String script = YoutubeSponsorBlock.getScript(getContext());
+		String script = YoutubeSponsorBlock.getScript(getContext(), getAddon().getPreferenceStore());
 		if (!script.isEmpty()) evaluateJavascript(script, result -> configureSponsorBlock());
+		else configureSponsorBlock();
 	}
 
 	private void configureSponsorBlock() {

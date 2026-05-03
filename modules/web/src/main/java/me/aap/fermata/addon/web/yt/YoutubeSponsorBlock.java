@@ -80,7 +80,9 @@ final class YoutubeSponsorBlock {
 				getCategoriesJson(ps) + ",\"actionTypes\":[\"skip\"]}";
 	}
 
-	static String getScript(Context ctx) {
+	static String getScript(Context ctx, PreferenceStore ps) {
+		if (!ps.getBooleanPref(ENABLED)) return "";
+
 		String s = script;
 		if (s != null) return s;
 

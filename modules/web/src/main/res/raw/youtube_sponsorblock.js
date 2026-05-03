@@ -154,16 +154,15 @@
 
       if (response.status === 404) {
         state.segments = [];
+        state.loadedKey = key;
       } else if (response.ok) {
         state.segments = normalizeSegments(segmentsForVideo(await response.json(), videoId));
+        state.loadedKey = key;
       } else {
         console.debug('SponsorBlock request failed', response.status);
       }
-
-      state.loadedKey = key;
     } catch (err) {
       console.debug('SponsorBlock unavailable', err);
-      state.loadedKey = key;
     } finally {
       if (state.pendingKey === key) state.pendingKey = null;
     }
