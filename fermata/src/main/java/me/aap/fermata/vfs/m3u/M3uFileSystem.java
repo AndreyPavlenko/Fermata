@@ -6,6 +6,7 @@ import static me.aap.utils.async.Completed.completedNull;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
@@ -82,7 +83,7 @@ public class M3uFileSystem implements VirtualFileSystem {
 			return completedNull();
 		}
 
-		Log.d("Loading M3U file: url=", url);
+		Log.d("Loading M3U file: url=", redactUrl(url));
 
 		if (url.startsWith("/") || url.startsWith("content://")) {
 			p.complete(file);
@@ -99,12 +100,29 @@ public class M3uFileSystem implements VirtualFileSystem {
 				Log.i("M3U download completed: ", cacheFile, " (", cacheFile.length(), " bytes)");
 				p.complete(file);
 			} else {
-				Log.e(err, "M3U download failed: ", url);
+				Log.e(err, "M3U download failed: ", redactUrl(url));
 				p.completeExceptionally(err);
 			}
 		});
 
 		return p;
+	}
+
+	private static String redactUrl(String url) {
+		try {
+			Uri uri = Uri.parse(url);
+			String scheme = uri.getScheme();
+			String host = uri.getHost();
+
+			if ((scheme == null) || (host == null)) return "<redacted>";
+
+			StringBuilder safe = new StringBuilder(scheme).append("://").append(host);
+			int port = uri.getPort();
+			if (port != -1) safe.append(':').append(port);
+			return safe.append("/...").toString();
+		} catch (Exception ex) {
+			return "<redacted>";
+		}
 	}
 
 	public static final class Provider implements VirtualFileSystem.Provider {

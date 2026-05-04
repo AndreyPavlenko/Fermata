@@ -292,6 +292,9 @@
     <string name="m3u_playlist_location_hint">File or http(s) URL</string>
     <string name="m3u_playlist_agent" translatable="false">User-Agent</string>
     <string name="m3u_playlist_timeout" translatable="false">Response timeout</string>
+    <string name="m3u_invalid_content">Playlist content is not valid M3U. Server may have returned an error. Check the URL/credentials and tap Refresh.</string>
+    <string name="m3u_loading_playlist">Loading playlist %1$s (%2$d MB). This may take a moment...</string>
+    <string name="m3u_loaded_playlist">Loaded %1$s: %2$d channels in %3$d groups (%4$d s)</string>
     <string name="m3u_playlist_video">Video playlist</string>
 
     <string name="eq_manual">Manual</string>

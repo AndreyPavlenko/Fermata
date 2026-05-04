@@ -1,19 +1,18 @@
 package me.aap.fermata.media.lib;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static me.aap.utils.async.Completed.completed;
 import static me.aap.utils.async.Completed.completedNull;
 import static me.aap.utils.text.TextUtils.indexOfChar;
 
-import android.content.Context;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -73,47 +72,22 @@ public class M3uItem extends BrowsableItemBase {
 		String id = getId();
 		VirtualFile m3uFile = (VirtualFile) getResource();
 		File localFile = m3uFile.getLocalFile();
+		long fileSize = ((localFile != null) && localFile.isFile()) ? localFile.length() : -1;
 
-		// Check if the local file exists and has content
-		if (localFile == null || !localFile.exists()) {
-			Log.e("M3U file does not exist: ", m3uFile);
-			return new Data(m3uFile.getName(), "", emptyList(), emptyMap(), null);
-		}
-		if (localFile.length() == 0) {
-			Log.e("M3U file is empty: ", localFile);
+		if (fileSize == 0) {
+			Log.e("M3U file is empty: ", m3uFile.getName());
 			return new Data(m3uFile.getName(), "", emptyList(), emptyMap(), null);
 		}
 
-		long fileSize = localFile.length();
-		Log.i("Parsing M3U file: ", localFile, " (", fileSize, " bytes)");
-
-		// Sanity check: peek at the first few hundred bytes so we can tell from logcat whether
-		// the downloaded content is actually an M3U playlist or e.g. an HTML error page from
-		// the Xtream server (wrong credentials, server returning JSON, etc.).
-		try (java.io.InputStream peek = new java.io.FileInputStream(localFile)) {
-			byte[] head = new byte[Math.min(256, (int) Math.min(fileSize, 256))];
-			int n = peek.read(head);
-			if (n > 0) {
-				String headStr = new String(head, 0, n, "UTF-8")
-						.replace('\n', ' ').replace('\r', ' ');
-				Log.i("M3U file head (", n, " bytes): ", headStr);
-				if (!headStr.trim().startsWith("#EXTM3U") && !headStr.trim().startsWith("#EXTINF")) {
-					Log.e("File does not look like an M3U playlist! First bytes: ", headStr);
-					showToast("Playlist content is not valid M3U. Server may have returned an error. "
-							+ "Check the URL/credentials and tap Refresh.");
-				}
-			}
-		} catch (Exception ex) {
-			Log.e(ex, "Failed to peek M3U head: ", localFile);
-		}
+		Log.i("Parsing M3U file: ", m3uFile.getName(), (fileSize > 0) ? " (" + fileSize + " bytes)" : "");
+		peekM3uHead(m3uFile);
 
 		// Notify the user when starting a large playlist (>5 MB ~= roughly 20K+ entries)
 		// so they know the upcoming wait is expected.
 		boolean largePlaylist = fileSize > 5L * 1024 * 1024;
 		long parseStart = System.currentTimeMillis();
 		if (largePlaylist) {
-			showToast("Loading playlist " + m3uFile.getName() + " (" + (fileSize / (1024 * 1024))
-					+ " MB) — this may take a moment\u2026");
+			showToast(R.string.m3u_loading_playlist, m3uFile.getName(), fileSize / (1024 * 1024));
 		}
 
 		VirtualFolder dir = m3uFile.getParent().peek();
@@ -125,8 +99,7 @@ public class M3uItem extends BrowsableItemBase {
 		int skippedNoName = 0;
 		int skippedNoFile = 0;
 		int totalLines = 0;
-		// Pool to deduplicate repeating short strings (group names, catchup-source, tvg-id, etc.).
-		// Drastically cuts heap usage on large Xtream playlists where these fields repeat heavily.
+		// Keep this playlist-scoped so pooled values can be collected after the playlist is reloaded.
 		Map<String, String> stringPool = new HashMap<>(4096);
 
 		String m3uName = null;
@@ -240,28 +213,28 @@ public class M3uItem extends BrowsableItemBase {
 								logo = trim(l.substring(start, i));
 								break;
 							case "tvg-id":
-								tvgId = intern(trim(l.substring(start, i)), stringPool);
+								tvgId = dedupe(trim(l.substring(start, i)), stringPool);
 								break;
 							case "tvg-name":
 								tvgName = trim(l.substring(start, i));
 								break;
 							case "group-title":
-								group = intern(trim(l.substring(start, i)), stringPool);
+								group = dedupe(trim(l.substring(start, i)), stringPool);
 								break;
 							case "catchup":
-								trackCatchup = intern(trim(l.substring(start, i)), stringPool);
+								trackCatchup = dedupe(trim(l.substring(start, i)), stringPool);
 								break;
 							case "tvg-rec":
 							case "catchup-days":
-								trackCatchupDays = intern(trim(l.substring(start, i)), stringPool);
+								trackCatchupDays = dedupe(trim(l.substring(start, i)), stringPool);
 								break;
 							case "catchup-source":
-								trackCatchupSource = intern(trim(l.substring(start, i)), stringPool);
+								trackCatchupSource = dedupe(trim(l.substring(start, i)), stringPool);
 								break;
 						}
 					}
 				} else if (l.startsWith("#EXTGRP:")) {
-					group = intern(trim(l.substring(8)), stringPool);
+					group = dedupe(trim(l.substring(8)), stringPool);
 					continue;
 				} else if (l.startsWith("#PLAYLIST:")) {
 					m3uName = trim(l.substring(10));
@@ -296,9 +269,7 @@ public class M3uItem extends BrowsableItemBase {
 				} else if ((name == null) || l.startsWith("#")) {
 					if (name == null && !l.startsWith("#") && !l.isEmpty()) {
 						skippedNoName++;
-						if (skippedNoName <= 3) {
-							Log.d("Skipped line (no name), URL: '", l, "'");
-						}
+						if (skippedNoName <= 3) Log.d("Skipped playlist entry with no name");
 					}
 					continue;
 				}
@@ -307,7 +278,7 @@ public class M3uItem extends BrowsableItemBase {
 				VirtualResource file = vfs.resolve(l, dir).get(null);
 
 				if (totalLines <= 3) {
-					Log.d("Resolving URL #", totalLines, ": '", l, "' -> ", (file != null ? "OK" : "NULL"));
+					Log.d("Resolved playlist URL #", totalLines, ": ", (file != null ? "OK" : "NULL"));
 				} else if ((totalLines % 25000) == 0) {
 					Log.i("M3U parse progress: ", totalLines, " entries (",
 							groups.size(), " groups, ", tracks.size(), " ungrouped tracks)");
@@ -351,9 +322,7 @@ public class M3uItem extends BrowsableItemBase {
 					});
 				} else {
 					skippedNoFile++;
-					if (skippedNoFile <= 3) {
-						Log.d("Skipped URL (resolve failed): '", l, "'");
-					}
+					if (skippedNoFile <= 3) Log.d("Skipped playlist URL (resolve failed)");
 				}
 
 				name = group = album = artist = genre = logo = tvgId = tvgName = null;
@@ -384,8 +353,8 @@ public class M3uItem extends BrowsableItemBase {
 				", elapsedMs=", elapsed);
 
 		if (largePlaylist) {
-			showToast("Loaded " + m3uFile.getName() + ": " + totalTracks + " channels in "
-					+ ngroups + " groups (" + (elapsed / 1000) + "s)");
+			showToast(R.string.m3u_loaded_playlist, m3uFile.getName(), totalTracks, ngroups,
+					elapsed / 1000);
 		}
 
 		List<Item> children = new ArrayList<>(ngroups + ntracks);
@@ -638,7 +607,7 @@ public class M3uItem extends BrowsableItemBase {
 			}
 		}
 
-		return new InputStreamReader(in, (cs == null) ? "UTF-8" : cs);
+		return new InputStreamReader(in, (cs == null) ? UTF_8 : java.nio.charset.Charset.forName(cs));
 	}
 
 	protected void setTvgUrl(String url) {
@@ -652,13 +621,26 @@ public class M3uItem extends BrowsableItemBase {
 		return (s == null) || (s = s.trim()).isEmpty() ? null : s;
 	}
 
-	/**
-	 * Deduplicate the given string against the supplied pool. Returns either the existing
-	 * pool entry equal to {@code s} or {@code s} itself (also storing it in the pool).
-	 * Used to drastically reduce memory usage for repeating fields in large playlists
-	 * (e.g. group-title, catchup-source, tvg-id namespaces).
-	 */
-	private static String intern(String s, Map<String, String> pool) {
+	private void peekM3uHead(VirtualFile file) {
+		try (Reader reader = createReader(file)) {
+			char[] head = new char[256];
+			int n = reader.read(head);
+
+			if (n > 0) {
+				String firstBytes = new String(head, 0, n).trim();
+
+				if (!firstBytes.startsWith("#EXTM3U") && !firstBytes.startsWith("#EXTINF")) {
+					Log.e("M3U content does not look like a playlist: ", file.getName(),
+							" (", n, " bytes checked)");
+					showToast(R.string.m3u_invalid_content);
+				}
+			}
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to check M3U content: ", file.getName());
+		}
+	}
+
+	private static String dedupe(String s, Map<String, String> pool) {
 		if (s == null) return null;
 		String existing = pool.get(s);
 		if (existing != null) return existing;
@@ -666,9 +648,9 @@ public class M3uItem extends BrowsableItemBase {
 		return s;
 	}
 
-	private static void showToast(CharSequence msg) {
+	private static void showToast(@StringRes int resId, Object... args) {
 		var app = App.get();
-		app.run(()-> Toast.makeText(app, msg, Toast.LENGTH_LONG).show());
+		app.run(() -> Toast.makeText(app, app.getString(resId, args), Toast.LENGTH_LONG).show());
 	}
 
 	protected static final class Data {

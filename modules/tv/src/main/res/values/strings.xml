@@ -22,7 +22,7 @@
     <string name="catchup_type_flussonic" translatable="false">Flussonic</string>
     <string name="catchup_days">Number of days</string>
     <string name="connection_settings">Connection settings</string>
-    <string name="response_timeout_hint">Increase for large playlists (e.g. 60\u2013120 s)</string>
+    <string name="response_timeout_hint">0 disables timeout. Increase for large playlists (e.g. 60\u2013120 s)</string>
     <string name="tv_search_title">Search channels</string>
     <string name="tv_search_no_results">No channels match \"%1$s\"</string>
 

@@ -10,6 +10,7 @@ import android.view.animation.AnimationUtils;
 import androidx.annotation.NonNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 import me.aap.fermata.addon.AddonManager;
@@ -160,7 +161,7 @@ public class TvFragment extends MediaLibFragment {
 		BrowsableItem parent = getAdapter().getParent();
 		if (parent == null) return;
 
-		UiUtils.queryText(getContext(), me.aap.fermata.R.string.search,
+		UiUtils.queryText(getContext(), R.string.tv_search_title,
 						me.aap.fermata.R.drawable.search)
 				.onSuccess(query -> {
 					if ((query == null) || query.trim().isEmpty()) return;
@@ -174,7 +175,7 @@ public class TvFragment extends MediaLibFragment {
 						return ((cur == null) || !items.contains(cur)) ? searchParent : cur.getParent();
 					};
 
-					SearchFolder.search(q, ps).main(a.getHandler()).onSuccess(f -> {
+					SearchFolder.search(q, getString(R.string.tv_search_title), ps).main(a.getHandler()).onSuccess(f -> {
 						if (f == null) return;
 						List<PlayableItem> items = f.getItemsFound();
 						if (items.isEmpty()) {
