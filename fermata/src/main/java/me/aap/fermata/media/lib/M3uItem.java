@@ -667,17 +667,8 @@ public class M3uItem extends BrowsableItemBase {
 	}
 
 	private static void showToast(CharSequence msg) {
-		try {
-			Context ctx = App.get();
-			if (Looper.myLooper() == Looper.getMainLooper()) {
-				Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show();
-			} else {
-				new Handler(Looper.getMainLooper())
-						.post(() -> Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show());
-			}
-		} catch (Throwable ex) {
-			Log.d(ex, "Failed to show toast: ", msg);
-		}
+		var app = App.get();
+		app.run(()-> Toast.makeText(app, msg, Toast.LENGTH_LONG).show());
 	}
 
 	protected static final class Data {
