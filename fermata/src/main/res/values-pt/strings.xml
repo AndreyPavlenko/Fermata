@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">Reproduzir/Pause</string>
     <string name="action_prev">Reproduzir anterior</string>
     <string name="action_next">Reproduzir próximo</string>
+    <string name="action_prev_folder">Reproduzir a pasta anterior</string>
+    <string name="action_next_folder">Tocar a próxima pasta</string>
     <string name="action_rw">Retroceder</string>
     <string name="action_ff">Avançar Rápido</string>
     <string name="action_vol_up">Aumentar Volume</string>
@@ -379,4 +386,5 @@
     <string name="err_failed_install_module">Falha ao instalar o módulo: %1$s</string>
     <string name="err_failed_to_download">Falha na transferência %1$s</string>
     <string name="err_no_audio_record_perm">Não é concedida autorização para gravação áudio</string>
+    <string name="err_failed_start_service">Não iniciou o serviço: %s</string>
 </resources>

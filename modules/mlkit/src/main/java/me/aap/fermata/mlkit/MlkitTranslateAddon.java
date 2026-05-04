@@ -1,16 +1,19 @@
 package me.aap.fermata.mlkit;
 
+import android.content.Context;
 import android.os.Build;
 import android.util.Pair;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.mlkit.common.MlKit;
 import com.google.mlkit.nl.translate.TranslateLanguage;
 import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.TranslatorOptions;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -22,6 +25,7 @@ import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.collection.CollectionUtils;
+import me.aap.utils.pref.PreferenceStore;
 
 @Keep
 @SuppressWarnings("unused")
@@ -54,12 +58,11 @@ public class MlkitTranslateAddon extends TranslateAddon {
 	}
 
 	@Override
-	public List<Pair<String, String>> getSupportedLanguages() {
-		var locale = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) ?
-				Locale.getDefault(Locale.Category.DISPLAY) : Locale.getDefault();
+	public List<Pair<String, String>> getSupportedLanguages(@Nullable String srcLang) {
+		var locale = Locale.getDefault(Locale.Category.DISPLAY);
 		var langs = CollectionUtils.map(TranslateLanguage.getAllLanguages(),
 				lang -> new Pair<>(lang, new Locale(lang).getDisplayLanguage(locale)));
-		Collections.sort(langs, (a, b) -> a.second.compareToIgnoreCase(b.second));
+		langs.sort((a, b) -> a.second.compareToIgnoreCase(b.second));
 		return langs;
 	}
 
@@ -73,6 +76,10 @@ public class MlkitTranslateAddon extends TranslateAddon {
 					.addOnCanceledListener(p::cancel)
 					.addOnFailureListener(p::completeExceptionally);
 			return p;
+		}
+
+		public boolean supportsBatch() {
+			return true;
 		}
 	}
 }

@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">인터페이스</string>
     <string name="interface_prefs_aa">안드로이드 오토</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">재생/일시정지</string>
     <string name="action_prev">이전재생</string>
     <string name="action_next">다음재생</string>
+    <string name="action_prev_folder">이전 폴더 재생하기</string>
+    <string name="action_next_folder">다음 폴더 재생</string>
     <string name="action_rw">되감기</string>
     <string name="action_ff">빨리감기</string>
     <string name="action_vol_up">음향 키우기</string>
@@ -380,4 +387,5 @@
     <string name="err_failed_install_module">모듈설치에 실패했습니다: %1$s</string>
     <string name="err_failed_to_download">다운로드에 실패했습니다 %1$s</string>
     <string name="err_no_audio_record_perm">음성녹음 권한이 부여되지 않았습니다</string>
+    <string name="err_failed_start_service">서비스 시작 실패: %s</string>
 </resources>

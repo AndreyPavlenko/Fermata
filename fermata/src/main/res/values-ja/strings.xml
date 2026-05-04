@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">インターフェース</string>
     <string name="interface_prefs_aa">Android Autoの設定</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">再生/一時停止</string>
     <string name="action_prev">前を再生</string>
     <string name="action_next">次を再生</string>
+    <string name="action_prev_folder">前のフォルダを再生</string>
+    <string name="action_next_folder">次のフォルダを再生</string>
     <string name="action_rw">巻き戻し</string>
     <string name="action_ff">早送り</string>
     <string name="action_vol_up">ボリュームアップ</string>
@@ -380,4 +387,5 @@
     <string name="err_failed_install_module">モジュールのインストールに失敗しました: %1$s</string>
     <string name="err_failed_to_download">ダウンロードに失敗しました %1$s</string>
     <string name="err_no_audio_record_perm">音声録音の許可が与えられていません</string>
+    <string name="err_failed_start_service">サービス開始失敗:%s</string>
 </resources>

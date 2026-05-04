@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">Benutzeroberfläche</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">Spielpause</string>
     <string name="action_prev">Vorheriges abspielen</string>
     <string name="action_next">Als nächstes spielen</string>
+    <string name="action_prev_folder">Vorherigen Ordner abspielen</string>
+    <string name="action_next_folder">Nächsten Ordner abspielen</string>
     <string name="action_rw">Zurückspulen</string>
     <string name="action_ff">Schneller Vorlauf</string>
     <string name="action_vol_up">Lautstärke erhöhen</string>
@@ -380,4 +387,5 @@
     <string name="err_failed_install_module">Modul konnte nicht installiert werden: %1$s</string>
     <string name="err_failed_to_download">Download fehlgeschlagen %1$s</string>
     <string name="err_no_audio_record_perm">Eine Genehmigung für Audioaufnahmen wurde nicht erteilt.</string>
+    <string name="err_failed_start_service">Dienst konnte nicht gestartet werden: %s</string>
 </resources>

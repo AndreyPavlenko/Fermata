@@ -67,6 +67,10 @@ public class Utils {
 		return (mime != null) && mime.startsWith("video/");
 	}
 
+	public static HttpFileDownloader createDownloader(String url) {
+		return createDownloader(App.get(), url);
+	}
+
 	public static HttpFileDownloader createDownloader(Context ctx, String url) {
 		HttpFileDownloader d = new HttpFileDownloader();
 		HttpDownloadStatusListener l = new HttpDownloadStatusListener(ctx);

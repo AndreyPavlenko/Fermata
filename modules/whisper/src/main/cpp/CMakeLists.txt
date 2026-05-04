@@ -31,15 +31,12 @@ if (CMAKE_ANDROID_ARCH_ABI MATCHES "arm64")
             GIT_TAG v1.3.275
     )
     FetchContent_Declare(spirv_headers GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers
-            GIT_TAG vulkan-sdk-1.3.275.0
+            GIT_TAG main
     )
-    FetchContent_MakeAvailable(vk_hpp)
-    FetchContent_MakeAvailable(spirv_headers)
-    set(VULKAN_HEADERS_INCLUDE_DIR "${vk_hpp_SOURCE_DIR}/Vulkan-Headers/include")
-    set(SPIRV_HEADERS_INCLUDE_DIR "${spirv_headers_SOURCE_DIR}/include")
-    include_directories(${vk_hpp_SOURCE_DIR} ${VULKAN_HEADERS_INCLUDE_DIR} ${SPIRV_HEADERS_INCLUDE_DIR})
-    set(Vulkan_INCLUDE_DIR "${VULKAN_HEADERS_INCLUDE_DIR}")
-    set(Vulkan_INCLUDE_DIRS "${VULKAN_HEADERS_INCLUDE_DIR}")
+    FetchContent_MakeAvailable(vk_hpp spirv_headers)
+    include_directories(${vk_hpp_SOURCE_DIR})
+    include_directories(${spirv_headers_SOURCE_DIR}/include)
+    set(Vulkan_INCLUDE_DIR "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include")
     set(Vulkan_GLSLC_EXECUTABLE "${ANDROID_NDK}/shader-tools/linux-x86_64/glslc")
     find_library(Vulkan_LIBRARY vulkan)
 endif ()

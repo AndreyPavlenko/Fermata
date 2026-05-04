@@ -1,7 +1,5 @@
 package me.aap.fermata.whisper;
 
-import static me.aap.utils.ui.UiUtils.showInfo;
-
 import android.content.Context;
 import android.os.Build;
 import android.util.Pair;
@@ -10,6 +8,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -72,14 +71,6 @@ public class WhisperAddon extends SubGenAddon {
 			o.title = me.aap.fermata.R.string.sub_gen_use_gpu;
 			o.visibility = visibility.copy();
 		});
-		set.addButton(o -> {
-			o.title = me.aap.fermata.R.string.sub_gen_cleanup;
-			o.onClick = () -> {
-				var deleted = Whisper.cleanUp(ctx, ps);
-				showInfo(ctx, ctx.getString(me.aap.fermata.R.string.sub_gen_cleanup_done, deleted));
-			};
-			o.visibility = visibility.copy();
-		});
 	}
 
 	@Override
@@ -93,16 +84,19 @@ public class WhisperAddon extends SubGenAddon {
 				"sk", "sl", "sn", "so", "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl",
 				"tr", "tt", "uk", "ur", "uz", "vi", "yi", "yo", "zh", "yue"
 		};
-		var locale = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) ?
-				Locale.getDefault(Locale.Category.DISPLAY) : Locale.getDefault();
+		var locale = Locale.getDefault(Locale.Category.DISPLAY);
 		var values = new ArrayList<Pair<String, String>>(supported.length + 1);
 		values.add(
 				new Pair<>("auto", FermataApplication.get().getString(me.aap.fermata.R.string.auto)));
 		for (String lang : supported) {
 			values.add(new Pair<>(lang, new Locale(lang).getDisplayLanguage(locale)));
 		}
-		Collections.sort(values.subList(1, values.size()),
-				(a, b) -> a.second.compareToIgnoreCase(b.second));
+		values.subList(1, values.size()).sort((a, b) -> a.second.compareToIgnoreCase(b.second));
 		return values;
+	}
+
+	@Override
+	public Collection<String> doCleanUp(Context ctx, PreferenceStore ps) {
+		return Whisper.cleanUp(ctx, ps);
 	}
 }

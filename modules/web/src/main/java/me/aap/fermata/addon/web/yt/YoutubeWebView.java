@@ -71,9 +71,13 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	public void onPreferenceChanged(PreferenceStore store, List<PreferenceStore.Pref<?>> prefs) {
 		super.onPreferenceChanged(store, prefs);
-		if (!getAddon().autoHighestQualityChanged(prefs)) return;
-		if (getAddon().autoHighestQuality()) setHighestVideoQuality();
-		else clearHighestVideoQuality();
+
+		if (getAddon().autoHighestQualityChanged(prefs)) {
+			if (getAddon().autoHighestQuality()) setHighestVideoQuality();
+			else clearHighestVideoQuality();
+		}
+
+		if (YoutubeSponsorBlock.isPreferenceChanged(prefs)) injectSponsorBlock();
 	}
 
 	@Override
@@ -99,6 +103,7 @@ public class YoutubeWebView extends FermataWebView {
 	@Override
 	protected void pageLoaded(String uri) {
 		attachListeners();
+		injectSponsorBlock();
 		addFocusHighlight();
 		CookieManager.getInstance().flush();
 	}
@@ -137,6 +142,17 @@ public class YoutubeWebView extends FermataWebView {
 				"   setTimeout(findVideo, 1000);\n" +
 				"}\n" +
 				"findVideo();");
+	}
+
+	private void injectSponsorBlock() {
+		String script = YoutubeSponsorBlock.getScript(getContext(), getAddon().getPreferenceStore());
+		if (!script.isEmpty()) evaluateJavascript(script, result -> configureSponsorBlock());
+		else configureSponsorBlock();
+	}
+
+	private void configureSponsorBlock() {
+		evaluateJavascript("if (window.FermataSponsorBlock) window.FermataSponsorBlock.configure(" +
+				YoutubeSponsorBlock.getConfigJson(getAddon().getPreferenceStore()) + ");", null);
 	}
 
 	protected boolean requestFullScreen() {

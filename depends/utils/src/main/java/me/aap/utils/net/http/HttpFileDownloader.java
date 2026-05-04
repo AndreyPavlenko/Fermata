@@ -15,11 +15,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
+import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.LongSupplier;
 import me.aap.utils.function.Supplier;
@@ -35,13 +38,15 @@ import me.aap.utils.vfs.VirtualFile;
  * @author Andrey Pavlenko
  */
 public class HttpFileDownloader {
+	private static final Map<String, FutureSupplier<Status>> cache = new ConcurrentHashMap<>();
 	public static final Pref<Supplier<String>> AGENT = Pref.s("AGENT", USER_AGENT::getDefaultValue);
 	public static final Pref<Supplier<String>> ETAG = Pref.s("ETAG");
 	public static final Pref<Supplier<String>> CHARSET = Pref.s("CHARSET", "UTF-8");
 	public static final Pref<Supplier<String>> ENCODING = Pref.s("ENCODING");
-	public static final Pref<IntSupplier> RESP_TIMEOUT = Pref.i("RESP_TIMEOUT", 10);
+	public static final Pref<IntSupplier> RESP_TIMEOUT = Pref.i("RESP_TIMEOUT", 30);
 	public static final Pref<LongSupplier> TIMESTAMP = Pref.l("TIMESTAMP", 0);
 	public static final Pref<IntSupplier> MAX_AGE = Pref.i("MAX_AGE", 0);
+	public static final Pref<BooleanSupplier> DECODE = Pref.b("DECODE", false);
 	private StatusListener statusListener;
 	private boolean returnExistingOnFail;
 
@@ -54,7 +59,9 @@ public class HttpFileDownloader {
 	}
 
 	public FutureSupplier<Status> download(String src, File dst) {
-		return download(src, dst, new BasicPreferenceStore());
+		var prefs = new BasicPreferenceStore();
+		prefs.applyBooleanPref(DECODE, true);
+		return download(src, dst, prefs);
 	}
 
 	public FutureSupplier<Status> download(String src, File dst, PreferenceStore prefs) {
@@ -96,6 +103,11 @@ public class HttpFileDownloader {
 				return failed(ex);
 			}
 		}
+
+		var key = src + ":->" + dst.getAbsolutePath();
+		var cached = cache.putIfAbsent(key, p);
+		if (cached != null) return cached;
+		p.thenRun(() -> cache.remove(key, p));
 
 		var o = new HttpConnection.Opts();
 		o.url = src;
@@ -139,39 +151,56 @@ public class HttpFileDownloader {
 					completeExceptionally(p, fail, status, listener);
 					//noinspection ResultOfMethodCallIgnored
 					incomplete.delete();
-				} else if (incomplete.renameTo(dst)) {
-					if (status.getContentEncoding() == null) {
-						try (var in = new FileInputStream(dst)) {
-							if ((in.read() == 0x1F) && (in.read() == 0x8B)) status.setEncoding("gzip");
-						} catch (IOException ex) {
-							Log.e(ex, "Failed to read file: ", dst);
-						}
-					}
-					try (PreferenceStore.Edit edit = prefs.editPreferenceStore()) {
-						edit.setStringPref(ETAG, status.getEtag());
-						edit.setStringPref(CHARSET, status.getCharacterEncoding());
-						edit.setStringPref(ENCODING, status.getContentEncoding());
-						edit.setLongPref(TIMESTAMP, System.currentTimeMillis());
-					}
+					return;
+				}
 
-					Log.d("Downloaded ", src, " to ", dst);
-					if (listener != null) listener.onSuccess(status);
-					p.complete(status);
-				} else {
-					completeExceptionally(p, new IOException("Failed to rename file " + incomplete + " to " + dst),
+				if (status.getContentEncoding() == null) {
+					try (var in = new FileInputStream(incomplete)) {
+						if ((in.read() == 0x1F) && (in.read() == 0x8B)) status.setEncoding("gzip");
+					} catch (IOException ex) {
+						Log.d(ex, "Failed to read file: ", dst);
+					}
+				}
+
+				if (prefs.getBooleanPref(DECODE) && (status.getContentEncoding() != null)) {
+					try (var in = status.getFileStream(incomplete, true);
+							 var out = new FileOutputStream(dst)) {
+						FileUtils.copy(in, out);
+						status.setEncoding(null);
+					} catch (IOException ex) {
+						completeExceptionally(p, ex, status, listener);
+						return;
+					} finally {
+						//noinspection ResultOfMethodCallIgnored
+						incomplete.delete();
+					}
+				} else if (!incomplete.renameTo(dst)) {
+					completeExceptionally(p,
+							new IOException("Failed to rename file " + incomplete + " to " + dst),
 							status, listener);
 					//noinspection ResultOfMethodCallIgnored
 					incomplete.delete();
+					return;
 				}
+
+				try (PreferenceStore.Edit edit = prefs.editPreferenceStore()) {
+					edit.setStringPref(ETAG, status.getEtag());
+					edit.setStringPref(CHARSET, status.getCharacterEncoding());
+					edit.setStringPref(ENCODING, status.getContentEncoding());
+					edit.setLongPref(TIMESTAMP, System.currentTimeMillis());
+				}
+
+				Log.d("Downloaded ", src, " to ", dst);
+				if (listener != null) listener.onSuccess(status);
+				p.complete(status);
 			});
 		});
 
 		return p;
 	}
 
-	private void completeExceptionally(Promise<Status> p, Throwable err, DownloadStatus status, StatusListener listener) {
-		Log.e("Failed to download ", status.getUrl(), " to ", status.getLocalFile());
-
+	private void completeExceptionally(Promise<Status> p, Throwable err, DownloadStatus status,
+																		 StatusListener listener) {
 		if (returnExistingOnFail && status.getLocalFile().isFile()) {
 			Log.e(err, "Failed to download: ", status.getUrl(), ". Returning existing file: ",
 					status.getLocalFile());
@@ -179,12 +208,14 @@ public class HttpFileDownloader {
 			if (listener != null) listener.onSuccess(status);
 			p.complete(status);
 		} else {
+			Log.e(err, "Failed to download ", status.getUrl(), " to ", status.getLocalFile());
 			if (listener != null) listener.onFailure(status);
 			p.completeExceptionally(err);
 		}
 	}
 
-	private FutureSupplier<?> writePayload(HttpResponse resp, File dst, DownloadStatus status, StatusListener listener) {
+	private FutureSupplier<?> writePayload(HttpResponse resp, File dst, DownloadStatus status,
+																				 StatusListener listener) {
 		try {
 			OutputStream out = new OutputStream() {
 				final OutputStream fos = new FileOutputStream(dst);
@@ -230,7 +261,11 @@ public class HttpFileDownloader {
 		long bytesDownloaded();
 
 		default InputStream getFileStream(boolean decode) throws IOException {
-			InputStream in = new FileInputStream(getLocalFile());
+			return getFileStream(getLocalFile(), decode);
+		}
+
+		default InputStream getFileStream(File file, boolean decode) throws IOException {
+			InputStream in = new FileInputStream(file);
 
 			if (decode) {
 				String enc = getContentEncoding();
@@ -321,7 +356,7 @@ public class HttpFileDownloader {
 		}
 
 		public void setEncoding(CharSequence encoding) {
-			if (encoding != null) this.encoding = encoding.toString();
+			this.encoding = (encoding != null) ? encoding.toString() : null;
 		}
 
 		@Override

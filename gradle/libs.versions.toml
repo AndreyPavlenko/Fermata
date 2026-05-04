@@ -43,6 +43,7 @@ googlePlayServicesAuth = "21.5.1"
 googlePlayServicesBase = "18.10.0"
 googlePlayServicesCast = "22.3.1"
 googleMlkitTranslate = "17.0.3"
+onnxruntimeAndroid = "1.25.1"
 
 # Google APIs
 googleHttpClientGson = "2.1.0"
@@ -115,6 +116,7 @@ googlePlayServicesAuth            = { group = "com.google.android.gms",         
 googlePlayServicesBase            = { group = "com.google.android.gms",             name = "play-services-base",            version.ref = "googlePlayServicesBase" }
 googlePlayServicesCast            = { group = "com.google.android.gms",             name = "play-services-cast-framework",  version.ref = "googlePlayServicesCast" }
 googleMlkitTranslate              = { group = "com.google.mlkit",                   name = "translate",                     version.ref = "googleMlkitTranslate" }
+onnxruntimeAndroid                = { group = "com.microsoft.onnxruntime",           name = "onnxruntime-android",            version.ref = "onnxruntimeAndroid" }
 
 # Google APIs
 googleHttpClientGson              = { group = "com.google.http-client",             name = "google-http-client-gson",       version.ref = "googleHttpClientGson" }

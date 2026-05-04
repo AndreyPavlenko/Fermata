@@ -34,6 +34,10 @@
     <string name="addon_name_whisper" translatable="false">Whisper</string>
     <string name="addon_name_mlkit" translatable="false">ML Kit</string>
     <string name="addon_name_mlkit_translate" translatable="false">ML Kit Translate</string>
+    <string name="addon_name_opusmt" translatable="false">OPUS-MT</string>
+    <string name="addon_name_opusmt_translate" translatable="false">OPUS-MT Translate</string>
+    <string name="addon_name_nllb" translatable="false">NLLB-200</string>
+    <string name="addon_name_nllb_translate" translatable="false">NLLB-200 Translate</string>
     <string name="addon_name_poi" translatable="false">POI</string>
 
     <string name="interface_prefs">Interface</string>
@@ -82,6 +86,8 @@
     <string name="action_play_pause">Play/Pause</string>
     <string name="action_prev">Play previous</string>
     <string name="action_next">Play next</string>
+    <string name="action_prev_folder">Play previous folder</string>
+    <string name="action_next_folder">Play next folder</string>
     <string name="action_rw">Rewind</string>
     <string name="action_ff">Fast forward</string>
     <string name="action_vol_up">Volume up</string>
