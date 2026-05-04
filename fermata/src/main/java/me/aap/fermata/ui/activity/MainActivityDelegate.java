@@ -4,7 +4,6 @@ import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.provider.Settings.System.SCREEN_BRIGHTNESS;
 import static android.util.Base64.URL_SAFE;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -50,7 +49,6 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.OperationCanceledException;
-import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -167,7 +165,8 @@ public class MainActivityDelegate extends ActivityDelegate
 	private FutureSupplier<?> contentLoading;
 	private boolean barsHidden;
 	private boolean videoMode;
-	private int brightness = 255;
+	private VideoView videoModeView;
+	private int videoBrightness = 255;
 	private SpeechListener speechListener;
 	private VoiceCommandHandler voiceCommandHandler;
 
@@ -594,32 +593,33 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public void setVideoMode(boolean videoMode, @Nullable VideoView v) {
-		if (videoMode == this.videoMode) return;
+		if (videoMode == this.videoMode) {
+			if (videoMode && (v != null)) videoModeView = v;
+			return;
+		}
 		ControlPanelView cp = getControlPanel();
 
 		if (videoMode) {
 			this.videoMode = true;
+			videoModeView = v;
 			setSystemUiVisibility();
 			keepScreenOn(true);
 			cp.enableVideoMode(v);
 		} else {
 			this.videoMode = false;
+			videoModeView = null;
 			setSystemUiVisibility();
 			keepScreenOn(false);
 			if (cp != null) cp.disableVideoMode();
 		}
 
-		if (!checkMirroringMode(false)) {
-			MainActivityPrefs p = getPrefs();
+		boolean mirroringMode = checkMirroringMode(false);
+		MainActivityPrefs p = getPrefs();
 
-			if (p.getChangeBrightnessPref()) {
-				if (videoMode) {
-					brightness = getBrightness();
-					setBrightness(p.getBrightnessPref());
-				} else {
-					setBrightness(brightness);
-				}
-			}
+		if (videoMode && p.getChangeBrightnessPref()) setBrightness(p.getBrightnessPref());
+		else setBrightness(255);
+
+		if (!mirroringMode) {
 			if (p.getLandscapeVideoPref()) {
 				if (videoMode) {
 					getAppActivity().setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
@@ -655,15 +655,15 @@ public class MainActivityDelegate extends ActivityDelegate
 	}
 
 	public int getBrightness() {
-		return Settings.System.getInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, 255);
+		return videoBrightness;
 	}
 
-	public void setBrightness(int br) {
-		try {
-			Settings.System.putInt(getContext().getContentResolver(), SCREEN_BRIGHTNESS, br);
-		} catch (SecurityException ex) {
-			Log.e(ex, "Failed to change brightness");
-		}
+	public void setBrightness(int brightness) {
+		videoBrightness = Math.max(0, Math.min(255, brightness));
+		VideoView videoView = videoModeView;
+		if (videoView == null) videoView = getMediaSessionCallback().getVideoView();
+		if ((videoView == null) && (body != null)) videoView = body.getVideoView();
+		if (videoView != null) videoView.setSoftwareBrightness(videoBrightness);
 	}
 
 	public boolean isVideoMode() {
@@ -1055,15 +1055,12 @@ public class MainActivityDelegate extends ActivityDelegate
 		} else if (MainActivityPrefs.hasFullscreenPref(this, prefs)) {
 			setSystemUiVisibility();
 		} else if (prefs.contains(CHANGE_BRIGHTNESS)) {
-			if (getPrefs().getChangeBrightnessPref()) {
-				if (!Settings.System.canWrite(getContext())) {
-					Intent i = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-					i.setData(Uri.parse("package:" + getContext().getPackageName()));
-					startActivity(i);
-				}
-			}
+			if (isVideoMode()) setBrightness(getPrefs().getChangeBrightnessPref() ?
+					getPrefs().getBrightnessPref() : 255);
 		} else if (prefs.contains(BRIGHTNESS)) {
-			if (isVideoMode()) setBrightness(getPrefs().getBrightnessPref());
+			if (isVideoMode() && getPrefs().getChangeBrightnessPref()) {
+				setBrightness(getPrefs().getBrightnessPref());
+			}
 		} else if (prefs.contains(VOICE_CONTROl_ENABLED)) {
 			if (!getPrefs().getVoiceControlEnabledPref()) {
 				getPrefs().applyBooleanPref(VOICE_CONTROl_FB, false);
