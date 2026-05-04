@@ -176,7 +176,7 @@ public class TvFragment extends MediaLibFragment {
 
 					SearchFolder.search(q, ps).main(a.getHandler()).onSuccess(f -> {
 						if (f == null) return;
-						java.util.List<PlayableItem> items = f.getItemsFound();
+						List<PlayableItem> items = f.getItemsFound();
 						if (items.isEmpty()) {
 							UiUtils.showInfo(getContext(),
 									getString(R.string.tv_search_no_results, q));
