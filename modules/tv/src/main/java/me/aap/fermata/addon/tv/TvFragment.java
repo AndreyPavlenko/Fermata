@@ -169,7 +169,7 @@ public class TvFragment extends MediaLibFragment {
 					if (searchParent == null) return;
 
 					FermataServiceUiBinder b = a.getMediaServiceBinder();
-					Function<java.util.List<PlayableItem>, BrowsableItem> ps = items -> {
+					Function<List<PlayableItem>, BrowsableItem> ps = items -> {
 						PlayableItem cur = b.getCurrentItem();
 						return ((cur == null) || !items.contains(cur)) ? searchParent : cur.getParent();
 					};
