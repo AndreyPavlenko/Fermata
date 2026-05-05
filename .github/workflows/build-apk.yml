@@ -33,6 +33,31 @@ jobs:
           echo "APP_VERSION=$app_version" >> $GITHUB_ENV
           echo "ANDROID_NDK_VERSION=$(version ndkVersion)-$git_hash" >> $GITHUB_ENV
 
+      - name: Prepare test build identifiers
+        env:
+          BRANCH_OWNER: ${{ github.event.pull_request.head.repo.owner.login || github.repository_owner }}
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          sanitize_package_segment() {
+            local value prefix
+            value="$1"
+            prefix="$2"
+            value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' |
+              sed -E 's/[^a-z0-9]+/_/g; s/^_+//; s/_+$//; s/_+/_/g')"
+            [ -n "$value" ] || value="test"
+            printf '%s%s' "$prefix" "$value"
+          }
+
+          owner_slug="$(sanitize_package_segment "$BRANCH_OWNER" o)"
+          branch_slug="$(sanitize_package_segment "$BRANCH_NAME" b)"
+          label_owner="${owner_slug#o}"
+          label_branch="${branch_slug#b}"
+          short_sha="$(git rev-parse --short HEAD)"
+
+          echo "APP_ID_SFX=.test.${owner_slug}.${branch_slug}" >> $GITHUB_ENV
+          echo "APP_NAME_SFX= (${label_owner}-${label_branch}@${short_sha})" >> $GITHUB_ENV
+          echo "ARTIFACT_SFX=-${owner_slug}-${branch_slug}" >> $GITHUB_ENV
+
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
@@ -72,15 +97,19 @@ jobs:
         run: |
           out=fermata/build/outputs/apk_from_bundle/autoRelease
           mkdir -p dist/arm64 dist/arm
-          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a --build-cache
+          echo "Using package suffix: $APP_ID_SFX"
+          echo "Using app name suffix: $APP_NAME_SFX"
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a \
+            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME_SFX="$APP_NAME_SFX" --build-cache
           mv $out/*.apk dist/arm64/
-          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a --build-cache
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a \
+            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME_SFX="$APP_NAME_SFX" --build-cache
           mv $out/*.apk dist/arm/
 
       - name: Upload arm64 APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-auto-${{ env.APP_VERSION }}-arm64
+          name: fermata-auto-test-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}-arm64
           path: dist/arm64/*.apk
           retention-days: 30
           if-no-files-found: error
@@ -88,7 +117,7 @@ jobs:
       - name: Upload arm APK
         uses: actions/upload-artifact@v4
         with:
-          name: fermata-auto-${{ env.APP_VERSION }}-arm
+          name: fermata-auto-test-${{ env.APP_VERSION }}${{ env.ARTIFACT_SFX }}-arm
           path: dist/arm/*.apk
           retention-days: 30
           if-no-files-found: error
