@@ -1,6 +1,7 @@
 -keepattributes LineNumberTable,SourceFile
 -keepnames class me.aap.utils.** { *; }
 
+-keep class ai.onnxruntime.** { *; }
 -keep class com.jcraft.jsch.** { *; }
 
 -keep class * extends com.google.api.client.json.GenericJson { *; }

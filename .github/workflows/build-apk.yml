@@ -1,0 +1,94 @@
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  build:
+    name: Build Fermata Auto APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Read versions from version catalog
+        run: |
+          ver_file=gradle/libs.versions.toml
+          version() { grep -Po "(?<=$1).+" $ver_file |  sed -e 's/[= "]//g'; }
+          app_version="$(version appVersionName)-$(git rev-parse --short HEAD)"
+          sed -ri "s/appVersionName.+/appVersionName = \"$app_version\"/" $ver_file
+          echo "APP_VERSION=$app_version" >> $GITHUB_ENV
+          echo "ANDROID_NDK_VERSION=$(version ndkVersion)-$git_hash" >> $GITHUB_ENV
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Android NDK
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/ndk/${{ env.ANDROID_NDK_VERSION }}
+          key: ${{ runner.os }}-android-ndk-${{ env.ANDROID_NDK_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Create keystore and local.properties
+        run: |
+          [ -z "${{ secrets.CI_KEYSTORE }}" ] && exit 0
+          echo "${{ secrets.CI_KEYSTORE }}" | base64 -d > keystore.jks
+
+          cat > local.properties <<EOF
+          storeFile=$(pwd)/keystore.jks
+          keyAlias=${{ secrets.CI_ALIAS }}
+          keyPassword=${{ secrets.CI_KEY_PWD }}
+          storePassword=${{ secrets.CI_KEYSTORE_PWD }}
+          EOF
+
+      - name: Build APKs
+        env:
+          NO_GS: true
+        run: |
+          out=fermata/build/outputs/apk_from_bundle/autoRelease
+          mkdir -p dist/arm64 dist/arm
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a --build-cache
+          mv $out/*.apk dist/arm64/
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a --build-cache
+          mv $out/*.apk dist/arm/
+
+      - name: Upload arm64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermata-auto-${{ env.APP_VERSION }}-arm64
+          path: dist/arm64/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload arm APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fermata-auto-${{ env.APP_VERSION }}-arm
+          path: dist/arm/*.apk
+          retention-days: 30
+          if-no-files-found: error

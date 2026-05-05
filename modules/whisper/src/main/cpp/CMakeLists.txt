@@ -30,8 +30,12 @@ if (CMAKE_ANDROID_ARCH_ABI MATCHES "arm64")
     FetchContent_Declare(vk_hpp GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Hpp
             GIT_TAG v1.3.275
     )
-    FetchContent_MakeAvailable(vk_hpp)
+    FetchContent_Declare(spirv_headers GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers
+            GIT_TAG main
+    )
+    FetchContent_MakeAvailable(vk_hpp spirv_headers)
     include_directories(${vk_hpp_SOURCE_DIR})
+    include_directories(${spirv_headers_SOURCE_DIR}/include)
     set(Vulkan_INCLUDE_DIR "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include")
     set(Vulkan_GLSLC_EXECUTABLE "${ANDROID_NDK}/shader-tools/linux-x86_64/glslc")
     find_library(Vulkan_LIBRARY vulkan)
@@ -53,8 +57,9 @@ target_include_directories(whisper_jni PRIVATE ${whispercpp_SOURCE_DIR})
 if (CMAKE_ANDROID_ARCH_ABI MATCHES "arm64")
     target_compile_options(whisper_jni PRIVATE -march=armv8.2-a+fp16+simd+dotprod)
     target_link_libraries(whisper_jni PRIVATE ${VULKAN_LIB})
-elseif (CMAKE_ANDROID_ARCH_ABI MATCHES "x86")
-    set(GGML_NATIVE ON CACHE BOOL "" FORCE)
+elseif (CMAKE_ANDROID_ARCH_ABI STREQUAL "x86")
+    set(GGML_AVX2 OFF CACHE BOOL "" FORCE)
+    set(GGML_BMI2 OFF CACHE BOOL "" FORCE)
 endif ()
 
 if (IS_DEBUG)

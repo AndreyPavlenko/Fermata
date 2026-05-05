@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">選項</string>
     <string name="interface_prefs_aa">Android Auto模式選項</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">播放/暫停</string>
     <string name="action_prev">播放上一個</string>
     <string name="action_next">播放下一個</string>
+    <string name="action_prev_folder">播放先前的資料夾</string>
+    <string name="action_next_folder">播放下一個資料夾</string>
     <string name="action_rw">倒帶</string>
     <string name="action_ff">快轉</string>
     <string name="action_vol_up">調大音量</string>
@@ -380,4 +387,5 @@
     <string name="err_failed_install_module">無法安裝模組: %1$s</string>
     <string name="err_failed_to_download">無法下載 %1$s</string>
     <string name="err_no_audio_record_perm">無法取得錄音權限</string>
+    <string name="err_failed_start_service">未能啟動服務：%s</string>
 </resources>

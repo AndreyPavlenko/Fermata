@@ -31,6 +31,13 @@ public interface FermataAddon {
 	}
 
 	default void uninstall() {
+		stop();
+	}
+
+	default void start() {
+	}
+
+	default void stop() {
 	}
 
 	default boolean handleIntent(MainActivityDelegate a, Intent intent) {

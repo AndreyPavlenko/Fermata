@@ -47,8 +47,14 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-q8_0.bin");
 		nameToUrl.put("tiny.en (77.7 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin");
+		nameToUrl.put("base-q4_k (46.5 MB)",
+				"https://huggingface.co/AndreyPavlenko/whisper.cpp/resolve/main/ggml-base-q4_k.bin");
+		nameToUrl.put("base-q5_k (55.3 MB)",
+				"https://huggingface.co/AndreyPavlenko/whisper.cpp/resolve/main/ggml-base-q5_k.bin");
 		nameToUrl.put("base-q5_1 (59.7 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin");
+		nameToUrl.put("base-q6_k (64.7 MB)",
+				"https://huggingface.co/AndreyPavlenko/whisper.cpp/resolve/main/ggml-base-q6_k.bin");
 		nameToUrl.put("base-q8_0 (81.8 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q8_0.bin");
 		nameToUrl.put("base (148 MB)",
@@ -59,6 +65,8 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en-q8_0.bin");
 		nameToUrl.put("base.en (148 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin");
+		nameToUrl.put("small-q4_k (145 MB)",
+				"https://huggingface.co/AndreyPavlenko/whisper.cpp/resolve/main/ggml-small-q4_k.bin");
 		nameToUrl.put("small-q5_1 (190 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin");
 		nameToUrl.put("small-q8_0 (264 MB)",
@@ -82,10 +90,6 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 		nameToUrl.put("medium.en-q8_0 (823 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en-q8_0.bin");
 		nameToUrl.put("medium.en (1.53 GB)",
-				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin");
-		nameToUrl.put("large-v3-q5_0 (1.08 GB)",
-				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-q5_0.bin");
-		nameToUrl.put("large-v3 (3.1 GB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin");
 		nameToUrl.put("large-v3-turbo-q5_0 (574 MB)",
 				"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin");
@@ -106,6 +110,9 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	private final long sessionPtr;
 	private boolean released = false;
 
+	private final StringBuilder sb = new StringBuilder();
+	private long start = -1;
+
 	private Whisper(long sessionPtr) {
 		this.sessionPtr = sessionPtr;
 		Log.d("Session created: ", sessionPtr);
@@ -119,7 +126,6 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 		var modelNameOrPath = ps.getStringPref(WhisperAddon.MODEL);
 		var lang = ps.getStringPref(WhisperAddon.LANG);
 		var useGpu = ps.getBooleanPref(WhisperAddon.USE_GPU);
-		var singleSegment = ps.getBooleanPref(WhisperAddon.SINGLE_SEGMENT);
 		var app = App.get();
 		var cacheDir = cacheDir(app);
 		var vadFile = new File(cacheDir, VAD_FILE_NAME);
@@ -159,13 +165,16 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 		}
 
 		return load.map(
-				v -> new Whisper(create(modelPath, vadFile.getAbsolutePath(), lang, useGpu, singleSegment)));
+				v -> {
+					var f = new File(modelPath);
+					Log.i("Loading model: ", f.getName(), ", size: ", f.length());
+					return new Whisper(create(modelPath, vadFile.getAbsolutePath(), lang, useGpu));
+				});
 	}
 
 	@Override
 	public boolean reconfigure(PreferenceStore ps) {
-		reconfigure(sessionPtr, ps.getStringPref(WhisperAddon.LANG),
-				ps.getBooleanPref(WhisperAddon.SINGLE_SEGMENT));
+		reconfigure(sessionPtr, ps.getStringPref(WhisperAddon.LANG));
 		return true;
 	}
 
@@ -188,15 +197,25 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 
 		var subtitles = new ArrayList<Subtitles.Text>(segments);
 		for (int i = 0; i < segments; i++) {
+			if (sb.length() > 0) sb.append(' ');
 			String text = text(sessionPtr, i).trim();
-			long start = start(sessionPtr, i);
+			sb.append(text);
+			if (start == -1) start = timeOffset + start(sessionPtr, i);
 			long end = end(sessionPtr, i);
-			var t = new Subtitles.Text(text, timeOffset + start, (int) (end - start));
-			Log.d(t);
-			subtitles.add(t);
+			long dur = end + timeOffset - start;
+			char c = text.isEmpty() ? 0 : text.charAt(text.length() - 1);
+			if (dur > 10000 || c == '.' || c == '?' || c == '!' ||
+					((dur > 3) && (c == ',' || c == ';' || c == ':' || c == '-'))) {
+				var t = new Subtitles.Text(sb.toString(), start, (int) dur);
+				Log.d(t);
+				subtitles.add(t);
+				sb.setLength(0);
+				start = -1;
+			}
 		}
 		return subtitles;
 	}
+
 
 	@Override
 	public String getLang() {
@@ -205,6 +224,8 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 
 	public void reset() {
 		reset(sessionPtr);
+		sb.setLength(0);
+		start = -1;
 	}
 
 	@Override
@@ -246,9 +267,9 @@ public final class Whisper implements SubGenAddon.Transcriptor {
 	}
 
 	private static native long create(String modelPath, String vadPath, String lang,
-																		boolean useGpu, boolean singleSegment);
+																		boolean useGpu);
 
-	private static native void reconfigure(long sessionPtr, String lang, boolean singleSegment);
+	private static native void reconfigure(long sessionPtr, String lang);
 
 	private static native int resample(long sessionPtr, ByteBuffer buf, int chunkLen,
 																		 int bytesPerSample, int channels, int frameRate);

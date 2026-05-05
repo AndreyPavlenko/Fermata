@@ -2,9 +2,12 @@ package me.aap.utils.net;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -14,10 +17,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.net.ssl.SSLEngine;
 
 import me.aap.utils.async.FutureSupplier;
+import me.aap.utils.concurrent.ConcurrentUtils;
 import me.aap.utils.concurrent.NetThreadPool;
 import me.aap.utils.function.BiFunction;
 import me.aap.utils.function.Consumer;
 import me.aap.utils.function.Supplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.net.NetServer.ConnectionHandler;
 
 /**
@@ -68,7 +73,8 @@ public interface NetHandler extends Closeable {
 		public int inactivityTimeout;
 
 		Executor getExecutor() {
-			return (executor == null) ? executor = new NetThreadPool(Runtime.getRuntime().availableProcessors()) : executor;
+			return (executor == null) ?
+					executor = new NetThreadPool(Runtime.getRuntime().availableProcessors()) : executor;
 		}
 
 		ScheduledExecutorService getScheduler() {
@@ -87,11 +93,21 @@ public interface NetHandler extends Closeable {
 		public int sendTimeout;
 
 		SocketAddress getAddress() {
-			if (address == null) {
-				return (host == null) ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
-			} else {
-				return address;
+			if (address != null) return address;
+			if (host == null) return new InetSocketAddress(port);
+			if (ConcurrentUtils.isMainThread()) return new InetSocketAddress(host, port);
+
+			try { // Prefer IPv4 addresses
+				var all = InetAddress.getAllByName(host);
+				for (InetAddress a : all) {
+					if (a instanceof Inet4Address) return new InetSocketAddress(a, port);
+				}
+				if (all.length > 0) return new InetSocketAddress(all[0], port);
+			} catch (UnknownHostException err) {
+				Log.e(err);
 			}
+
+			return new InetSocketAddress(host, port);
 		}
 	}
 

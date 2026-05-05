@@ -9,5 +9,5 @@ android {
 dependencies {
     implementation project(':utils')
     implementation project(':fermata')
-    implementation 'org.videolan.android:libvlc-all:3.6.5'
+    implementation libs.libvlc
 }

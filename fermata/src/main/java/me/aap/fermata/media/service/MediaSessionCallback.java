@@ -624,24 +624,47 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	@Override
 	public void onSkipToPrevious() {
 		playerTask.cancel();
-		playerTask = skipTo(false);
+		playerTask = skipTo(false, false);
+	}
+
+	public void onSkipToPreviousFolder() {
+		playerTask.cancel();
+		playerTask = skipTo(false, true);
 	}
 
 	@Override
 	public void onSkipToNext() {
 		playerTask.cancel();
-		playerTask = skipTo(true);
+		playerTask = skipTo(true, false);
 	}
 
-	private FutureSupplier<Void> skipTo(boolean next) {
+	public void onSkipToNextFolder() {
+		playerTask.cancel();
+		playerTask = skipTo(true, true);
+	}
+
+	private FutureSupplier<Void> skipTo(boolean next, boolean folder) {
 		PlayableItem i;
 		MediaEngine eng = getEngine();
 		if ((eng == null) || ((i = eng.getSource()) == null)) return completedVoid();
 
-		return (next ? getNextPlayable(i) : getPrevPlayable(i)).then(this::prepareItem).then(pi -> {
-			if (pi != null) skipTo(next, pi);
-			return completedVoid();
-		});
+		FutureSupplier<PlayableItem> getItem;
+		if (folder) {
+			var parent = i.getParent();
+			getItem = parent.getPlayableChildren(false, true).main().map(children -> {
+				if (children == null || children.isEmpty()) return i;
+				return next ? children.get(children.size() - 1) : children.get(0);
+			});
+		} else {
+			getItem = completed(i);
+		}
+
+		return getItem.then(
+				item -> (next ? getNextPlayable(item) : getPrevPlayable(item)).then(this::prepareItem)
+						.then(pi -> {
+							if (pi != null) skipTo(next, pi);
+							return completedVoid();
+						}));
 	}
 
 	private void skipTo(boolean next, PlayableItem i) {

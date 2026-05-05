@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">Interface</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">Lire/Pause</string>
     <string name="action_prev">Lire la piste précédente</string>
     <string name="action_next">Lire la piste suivante</string>
+    <string name="action_prev_folder">Lire le dossier précédent</string>
+    <string name="action_next_folder">Lire le dossier suivant</string>
     <string name="action_rw">Rembobiner</string>
     <string name="action_ff">Avancer rapidement</string>
     <string name="action_vol_up">Augmenter le volume</string>
@@ -380,4 +387,5 @@
     <string name="err_failed_install_module">Échec de l\'installation du module : %1$s</string>
     <string name="err_failed_to_download">Échec du téléchargement de %1$s</string>
     <string name="err_no_audio_record_perm">Autorisation d\'enregistrement audio non accordée</string>
+    <string name="err_failed_start_service"><![CDATA[Échec du démarrage du service : %s]]></string>
 </resources>

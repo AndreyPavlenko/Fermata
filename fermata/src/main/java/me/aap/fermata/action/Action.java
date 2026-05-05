@@ -38,6 +38,8 @@ public enum Action {
 	})),
 	PREV(R.string.action_prev, m(MediaSessionCallback::onSkipToPrevious)),
 	NEXT(R.string.action_next, m(MediaSessionCallback::onSkipToNext)),
+	PREV_FOLDER(R.string.action_prev_folder, m(MediaSessionCallback::onSkipToPreviousFolder)),
+	NEXT_FOLDER(R.string.action_next_folder, m(MediaSessionCallback::onSkipToNextFolder)),
 	RW(R.string.action_rw, new RwFfHandler(false)),
 	FF(R.string.action_ff, new RwFfHandler(true)),
 	VOLUME_UP(R.string.action_vol_up, new VolumeHandler(ADJUST_RAISE)),

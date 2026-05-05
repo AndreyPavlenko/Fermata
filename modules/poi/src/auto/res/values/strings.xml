@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="poi_file_or_url">POI database file or URL</string>
+    <string name="locale">en</string>
+    <string name="speed_unit">km/h</string>
+    <string name="distance_unit">m</string>
+    <string name="speed_limit_i">The speed limit is ${speed_limit} ${speed_unit}</string>
+    <string name="speed_limit_a">In ${distance} ${distance_unit} the speed limit is ${speed_limit} ${speed_unit}</string>
+    <string name="speed_limit_w">Your speed ${speed} ${speed_unit} exceeds the maximum allowed speed of ${speed_limit} ${speed_unit}!</string>
+</resources>

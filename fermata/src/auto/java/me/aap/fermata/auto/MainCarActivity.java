@@ -80,8 +80,7 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 
 	@Override
 	protected void attachBaseContext(Context base) {
-		MainActivityDelegate.attachBaseContext(base);
-		super.attachBaseContext(base);
+		super.attachBaseContext(MainActivityDelegate.attachBaseContext(base));
 	}
 
 	@Override

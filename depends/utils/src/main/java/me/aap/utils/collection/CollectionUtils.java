@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -218,6 +219,17 @@ public class CollectionUtils {
 														 IntBiConsumer<? super T, R> mapper,
 														 IntFunction<R> generator) {
 		return filterMap(collection, t -> true, mapper, generator);
+	}
+
+	public static <K, V> Map<K, V> mapOf(K k, V v, Object... kvs) {
+		Map<K, V> m = new HashMap<>((kvs.length / 2 + 1) * 4 / 3 + 1);
+		m.put(k, v);
+		for (int i = 0; i < kvs.length; i += 2) {
+			@SuppressWarnings("unchecked") K key = (K) kvs[i];
+			@SuppressWarnings("unchecked") V value = (V) kvs[i + 1];
+			m.put(key, value);
+		}
+		return m;
 	}
 
 	public static <T> List<T> filter(Collection<T> list, Predicate<? super T> predicate) {

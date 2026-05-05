@@ -1,6 +1,8 @@
 package me.aap.fermata.addon;
 
+import static java.util.Collections.emptyList;
 import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.ui.UiUtils.showInfo;
 
 import android.content.Context;
 import android.util.Pair;
@@ -9,6 +11,8 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -78,7 +82,7 @@ public class SubGenAddon implements FermataAddon {
 		}
 
 		set.addBooleanPref(o -> {
-			o.store = ps;
+			o.store = mps;
 			o.pref = TRANSLATE;
 			o.title = me.aap.fermata.R.string.sub_gen_translate;
 			o.visibility = visibility.copy();
@@ -90,16 +94,18 @@ public class SubGenAddon implements FermataAddon {
 			o.formatSubtitle = true;
 			o.visibility = visibility.copy();
 		});
-		set.addListPref(o -> {
-			var a = TranslateAddon.get().peek();
-			var langs = a != null ? a.getSupportedLanguages() :
-					Collections.singletonList(new Pair<>(Locale.getDefault().getLanguage(),
-							ctx.getString(R.string.loading)));
-			o.setStringValues(mps, TRANSLATE_LANG, langs);
-			o.title = R.string.trans_lang;
-			o.subtitle = R.string.string_format;
-			o.formatSubtitle = true;
-			o.visibility = visibility.copy().and(PrefCondition.create(mps, TRANSLATE));
+		TranslateAddon.get().onSuccess(a -> {
+			a.contributeSettings(ctx, mps, set,
+					visibility.copy().and(PrefCondition.create(mps, TRANSLATE)));
+			set.addListPref(o -> {
+				var srcLang = mps.getStringPref(LANG);
+				var langs = a.getSupportedLanguages(mps, "auto".equals(srcLang) ? null : srcLang);
+				o.setStringValues(mps, TRANSLATE_LANG, langs);
+				o.title = R.string.trans_lang;
+				o.subtitle = R.string.string_format;
+				o.formatSubtitle = true;
+				o.visibility = visibility.copy().and(PrefCondition.create(mps, TRANSLATE));
+			});
 		});
 		set.addIntPref(o -> {
 			o.store = mps;
@@ -121,6 +127,20 @@ public class SubGenAddon implements FermataAddon {
 			o.seekScale = 5;
 			o.visibility = visibility.copy();
 		});
+		set.addButton(o -> {
+			o.title = me.aap.fermata.R.string.sub_gen_cleanup;
+			o.onClick = () -> {
+				var tr = TranslateAddon.get();
+				var deleted = new ArrayList<>(cleanUp(ctx, mps));
+				var a = tr.peek();
+				if (a != null) {
+					deleted.addAll(
+							a.cleanUp(mps, mps.getStringPref(LANG), mps.getStringPref(TRANSLATE_LANG)));
+				}
+				showInfo(ctx, ctx.getString(me.aap.fermata.R.string.sub_gen_cleanup_done, deleted));
+			};
+			o.visibility = visibility.copy();
+		});
 	}
 
 	@Override
@@ -134,6 +154,15 @@ public class SubGenAddon implements FermataAddon {
 	public void uninstall() {
 		FermataApplication.get().getPreferenceStore()
 				.applyBooleanPref(getImplInfo().enabledPref, false);
+	}
+
+	public Collection<String> cleanUp(Context ctx, PreferenceStore ps) {
+		var impl = getImpl().peek();
+		return impl != null ? impl.doCleanUp(ctx, ps) : emptyList();
+	}
+
+	protected Collection<String> doCleanUp(Context ctx, PreferenceStore ps) {
+		return emptyList();
 	}
 
 	public FutureSupplier<Transcriptor> getTranscriptor(PreferenceStore ps) {

@@ -137,7 +137,7 @@ class SelectorHandler implements NetHandler, Runnable {
 				channel.socket().bind(opts.getAddress(), opts.backlog);
 			}
 
-			RunnablePromise<NetServer> p = new RunnablePromise<NetServer>() {
+			RunnablePromise<NetServer> p = new RunnablePromise<>() {
 				@Override
 				protected NetServer runTask() throws ClosedChannelException {
 					channel.register(selector, OP_ACCEPT, server);
@@ -162,7 +162,7 @@ class SelectorHandler implements NetHandler, Runnable {
 	public FutureSupplier<NetChannel> connect(ConnectOpts o) {
 		try {
 			SocketChannel ch = SocketChannel.open();
-			Promise<NetChannel> p = new Promise<NetChannel>() {
+			Promise<NetChannel> p = new Promise<>() {
 				@Override
 				public boolean cancel(boolean mayInterruptIfRunning) {
 					if (!super.cancel(mayInterruptIfRunning)) return false;
@@ -193,6 +193,7 @@ class SelectorHandler implements NetHandler, Runnable {
 			setOpts(ch, o.opt);
 
 			if (bindAddr != null) {
+				Log.i("Bind address: ", bindAddr);
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 					ch.bind(bindAddr);
 				} else {
@@ -200,37 +201,46 @@ class SelectorHandler implements NetHandler, Runnable {
 				}
 			}
 
-			ch.connect(addr);
-			startTimer(p, o.connectTimeout, Timer.CONNECT);
+			Log.d("Connecting to ", addr);
+			if (!ch.connect(addr)) startTimer(p, o.connectTimeout, Timer.CONNECT);
 
 			selectorRun(() -> {
 				try {
-					SelectionKey key = ch.register(selector, OP_CONNECT);
+					boolean finished = ch.isConnected() || (ch.isConnectionPending() && ch.finishConnect());
+					SelectionKey key = ch.register(selector, finished ? 0 : OP_CONNECT);
 					SelectableNetChannel nc = ((o.readTimeout | o.writeTimeout | o.sendTimeout) == 0)
 							? new SelectableNetChannel(key)
-							: new SelectableNetChannelWitTimeout(key, o.readTimeout, o.writeTimeout, o.sendTimeout);
-
-					key.attach((Selectable) () -> {
-						try {
-							assertEquals(OP_CONNECT, key.interestOps());
-							if (!key.isConnectable() || !ch.finishConnect()) return;
-							key.attach(nc);
-							key.interestOps(0);
-
-							getExecutor().execute(() -> {
-								if (o.ssl) {
-									if (o.host == null) o.host = ((InetSocketAddress) addr).getHostString();
-									if (o.sslEngine == null) o.sslEngine = SecurityUtils::createClientSslEngine;
-									SslChannel.create(nc, o.sslEngine.apply(o.host, o.port)).onCompletionSupply(p);
-								} else {
-									p.complete(nc);
-								}
-							});
-						} catch (CancelledKeyException ignore) {
-						} catch (Throwable ex) {
-							getExecutor().execute(() -> p.completeExceptionally(ex));
+							:
+							new SelectableNetChannelWitTimeout(key, o.readTimeout, o.writeTimeout,
+									o.sendTimeout);
+					Runnable exec = () -> getExecutor().execute(() -> {
+						if (o.ssl) {
+							if (o.host == null) o.host = ((InetSocketAddress) addr).getHostString();
+							if (o.sslEngine == null) o.sslEngine = SecurityUtils::createClientSslEngine;
+							SslChannel.create(nc, o.sslEngine.apply(o.host, o.port)).onCompletionSupply(p);
+						} else {
+							p.complete(nc);
 						}
 					});
+
+					if (finished) {
+						key.attach(nc);
+						key.interestOps(0);
+						exec.run();
+					} else {
+						key.attach((Selectable) () -> {
+							try {
+								assertEquals(OP_CONNECT, key.interestOps());
+								if (!key.isConnectable() || !ch.finishConnect()) return;
+								key.attach(nc);
+								key.interestOps(0);
+								exec.run();
+							} catch (CancelledKeyException ignore) {
+							} catch (Throwable ex) {
+								getExecutor().execute(() -> p.completeExceptionally(ex));
+							}
+						});
+					}
 				} catch (Throwable ex) {
 					getExecutor().execute(() -> p.completeExceptionally(ex));
 				}
@@ -304,6 +314,7 @@ class SelectorHandler implements NetHandler, Runnable {
 	private static void setOpts(SocketChannel ch, Map<SocketOption<?>, ?> opts) throws IOException {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 			for (Map.Entry<SocketOption<?>, ?> e : opts.entrySet()) {
+				Log.i("Socket opt ", e.getKey(), " = ", e.getValue());
 				ch.setOption((SocketOption) e.getKey(), e.getValue());
 			}
 		}
@@ -366,21 +377,13 @@ class SelectorHandler implements NetHandler, Runnable {
 
 			if (t != null) {
 				task = null;
-				String msg;
+				String msg = switch (type) {
+					case CONNECT -> "Connect timeout";
+					case READ -> "Read timeout";
+					case WRITE -> "Write timeout";
+					default -> "Send timeout";
+				};
 
-				switch (type) {
-					case CONNECT:
-						msg = "Connect timeout";
-						break;
-					case READ:
-						msg = "Read timeout";
-						break;
-					case WRITE:
-						msg = "Write timeout";
-						break;
-					default:
-						msg = "Send timeout";
-				}
 				t.completeExceptionally(new TimeoutException(msg));
 			}
 		}
@@ -510,6 +513,7 @@ class SelectorHandler implements NetHandler, Runnable {
 			}
 		}
 
+		@Nonnull
 		@Override
 		public String toString() {
 			return channel.toString();
@@ -517,7 +521,8 @@ class SelectorHandler implements NetHandler, Runnable {
 	}
 
 	private static final AtomicReferenceFieldUpdater<SelectableNetChannel, ReadPromise> READER =
-			AtomicReferenceFieldUpdater.newUpdater(SelectableNetChannel.class, ReadPromise.class, "reader");
+			AtomicReferenceFieldUpdater.newUpdater(SelectableNetChannel.class, ReadPromise.class,
+					"reader");
 	private static final AtomicIntegerFieldUpdater<SelectableNetChannel> WRITING =
 			AtomicIntegerFieldUpdater.newUpdater(SelectableNetChannel.class, "writing");
 
@@ -562,7 +567,8 @@ class SelectorHandler implements NetHandler, Runnable {
 		}
 
 		@Override
-		public FutureSupplier<ByteBuffer> read(ByteBufferSupplier supplier, @Nullable Completion<ByteBuffer> consumer) {
+		public FutureSupplier<ByteBuffer> read(ByteBufferSupplier supplier,
+																					 @Nullable Completion<ByteBuffer> consumer) {
 			ReadPromise p = new ReadPromise(supplier);
 			if (consumer != null) p.onCompletion(consumer);
 
@@ -621,7 +627,8 @@ class SelectorHandler implements NetHandler, Runnable {
 		}
 
 		@Override
-		public FutureSupplier<Void> write(ByteBufferArraySupplier supplier, @Nullable Completion<Void> consumer) {
+		public FutureSupplier<Void> write(ByteBufferArraySupplier supplier,
+																			@Nullable Completion<Void> consumer) {
 			if (!isOpen()) return failed(ChannelClosed.get());
 
 			WritePromise p = new WritePromise(supplier);
@@ -842,7 +849,8 @@ class SelectorHandler implements NetHandler, Runnable {
 		private final int writeTimeout;
 		private final int sendTimeout;
 
-		SelectableNetChannelWitTimeout(SelectionKey key, int readTimeout, int writeTimeout, int sendTimeout) {
+		SelectableNetChannelWitTimeout(SelectionKey key, int readTimeout, int writeTimeout,
+																	 int sendTimeout) {
 			super(key);
 			this.readTimeout = readTimeout;
 			this.writeTimeout = writeTimeout;
@@ -910,9 +918,11 @@ class SelectorHandler implements NetHandler, Runnable {
 		}
 	}
 
-	private static class WritePromise extends ChannelPromise<Void> implements Node<ByteBufferArraySupplier> {
+	private static class WritePromise extends ChannelPromise<Void>
+			implements Node<ByteBufferArraySupplier> {
 		@SuppressWarnings("rawtypes")
-		private static final AtomicReferenceFieldUpdater NEXT = AtomicReferenceFieldUpdater.newUpdater(WritePromise.class, WritePromise.class, "next");
+		private static final AtomicReferenceFieldUpdater NEXT =
+				AtomicReferenceFieldUpdater.newUpdater(WritePromise.class, WritePromise.class, "next");
 		private volatile WritePromise next;
 		ByteBufferArraySupplier supplier;
 
@@ -932,7 +942,8 @@ class SelectorHandler implements NetHandler, Runnable {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public boolean compareAndSetNext(Node<ByteBufferArraySupplier> expect, Node<ByteBufferArraySupplier> update) {
+		public boolean compareAndSetNext(Node<ByteBufferArraySupplier> expect,
+																		 Node<ByteBufferArraySupplier> update) {
 			return NEXT.compareAndSet(this, expect, update);
 		}
 
@@ -988,7 +999,8 @@ class SelectorHandler implements NetHandler, Runnable {
 		private long off;
 		private long len;
 
-		public SendPromise(ByteBufferArraySupplier supplier, RandomAccessChannel channel, long off, long len) {
+		public SendPromise(ByteBufferArraySupplier supplier, RandomAccessChannel channel, long off,
+											 long len) {
 			super(supplier);
 			this.channel = channel;
 			this.off = off;

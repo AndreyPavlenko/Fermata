@@ -487,17 +487,19 @@ public class ExoPlayerEngine extends MediaEngineBase implements Player.Listener 
 				if (subStream == null) subStream = new Subtitles.Stream();
 				var added = subStream.add(subs);
 				if (transLang == null) return;
+				var src = getSource();
+				if (src == null) return;
 
 				var targetLang = transLang;
 				if (translator.isDone() && translator.peek() == null) {
 					translator = TranslateAddon.get().then(a -> {
 						if (a == null || !targetLang.equals(transLang)) return completedNull();
-						return a.getTranslator(lang, transLang);
+						return a.getTranslator(src.getPrefs(), lang, transLang);
 					});
 				}
 				translator.main().onSuccess(tr -> {
 					if (tr == null || !targetLang.equals(transLang)) return;
-					if (useBatchTranslate) batchTranslate(tr, targetLang, added);
+					if (useBatchTranslate && tr.supportsBatch()) batchTranslate(tr, targetLang, added);
 					else perItemTranslate(tr, targetLang, added);
 				});
 			});

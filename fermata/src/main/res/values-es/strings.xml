@@ -33,6 +33,11 @@
     
     
     
+    
+    
+    
+    
+    
 
     <string name="interface_prefs">Interfaz</string>
     <string name="interface_prefs_aa">Android Auto</string>
@@ -80,6 +85,8 @@
     <string name="action_play_pause">Reproducir/Pausar</string>
     <string name="action_prev">Jugar anterior</string>
     <string name="action_next">Jugar siguiente</string>
+    <string name="action_prev_folder">Reproducir carpeta anterior</string>
+    <string name="action_next_folder">Reproducir la siguiente carpeta</string>
     <string name="action_rw">Rebobinar</string>
     <string name="action_ff">Avance rápido</string>
     <string name="action_vol_up">Sube volumen</string>
@@ -383,4 +390,5 @@ Por favor, reinicie la aplicación.</string>
     <string name="err_failed_install_module">Error al instalar el módulo: %1$s</string>
     <string name="err_failed_to_download">No se pudo descargar %1$s</string>
     <string name="err_no_audio_record_perm">No se concede permiso de grabación de audio</string>
+    <string name="err_failed_start_service">No se pudo iniciar el servicio: %s</string>
 </resources>

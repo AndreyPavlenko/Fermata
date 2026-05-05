@@ -864,7 +864,7 @@
             android:exported="false"
             android:permission="android.permission.BIND_VOICE_INTERACTION">
             <intent-filter>
-                <action android:name="android.speech.RecognitionService"/>
+                <action android:name="android.speech.RecognitionService" />
             </intent-filter>
         </service>
 
@@ -884,6 +884,12 @@
             android:exported="true"
             android:grantUriPermissions="true"
             tools:ignore="ExportedContentProvider" />
+
+        <!-- Remove ML Kit provider from base APK -->
+        <provider
+            android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+            android:authorities="${applicationId}.mlkitinitprovider"
+            tools:node="remove" />
     </application>
 
 </manifest>
