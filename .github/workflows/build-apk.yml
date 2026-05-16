@@ -34,6 +34,10 @@ jobs:
           echo "ANDROID_NDK_VERSION=$(version ndkVersion)-$git_hash" >> $GITHUB_ENV
 
       - name: Export vars
+        env:
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_ID_SFX: ${{ vars.APP_ID_SFX }}
+          ARTIFACT_SFX: ${{ vars.ARTIFACT_SFX }}
         run: |
           export_vars() {
             for name in "$@"; do
