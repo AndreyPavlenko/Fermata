@@ -60,7 +60,8 @@ android {
     productFlavors {
         mobile {
             dimension "version"
-            resValue "string", "app_name", "@string/app_name_mobile"
+            resValue "string", "app_name", project.getProperties()
+                    .getOrDefault('APP_NAME', "@string/app_name_mobile")
             resValue "string", "media_service_name", "@string/media_service_name_mobile"
             resValue "drawable", "media_service_icon", "@drawable/launcher"
             buildConfigField "boolean", 'AUTO', 'false'
@@ -70,7 +71,8 @@ android {
         auto {
             dimension "version"
             applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
-            resValue "string", "app_name", "@string/app_name_auto"
+            resValue "string", "app_name", project.getProperties()
+                    .getOrDefault('APP_NAME', "@string/app_name_auto")
             resValue "string", "media_service_name", "@string/media_service_name_auto"
             resValue "drawable", "media_service_icon", "@drawable/media_service"
             buildConfigField "boolean", 'AUTO', 'true'
