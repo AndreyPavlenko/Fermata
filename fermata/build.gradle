@@ -1,10 +1,5 @@
 if (gradle.ext.enableGoogleServices) apply plugin: 'com.google.gms.google-services'
 
-def appNameSuffix = project.getProperties().getOrDefault('APP_NAME_SFX', '')
-def appName = { String resourceName, String value ->
-    appNameSuffix.isEmpty() ? "@string/${resourceName}" : "${value}${appNameSuffix}"
-}
-
 android {
     defaultConfig {
         namespace = 'me.aap.fermata'
@@ -34,8 +29,8 @@ android {
         release {
             debuggable false
             minifyEnabled true
-            resValue "string", "app_name_auto", appName('app_name_auto_release', 'Fermata Auto')
-            resValue "string", "app_name_mobile", appName('app_name_mobile_release', 'Fermata')
+            resValue "string", "app_name_auto", "@string/app_name_auto_release"
+            resValue "string", "app_name_mobile", "@string/app_name_mobile_release"
             resValue "string", "media_service_name_auto", "@string/media_service_name_auto_release"
             resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_release"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_release"
@@ -49,8 +44,8 @@ android {
         debug {
             debuggable true
             applicationIdSuffix '.debug'
-            resValue "string", "app_name_auto", appName('app_name_auto_debug', 'Debug Fermata Auto')
-            resValue "string", "app_name_mobile", appName('app_name_mobile_debug', 'Debug Fermata')
+            resValue "string", "app_name_auto", "@string/app_name_auto_debug"
+            resValue "string", "app_name_mobile", "@string/app_name_mobile_debug"
             resValue "string", "media_service_name_auto", "@string/media_service_name_auto_debug"
             resValue "string", "media_service_name_mobile", "@string/media_service_name_mobile_debug"
             resValue "string", "mirror_service_name", "@string/mirror_service_name_debug"
@@ -65,7 +60,8 @@ android {
     productFlavors {
         mobile {
             dimension "version"
-            resValue "string", "app_name", "@string/app_name_mobile"
+            resValue "string", "app_name", project.getProperties()
+                    .getOrDefault('APP_NAME', "@string/app_name_mobile")
             resValue "string", "media_service_name", "@string/media_service_name_mobile"
             resValue "drawable", "media_service_icon", "@drawable/launcher"
             buildConfigField "boolean", 'AUTO', 'false'
@@ -75,7 +71,8 @@ android {
         auto {
             dimension "version"
             applicationIdSuffix '.auto' + project.getProperties().getOrDefault('APP_ID_SFX', '')
-            resValue "string", "app_name", "@string/app_name_auto"
+            resValue "string", "app_name", project.getProperties()
+                    .getOrDefault('APP_NAME', "@string/app_name_auto")
             resValue "string", "media_service_name", "@string/media_service_name_auto"
             resValue "drawable", "media_service_icon", "@drawable/media_service"
             buildConfigField "boolean", 'AUTO', 'true'
