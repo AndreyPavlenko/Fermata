@@ -92,13 +92,13 @@ jobs:
         run: |
           out=fermata/build/outputs/apk_from_bundle/autoRelease
           mkdir -p dist/arm64 dist/arm
-          echo "Using package suffix: $APP_ID_SFX"
-          echo "Using app name suffix: $APP_NAME_SFX"
+          echo "App name: $APP_NAME"
+          echo "Package suffix: $APP_ID_SFX"
           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a \
-            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME_SFX="$APP_NAME_SFX" --build-cache
+            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME="$APP_NAME" --build-cache
           mv $out/*.apk dist/arm64/
           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a \
-            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME_SFX="$APP_NAME_SFX" --build-cache
+            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME="$APP_NAME" --build-cache
           mv $out/*.apk dist/arm/
 
       - name: Upload arm64 APK
