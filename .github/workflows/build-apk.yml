@@ -94,11 +94,12 @@ jobs:
           mkdir -p dist/arm64 dist/arm
           echo "App name: $APP_NAME"
           echo "Package suffix: $APP_ID_SFX"
-          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a \
-            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME="$APP_NAME" --build-cache
+          ARGS=(--build-cache)
+           [ -z "$APP_NAME" ] || ARGS+=("-PAPP_NAME=$APP_NAME")
+           [ -z "$APP_ID_SFX" ] || ARGS+=("-PAPP_ID_SFX=$APP_ID_SFX")
+           ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=arm64-v8a "${ARGS[@]}"
           mv $out/*.apk dist/arm64/
-          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a \
-            -PAPP_ID_SFX="$APP_ID_SFX" -PAPP_NAME="$APP_NAME" --build-cache
+          ./gradlew fermata:packageAutoReleaseUniversalApk -PABI=armeabi-v7a "${ARGS[@]}"
           mv $out/*.apk dist/arm/
 
       - name: Upload arm64 APK
