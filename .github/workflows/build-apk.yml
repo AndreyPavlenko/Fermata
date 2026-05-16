@@ -35,9 +35,15 @@ jobs:
 
       - name: Export vars
         run: |
-          [ -z "${{ vars.APP_NAME }}" ] || echo "APP_NAME=${{ vars.APP_NAME == 'none' ? '' : vars.APP_NAME }}" >> "$GITHUB_ENV"
-          [ -z "${{ vars.APP_ID_SFX }}" ] || echo "APP_ID_SFX=${{ vars.APP_ID_SFX == 'none' ? '' : vars.APP_ID_SFX }}" >> "$GITHUB_ENV"
-          [ -z "${{ vars.ARTIFACT_SFX }}" ] || echo "ARTIFACT_SFX=${{ vars.ARTIFACT_SFX == 'none' ? '' : vars.ARTIFACT_SFX }}" >> "$GITHUB_ENV"
+          export_vars() {
+            for name in "$@"; do
+              local value="${!name}"
+              [ -z "$value" ] && continue
+              [ "$value" = "none" ] && value=""
+              echo "$name=$value" >> "$GITHUB_ENV"
+            done
+          }
+          export_vars APP_NAME APP_ID_SFX ARTIFACT_SFX
 
       - name: Prepare build identifiers
         env:
