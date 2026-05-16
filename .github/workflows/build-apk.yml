@@ -33,6 +33,12 @@ jobs:
           echo "APP_VERSION=$app_version" >> $GITHUB_ENV
           echo "ANDROID_NDK_VERSION=$(version ndkVersion)-$git_hash" >> $GITHUB_ENV
 
+      - name: Export vars
+        run: |
+          [ -z "${{ vars.APP_NAME }}" ] || echo "APP_NAME=${{ vars.APP_NAME == 'none' ? '' : vars.APP_NAME }}" >> "$GITHUB_ENV"
+          [ -z "${{ vars.APP_ID_SFX }}" ] || echo "APP_ID_SFX=${{ vars.APP_ID_SFX == 'none' ? '' : vars.APP_ID_SFX }}" >> "$GITHUB_ENV"
+          [ -z "${{ vars.ARTIFACT_SFX }}" ] || echo "ARTIFACT_SFX=${{ vars.ARTIFACT_SFX == 'none' ? '' : vars.ARTIFACT_SFX }}" >> "$GITHUB_ENV"
+
       - name: Prepare build identifiers
         env:
           BRANCH_OWNER: ${{ github.event.pull_request.head.repo.owner.login || github.repository_owner }}
