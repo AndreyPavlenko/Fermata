@@ -51,7 +51,7 @@ jobs:
 
           [ -v APP_NAME ] || echo "APP_NAME=Fermata Auto (${BRANCH_OWNER}-${sha})" >> "$GITHUB_ENV"
           [ -v APP_ID_SFX ] || echo "APP_ID_SFX=.${owner}" >> "$GITHUB_ENV"
-          [ -v ARTIFACT_SFX ] || echo "ARTIFACT_SFX=-${owner}-${branch}-${sha}" >> "$GITHUB_ENV"
+          [ -v ARTIFACT_SFX ] || echo "ARTIFACT_SFX=-${owner}-${branch}" >> "$GITHUB_ENV"
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
