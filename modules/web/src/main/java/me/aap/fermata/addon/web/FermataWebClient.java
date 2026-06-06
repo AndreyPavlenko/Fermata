@@ -40,7 +40,8 @@ public class FermataWebClient extends WebViewClientCompat {
 	@Override
 	public void onPageFinished(WebView view, String url) {
 		FermataWebView v = (FermataWebView) view;
-		FutureSupplier<MainActivityDelegate> f = MainActivityDelegate.getActivityDelegate(v.getContext());
+		FutureSupplier<MainActivityDelegate> f =
+				MainActivityDelegate.getActivityDelegate(v.getContext());
 		f.onSuccess(a -> a.setContentLoading(Completed.completedVoid()));
 
 		if (loading != null) {
@@ -55,10 +56,12 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	@Override
-	public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
+	public boolean shouldOverrideUrlLoading(@NonNull WebView view,
+																					@NonNull WebResourceRequest request) {
 		if (isYoutubeUri(request.getUrl())) {
 			try {
-				MainActivityDelegate a = MainActivityDelegate.getActivityDelegate(view.getContext()).peek();
+				MainActivityDelegate a =
+						MainActivityDelegate.getActivityDelegate(view.getContext()).peek();
 				if (a == null) return false;
 				if (!(a.showFragment(me.aap.fermata.R.id.youtube_fragment) instanceof YoutubeFragment f))
 					return false;
@@ -74,11 +77,13 @@ public class FermataWebClient extends WebViewClientCompat {
 
 	public static boolean isYoutubeUri(Uri uri) {
 		String host = uri.getHost();
-		return ((host != null) && (host.endsWith("youtube.com") || host.equals("youtu.be")));
+		return ((host != null) && ((host.endsWith("youtube.com") && !host.endsWith("tv.youtube.com")) ||
+				host.equals("youtu.be")));
 	}
 
 	@Override
-	public void onReceivedError(@NonNull WebView view, @NonNull WebResourceRequest request, @NonNull WebResourceErrorCompat error) {
+	public void onReceivedError(@NonNull WebView view, @NonNull WebResourceRequest request,
+															@NonNull WebResourceErrorCompat error) {
 		if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)) {
 			Log.e("Web error received: " + error.getDescription());
 		} else {
