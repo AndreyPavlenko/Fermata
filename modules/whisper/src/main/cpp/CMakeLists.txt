@@ -30,14 +30,17 @@ if (CMAKE_ANDROID_ARCH_ABI MATCHES "arm64")
     FetchContent_Declare(vk_hpp GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Hpp
             GIT_TAG v1.3.275
     )
-    FetchContent_Declare(spirv_headers GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers
+    FetchContent_Declare(SPIRV-Headers GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers
             GIT_TAG main
+            OVERRIDE_FIND_PACKAGE
     )
-    FetchContent_MakeAvailable(vk_hpp spirv_headers)
+    FetchContent_MakeAvailable(vk_hpp SPIRV-Headers)
     include_directories(${vk_hpp_SOURCE_DIR})
-    include_directories(${spirv_headers_SOURCE_DIR}/include)
+    include_directories(${SPIRV-Headers_SOURCE_DIR}/include)
     set(Vulkan_INCLUDE_DIR "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include")
-    set(Vulkan_GLSLC_EXECUTABLE "${ANDROID_NDK}/shader-tools/linux-x86_64/glslc")
+    set(Vulkan_GLSLC_EXECUTABLE "${ANDROID_NDK}/shader-tools/linux-x86_64/glslc" CACHE FILEPATH "" FORCE)
+    set(Vulkan_GLSLANG_VALIDATOR_EXECUTABLE "${Vulkan_GLSLC_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(Vulkan_glslangValidator_FOUND TRUE CACHE BOOL "" FORCE)
     find_library(Vulkan_LIBRARY vulkan)
 endif ()
 
