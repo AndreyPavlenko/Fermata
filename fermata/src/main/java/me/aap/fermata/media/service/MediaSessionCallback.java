@@ -1444,7 +1444,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (position < 0) {
 			var id = i.getId();
+			lib.getPrefs().setLastPlayedPosPref(0);
 			lib.getPrefs().setLastPlayedItemPref(id);
+			i.getParent().getPrefs().setLastPlayedPosPref(0);
 			i.getParent().getPrefs().setLastPlayedItemPref(id);
 			return;
 		}
