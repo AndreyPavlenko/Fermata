@@ -344,9 +344,9 @@
     <string name="clock_pos_left">Left</string>
     <string name="clock_pos_right">Right</string>
     <string name="clock_pos_center">Center</string>
-    <string name="change_brightness">Change brightness while playing video</string>
+    <string name="change_brightness">Dim video while playing</string>
     <string name="video_brightness">Video brightness</string>
-    <string name="change_brightness_sub">The brightness can also be changed with two finger scroll</string>
+    <string name="change_brightness_sub">Uses a software overlay and can also be adjusted with two-finger vertical scroll</string>
     <string name="watched_threshold">Watched threshold</string>
     <string name="watched_threshold_sub">Marked video as watched, if more than this number of percentages has been watched</string>
 
