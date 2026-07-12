@@ -243,9 +243,8 @@ public class NavBarMediator extends PrefNavBarMediator
 
 			b.addItem(R.id.nav_about, R.drawable.about, R.string.about);
 			b.addItem(R.id.settings_fragment, R.drawable.settings, R.string.settings);
-			if (!a.isCarActivityNotMirror()) b.addItem(R.id.nav_exit, R.drawable.exit, R.string.exit);
-
 			if (BuildConfig.AUTO) b.addItem(R.id.nav_donate, R.drawable.coffee, R.string.donate);
+			b.addItem(R.id.nav_exit, R.drawable.exit, a.isCarActivityNotMirror() ? R.string.restart : R.string.exit);
 		});
 	}
 
@@ -276,7 +275,11 @@ public class NavBarMediator extends PrefNavBarMediator
 			MainActivityDelegate.get(item.getContext()).showFragment(R.id.settings_fragment);
 			return true;
 		} else if (itemId == R.id.nav_exit) {
-			MainActivityDelegate.get(item.getContext()).finish();
+			MainActivityDelegate a = MainActivityDelegate.get(item.getContext());
+			a.finish();
+			if (a.isCarActivityNotMirror()) {
+				a.getHandler().postDelayed(() -> System.exit(0), 500);
+			}
 			return true;
 		}
 		MainActivityDelegate a;

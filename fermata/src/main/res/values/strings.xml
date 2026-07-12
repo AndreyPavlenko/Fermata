@@ -216,6 +216,7 @@
     <string name="settings">Settings</string>
     <string name="menu">Menu</string>
     <string name="exit">Exit</string>
+    <string name="restart">Restart</string>
     <string name="cancel">Cancel</string>
     <string name="got_to_current">Current track</string>
 
