@@ -1,4 +1,4 @@
-## !!!Be aware of scam!!! The sites like https://fermata-auto.com/ are 100% scam. This app is free and opensource!
+## !!!Be aware of scam!!! The sites like https :// fermata-auto . com  are 100% scam. This app is free and opensource!
 
 
 ## Fermata Media Player
