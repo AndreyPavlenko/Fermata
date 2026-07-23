@@ -351,6 +351,9 @@
     <string name="watched_threshold">Watched threshold</string>
     <string name="watched_threshold_sub">Marked video as watched, if more than this number of percentages has been watched</string>
 
+    <string name="internet_access">Internet access</string>
+    <string name="internet_access_sub">Block HTTP requests and web browsing</string>
+    <string name="internet_disabled_toast">Internet access is disabled. Enable it in Settings.</string>
     <string name="other">Other</string>
     <string name="check_updates">Check for updates on startup</string>
     <string name="update">Update</string>
