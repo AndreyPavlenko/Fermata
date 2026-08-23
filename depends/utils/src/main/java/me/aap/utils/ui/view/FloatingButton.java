@@ -22,6 +22,10 @@ import androidx.annotation.Px;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import me.aap.utils.R;
+import me.aap.utils.function.DoubleSupplier;
+import me.aap.utils.pref.PreferenceStore;
+import me.aap.utils.pref.PreferenceStore.Pref;
+import me.aap.utils.pref.SharedPreferenceStore;
 import me.aap.utils.ui.UiUtils;
 import me.aap.utils.ui.activity.ActivityDelegate;
 import me.aap.utils.ui.activity.ActivityListener;
@@ -32,6 +36,10 @@ import me.aap.utils.ui.fragment.ViewFragmentMediator;
  * @author Andrey Pavlenko
  */
 public class FloatingButton extends FloatingActionButton implements ActivityListener {
+	private static final String POS_PREFS_NAME = "FloatingButton";
+	private static final Pref<DoubleSupplier> POS_X_PREF = Pref.f("posX", -1f);
+	private static final Pref<DoubleSupplier> POS_Y_PREF = Pref.f("posY", -1f);
+	private final PreferenceStore posPrefs;
 	private Mediator mediator;
 	@ColorInt
 	private int borderColor;
@@ -55,6 +63,7 @@ public class FloatingButton extends FloatingActionButton implements ActivityList
 		borderFocusColor = ta.getColor(R.styleable.FloatingButton_borderFocusColor, Color.TRANSPARENT);
 		ta.recycle();
 
+		posPrefs = SharedPreferenceStore.create(context, POS_PREFS_NAME);
 		ActivityDelegate a = getActivity();
 		a.addBroadcastListener(this, ToolBarView.Mediator.DEFAULT_EVENT_MASK);
 		setMediator(a.getActiveFragment());
@@ -167,26 +176,13 @@ public class FloatingButton extends FloatingActionButton implements ActivityList
 				return super.onTouchEvent(e);
 
 			case MotionEvent.ACTION_MOVE:
-				int w = getWidth();
-				int h = getHeight();
-
-				View p = (View) getParent();
-				int pw = p.getWidth();
-				int ph = p.getHeight();
-
+				float[] bounds = getDragBounds();
 				float newX = e.getRawX() + dx;
 				float newY = e.getRawY() + dy;
-				ViewGroup.LayoutParams lp = getLayoutParams();
 
-				if (lp instanceof ViewGroup.MarginLayoutParams) {
-					ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) getLayoutParams();
-					newX = Math.max(mlp.leftMargin, newX);
-					newX = Math.min(pw - w - mlp.rightMargin, newX);
-					newY = Math.max(mlp.topMargin, newY);
-					newY = Math.min(ph - h - mlp.bottomMargin, newY);
-				} else {
-					newX = Math.min(pw - w, newX);
-					newY = Math.min(ph - h, newY);
+				if (bounds != null) {
+					newX = Math.max(bounds[0], Math.min(bounds[1], newX));
+					newY = Math.max(bounds[2], Math.min(bounds[3], newY));
 				}
 
 				animate().x(newX).y(newY).setDuration(0).start();
@@ -199,6 +195,7 @@ public class FloatingButton extends FloatingActionButton implements ActivityList
 
 				if (moving) {
 					moving = false;
+					savePosition();
 
 					var dm = getContext().getResources().getDisplayMetrics();
 					if ((Math.abs(e.getRawX() - downX) >= (dm.widthPixels * 0.05f))
@@ -213,6 +210,74 @@ public class FloatingButton extends FloatingActionButton implements ActivityList
 			default:
 				return super.onTouchEvent(e);
 		}
+	}
+
+	/**
+	 * Returns {@code [minX, maxX, minY, maxY]} - the range within which the button can be
+	 * dragged inside its parent, or {@code null} if the parent or this view is not laid out yet.
+	 */
+	@Nullable
+	private float[] getDragBounds() {
+		View p = (View) getParent();
+		int w = getWidth();
+		int h = getHeight();
+		if ((p == null) || (w == 0) || (h == 0)) return null;
+
+		int pw = p.getWidth();
+		int ph = p.getHeight();
+		ViewGroup.LayoutParams lp = getLayoutParams();
+		float minX, maxX, minY, maxY;
+
+		if (lp instanceof ViewGroup.MarginLayoutParams mlp) {
+			minX = mlp.leftMargin;
+			maxX = pw - w - mlp.rightMargin;
+			minY = mlp.topMargin;
+			maxY = ph - h - mlp.bottomMargin;
+		} else {
+			minX = 0;
+			maxX = pw - w;
+			minY = 0;
+			maxY = ph - h;
+		}
+
+		return new float[]{minX, maxX, minY, maxY};
+	}
+
+	private void savePosition() {
+		float[] bounds = getDragBounds();
+		if (bounds == null) return;
+
+		float rangeX = bounds[1] - bounds[0];
+		float rangeY = bounds[3] - bounds[2];
+		if ((rangeX <= 0) || (rangeY <= 0)) return;
+
+		float fx = (getX() - bounds[0]) / rangeX;
+		float fy = (getY() - bounds[2]) / rangeY;
+
+		try (PreferenceStore.Edit ed = posPrefs.editPreferenceStore()) {
+			ed.setFloatPref(POS_X_PREF, fx);
+			ed.setFloatPref(POS_Y_PREF, fy);
+		}
+	}
+
+	private void restorePosition() {
+		if (moving) return;
+
+		float fx = posPrefs.getFloatPref(POS_X_PREF);
+		float fy = posPrefs.getFloatPref(POS_Y_PREF);
+		if ((fx < 0) || (fy < 0)) return;
+
+		float[] bounds = getDragBounds();
+		if (bounds == null) return;
+
+		setX(bounds[0] + fx * (bounds[1] - bounds[0]));
+		setY(bounds[2] + fy * (bounds[3] - bounds[2]));
+	}
+
+	@Override
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		super.onLayout(changed, left, top, right, bottom);
+		restorePosition();
 	}
 
 	@Override
