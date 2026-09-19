@@ -211,7 +211,15 @@ public class PoiDb extends Poi.Type {
 			} else if (url.startsWith("http://") || url.startsWith("https://")) {
 				//TODO: implement
 			} else if (url.startsWith("file:/") || url.startsWith("/")) {
-				//TODO: implement
+				var path = url.startsWith("file:") ? android.net.Uri.parse(url).getPath() : url;
+				if (path == null) {
+					Log.e("Invalid POI file URL: ", url);
+					return null;
+				}
+				var dir = new java.io.File(path);
+				if (dir.isDirectory()) return new LufopFileProvider(dir);
+				Log.e("POI directory not found: ", dir);
+				return null;
 			} else if (url.startsWith("content:/")) {
 				//TODO: implement
 			}

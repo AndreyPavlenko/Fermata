@@ -38,6 +38,7 @@ struct WhisperSession {
 		if (!this->vadPath.empty()) {
 			params.vad = true;
 			params.vad_model_path = this->vadPath.c_str();
+			params.vad_params = whisper_vad_default_params();
 		}
 	}
 

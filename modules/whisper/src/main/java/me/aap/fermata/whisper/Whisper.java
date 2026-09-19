@@ -27,7 +27,7 @@ import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 
 public final class Whisper implements SubGenAddon.Transcriptor {
-	private static final String VAD_FILE_NAME = "ggml-silero-v5.1.2.bin";
+	private static final String VAD_FILE_NAME = "ggml-silero-v6.2.0.bin";
 	private static final Map<String, String> NAME_TO_URL = new LinkedHashMap<>();
 	private static final List<Pair<String, String>> displayNames;
 
