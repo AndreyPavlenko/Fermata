@@ -260,6 +260,7 @@ public interface MainActivityPrefs
 		AR,
 		ES,
 		KM,
+		BG,
     ;
 
 		private static final List<Lang> values = List.of(values());

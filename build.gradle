@@ -76,7 +76,7 @@ subprojects {
             vectorDrawables.useSupportLibrary = true
             testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
             resConfigs 'en', 'ru', 'it', 'tr', 'de', 'pt', 'vi', 'pl', 'hr', 'ja', 'zh_TW', 'ko',
-                    'fr', 'ro', 'ar', 'es', 'km'
+                    'fr', 'ro', 'ar', 'es', 'km', 'bg'
         }
 
         if (isDynFeature) {
