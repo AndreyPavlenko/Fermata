@@ -1,15 +1,23 @@
 package me.aap.utils.vfs.gdrive;
 
-import android.content.Intent;
+import static me.aap.utils.async.Completed.completed;
+import static me.aap.utils.async.Completed.failed;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialException;
 
 import com.google.android.gms.auth.UserRecoverableAuthException;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -45,9 +53,6 @@ import me.aap.utils.vfs.VirtualFileSystem;
 import me.aap.utils.vfs.VirtualFolder;
 import me.aap.utils.vfs.VirtualResource;
 
-import static me.aap.utils.async.Completed.completed;
-import static me.aap.utils.async.Completed.failed;
-
 /**
  * @author Andrey Pavlenko
  */
@@ -62,7 +67,8 @@ public class GdriveFileSystem implements VirtualFileSystem {
 	private final FutureRef<Drive> drive = FutureRef.create(this::createDrive);
 	private String email = "somebody@gmail.com";
 
-	private GdriveFileSystem(Provider provider, String requestToken, Supplier<FutureSupplier<? extends AppActivity>> activitySupplier) {
+	private GdriveFileSystem(Provider provider, String requestToken,
+	                         Supplier<FutureSupplier<? extends AppActivity>> activitySupplier) {
 		this.provider = provider;
 		this.requestToken = requestToken;
 		this.activitySupplier = activitySupplier;
@@ -128,51 +134,100 @@ public class GdriveFileSystem implements VirtualFileSystem {
 	}
 
 	private FutureSupplier<Drive> createDrive() {
-		GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(App.get());
-		if (account != null) return completed(createDrive(account));
-
 		Promise<Drive> p = new Promise<>();
-		activitySupplier.get().onFailure(p::completeExceptionally).onSuccess(a -> signIn(p, a));
+		activitySupplier.get().onFailure(p::completeExceptionally).onSuccess(a -> {
+			GetCredentialRequest request = new GetCredentialRequest.Builder()
+					.addCredentialOption(new GetGoogleIdOption.Builder()
+							.setServerClientId(requestToken)
+							.setFilterByAuthorizedAccounts(true)
+							.setAutoSelectEnabled(true)
+							.build())
+					.build();
+
+			CredentialManager.create(a.getContext())
+					.getCredentialAsync(a.getContext(), request, null, App.get().getExecutor(),
+							new CredentialManagerCallback<>() {
+								@Override
+								public void onResult(GetCredentialResponse result) {
+									handleSignInResult(p, result);
+								}
+
+								@Override
+								public void onError(@NonNull GetCredentialException err) {
+									Log.d(err, "Google sign in failed");
+									signIn(p, a);
+								}
+							});
+		});
 		return p;
 	}
 
-	private Drive createDrive(GoogleSignInAccount account) {
+	private Drive createDrive(Account account, String email) {
 		App app = App.get();
 		GoogleAccountCredential c = GoogleAccountCredential
 				.usingOAuth2(app, Collections.singleton(DriveScopes.DRIVE));
-		c.setSelectedAccount(account.getAccount());
-		email = account.getEmail();
+		c.setSelectedAccount(account);
+		this.email = email;
 		return new Drive.Builder(new NetHttpTransport(), new GsonFactory(), c)
 				.setApplicationName(app.getPackageName()).build();
 	}
 
 	private void signIn(Promise<Drive> p, AppActivity activity) {
-		GoogleSignInOptions o = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-				.requestIdToken(requestToken).requestEmail().build();
-		GoogleSignInClient client = GoogleSignIn.getClient(activity.getContext(), o);
-		activity.startActivityForResult(client::getSignInIntent).onCompletion((r, f) -> {
-			if (f != null) {
-				Log.e(f);
-				p.completeExceptionally(new LoginException("Google sign in failed"));
-			} else {
-				handleSignInResult(p, r);
-			}
-		});
+		GetCredentialRequest request = new GetCredentialRequest.Builder()
+				.addCredentialOption(new GetGoogleIdOption.Builder()
+						.setServerClientId(requestToken)
+						.setFilterByAuthorizedAccounts(false)
+						.setAutoSelectEnabled(false)
+						.build())
+				.build();
+
+		CredentialManager.create(activity.getContext())
+				.getCredentialAsync(activity.getContext(), request, null, App.get().getExecutor(),
+						new CredentialManagerCallback<>() {
+							@Override
+							public void onResult(GetCredentialResponse result) {
+								handleSignInResult(p, result);
+							}
+
+							@Override
+							public void onError(@NonNull GetCredentialException err) {
+								Log.e(err, "Google sign in failed");
+								p.completeExceptionally(new LoginException("Google sign in failed"));
+							}
+						});
 	}
 
-	private void handleSignInResult(Completable<Drive> p, Intent result) {
-		GoogleSignIn.getSignedInAccountFromIntent(result).addOnSuccessListener(account -> {
-			Log.d("Signed in as ", account.getEmail());
-			try {
-				p.complete(createDrive(account));
-			} catch (Exception ex) {
-				Log.e(ex, "Failed to create drive");
-				p.completeExceptionally(ex);
+	private void handleSignInResult(Completable<Drive> p, GetCredentialResponse result) {
+		Credential credential = result.getCredential();
+
+		try {
+			GoogleIdTokenCredential c = GoogleIdTokenCredential.createFrom(credential.getData());
+			String email = c.getId();
+			Log.d("Signed in as ", email);
+			Account account = getAccount(email);
+
+			if (account != null) {
+				try {
+					p.complete(createDrive(account, email));
+				} catch (Exception ex) {
+					Log.e(ex, "Failed to create drive");
+					p.completeExceptionally(ex);
+				}
+			} else {
+				p.completeExceptionally(new LoginException("Account not found: " + email));
 			}
-		}).addOnFailureListener(ex -> {
-			Log.e(ex, "Google sign in failed");
+		} catch (Exception ex) {
+			Log.e(ex, "Unexpected credential type");
 			p.completeExceptionally(ex);
-		});
+		}
+	}
+
+	private Account getAccount(String email) {
+		AccountManager am = AccountManager.get(App.get());
+		for (Account a : am.getAccountsByType("com.google")) {
+			if (a.name.equalsIgnoreCase(email)) return a;
+		}
+		return null;
 	}
 
 	@NonNull
@@ -185,7 +240,8 @@ public class GdriveFileSystem implements VirtualFileSystem {
 		return email;
 	}
 
-	List<VirtualResource> loadList(Drive.Files.List req, GdriveFolder parent, boolean dirsOnly) throws IOException {
+	List<VirtualResource> loadList(Drive.Files.List req, GdriveFolder parent, boolean dirsOnly)
+			throws IOException {
 		List<VirtualResource> ls = null;
 
 		for (; ; ) {
@@ -227,7 +283,8 @@ public class GdriveFileSystem implements VirtualFileSystem {
 		@NonNull
 		@Override
 		public FutureSupplier<VirtualFileSystem> createFileSystem(PreferenceStore ps) {
-			return completed(new GdriveFileSystem(this, ps.getStringPref(GOOGLE_TOKEN), activitySupplier));
+			return completed(
+					new GdriveFileSystem(this, ps.getStringPref(GOOGLE_TOKEN), activitySupplier));
 		}
 	}
 }

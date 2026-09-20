@@ -176,6 +176,7 @@ public abstract class ActivityBase extends AppCompatActivity implements AppActiv
 		super.finish();
 	}
 
+	@Override
 	public FutureSupplier<Intent> startActivityForResult(Supplier<Intent> intent) {
 		StartActivityPromise p = new StartActivityPromise(intent);
 		try {

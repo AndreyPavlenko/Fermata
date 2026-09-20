@@ -71,6 +71,9 @@ dependencies {
 
     implementation libs.googlePlayServicesAuth
     implementation libs.googlePlayServicesBase
+    implementation libs.androidxCredentials
+    implementation libs.androidxCredentialsAuth
+    implementation libs.googleid
     implementation libs.googleHttpClientGson
     implementation(libs.googleApiClientAndroid) {
         exclude group: 'org.apache.httpcomponents'

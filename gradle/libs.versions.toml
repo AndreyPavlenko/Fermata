@@ -4,7 +4,7 @@ appVersionCode = "268"
 appVersionName = "2.0.2"
 
 # Build tooling
-agp = "9.2.1"
+agp = "9.4.1"
 googleServices = "4.5.0"
 
 # SDK
@@ -20,6 +20,7 @@ androidxAnnotation = "1.10.0"
 androidxAppcompat = "1.8.0"
 androidxConstraintlayout = "2.2.2"
 androidxCore = "1.19.0"
+androidxCredentials = "1.6.0"
 androidxFragment = "1.9.0"
 androidxLegacySupport = "1.0.0"
 androidxLocalbroadcastmanager = "1.1.0"
@@ -29,7 +30,7 @@ androidxTvprovider = "1.1.0"
 androidxWebkit = "1.17.0"
 
 # AndroidX media3
-media3 = "1.11.0"
+media3 = "1.11.1"
 
 # AndroidX Car
 androidxCar = "1.7.0"
@@ -39,15 +40,16 @@ androidMaterial = "1.14.0"
 googlePlayFeatureDelivery = "2.1.0"
 googlePlayAssetDelivery = "2.3.0"
 googlePlayAppUpdate = "2.1.0"
-googlePlayServicesAuth = "21.6.0"
-googlePlayServicesBase = "18.10.0"
+googlePlayServicesAuth = "22.0.0"
+googleid = "1.2.1"
+googlePlayServicesBase = "18.11.0"
 googlePlayServicesCast = "22.3.1"
 googleMlkitTranslate = "17.0.3"
-onnxruntimeAndroid = "1.29.0"
+onnxruntimeAndroid = "1.30.0"
 
 # Google APIs
 googleHttpClientGson = "2.2.0"
-googleApiClientAndroid = "2.9.0"
+googleApiClientAndroid = "2.9.1"
 googleApiServicesDrive = "v3-rev197-1.25.0"
 
 # Firebase / Transport
@@ -58,17 +60,17 @@ transportBackendCct = "4.1.1"
 transportRuntime = "4.1.1"
 
 # Guava
-guava = "33.6.0-android"
+guava = "33.7.1-android"
 
 # Networking
-jsch = "2.28.6"
-smbj = "0.14.0"
+jsch = "2.28.7"
+smbj = "0.15.0"
 
 # Bouncycastle
-bouncycastle = "1.84"
+bouncycastle = "1.86"
 
 # VLC
-libvlc = "3.7.5"
+libvlc = "3.7.6"
 
 # Desugar
 desugarJdkLibs = "2.1.5"
@@ -89,6 +91,9 @@ androidxAnnotation                = { group = "androidx.annotation",            
 androidxAppcompat                 = { group = "androidx.appcompat",                 name = "appcompat",                     version.ref = "androidxAppcompat" }
 androidxConstraintlayout          = { group = "androidx.constraintlayout",          name = "constraintlayout",              version.ref = "androidxConstraintlayout" }
 androidxCore                      = { group = "androidx.core",                      name = "core",                          version.ref = "androidxCore" }
+androidxCredentials               = { group = "androidx.credentials",               name = "credentials",                   version.ref = "androidxCredentials" }
+androidxCredentialsAuth           = { group = "androidx.credentials",               name = "credentials-play-services-auth", version.ref = "androidxCredentials" }
+googleid                          = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 androidxFragment                  = { group = "androidx.fragment",                  name = "fragment",                      version.ref = "androidxFragment" }
 androidxLegacySupportCore         = { group = "androidx.legacy",                    name = "legacy-support-core-utils",     version.ref = "androidxLegacySupport" }
 androidxLocalbroadcastmanager     = { group = "androidx.localbroadcastmanager",     name = "localbroadcastmanager",         version.ref = "androidxLocalbroadcastmanager" }

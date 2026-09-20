@@ -100,7 +100,7 @@ subprojects {
 
         packagingOptions {
             resources {
-                excludes += ['META-INF/*.version']
+                excludes += ['META-INF/*.version', 'META-INF/LICENSE.md']
             }
         }
 
