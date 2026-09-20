@@ -31,7 +31,7 @@ jobs:
           app_version="$(version appVersionName)-$(git rev-parse --short HEAD)"
           sed -ri "s/appVersionName.+/appVersionName = \"$app_version\"/" $ver_file
           echo "APP_VERSION=$app_version" >> $GITHUB_ENV
-          echo "ANDROID_NDK_VERSION=$(version ndkVersion)-$git_hash" >> $GITHUB_ENV
+          echo "ANDROID_NDK_VERSION=$(version ndkVersion)" >> $GITHUB_ENV
 
       - name: Export vars
         env:
@@ -77,6 +77,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Cache Android NDK
         uses: actions/cache@v4
