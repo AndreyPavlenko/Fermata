@@ -84,11 +84,19 @@ import me.aap.utils.ui.view.NavBarView;
 public class VideoView extends FrameLayout
 		implements SurfaceHolder.Callback, View.OnLayoutChangeListener, PreferenceStore.Listener,
 		MainActivityListener, BiConsumer<SubGrid.Position, Subtitles.Text> {
+	private static final int BRIGHTNESS_GESTURE_SLOP_DP = 8;
 	private final Set<PreferenceStore.Pref<?>> prefChange = new HashSet<>(
 			Arrays.asList(MediaPrefs.VIDEO_SCALE, MediaPrefs.AUDIO_DELAY, MediaPrefs.AUDIO_DELAY_AA,
 					MediaPrefs.SUB_DELAY));
 	private SubDrawer subDrawer;
+	private View brightnessOverlay;
 	private FutureSupplier<?> createSurface = new Promise<>();
+	private boolean brightnessGesture;
+	private boolean brightnessDragging;
+	private float brightnessStartX;
+	private float brightnessStartY;
+	private int brightnessStartValue;
+	private int brightnessGestureValue;
 
 	public VideoView(Context context) {
 		this(context, null);
@@ -127,9 +135,20 @@ public class VideoView extends FrameLayout
 		});
 
 		addInfoView(context);
+		addBrightnessOverlay(context);
 		addOnLayoutChangeListener(this);
 		setLayoutParams(new CircularRevealFrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 		setFocusable(true);
+	}
+
+	protected void addBrightnessOverlay(Context context) {
+		brightnessOverlay = new View(context);
+		brightnessOverlay.setBackgroundColor(Color.BLACK);
+		brightnessOverlay.setAlpha(0f);
+		brightnessOverlay.setClickable(false);
+		brightnessOverlay.setFocusable(false);
+		brightnessOverlay.setVisibility(GONE);
+		addView(brightnessOverlay, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
 	}
 
 	protected void addInfoView(Context context) {
@@ -199,12 +218,22 @@ public class VideoView extends FrameLayout
 		createSurface.onSuccess(v -> {
 			MainActivityDelegate a = getActivity().peek();
 			if (a == null) return;
+			if (a.getPrefs().getChangeBrightnessPref()) setSoftwareBrightness(a.getBrightness());
 			MediaSessionCallback cb = a.getMediaSessionCallback();
 			MediaEngine eng = cb.getEngine();
 			if (eng != null) setSurfaceSize(eng);
 			VideoInfoView info = getVideoInfoView();
 			if (hideTitle && (info != null)) info.setVisibility(GONE);
 		});
+	}
+
+	public void setSoftwareBrightness(int brightness) {
+		View overlay = brightnessOverlay;
+		if (overlay == null) return;
+		int value = Math.max(0, Math.min(255, brightness));
+		float alpha = (255 - value) / 255f;
+		overlay.setAlpha(alpha);
+		overlay.setVisibility(alpha == 0f ? GONE : VISIBLE);
 	}
 
 	public void prepareSubDrawer(boolean dbl) {
@@ -396,9 +425,96 @@ public class VideoView extends FrameLayout
 
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
-	public boolean onTouchEvent(@NonNull MotionEvent e) {
-		MainActivityDelegate a = getActivity().peek();
-		return (a != null) && a.interceptTouchEvent(e, this::onTouch);
+	public boolean onTouchEvent(@NonNull MotionEvent event) {
+		if (handleBrightnessGesture(event)) return true;
+		MainActivityDelegate activity = getActivity().peek();
+		return (activity != null) && activity.interceptTouchEvent(event, this::onTouch);
+	}
+
+	public boolean handleBrightnessGesture(@NonNull MotionEvent event) {
+		MainActivityDelegate activity = getActivity().peek();
+		if (activity == null) return false;
+
+		switch (event.getActionMasked()) {
+			case MotionEvent.ACTION_POINTER_DOWN -> {
+				if (event.getPointerCount() == 2) {
+					brightnessGesture = true;
+					brightnessDragging = false;
+					brightnessStartX = getPointerCenterX(event);
+					brightnessStartY = getPointerCenterY(event);
+					brightnessStartValue = activity.getBrightness();
+					brightnessGestureValue = brightnessStartValue;
+				} else {
+					resetBrightnessGesture();
+				}
+			}
+			case MotionEvent.ACTION_MOVE -> {
+				if (!brightnessGesture || (event.getPointerCount() < 2)) return false;
+
+				float currentX = getPointerCenterX(event);
+				float currentY = getPointerCenterY(event);
+				float deltaX = currentX - brightnessStartX;
+				float deltaY = currentY - brightnessStartY;
+
+				if (!brightnessDragging) {
+					int slop = toIntPx(getContext(), BRIGHTNESS_GESTURE_SLOP_DP);
+					if (Math.abs(deltaY) < slop) return false;
+					if (Math.abs(deltaX) > Math.abs(deltaY)) {
+						resetBrightnessGesture();
+						return false;
+					}
+
+					brightnessDragging = true;
+					if (!activity.getPrefs().getChangeBrightnessPref()) {
+						activity.getPrefs().applyBooleanPref(
+								MainActivityPrefs.CHANGE_BRIGHTNESS, true);
+					}
+				}
+
+				int height = getHeight();
+				if ((height <= 0) && (getParent() instanceof View parent)) {
+					height = parent.getHeight();
+				}
+				int travel = Math.max(height / 2, 1);
+				int value = brightnessStartValue - Math.round(deltaY * 255f / travel);
+				brightnessGestureValue = Math.max(0, Math.min(255, value));
+				activity.setBrightness(brightnessGestureValue);
+				setSoftwareBrightness(activity.getBrightness());
+				return true;
+			}
+			case MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+				boolean handled = brightnessDragging;
+				if (handled) activity.getPrefs().applyIntPref(
+						MainActivityPrefs.BRIGHTNESS, brightnessGestureValue);
+				resetBrightnessGesture();
+				return handled;
+			}
+		}
+
+		return false;
+	}
+
+	private void resetBrightnessGesture() {
+		brightnessGesture = false;
+		brightnessDragging = false;
+	}
+
+	private static float getPointerCenterX(@NonNull MotionEvent event) {
+		float center = 0f;
+		int pointerCount = Math.min(event.getPointerCount(), 2);
+		for (int pointerIndex = 0; pointerIndex < pointerCount; pointerIndex++) {
+			center += event.getX(pointerIndex);
+		}
+		return center / pointerCount;
+	}
+
+	private static float getPointerCenterY(@NonNull MotionEvent event) {
+		float center = 0f;
+		int pointerCount = Math.min(event.getPointerCount(), 2);
+		for (int pointerIndex = 0; pointerIndex < pointerCount; pointerIndex++) {
+			center += event.getY(pointerIndex);
+		}
+		return center / pointerCount;
 	}
 
 	@Override

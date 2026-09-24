@@ -10,6 +10,7 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
@@ -17,11 +18,13 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 import me.aap.fermata.BuildConfig;
+import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.FermataChromeClient;
 import me.aap.fermata.addon.web.FermataJsInterface;
 import me.aap.fermata.addon.web.FermataWebView;
 import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
 import me.aap.utils.log.Log;
@@ -88,6 +91,13 @@ public class YoutubeWebView extends FermataWebView {
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
 		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
 		super.goBack();
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		VideoView videoView = MainActivityDelegate.get(getContext()).findViewById(R.id.ytVideoView);
+		if ((videoView != null) && videoView.handleBrightnessGesture(event)) return true;
+		return super.onTouchEvent(event);
 	}
 
 	@Override
