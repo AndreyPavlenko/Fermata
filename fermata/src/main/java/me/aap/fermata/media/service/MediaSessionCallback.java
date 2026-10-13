@@ -1280,6 +1280,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private void setPlaybackState(PlaybackStateCompat state) {
 		currentState = state;
 		session.setPlaybackState(state);
+		if ((state.getState() == STATE_PLAYING) && !session.isActive()) session.setActive(true);
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 
