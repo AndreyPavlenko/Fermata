@@ -113,18 +113,29 @@ public class YoutubeWebView extends FermataWebView {
 		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		loadUrl("javascript:\n" +
+				// Muted autoplay previews in the feeds reuse the player, they are not user playback
+				"function isPreview(v) {\n" +
+				"  return v.muted && !/^\\/(watch|shorts)/.test(location.pathname);\n" +
+				"}\n" +
+				"function videoEvent(v, e) {\n" +
+				"  if (isPreview(v)) {\n" +
+				"    if (!v.fermataPlaying) return;\n" +
+				"    e = " + JS_VIDEO_PAUSED + ";\n" +
+				"  }\n" +
+				"  v.fermataPlaying = (e === " + JS_VIDEO_PLAYING + ");\n" +
+				"  " + JS_EVENT + "(e, (e === " + JS_VIDEO_ENDED + ") ? null : v.currentSrc);\n" +
+				"}\n" +
 				"function attachVideoListeners(v) {\n" +
 				"  if (v.getAttribute('FermataAttached') === 'true') return;\n" +
 				"  v.setAttribute('FermataAttached', 'true');\n" +
 				"  v.setAttribute('style', 'object-fit:" + scale + "');\n" + debug +
-				"  if ((v.currentTime > 0) && !v.paused && !v.ended) " + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);\n" +
-				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PAUSED +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED +
-				", null);});\n" +
+				"  if ((v.currentTime > 0) && !v.paused && !v.ended) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  v.addEventListener('playing', function(e) {videoEvent(v, " + JS_VIDEO_PLAYING + ");});\n" +
+				"  v.addEventListener('pause', function(e) {videoEvent(v, " + JS_VIDEO_PAUSED + ");});\n" +
+				"  v.addEventListener('ended', function(e) {videoEvent(v, " + JS_VIDEO_ENDED + ");});\n" +
+				"  v.addEventListener('volumechange', function(e) {\n" +
+				"    if (!v.paused && !v.fermataPlaying && !isPreview(v)) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  });\n" +
 				"}\n" +
 				"function findVideo() {\n" +
 				"  var video = document.querySelectorAll('video');" +
