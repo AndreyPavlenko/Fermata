@@ -45,6 +45,7 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
 	private static final Pref<BooleanSupplier> YT_PLAYER_CONTROLS =
 			Pref.b("YT_PLAYER_CONTROLS", false);
+	private static final Pref<BooleanSupplier> YT_PAUSE_ON_LEAVE = Pref.b("YT_PAUSE_ON_LEAVE", !AUTO);
 	private boolean ignorePrefChange;
 
 	@IdRes
@@ -110,6 +111,13 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.subtitle = R.string.youtube_player_controls_sub;
 			o.visibility = visibility;
 		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_PAUSE_ON_LEAVE;
+			o.title = R.string.youtube_pause_on_leave;
+			o.subtitle = R.string.youtube_pause_on_leave_sub;
+			o.visibility = visibility;
+		});
 
 		if (AUTO) {
 			set.addBooleanPref(o -> {
@@ -172,6 +180,10 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	void setScale(VideoScale scale) {
 		getPreferenceStore().applyStringPref(VIDEO_SCALE, scale.prefName());
+	}
+
+	boolean pauseOnLeave() {
+		return getPreferenceStore().getBooleanPref(YT_PAUSE_ON_LEAVE);
 	}
 
 	boolean autoHighestQuality() {

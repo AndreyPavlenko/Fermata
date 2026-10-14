@@ -32,4 +32,6 @@
     <string name="sponsorblock_cat_music_offtopic">Non-music sections</string>
     <string name="sponsorblock_cat_filler">Filler</string>
     <string name="sponsorblock_cat_filler_sub">Aggressive category; disabled by default.</string>
+    <string name="youtube_pause_on_leave">Pause when leaving the screen</string>
+    <string name="youtube_pause_on_leave_sub">Pause when Fermata goes off screen and resume when it\'s back. Off: keep playing in the background</string>
 </resources>
