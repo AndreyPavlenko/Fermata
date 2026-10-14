@@ -59,6 +59,7 @@ public class FermataWebView extends WebView
 	private WebBrowserAddon addon;
 	private FermataWebClient webClient;
 	private FermataChromeClient chrome;
+	private boolean keyNavigation;
 
 	public FermataWebView(Context context) {
 		this(context, null);
@@ -239,11 +240,22 @@ public class FermataWebView extends WebView
 		});
 	}
 
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		// The highlight is for key navigation (D-pad, rotary controller): add it on the first such key
+		if (!keyNavigation && (event.getAction() == KeyEvent.ACTION_DOWN) && !event.isSystem()) {
+			keyNavigation = true;
+			addFocusHighlight();
+		}
+		return super.dispatchKeyEvent(event);
+	}
+
 	protected void addFocusHighlight() {
+		if (!keyNavigation) return;
 		evaluateJavascript("""
 				(function() {
 				  var style = document.createElement('style');
-				  style.textContent = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
+				  style.textContent = ':focus-visible {outline: 2px solid blue !important; border-radius: 5px;}';
 				  document.head.appendChild(style);
 				})()""", null);
 	}
