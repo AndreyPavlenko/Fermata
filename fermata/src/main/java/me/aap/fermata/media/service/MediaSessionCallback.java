@@ -509,12 +509,24 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
+		// Only a request that came through the session from another app (e.g. Android Auto's autoplay) may be
+		// handed off. Fermata's own controls call this directly, outside of a session request.
+		boolean handOff;
+		try {
+			handOff = !lib.getContext().getPackageName().equals(session.getCurrentControllerInfo().getPackageName());
+		} catch (RuntimeException ex) {
+			handOff = false;
+		}
 		playerTask.cancel();
-		playerTask = play();
+		playerTask = play(handOff);
+	}
+
+	public FutureSupplier<Void> play() {
+		return play(false);
 	}
 
 	@SuppressLint("SwitchIntDef")
-	public FutureSupplier<Void> play() {
+	private FutureSupplier<Void> play(boolean handOff) {
 		PlaybackStateCompat state = getPlaybackState();
 
 		switch (state.getState()) {
@@ -524,6 +536,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 						playPreparedItem(i, lib.getLastPlayedPosition(i));
 					} else {
 						// Report it right away, rather than leaving the caller (e.g. Android Auto's autoplay) waiting
+						if (handOff) PreviousMediaApp.resume(lib.getContext(), lib.getPrefs());
 						setMetadata(null);
 						setPlaybackState(new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 								.setState(STATE_ERROR, 0, 1.0f)
@@ -1349,6 +1362,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		// A stop or engine switch deactivates the session. Publish resumed playback
 		// through an active session so system media controls can discover it again.
 		if ((state.getState() == STATE_PLAYING) && !session.isActive()) {
+			PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
 			session.setActive(true);
 		}
 		session.setPlaybackState(state);
