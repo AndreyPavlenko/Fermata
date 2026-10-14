@@ -15,6 +15,9 @@ import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONException;
+import org.json.JSONTokener;
+
 import java.util.List;
 
 import me.aap.fermata.BuildConfig;
@@ -377,8 +380,25 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<String> getVideoTitle() {
 		Promise<String> p = new Promise<>();
-		evaluateJavascript("document.title", p::complete);
+		// The page title is updated only some time after a video is opened, the player knows it already
+		evaluateJavascript("""
+				(function() {
+				  var v = document.querySelector('video');
+				  var p = v && v.closest('#movie_player');
+				  var d = p && p.getVideoData && p.getVideoData();
+				  return (d && d.title) || document.title;
+				})()""", json -> p.complete(jsonString(json)));
 		return p;
+	}
+
+	// evaluateJavascript() returns its result as JSON, so a string comes quoted and escaped
+	private static String jsonString(String json) {
+		try {
+			Object v = new JSONTokener(json).nextValue();
+			return (v instanceof String) ? (String) v : null;
+		} catch (JSONException ex) {
+			return json;
+		}
 	}
 
 	void setScale(YoutubeAddon.VideoScale scale) {
