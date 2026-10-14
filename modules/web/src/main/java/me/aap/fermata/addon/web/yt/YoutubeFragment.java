@@ -177,7 +177,8 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			FermataChromeClient chrome = v.getWebChromeClient();
 			if (chrome == null) return;
 
-			if (!DEFAULT_URLS.contains(getUrl())) chrome.enterFullScreen();
+			// Only while on screen: off screen, full screen would hide the page and pause the video
+			if (isResumed() && !DEFAULT_URLS.contains(getUrl())) chrome.enterFullScreen();
 		} else if (YoutubeMediaEngine.isYoutubeItem(oldItem)) {
 			FermataWebView v = getWebView();
 			if (v == null) return;
