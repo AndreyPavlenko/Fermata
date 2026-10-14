@@ -243,7 +243,7 @@ public class FermataWebView extends WebView
 		evaluateJavascript("""
 				(function() {
 				  var style = document.createElement('style');
-				  style.innerHTML = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
+				  style.textContent = ':focus {outline: 2px solid blue !important; border-radius: 5px;}';
 				  document.head.appendChild(style);
 				})()""", null);
 	}
