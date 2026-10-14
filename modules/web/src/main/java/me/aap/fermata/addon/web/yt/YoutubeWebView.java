@@ -41,6 +41,8 @@ public class YoutubeWebView extends FermataWebView {
 					"  window.__fermataQ = null;\n" +
 					"}\n";
 	private YoutubeJsInterface js;
+	private boolean bareVideoFullScreen;
+	private int fullScreenRequest;
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -146,11 +148,61 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	protected boolean requestFullScreen() {
-		loadUrl("javascript: var v = document.querySelector('video');\n" +
+		int req = ++fullScreenRequest;
+		bareVideoFullScreen = false;
+
+		if (!getAddon().youtubePlayerControls()) {
+			requestFullScreen("document.querySelector('video')");
+			return true;
+		}
+
+		// YouTube's own full screen keeps its controls and lays the video out for it. Without its button
+		// (e.g. Shorts) take the player along, without the player the bare video, as without the option.
+		evaluateJavascript("""
+				(function() {
+				  var c = document.querySelector('video');
+				  c = c && c.closest('#player-container-id');
+				  if (!c) return 'video';
+				  return c.querySelector('button.fullscreen-icon') ? 'button player video' : 'player video';
+				})()""", steps -> requestFullScreen(req, steps.replace("\"", "").split(" "), 0));
+		return true;
+	}
+
+	// Each step is a request of its own, the next one follows if full screen hasn't started
+	private void requestFullScreen(int req, String[] steps, int i) {
+		if (req != fullScreenRequest) return;
+
+		switch (steps[i]) {
+			case "button" -> loadUrl("javascript: if (!document.fullscreenElement) document.querySelector('video')" +
+					".closest('#player-container-id').querySelector('button.fullscreen-icon').click();");
+			case "player" -> requestFullScreen("document.querySelector('video').closest('#player-container-id')");
+			default -> {
+				bareVideoFullScreen = true;
+				requestFullScreen("document.querySelector('video')");
+			}
+		}
+
+		if (i + 1 < steps.length) postDelayed(() -> {
+			if ((req == fullScreenRequest) && !getWebChromeClient().isFullScreen())
+				requestFullScreen(req, steps, i + 1);
+		}, 1500);
+	}
+
+	private void requestFullScreen(String target) {
+		loadUrl("javascript: var v = " + target + ";\n" +
 				"if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
 				"else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
 				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);");
-		return true;
+	}
+
+	// Whether touches in full screen go to YouTube's controls
+	boolean usePlayerControls() {
+		return getAddon().youtubePlayerControls() && !bareVideoFullScreen;
+	}
+
+	void fullScreenExited() {
+		fullScreenRequest++;
+		bareVideoFullScreen = false;
 	}
 
 	void play() {

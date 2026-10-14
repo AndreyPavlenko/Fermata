@@ -53,6 +53,12 @@ public class YoutubeChromeClient extends FermataChromeClient {
 	}
 
 	@Override
+	public void onHideCustomView() {
+		super.onHideCustomView();
+		((YoutubeWebView) getWebView()).fullScreenExited();
+	}
+
+	@Override
 	public boolean canEnterFullScreen() {
 		MainActivityDelegate a = MainActivityDelegate.get(getWebView().getContext());
 		MediaSessionCallback cb = a.getMediaSessionCallback();
@@ -62,6 +68,9 @@ public class YoutubeChromeClient extends FermataChromeClient {
 	}
 
 	protected boolean onTouchEvent(View v, MotionEvent event) {
-		return isFullScreen() && getFullScreenView().onTouchEvent(event);
+		if (!isFullScreen()) return false;
+		// Leave the touches to YouTube's controls, only show the floating button
+		if (((YoutubeWebView) getWebView()).usePlayerControls()) return super.onTouchEvent(v, event);
+		return getFullScreenView().onTouchEvent(event);
 	}
 }

@@ -43,6 +43,8 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
+	private static final Pref<BooleanSupplier> YT_PLAYER_CONTROLS =
+			Pref.b("YT_PLAYER_CONTROLS", false);
 	private boolean ignorePrefChange;
 
 	@IdRes
@@ -99,6 +101,13 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.store = getPreferenceStore();
 			o.pref = YT_AUTO_HIGHEST_QUALITY;
 			o.title = R.string.auto_highest_video_quality;
+			o.visibility = visibility;
+		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_PLAYER_CONTROLS;
+			o.title = R.string.youtube_player_controls;
+			o.subtitle = R.string.youtube_player_controls_sub;
 			o.visibility = visibility;
 		});
 
@@ -167,6 +176,10 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	boolean autoHighestQuality() {
 		return getPreferenceStore().getBooleanPref(YT_AUTO_HIGHEST_QUALITY);
+	}
+
+	boolean youtubePlayerControls() {
+		return getPreferenceStore().getBooleanPref(YT_PLAYER_CONTROLS);
 	}
 
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {
