@@ -9,6 +9,7 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 
@@ -88,6 +89,16 @@ public class YoutubeWebView extends FermataWebView {
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
 		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
 		super.goBack();
+	}
+
+	@Override
+	protected void urlChanged(String url) {
+		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
+		// even though YouTube keeps playing it as a muted preview
+		String path = Uri.parse(url).getPath();
+		if ((path != null) && (path.startsWith("/watch") || path.startsWith("/shorts"))) return;
+		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
+		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
 	}
 
 	@Override
