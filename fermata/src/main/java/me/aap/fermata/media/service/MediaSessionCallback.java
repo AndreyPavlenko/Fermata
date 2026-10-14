@@ -456,19 +456,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
+		boolean handOff = isFromOtherApp();
 		playerTask.cancel();
-		playerTask = play();
+		playerTask = play(handOff);
 	}
 
-	@SuppressLint("SwitchIntDef")
 	public FutureSupplier<Void> play() {
+		return play(false);
+	}
+
+	// Only a request from another app (e.g. Android Auto's autoplay) may be handed off when there is
+	// nothing to resume, never one from Fermata's own controls
+	@SuppressLint("SwitchIntDef")
+	private FutureSupplier<Void> play(boolean handOff) {
 		PlaybackStateCompat state = getPlaybackState();
 
 		switch (state.getState()) {
 			case STATE_NONE, STATE_STOPPED, STATE_ERROR -> {
 				return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
 					if (i != null) playPreparedItem(i, lib.getLastPlayedPosition(i));
-					else nothingToResume();
+					else nothingToResume(handOff);
 					return completedVoid();
 				});
 			}
@@ -602,8 +609,20 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		return completedVoid();
 	}
 
+	// Whether the request being handled came through the session from another app. Fermata's own
+	// controls call this callback directly, outside of a session request.
+	private boolean isFromOtherApp() {
+		try {
+			var info = session.getCurrentControllerInfo();
+			return !lib.getContext().getPackageName().equals(info.getPackageName());
+		} catch (RuntimeException ex) {
+			return false;
+		}
+	}
+
 	// Report it right away, rather than leaving the caller (e.g. Android Auto's autoplay) waiting
-	private void nothingToResume() {
+	private void nothingToResume(boolean handOff) {
+		if (handOff) PreviousMediaApp.resume(lib.getContext(), lib.getPrefs());
 		setMetadata(null);
 		setPlaybackState(new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 				.setState(STATE_ERROR, 0, 1.0f)
@@ -1295,7 +1314,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private void setPlaybackState(PlaybackStateCompat state) {
 		currentState = state;
 		session.setPlaybackState(state);
-		if ((state.getState() == STATE_PLAYING) && !session.isActive()) session.setActive(true);
+		if ((state.getState() == STATE_PLAYING) && !session.isActive()) {
+			PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
+			session.setActive(true);
+		}
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 

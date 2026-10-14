@@ -19,11 +19,13 @@ import static me.aap.utils.ui.UiUtils.ID_NULL;
 import static me.aap.utils.ui.UiUtils.showAlert;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,6 +65,7 @@ import me.aap.fermata.addon.SubGenAddon;
 import me.aap.fermata.media.lib.MediaLib;
 import me.aap.fermata.media.pref.BrowsableItemPrefs;
 import me.aap.fermata.media.pref.MediaLibPrefs;
+import me.aap.fermata.media.service.MediaSessionListener;
 import me.aap.fermata.media.pref.MediaPrefs;
 import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
@@ -377,6 +380,17 @@ public class SettingsFragment extends MainActivityFragment
 			o.store = mediaPrefs;
 			o.pref = BrowsableItemPrefs.PLAY_NEXT;
 			o.title = R.string.play_next_on_completion;
+		});
+		sub1.addBooleanPref(o -> {
+			o.store = mediaPrefs;
+			o.pref = MediaLibPrefs.RESUME_PREVIOUS_APP;
+			o.title = R.string.resume_previous_app;
+			o.subtitle = R.string.resume_previous_app_sub;
+		});
+		sub1.addButton(o -> {
+			o.title = R.string.notification_access;
+			o.subtitle = R.string.notification_access_sub;
+			o.onClick = SettingsFragment::openNotificationAccess;
 		});
 
 		sub1 = set.subSet(o -> o.title = R.string.playback_control);
@@ -940,6 +954,25 @@ public class SettingsFragment extends MainActivityFragment
 			if (ctx instanceof Activity) ((Activity) ctx).finishAffinity();
 			else System.exit(0);
 		});
+	}
+
+	private static void openNotificationAccess() {
+		Context ctx = FermataApplication.get();
+		Intent i;
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			i = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS).putExtra(
+					Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+					new ComponentName(ctx, MediaSessionListener.class).flattenToString());
+		} else {
+			i = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+		}
+
+		try {
+			ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+		} catch (Exception ex) {
+			Log.e(ex, "Failed to open notification access settings");
+		}
 	}
 
 	private void openLog(MainActivityDelegate a) {
