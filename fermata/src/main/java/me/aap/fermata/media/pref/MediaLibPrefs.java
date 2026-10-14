@@ -11,6 +11,8 @@ public interface MediaLibPrefs extends BrowsableItemPrefs {
 	Pref<BooleanSupplier> VLC_ENABLED = Pref.b("VLC_ENABLED", false).withInheritance(false);
 	Pref<BooleanSupplier> RESUME_PREVIOUS_APP =
 			Pref.b("RESUME_PREVIOUS_APP", false).withInheritance(false);
+	Pref<BooleanSupplier> RESUME_PREVIOUS_APP_ON_LEAVE =
+			Pref.b("RESUME_PREVIOUS_APP_ON_LEAVE", false).withInheritance(false);
 	Pref<Supplier<String>> PREVIOUS_MEDIA_APP =
 			Pref.s("PREVIOUS_MEDIA_APP").withInheritance(false);
 

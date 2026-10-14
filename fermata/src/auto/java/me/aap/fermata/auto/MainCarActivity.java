@@ -123,6 +123,12 @@ public class MainCarActivity extends CarActivity implements FermataActivity {
 	}
 
 	@Override
+	public void onStop() {
+		super.onStop();
+		getActivityDelegate().onSuccess(MainActivityDelegate::onCarActivityStop);
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
 	public void onDestroy() {
 		super.onDestroy();

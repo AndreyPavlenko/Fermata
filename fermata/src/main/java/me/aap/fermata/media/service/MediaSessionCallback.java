@@ -123,6 +123,7 @@ import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
@@ -189,6 +190,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
+	private Runnable carScreenLeft;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
 															MediaLib lib,
@@ -618,6 +620,28 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		} catch (RuntimeException ex) {
 			return false;
 		}
+	}
+
+	// Fermata's car screen is no longer visible
+	public void onCarScreenLeft() {
+		onCarScreenShown();
+		// The screen is also left when the car disconnects: give Android Auto time to report it
+		carScreenLeft = () -> {
+			carScreenLeft = null;
+			if (!lib.getPrefs().getBooleanPref(MediaLibPrefs.RESUME_PREVIOUS_APP_ON_LEAVE)) return;
+			int st = getPlaybackState().getState();
+			// Only with nothing to offer, which is what a greyed out play button means
+			if ((metadata != null) || ((st != STATE_NONE) && (st != STATE_STOPPED) && (st != STATE_ERROR)))
+				return;
+			PreviousMediaApp.handBack(lib.getContext(), lib.getPrefs());
+		};
+		App.get().getHandler().postDelayed(carScreenLeft, 2000);
+	}
+
+	public void onCarScreenShown() {
+		if (carScreenLeft == null) return;
+		App.get().getHandler().removeCallbacks(carScreenLeft);
+		carScreenLeft = null;
 	}
 
 	// Report it right away, rather than leaving the caller (e.g. Android Auto's autoplay) waiting
