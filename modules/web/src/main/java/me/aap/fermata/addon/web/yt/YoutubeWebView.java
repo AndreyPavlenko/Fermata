@@ -95,6 +95,14 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		// The page is gone with its activity (e.g. Fermata Auto exited from Android Auto), and nothing
+		// can continue its playback. Switching to another section only detaches it until it's shown again.
+		if ((e == ACTIVITY_DESTROY) && (js != null)) js.pageRemoved();
+		super.onActivityEvent(a, e);
+	}
+
+	@Override
 	protected void urlChanged(String url) {
 		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
 		// even though YouTube keeps playing it as a muted preview

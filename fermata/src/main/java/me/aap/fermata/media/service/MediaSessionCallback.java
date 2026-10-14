@@ -572,7 +572,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (setPosition && (eng != null)) {
 			PlayableItem i = eng.getSource();
-			if ((i != null) && i.isExternal()) return onStop(eng, -1);
+			// Without a source there is no position to save, and an engine whose page is gone may
+			// never answer
+			if ((i == null) || i.isExternal()) return onStop(eng, -1);
 			else return eng.getPosition().main().then(pos -> onStop(eng, pos));
 		} else {
 			return onStop(eng, -1);
