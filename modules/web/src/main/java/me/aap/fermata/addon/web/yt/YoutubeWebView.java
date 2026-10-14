@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web.yt;
 
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_ERR;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_EVENT;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_FULL_SCREEN;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_ENDED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
@@ -41,6 +42,8 @@ public class YoutubeWebView extends FermataWebView {
 					"  window.__fermataQ = null;\n" +
 					"}\n";
 	private YoutubeJsInterface js;
+	// Reported by the page: the bare video, which has no YouTube controls, is what's in full screen
+	boolean videoFullScreen;
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -131,6 +134,13 @@ public class YoutubeWebView extends FermataWebView {
 				"  video.forEach(attachVideoListeners);\n" +
 				"   setTimeout(findVideo, 1000);\n" +
 				"}\n" +
+				"if (!window.__fermataFullScreen) {\n" +
+				"  window.__fermataFullScreen = true;\n" +
+				"  document.addEventListener('fullscreenchange', function() {\n" +
+				"    var e = document.fullscreenElement;\n" +
+				"    " + JS_EVENT + "(" + JS_FULL_SCREEN + ", e ? e.tagName : null);\n" +
+				"  });\n" +
+				"}\n" +
 				"findVideo();");
 	}
 
@@ -146,10 +156,31 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	protected boolean requestFullScreen() {
-		loadUrl("javascript: var v = document.querySelector('video');\n" +
-				"if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
-				"else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
-				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);");
+		// With YouTube's controls, its own button lets YouTube switch to its full screen layout. Without the
+		// button (e.g. Shorts) the player goes full screen, and without the player the bare video, as without
+		// the option. A refused request falls back to the next one. Only the click can't tell, so whether
+		// full screen started is checked after a while.
+		loadUrl("javascript:(function() {\n" +
+				"  var v = document.querySelector('video');\n" +
+				"  if (!v) return;\n" +
+				"  var p = " + getAddon().youtubePlayerControls() + " && v.closest('#player-container-id');\n" +
+				"  var b = p && p.querySelector('button.fullscreen-icon');\n" +
+				"  function fs(e) {\n" +
+				"    if ('requestFullscreen' in e) return e.requestFullscreen();\n" +
+				"    if ('webkitRequestFullscreen' in e) return Promise.resolve(e.webkitRequestFullscreen());\n" +
+				"    return Promise.reject('Method requestFullscreen not found in ' + e);\n" +
+				"  }\n" +
+				"  function video() {\n" +
+				"    fs(v).catch(function(err) { " + JS_EVENT + "(" + JS_ERR + ", '' + err); });\n" +
+				"  }\n" +
+				"  function player() { fs(p).catch(video); }\n" +
+				"  if (!p) video();\n" +
+				"  else if (!b) player();\n" +
+				"  else {\n" +
+				"    b.click();\n" +
+				"    setTimeout(function() { if (!document.fullscreenElement) player(); }, 1500);\n" +
+				"  }\n" +
+				"})();");
 		return true;
 	}
 
