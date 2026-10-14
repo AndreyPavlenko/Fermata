@@ -387,6 +387,14 @@ public class SettingsFragment extends MainActivityFragment
 			o.title = R.string.resume_previous_app;
 			o.subtitle = R.string.resume_previous_app_sub;
 		});
+		if (BuildConfig.AUTO) {
+			sub1.addBooleanPref(o -> {
+				o.store = mediaPrefs;
+				o.pref = MediaLibPrefs.RESUME_PREVIOUS_APP_ON_LEAVE;
+				o.title = R.string.resume_previous_app_on_leave;
+				o.subtitle = R.string.resume_previous_app_on_leave_sub;
+			});
+		}
 		sub1.addButton(o -> {
 			o.title = R.string.notification_access;
 			o.subtitle = R.string.notification_access_sub;

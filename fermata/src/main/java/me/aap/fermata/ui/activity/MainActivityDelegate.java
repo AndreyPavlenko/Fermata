@@ -389,6 +389,8 @@ public class MainActivityDelegate extends ActivityDelegate
 	public void onActivityResume() {
 		super.onActivityResume();
 		checkMirroringMode(true);
+		if (AUTO && getAppActivity().isCarActivity())
+			getMediaServiceBinder().getMediaSessionCallback().onCarScreenShown();
 		for (FermataAddon addon : AddonManager.get().getAddons()) {
 			if (addon instanceof FermataActivityAddon)
 				((FermataActivityAddon) addon).onActivityResume(this);
