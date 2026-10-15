@@ -468,6 +468,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			case STATE_NONE, STATE_STOPPED, STATE_ERROR -> {
 				return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
 					if (i != null) playPreparedItem(i, lib.getLastPlayedPosition(i));
+					else nothingToResume();
 					return completedVoid();
 				});
 			}
@@ -572,7 +573,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (setPosition && (eng != null)) {
 			PlayableItem i = eng.getSource();
-			if ((i != null) && i.isExternal()) return onStop(eng, -1);
+			// Without a source there is no position to save, and an engine whose page is gone may
+			// never answer
+			if ((i == null) || i.isExternal()) return onStop(eng, -1);
 			else return eng.getPosition().main().then(pos -> onStop(eng, pos));
 		} else {
 			return onStop(eng, -1);
@@ -580,11 +583,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private FutureSupplier<?> onStop(MediaEngine eng, long pos) {
+		boolean external = false;
+
 		if (eng != null) {
-			if (pos != -1) {
-				PlayableItem i = eng.getSource();
-				if (i != null) setLastPlayed(i, pos);
-			}
+			PlayableItem i = eng.getSource();
+			external = (i != null) && i.isExternal();
+			if ((pos != -1) && (i != null)) setLastPlayed(i, pos);
 
 			eng.stop();
 			eng.releaseAudioFocus(audioManager, audioFocusReq);
@@ -593,7 +597,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		stopped();
+		// An external item (e.g. a web video) can't be resumed from here, don't keep showing it
+		if (external) setMetadata(null);
 		return completedVoid();
+	}
+
+	// Report it right away, rather than leaving the caller (e.g. Android Auto's autoplay) waiting
+	private void nothingToResume() {
+		setMetadata(null);
+		setPlaybackState(new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+				.setState(STATE_ERROR, 0, 1.0f)
+				.setErrorMessage(PlaybackStateCompat.ERROR_CODE_NOT_SUPPORTED,
+						lib.getContext().getString(R.string.nothing_to_resume)).build());
 	}
 
 	private void stopped() {
@@ -1280,6 +1295,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private void setPlaybackState(PlaybackStateCompat state) {
 		currentState = state;
 		session.setPlaybackState(state);
+		if ((state.getState() == STATE_PLAYING) && !session.isActive()) session.setActive(true);
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 
