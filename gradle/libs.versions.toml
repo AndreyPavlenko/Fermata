@@ -160,6 +160,7 @@ junit4                            = { group = "junit",                          
 junit5Api                         = { group = "org.junit.jupiter",                  name = "junit-jupiter-api",             version.ref = "junit5" }
 junit5Engine                      = { group = "org.junit.jupiter",                  name = "junit-jupiter-engine",          version.ref = "junit5" }
 junit5Params                      = { group = "org.junit.jupiter",                  name = "junit-jupiter-params",          version.ref = "junit5" }
+junit5Launcher                    = { group = "org.junit.platform",                 name = "junit-platform-launcher",       version.ref = "junit5" }
 androidxTestJunit                 = { group = "androidx.test.ext",                  name = "junit",                         version.ref = "androidxTestJunit" }
 androidxTestEspresso              = { group = "androidx.test.espresso",             name = "espresso-core",                 version.ref = "androidxTestEspresso" }
 

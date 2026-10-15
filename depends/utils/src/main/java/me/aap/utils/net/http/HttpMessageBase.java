@@ -474,6 +474,8 @@ abstract class HttpMessageBase implements HttpMessage {
 				if (bb.hasRemaining()) {
 					lenBuf.clear();
 					lenBuf.put(bb);
+					// Ready to be read by getByteBuffer(), which prepends the partial line to the next read
+					lenBuf.flip();
 				} else {
 					lenBuf.limit(0);
 				}
