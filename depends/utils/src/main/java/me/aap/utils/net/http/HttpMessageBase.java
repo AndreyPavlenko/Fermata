@@ -16,7 +16,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -48,7 +50,9 @@ abstract class HttpMessageBase implements HttpMessage {
 	int contentTypeStart = -1;
 	int contentEncodingStart = -1;
 	int transferEncodingStart = -1;
-
+	// A response without Content-Length and Transfer-Encoding, whose payload ends when the server
+	// closes the connection (RFC 9112, section 6.3)
+	boolean closeDelimited;
 
 	HttpMessageBase(HttpVersion version, ByteBuffer buf, int headerStart) {
 		this.version = version;
@@ -109,7 +113,8 @@ abstract class HttpMessageBase implements HttpMessage {
 
 		if (len <= 0) {
 			CharSequence te = getTransferEncoding();
-			return (te != null) ? getTransferEncodedPayload(te, consumer, decode, maxLen)
+			if (te != null) return getTransferEncodedPayload(te, consumer, decode, maxLen);
+			return closeDelimited ? getCloseDelimitedPayload(consumer, decode, maxLen)
 					: consumer.apply(emptyByteBuffer(), null);
 		}
 
@@ -172,6 +177,51 @@ abstract class HttpMessageBase implements HttpMessage {
 		return p;
 	}
 
+	private <T> FutureSupplier<T> getCloseDelimitedPayload(
+			BiFunction<ByteBuffer, Throwable, FutureSupplier<T>> consumer, boolean decode, int maxLen) {
+		String enc;
+
+		if (decode) {
+			CharSequence e = getContentEncoding();
+			enc = (e != null) ? e.toString() : null;
+		} else {
+			enc = null;
+		}
+
+		ByteBuffer received = buf.duplicate();
+		received.position(headerEnd).limit(payloadEnd);
+		releaseBuf();
+		ReadUntilClosePromise<T> p = new ReadUntilClosePromise<>(enc, maxLen, consumer);
+		if (p.append(received)) getChannel().read(p, p);
+		return p;
+	}
+
+	private FutureSupplier<?> writeCloseDelimitedPayload(AsyncOutputStream out) {
+		ByteBuffer received = buf.duplicate();
+		received.position(headerEnd).limit(payloadEnd);
+		releaseBuf();
+		WriteUntilClosePromise p = new WriteUntilClosePromise(out);
+
+		if (received.hasRemaining()) {
+			out.write(out.isAsync() ? IoUtils.copyOf(received) : received).onCompletion((v, err) -> {
+				if (err != null) p.completeExceptionally(new IOException("Failed to write payload", err));
+				else getChannel().read(p, p);
+			});
+		} else {
+			getChannel().read(p, p);
+		}
+
+		return p;
+	}
+
+	/**
+	 * The end of a close-delimited payload: an empty read on a plain channel, or a closed channel
+	 * error on an SSL channel.
+	 */
+	private static boolean isEndOfStream(ByteBuffer result, Throwable fail) {
+		return (fail instanceof ClosedChannelException) || ((fail == null) && !result.hasRemaining());
+	}
+
 	@Override
 	public FutureSupplier<?> writePayload(AsyncOutputStream out) {
 		checkReleased();
@@ -180,7 +230,7 @@ abstract class HttpMessageBase implements HttpMessage {
 		if (len <= 0) {
 			CharSequence te = getTransferEncoding();
 
-			if (te == null) return completedVoid();
+			if (te == null) return closeDelimited ? writeCloseDelimitedPayload(out) : completedVoid();
 
 			if (!TextUtils.equals("chunked", te)) {
 				return failed(new IOException("Unsupported transfer encoding: " + te));
@@ -554,6 +604,83 @@ abstract class HttpMessageBase implements HttpMessage {
 					remaining -= available;
 					getChannel().read(this, this);
 				}
+			});
+		}
+
+		@Override
+		public ByteBuffer getByteBuffer() {
+			return getReadBuffer();
+		}
+	}
+
+	private final class ReadUntilClosePromise<T> extends Promise<T> implements Completion<ByteBuffer>, ByteBufferSupplier {
+		private final String enc;
+		private final int maxLen;
+		private final BiFunction<ByteBuffer, Throwable, FutureSupplier<T>> consumer;
+		private ByteBuffer payload = emptyByteBuffer();
+
+		ReadUntilClosePromise(String enc, int maxLen,
+													BiFunction<ByteBuffer, Throwable, FutureSupplier<T>> consumer) {
+			this.enc = enc;
+			this.maxLen = maxLen;
+			this.consumer = consumer;
+		}
+
+		boolean append(ByteBuffer bb) {
+			try {
+				payload = ensureCapacity(payload, bb.remaining(), maxLen);
+				payload.put(bb);
+				return true;
+			} catch (BufferOverflowException ex) {
+				getChannel().close();
+				consumer.apply(null, new IOException("Maximum payload length exceeded: max=" + maxLen))
+						.thenComplete(this);
+				return false;
+			}
+		}
+
+		@Override
+		public void onCompletion(ByteBuffer result, Throwable fail) {
+			if (isEndOfStream(result, fail)) {
+				payload.limit(payload.position()).position(0);
+				if (enc != null) decode(consumer, payload, enc, maxLen).thenComplete(this);
+				else consumer.apply(payload, null).thenComplete(this);
+			} else if (fail != null) {
+				consumer.apply(null, new IOException("Failed to read payload", fail)).thenComplete(this);
+			} else if (append(result)) {
+				getChannel().read(this, this);
+			}
+		}
+
+		@Override
+		public ByteBuffer getByteBuffer() {
+			return getReadBuffer();
+		}
+	}
+
+	private final class WriteUntilClosePromise extends Promise<Void> implements Completion<ByteBuffer>, ByteBufferSupplier {
+		private final AsyncOutputStream out;
+
+		WriteUntilClosePromise(AsyncOutputStream out) {
+			this.out = out;
+		}
+
+		@Override
+		public void onCompletion(ByteBuffer result, Throwable fail) {
+			if (isEndOfStream(result, fail)) {
+				out.endOfStream();
+				complete(null);
+				return;
+			}
+
+			if (fail != null) {
+				completeExceptionally(new IOException("Failed to read payload", fail));
+				return;
+			}
+
+			out.write(out.isAsync() ? IoUtils.copyOf(result) : result).onCompletion((v, err) -> {
+				if (err != null) completeExceptionally(new IOException("Failed to write payload", err));
+				else getChannel().read(this, this);
 			});
 		}
 
