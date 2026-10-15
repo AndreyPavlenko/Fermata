@@ -15,6 +15,8 @@
     <string name="video_quality">Video quality</string>
     <string name="open_on_start">Open on start</string>
     <string name="auto_highest_video_quality">Auto-select highest video quality</string>
+    <string name="youtube_player_controls">Use YouTube\'s controls in full screen</string>
+    <string name="youtube_player_controls_sub">Instead of Fermata\'s control panel: progress bar, captions, settings, double-tap to seek</string>
     <string name="try_to_skip_ad">Try to skip advertising</string>
     <string name="sponsorblock" translatable="false">SponsorBlock</string>
     <string name="sponsorblock_sub">Skip crowd-sourced segments while watching YouTube.</string>
