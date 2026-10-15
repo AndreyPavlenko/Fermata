@@ -102,6 +102,13 @@
     <string name="action_none">None</string>
 
     <string name="play_next_on_completion">Play next on completion</string>
+    <string name="nothing_to_resume">Nothing to resume</string>
+    <string name="resume_previous_app">Handoff to the previous media app</string>
+    <string name="resume_previous_app_sub">When asked to play with nothing to resume (e.g. by Android Auto\'s \"Start music automatically\" after watching a video), play the app that was playing before Fermata. Needs notification access</string>
+    <string name="resume_previous_app_on_leave">Handoff when leaving Fermata in the car</string>
+    <string name="resume_previous_app_on_leave_sub">When Fermata\'s car screen is closed with nothing left to play (e.g. after watching a video), resume the app Fermata took over from, unless it\'s already playing. Needs Handoff above</string>
+    <string name="notification_access">Notification access</string>
+    <string name="notification_access_sub">Lets Handoff see and control other apps\' media sessions. Only the main switch is needed: Fermata reads no notifications, so leave every notification type off (they should be greyed out). If the switch itself is greyed out, allow restricted settings in Fermata\'s App info (⋮ menu), or grant it over adb</string>
 
     <string name="rw_ff_click">RW/FF - click</string>
     <string name="rw_ff_long_click">RW/FF - long click</string>

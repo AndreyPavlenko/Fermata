@@ -23,6 +23,10 @@ public class YoutubeJsInterface extends FermataJsInterface {
 		this.engine = engine;
 	}
 
+	void pageRemoved() {
+		engine.pageRemoved();
+	}
+
 	Promise<String> getResultPromise() {
 		if (result != null) result.cancel();
 		return result = new Promise<>();
