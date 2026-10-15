@@ -175,16 +175,26 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void prevNext(boolean next) {
-		FermataChromeClient chrome = getWebChromeClient();
-		if (chrome == null) return;
-		chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
-				function prevNextVideo() {
-				  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
-				  console.log('Prev/Next buttons:', buttons);
-				  if (buttons) buttons[%d].click();
-				}
-				setTimeout(prevNextVideo, 600);
-				""".formatted(next ? 1 : 0), null));
+		evaluateJavascript("""
+				(function() {
+				  const p = document.querySelector('#movie_player') || document.querySelector('.html5-video-player');
+				  const fn = '%s';
+				  if (!p || (typeof p[fn] !== 'function')) return false;
+				  p[fn]();
+				  return true;
+				})();
+				""".formatted(next ? "nextVideo" : "previousVideo"), r -> {
+			if ("true".equals(r)) return;
+			// Player API not available, fall back to the page's prev/next buttons
+			FermataChromeClient chrome = getWebChromeClient();
+			if (chrome == null) return;
+			chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
+					setTimeout(() => {
+					  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
+					  if (buttons.length > %1$d) buttons[%1$d].click();
+					}, 600);
+					""".formatted(next ? 1 : 0), null));
+		});
 	}
 
 	FutureSupplier<Long> getDuration() {
