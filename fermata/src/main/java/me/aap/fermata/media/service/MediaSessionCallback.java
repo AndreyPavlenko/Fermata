@@ -1279,6 +1279,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	private void setPlaybackState(PlaybackStateCompat state) {
 		currentState = state;
+		// A stop or engine switch deactivates the session. Publish resumed playback
+		// through an active session so system media controls can discover it again.
+		if ((state.getState() == STATE_PLAYING) && !session.isActive()) {
+			session.setActive(true);
+		}
 		session.setPlaybackState(state);
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
