@@ -100,6 +100,10 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 		cb.onEngineEnded(this);
 	}
 
+	void pageRemoved() {
+		if (cb.getEngine() == this) cb.onStop();
+	}
+
 	void paused() {
 		ignorePause = true;
 		cb.onPause();
