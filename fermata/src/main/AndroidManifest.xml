@@ -860,6 +860,20 @@
         </service>
 
         <service
+            android:name="me.aap.fermata.media.service.MediaSessionListener"
+            android:exported="true"
+            android:label="@string/resume_previous_app"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+            <!-- Only used to access media sessions: no notifications of any type are needed -->
+            <meta-data
+                android:name="android.service.notification.disabled_filter_types"
+                android:value="conversations|alerting|ongoing|silent" />
+        </service>
+
+        <service
             android:name="me.aap.fermata.service.SpeechRecognitionService"
             android:exported="false"
             android:permission="android.permission.BIND_VOICE_INTERACTION">

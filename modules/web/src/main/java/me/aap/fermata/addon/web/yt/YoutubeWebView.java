@@ -9,10 +9,14 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
+
+import org.json.JSONException;
+import org.json.JSONTokener;
 
 import java.util.List;
 
@@ -91,6 +95,24 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		// The page is gone with its activity (e.g. Fermata Auto exited from Android Auto), and nothing
+		// can continue its playback. Switching to another section only detaches it until it's shown again.
+		if ((e == ACTIVITY_DESTROY) && (js != null)) js.pageRemoved();
+		super.onActivityEvent(a, e);
+	}
+
+	@Override
+	protected void urlChanged(String url) {
+		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
+		// even though YouTube keeps playing it as a muted preview
+		String path = Uri.parse(url).getPath();
+		if ((path != null) && (path.startsWith("/watch") || path.startsWith("/shorts"))) return;
+		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
+		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
+	}
+
+	@Override
 	protected void pageLoaded(String uri) {
 		attachListeners();
 		injectSponsorBlock();
@@ -113,18 +135,29 @@ public class YoutubeWebView extends FermataWebView {
 		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		loadUrl("javascript:\n" +
+				// Muted autoplay previews in the feeds reuse the player, they are not user playback
+				"function isPreview(v) {\n" +
+				"  return v.muted && !/^\\/(watch|shorts)/.test(location.pathname);\n" +
+				"}\n" +
+				"function videoEvent(v, e) {\n" +
+				"  if (isPreview(v)) {\n" +
+				"    if (!v.fermataPlaying) return;\n" +
+				"    e = " + JS_VIDEO_PAUSED + ";\n" +
+				"  }\n" +
+				"  v.fermataPlaying = (e === " + JS_VIDEO_PLAYING + ");\n" +
+				"  " + JS_EVENT + "(e, (e === " + JS_VIDEO_ENDED + ") ? null : v.currentSrc);\n" +
+				"}\n" +
 				"function attachVideoListeners(v) {\n" +
 				"  if (v.getAttribute('FermataAttached') === 'true') return;\n" +
 				"  v.setAttribute('FermataAttached', 'true');\n" +
 				"  v.setAttribute('style', 'object-fit:" + scale + "');\n" + debug +
-				"  if ((v.currentTime > 0) && !v.paused && !v.ended) " + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);\n" +
-				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PAUSED +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED +
-				", null);});\n" +
+				"  if ((v.currentTime > 0) && !v.paused && !v.ended) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  v.addEventListener('playing', function(e) {videoEvent(v, " + JS_VIDEO_PLAYING + ");});\n" +
+				"  v.addEventListener('pause', function(e) {videoEvent(v, " + JS_VIDEO_PAUSED + ");});\n" +
+				"  v.addEventListener('ended', function(e) {videoEvent(v, " + JS_VIDEO_ENDED + ");});\n" +
+				"  v.addEventListener('volumechange', function(e) {\n" +
+				"    if (!v.paused && !v.fermataPlaying && !isPreview(v)) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  });\n" +
 				"}\n" +
 				"function findVideo() {\n" +
 				"  var video = document.querySelectorAll('video');" +
@@ -355,8 +388,25 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<String> getVideoTitle() {
 		Promise<String> p = new Promise<>();
-		evaluateJavascript("document.title", p::complete);
+		// The page title is updated only some time after a video is opened, the player knows it already
+		evaluateJavascript("""
+				(function() {
+				  var v = document.querySelector('video');
+				  var p = v && v.closest('#movie_player');
+				  var d = p && p.getVideoData && p.getVideoData();
+				  return (d && d.title) || document.title;
+				})()""", json -> p.complete(jsonString(json)));
 		return p;
+	}
+
+	// evaluateJavascript() returns its result as JSON, so a string comes quoted and escaped
+	private static String jsonString(String json) {
+		try {
+			Object v = new JSONTokener(json).nextValue();
+			return (v instanceof String) ? (String) v : null;
+		} catch (JSONException ex) {
+			return json;
+		}
 	}
 
 	void setScale(YoutubeAddon.VideoScale scale) {

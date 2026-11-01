@@ -123,6 +123,7 @@ import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
@@ -189,6 +190,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
+	private Runnable carScreenLeft;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
 															MediaLib lib,
@@ -456,18 +458,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
+		boolean handOff = isFromOtherApp();
 		playerTask.cancel();
-		playerTask = play();
+		playerTask = play(handOff);
 	}
 
-	@SuppressLint("SwitchIntDef")
 	public FutureSupplier<Void> play() {
+		return play(false);
+	}
+
+	// Only a request from another app (e.g. Android Auto's autoplay) may be handed off when there is
+	// nothing to resume, never one from Fermata's own controls
+	@SuppressLint("SwitchIntDef")
+	private FutureSupplier<Void> play(boolean handOff) {
 		PlaybackStateCompat state = getPlaybackState();
 
 		switch (state.getState()) {
 			case STATE_NONE, STATE_STOPPED, STATE_ERROR -> {
 				return lib.getLastPlayedItem().then(this::prepareItem).then(i -> {
 					if (i != null) playPreparedItem(i, lib.getLastPlayedPosition(i));
+					else nothingToResume(handOff);
 					return completedVoid();
 				});
 			}
@@ -572,7 +582,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		if (setPosition && (eng != null)) {
 			PlayableItem i = eng.getSource();
-			if ((i != null) && i.isExternal()) return onStop(eng, -1);
+			// Without a source there is no position to save, and an engine whose page is gone may
+			// never answer
+			if ((i == null) || i.isExternal()) return onStop(eng, -1);
 			else return eng.getPosition().main().then(pos -> onStop(eng, pos));
 		} else {
 			return onStop(eng, -1);
@@ -580,11 +592,12 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private FutureSupplier<?> onStop(MediaEngine eng, long pos) {
+		boolean external = false;
+
 		if (eng != null) {
-			if (pos != -1) {
-				PlayableItem i = eng.getSource();
-				if (i != null) setLastPlayed(i, pos);
-			}
+			PlayableItem i = eng.getSource();
+			external = (i != null) && i.isExternal();
+			if ((pos != -1) && (i != null)) setLastPlayed(i, pos);
 
 			eng.stop();
 			eng.releaseAudioFocus(audioManager, audioFocusReq);
@@ -593,7 +606,52 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		}
 
 		stopped();
+		// An external item (e.g. a web video) can't be resumed from here, don't keep showing it
+		if (external) setMetadata(null);
 		return completedVoid();
+	}
+
+	// Whether the request being handled came through the session from another app. Fermata's own
+	// controls call this callback directly, outside of a session request.
+	private boolean isFromOtherApp() {
+		try {
+			var info = session.getCurrentControllerInfo();
+			return !lib.getContext().getPackageName().equals(info.getPackageName());
+		} catch (RuntimeException ex) {
+			return false;
+		}
+	}
+
+	// Fermata's car screen is no longer visible
+	public void onCarScreenLeft() {
+		onCarScreenShown();
+		// The screen is also left when the car disconnects: give Android Auto time to report it
+		carScreenLeft = () -> {
+			carScreenLeft = null;
+			if (!lib.getPrefs().getBooleanPref(MediaLibPrefs.RESUME_PREVIOUS_APP_ON_LEAVE)) return;
+			int st = getPlaybackState().getState();
+			// Only with nothing to offer, which is what a greyed out play button means
+			if ((metadata != null) || ((st != STATE_NONE) && (st != STATE_STOPPED) && (st != STATE_ERROR)))
+				return;
+			PreviousMediaApp.handBack(lib.getContext(), lib.getPrefs());
+		};
+		App.get().getHandler().postDelayed(carScreenLeft, 2000);
+	}
+
+	public void onCarScreenShown() {
+		if (carScreenLeft == null) return;
+		App.get().getHandler().removeCallbacks(carScreenLeft);
+		carScreenLeft = null;
+	}
+
+	// Report it right away, rather than leaving the caller (e.g. Android Auto's autoplay) waiting
+	private void nothingToResume(boolean handOff) {
+		if (handOff) PreviousMediaApp.resume(lib.getContext(), lib.getPrefs());
+		setMetadata(null);
+		setPlaybackState(new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
+				.setState(STATE_ERROR, 0, 1.0f)
+				.setErrorMessage(PlaybackStateCompat.ERROR_CODE_NOT_SUPPORTED,
+						lib.getContext().getString(R.string.nothing_to_resume)).build());
 	}
 
 	private void stopped() {
@@ -1285,6 +1343,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			session.setActive(true);
 		}
 		session.setPlaybackState(state);
+		if ((state.getState() == STATE_PLAYING) && !session.isActive()) {
+			PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
+			session.setActive(true);
+		}
 		service.updateNotification(state.getState(), getCurrentItem());
 		fireBroadcastEvent(l -> l.onPlaybackStateChanged(this, state));
 

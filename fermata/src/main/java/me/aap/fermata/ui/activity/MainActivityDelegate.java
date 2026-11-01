@@ -389,6 +389,8 @@ public class MainActivityDelegate extends ActivityDelegate
 	public void onActivityResume() {
 		super.onActivityResume();
 		checkMirroringMode(true);
+		if (AUTO && getAppActivity().isCarActivity())
+			getMediaServiceBinder().getMediaSessionCallback().onCarScreenShown();
 		for (FermataAddon addon : AddonManager.get().getAddons()) {
 			if (addon instanceof FermataActivityAddon)
 				((FermataActivityAddon) addon).onActivityResume(this);
@@ -402,6 +404,11 @@ public class MainActivityDelegate extends ActivityDelegate
 			if (addon instanceof FermataActivityAddon)
 				((FermataActivityAddon) addon).onActivityPause(this);
 		}
+	}
+
+	// Called by the car activity when it's no longer visible
+	public void onCarActivityStop() {
+		getMediaServiceBinder().getMediaSessionCallback().onCarScreenLeft();
 	}
 
 	@Override
