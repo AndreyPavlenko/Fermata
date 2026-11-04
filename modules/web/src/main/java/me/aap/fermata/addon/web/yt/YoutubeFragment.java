@@ -27,6 +27,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.function.LongSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.pref.SharedPreferenceStore;
@@ -61,14 +62,25 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 
 		String url;
 		boolean pause;
+		boolean resumed = false;
 
 		if (state != null) {
 			url = state.getString("url", DEFAULT_URL);
 			pause = state.getBoolean("pause", false);
 		} else {
-			url = DEFAULT_URL;
+			// Fresh start, e.g. the process was killed after Android Auto disconnected
+			String resume = addon.getResumeUrl();
+			if (resume != null) {
+				Log.i("Resuming the last video: ", resume);
+				url = resume;
+				resumed = true;
+			} else {
+				url = DEFAULT_URL;
+			}
 			pause = false;
 		}
+
+		boolean unmute = resumed;
 
 		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(a -> {
 			YoutubeWebView webView = a.findViewById(R.id.ytWebView);
@@ -77,6 +89,7 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
+			if (unmute) webView.unmuteOnPlay();
 			webView.loadUrl(DEFAULT_URL);
 			if (!DEFAULT_URL.equals(url)) a.post(() -> webView.loadUrl(url));
 			a.postDelayed(() -> {

@@ -6,6 +6,7 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_ENDED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PLAYING;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PROGRESS;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
@@ -41,6 +42,7 @@ public class YoutubeWebView extends FermataWebView {
 					"  window.__fermataQ = null;\n" +
 					"}\n";
 	private YoutubeJsInterface js;
+	private boolean unmuteOnPlay;
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -121,10 +123,34 @@ public class YoutubeWebView extends FermataWebView {
 				", v.currentSrc);\n" +
 				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING +
 				", v.currentSrc);});\n" +
-				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PAUSED +
-				", v.currentSrc);});\n" +
+				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
+				", Math.floor(v.currentTime) + '|' + fermataVideoUrl());" + JS_EVENT + "(" +
+				JS_VIDEO_PAUSED + ", v.currentSrc);});\n" +
+				"  v.addEventListener('timeupdate', function(e) {\n" +
+				"    var t = Math.floor(v.currentTime);\n" +
+				"    if ((t % 5 != 0) || (t === v.fermataProgress)) return;\n" +
+				"    v.fermataProgress = t;\n" +
+				"    " + JS_EVENT + "(" + JS_VIDEO_PROGRESS + ", t + '|' + fermataVideoUrl());\n" +
+				"  });\n" +
 				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED +
 				", null);});\n" +
+				"}\n" +
+				// Search results and the home feed play videos inline, so the page URL is not
+				// always the video URL. The player element knows the video id.
+				"function fermataVideoUrl() {\n" +
+				"  var h = location.href;\n" +
+				"  if ((h.indexOf('/watch?') >= 0) || (h.indexOf('/shorts/') >= 0)) return h;\n" +
+				"  var p = document.getElementById('movie_player') ||" +
+				" document.querySelector('.html5-video-player');\n" +
+				"  try {\n" +
+				"    var d = p && p.getVideoData && p.getVideoData();\n" +
+				"    if (d && d.video_id) return location.origin + '/watch?v=' + d.video_id;\n" +
+				"  } catch (e) {}\n" +
+				"  try {\n" +
+				"    var u = p && p.getVideoUrl && p.getVideoUrl();\n" +
+				"    if (u) return u;\n" +
+				"  } catch (e) {}\n" +
+				"  return h;\n" +
 				"}\n" +
 				"function findVideo() {\n" +
 				"  var video = document.querySelectorAll('video');" +
@@ -159,6 +185,24 @@ public class YoutubeWebView extends FermataWebView {
 
 	void pause() {
 		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.pause();");
+	}
+
+	/**
+	 * YouTube starts a video muted if it autoplays without a tap. Used for the resumed video, so it
+	 * is unmuted once when it starts playing. Other autoplayed videos, like feed previews, stay muted.
+	 */
+	void unmuteOnPlay() {
+		unmuteOnPlay = true;
+	}
+
+	void playing() {
+		if (!unmuteOnPlay) return;
+		unmuteOnPlay = false;
+		loadUrl("javascript:\n" +
+				"var p = document.getElementById('movie_player');\n" +
+				"try { if (p && p.unMute) p.unMute(); } catch (e) {}\n" +
+				"var v = document.querySelector('video');\n" +
+				"if (v != null) v.muted = false;");
 	}
 
 	void stop() {

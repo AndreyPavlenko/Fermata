@@ -3,10 +3,12 @@ package me.aap.fermata.addon.web.yt;
 import static me.aap.fermata.BuildConfig.AUTO;
 
 import android.content.Context;
+import android.net.Uri;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import me.aap.fermata.addon.FermataAddon;
 import me.aap.fermata.addon.web.R;
 import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
+import me.aap.utils.log.Log;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
 import me.aap.utils.function.Supplier;
@@ -43,7 +46,11 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
+	private static final Pref<BooleanSupplier> YT_RESUME_LAST = Pref.b("YT_RESUME_LAST", true);
+	private static final Pref<Supplier<String>> YT_LAST_VIDEO_URL = Pref.s("YT_LAST_VIDEO_URL", (String) null);
+	private static final Pref<IntSupplier> YT_LAST_VIDEO_POS = Pref.i("YT_LAST_VIDEO_POS", 0);
 	private boolean ignorePrefChange;
+	private String lastSavedUrl;
 
 	@IdRes
 	@Override
@@ -93,6 +100,13 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.store = getPreferenceStore();
 			o.pref = YT_OPEN_ON_START;
 			o.title = R.string.open_on_start;
+			o.visibility = visibility;
+		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_RESUME_LAST;
+			o.title = R.string.resume_last_video;
+			o.subtitle = R.string.resume_last_video_sub;
 			o.visibility = visibility;
 		});
 		set.addBooleanPref(o -> {
@@ -171,6 +185,53 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {
 		return prefs.contains(YT_AUTO_HIGHEST_QUALITY);
+	}
+
+	/**
+	 * The last watched video page with the position appended as the t= parameter, or null if
+	 * resuming is disabled or there is nothing to resume. Unlike the activity state, this survives
+	 * the process being killed when Android Auto disconnects.
+	 */
+	@Nullable
+	String getResumeUrl() {
+		PreferenceStore ps = getPreferenceStore();
+		if (!ps.getBooleanPref(YT_RESUME_LAST)) return null;
+		String url = ps.getStringPref(YT_LAST_VIDEO_URL);
+		if (url == null) return null;
+		Uri u = Uri.parse(url);
+		Uri.Builder b = u.buildUpon().clearQuery();
+		for (String name : u.getQueryParameterNames()) {
+			if ("t".equals(name)) continue;
+			for (String v : u.getQueryParameters(name)) b.appendQueryParameter(name, v);
+		}
+		int pos = ps.getIntPref(YT_LAST_VIDEO_POS);
+		if (pos > 0) b.appendQueryParameter("t", pos + "s");
+		return b.build().toString();
+	}
+
+	void saveLastVideo(@Nullable String url, int posSec) {
+		boolean changed = (url != null) && !url.equals(lastSavedUrl);
+		lastSavedUrl = url;
+		if (!isVideoUrl(url)) {
+			if (changed) Log.i("Not saving the video position, not a video page: ", url);
+			return;
+		}
+		if (changed) Log.i("Saving the last video: ", url);
+		try (PreferenceStore.Edit e = getPreferenceStore().editPreferenceStore()) {
+			e.setStringPref(YT_LAST_VIDEO_URL, url);
+			e.setIntPref(YT_LAST_VIDEO_POS, posSec);
+		}
+	}
+
+	void clearLastVideo() {
+		try (PreferenceStore.Edit e = getPreferenceStore().editPreferenceStore()) {
+			e.removePref(YT_LAST_VIDEO_URL);
+			e.removePref(YT_LAST_VIDEO_POS);
+		}
+	}
+
+	private static boolean isVideoUrl(@Nullable String url) {
+		return (url != null) && (url.contains("/watch?") || url.contains("/shorts/"));
 	}
 
 	enum VideoScale {
