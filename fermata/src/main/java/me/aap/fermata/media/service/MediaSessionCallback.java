@@ -68,6 +68,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioManager;
@@ -89,6 +90,7 @@ import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.media.AudioAttributesCompat;
 import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
@@ -178,6 +180,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final PlaybackStateCompat.CustomAction customFavoritesAdd;
 	private final PlaybackStateCompat.CustomAction customFavoritesRemove;
 	private final BroadcastReceiver onNoisy;
+	@Nullable
+	private final BroadcastReceiver onCarConnection;
+	private boolean carConnected;
 	private MediaEngine engine;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
@@ -248,6 +253,36 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			}
 		};
 		ctx.registerReceiver(onNoisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+
+		if (BuildConfig.AUTO) {
+			// Switching the car off doesn't always end the car screen or send a pause, and the playback
+			// would carry on from the phone. Android Auto broadcasts the connection changes to car apps.
+			carConnected = isCarConnected(ctx);
+			onCarConnection = new BroadcastReceiver() {
+				@Override
+				public void onReceive(Context context, Intent intent) {
+					boolean connected = isCarConnected(context);
+					if (carConnected && !connected) onPause();
+					carConnected = connected;
+				}
+			};
+			ContextCompat.registerReceiver(ctx, onCarConnection,
+					new IntentFilter("androidx.car.app.connection.action.CAR_CONNECTION_UPDATED"),
+					ContextCompat.RECEIVER_EXPORTED);
+		} else {
+			onCarConnection = null;
+		}
+	}
+
+	// Same query as the Car App Library's CarConnection
+	private static boolean isCarConnected(Context ctx) {
+		try (Cursor c = ctx.getContentResolver().query(Uri.parse("content://androidx.car.app.connection"),
+				new String[]{"CarConnectionState"}, null, null, null)) {
+			return (c != null) && c.moveToNext() && (c.getInt(0) != 0); // 0: CONNECTION_TYPE_NOT_CONNECTED
+		} catch (Exception ex) {
+			Log.d(ex, "Failed to query the car connection");
+			return false;
+		}
 	}
 
 	public Context getContext() {
@@ -418,6 +453,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		onStop();
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
+		if (onCarConnection != null) lib.getContext().unregisterReceiver(onCarConnection);
 		removeBroadcastListeners();
 		metadata = null;
 	}
