@@ -11,10 +11,13 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.SystemClock;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONTokener;
@@ -48,6 +51,10 @@ public class YoutubeWebView extends FermataWebView {
 	private YoutubeJsInterface js;
 	// Reported by the page: the bare video, which has no YouTube controls, is what's in full screen
 	boolean videoFullScreen;
+	// The video of a page that went with its screen, for the next car screen to open again
+	private static Video closedVideo;
+
+	record Video(String url, long position, boolean playing) {}
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -101,16 +108,62 @@ public class YoutubeWebView extends FermataWebView {
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		// The page is gone with its activity (e.g. Fermata Auto exited from Android Auto), and nothing
 		// can continue its playback. Switching to another section only detaches it until it's shown again.
-		if ((e == ACTIVITY_DESTROY) && (js != null)) js.pageRemoved();
+		if ((e == ACTIVITY_DESTROY) && (js != null)) {
+			Video v = getVideo(a.getMediaSessionCallback());
+			// Its playback stops here: reopen it paused rather than start playing out of the blue
+			if (v != null) closedVideo = new Video(v.url(), v.position(), false);
+			js.pageRemoved();
+		}
 		super.onActivityEvent(a, e);
+	}
+
+	/**
+	 * A car screen has no saved state to restore its page from, as a phone screen does. When a new one
+	 * opens, take over the video of the previous one: its page may still be there, as a car that's
+	 * switched off doesn't always close it, or it may be gone with its video, which then reopens paused.
+	 */
+	@Nullable
+	static Video takeOverVideo(MediaSessionCallback cb, YoutubeWebView page) {
+		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() != page)) {
+			Video v = eng.getWebView().getVideo(cb);
+			if (v == null) return null;
+			closedVideo = null;
+			cb.onStop();
+			return v;
+		}
+
+		Video v = closedVideo;
+		closedVideo = null;
+		return v;
+	}
+
+	// The video playing or paused on this page
+	@Nullable
+	private Video getVideo(MediaSessionCallback cb) {
+		if (!(cb.getEngine() instanceof YoutubeMediaEngine eng) || (eng.getWebView() != this)) return null;
+		String url = getUrl();
+		if (!isVideoUrl(url)) return null;
+		PlaybackStateCompat st = cb.getPlaybackState();
+		int state = st.getState();
+		boolean playing = (state == PlaybackStateCompat.STATE_PLAYING);
+		if (!playing && (state != PlaybackStateCompat.STATE_PAUSED)) return null;
+		long pos = st.getPosition();
+		if (playing) pos += (long) ((SystemClock.elapsedRealtime() - st.getLastPositionUpdateTime()) *
+				st.getPlaybackSpeed());
+		return new Video(url, pos, playing);
+	}
+
+	private static boolean isVideoUrl(@Nullable String url) {
+		if (url == null) return false;
+		String path = Uri.parse(url).getPath();
+		return (path != null) && (path.startsWith("/watch") || path.startsWith("/shorts"));
 	}
 
 	@Override
 	protected void urlChanged(String url) {
 		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
 		// even though YouTube keeps playing it as a muted preview
-		String path = Uri.parse(url).getPath();
-		if ((path != null) && (path.startsWith("/watch") || path.startsWith("/shorts"))) return;
+		if (isVideoUrl(url)) return;
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
 		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
 	}
