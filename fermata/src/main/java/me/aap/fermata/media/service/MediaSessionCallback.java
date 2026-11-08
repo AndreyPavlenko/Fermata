@@ -64,6 +64,7 @@ import static me.aap.utils.misc.Assert.assertNotNull;
 import static me.aap.utils.misc.MiscUtils.ifNotNull;
 
 import android.annotation.SuppressLint;
+import android.content.AsyncQueryHandler;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -182,6 +183,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final BroadcastReceiver onNoisy;
 	@Nullable
 	private final BroadcastReceiver onCarConnection;
+	@Nullable
+	private final AsyncQueryHandler carConnectionQuery;
 	private boolean carConnected;
 	private MediaEngine engine;
 	private boolean playOnPrepared;
@@ -257,30 +260,43 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		if (BuildConfig.AUTO) {
 			// Switching the car off doesn't always end the car screen or send a pause, and the playback
 			// would carry on from the phone. Android Auto broadcasts the connection changes to car apps.
-			carConnected = isCarConnected(ctx);
+			// Like the Car App Library's CarConnection, query the state off the main thread on each one.
+			carConnectionQuery = new AsyncQueryHandler(ctx.getContentResolver()) {
+				@Override
+				protected void onQueryComplete(int token, Object cookie, Cursor c) {
+					boolean connected = isCarConnected(c);
+					if (carConnected && !connected) onPause();
+					carConnected = connected;
+				}
+			};
 			onCarConnection = new BroadcastReceiver() {
 				@Override
 				public void onReceive(Context context, Intent intent) {
-					boolean connected = isCarConnected(context);
-					if (carConnected && !connected) onPause();
-					carConnected = connected;
+					queryCarConnection();
 				}
 			};
 			ContextCompat.registerReceiver(ctx, onCarConnection,
 					new IntentFilter("androidx.car.app.connection.action.CAR_CONNECTION_UPDATED"),
 					ContextCompat.RECEIVER_EXPORTED);
+			queryCarConnection();
 		} else {
+			carConnectionQuery = null;
 			onCarConnection = null;
 		}
 	}
 
-	// Same query as the Car App Library's CarConnection
-	private static boolean isCarConnected(Context ctx) {
-		try (Cursor c = ctx.getContentResolver().query(Uri.parse("content://androidx.car.app.connection"),
-				new String[]{"CarConnectionState"}, null, null, null)) {
-			return (c != null) && c.moveToNext() && (c.getInt(0) != 0); // 0: CONNECTION_TYPE_NOT_CONNECTED
+	private void queryCarConnection() {
+		if (carConnectionQuery == null) return;
+		carConnectionQuery.startQuery(0, null, Uri.parse("content://androidx.car.app.connection"),
+				new String[]{"CarConnectionState"}, null, null, null);
+	}
+
+	private static boolean isCarConnected(@Nullable Cursor c) {
+		if (c == null) return false;
+		try (c) {
+			return c.moveToNext() && (c.getInt(0) != 0); // 0: CONNECTION_TYPE_NOT_CONNECTED
 		} catch (Exception ex) {
-			Log.d(ex, "Failed to query the car connection");
+			Log.d(ex, "Failed to read the car connection");
 			return false;
 		}
 	}
@@ -454,6 +470,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
 		if (onCarConnection != null) lib.getContext().unregisterReceiver(onCarConnection);
+		if (carConnectionQuery != null) carConnectionQuery.cancelOperation(0);
 		removeBroadcastListeners();
 		metadata = null;
 	}

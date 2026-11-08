@@ -87,7 +87,8 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 				long pos = (video != null) ? video.position() : ps.getLongPref(RESUME_POS);
 				ps.removePref(RESUME_POS);
 				MediaSessionCallback cb = a.getMediaSessionCallback();
-				if (cb.getEngine() instanceof YoutubeMediaEngine) {
+				// Only this page's video: another one may have been opened in the meantime
+				if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() == webView)) {
 					if (pos > 0L) cb.onSeekTo(pos);
 					if ((video != null) ? !video.playing() : pause) cb.onPause();
 				}

@@ -109,8 +109,9 @@ public class YoutubeWebView extends FermataWebView {
 		// The page is gone with its activity (e.g. Fermata Auto exited from Android Auto), and nothing
 		// can continue its playback. Switching to another section only detaches it until it's shown again.
 		if ((e == ACTIVITY_DESTROY) && (js != null)) {
-			Video v = getVideo(a.getMediaSessionCallback());
-			// Its playback stops here: reopen it paused rather than start playing out of the blue
+			// Only a car screen's video: a phone screen restores its own from its saved state.
+			// Its playback stops here, so it reopens paused rather than start playing out of the blue.
+			Video v = a.isCarActivity() ? getVideo(a.getMediaSessionCallback()) : null;
 			if (v != null) closedVideo = new Video(v.url(), v.position(), false);
 			js.pageRemoved();
 		}
@@ -153,10 +154,12 @@ public class YoutubeWebView extends FermataWebView {
 		return new Video(url, pos, playing);
 	}
 
+	// The same pages as isPreview() in attachListeners(): keep the two in sync
 	private static boolean isVideoUrl(@Nullable String url) {
 		if (url == null) return false;
 		String path = Uri.parse(url).getPath();
-		return (path != null) && (path.startsWith("/watch") || path.startsWith("/shorts"));
+		return (path != null) && (path.startsWith("/watch") || path.startsWith("/shorts") ||
+				path.startsWith("/live") || path.startsWith("/embed"));
 	}
 
 	@Override
@@ -165,7 +168,7 @@ public class YoutubeWebView extends FermataWebView {
 		// even though YouTube keeps playing it as a muted preview
 		if (isVideoUrl(url)) return;
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
-		if (cb.getEngine() instanceof YoutubeMediaEngine) cb.onStop();
+		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() == this)) cb.onStop();
 	}
 
 	@Override
@@ -191,9 +194,10 @@ public class YoutubeWebView extends FermataWebView {
 		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		loadUrl("javascript:\n" +
-				// Muted autoplay previews in the feeds reuse the player, they are not user playback
+				// Muted autoplay previews in the feeds reuse the player, they are not user playback.
+				// The video pages are the same as in isVideoUrl(): keep the two in sync.
 				"function isPreview(v) {\n" +
-				"  return v.muted && !/^\\/(watch|shorts)/.test(location.pathname);\n" +
+				"  return v.muted && !/^\\/(watch|shorts|live|embed)/.test(location.pathname);\n" +
 				"}\n" +
 				"function videoEvent(v, e) {\n" +
 				"  if (isPreview(v)) {\n" +
