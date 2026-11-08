@@ -62,6 +62,10 @@ public class YoutubeChromeClient extends FermataChromeClient {
 	}
 
 	protected boolean onTouchEvent(View v, MotionEvent event) {
-		return isFullScreen() && getFullScreenView().onTouchEvent(event);
+		if (!isFullScreen()) return false;
+		YoutubeWebView w = (YoutubeWebView) getWebView();
+		// Leave the touches to YouTube's controls, only show the floating button
+		if (w.getAddon().youtubePlayerControls() && !w.videoFullScreen) return super.onTouchEvent(v, event);
+		return getFullScreenView().onTouchEvent(event);
 	}
 }
