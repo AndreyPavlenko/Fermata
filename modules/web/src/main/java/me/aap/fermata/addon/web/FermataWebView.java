@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.text.Editable;
 import android.util.AttributeSet;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -242,21 +243,48 @@ public class FermataWebView extends WebView
 
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent event) {
-		// The highlight is for key navigation (D-pad, rotary controller): add it on the first such key
-		if (!keyNavigation && (event.getAction() == KeyEvent.ACTION_DOWN) && !event.isSystem()) {
-			keyNavigation = true;
-			addFocusHighlight();
+		if ((event.getAction() == KeyEvent.ACTION_DOWN) && isNavigationKey(event.getKeyCode())) {
+			onKeyNavigation();
 		}
 		return super.dispatchKeyEvent(event);
+	}
+
+	@Override
+	public boolean dispatchGenericMotionEvent(MotionEvent event) {
+		// Some rotary controllers turn as scroll events rather than keys
+		if ((event.getAction() == MotionEvent.ACTION_SCROLL) &&
+				event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
+			onKeyNavigation();
+		}
+		return super.dispatchGenericMotionEvent(event);
+	}
+
+	private static boolean isNavigationKey(int code) {
+		return switch (code) {
+			case KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT,
+					KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_TAB,
+					KeyEvent.KEYCODE_NAVIGATE_NEXT, KeyEvent.KEYCODE_NAVIGATE_PREVIOUS -> true;
+			default -> false;
+		};
+	}
+
+	// The highlight is for key navigation (D-pad, rotary controller): add it on the first such input.
+	// It then stays for this view's lifetime, as the same controller keeps being used.
+	private void onKeyNavigation() {
+		if (keyNavigation) return;
+		keyNavigation = true;
+		addFocusHighlight();
 	}
 
 	protected void addFocusHighlight() {
 		if (!keyNavigation) return;
 		evaluateJavascript("""
 				(function() {
+				  if (document.getElementById('fermata-focus')) return;
 				  var style = document.createElement('style');
+				  style.id = 'fermata-focus';
 				  style.textContent = ':focus-visible {outline: 2px solid blue !important; border-radius: 5px;}';
-				  document.head.appendChild(style);
+				  (document.head || document.documentElement).appendChild(style);
 				})()""", null);
 	}
 
