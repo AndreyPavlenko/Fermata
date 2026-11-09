@@ -77,22 +77,14 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
-			YoutubeWebView.Video video = ((state == null) && a.isCarActivity()) ?
-					YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) : null;
-			String videoUrl = (video != null) ? video.url() : url;
+			PreferenceStore ps = addon.getPreferenceStore();
+			long pos = ps.getLongPref(RESUME_POS);
+			ps.removePref(RESUME_POS);
+			YoutubeWebView.Video video = (state != null) ? new YoutubeWebView.Video(url, pos, !pause) :
+					a.isCarActivity() ? YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) :
+							null;
 			webView.loadUrl(DEFAULT_URL);
-			if (!DEFAULT_URL.equals(videoUrl)) a.post(() -> webView.loadUrl(videoUrl));
-			a.postDelayed(() -> {
-				PreferenceStore ps = addon.getPreferenceStore();
-				long pos = (video != null) ? video.position() : ps.getLongPref(RESUME_POS);
-				ps.removePref(RESUME_POS);
-				MediaSessionCallback cb = a.getMediaSessionCallback();
-				// Only this page's video: another one may have been opened in the meantime
-				if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() == webView)) {
-					if (pos > 0L) cb.onSeekTo(pos);
-					if ((video != null) ? !video.playing() : pause) cb.onPause();
-				}
-			}, 3000L);
+			if ((video != null) && !DEFAULT_URL.equals(video.url())) a.post(() -> webView.reopen(video));
 		});
 	}
 

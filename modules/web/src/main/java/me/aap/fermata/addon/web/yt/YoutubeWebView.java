@@ -53,6 +53,9 @@ public class YoutubeWebView extends FermataWebView {
 	boolean videoFullScreen;
 	// The video of a page that went with its screen, for the next car screen to open again
 	private static Video closedVideo;
+	// The video this page is reopening, set as it was once it starts playing
+	@Nullable
+	private Video reopening;
 
 	record Video(String url, long position, boolean playing) {}
 
@@ -154,6 +157,52 @@ public class YoutubeWebView extends FermataWebView {
 		return new Video(url, pos, playing);
 	}
 
+	/**
+	 * Open a video at its position, playing or paused. It's set as it was when it starts playing rather
+	 * than after a delay, as the page may take a while to load, e.g. in a car that's just been started.
+	 */
+	void reopen(Video v) {
+		String url = v.url();
+		if (isVideoUrl(url)) {
+			reopening = v;
+			url = withStartTime(url, v.position());
+		}
+		loadUrl(url);
+	}
+
+	// Called when this page's video starts playing
+	void videoPlaying() {
+		Video v = reopening;
+		if (v == null) return;
+		reopening = null;
+		// Pausing from the page, its pause event then updates the session as any other pause does.
+		// YouTube may also start a video that the page opens by itself muted: unmute it, or it would
+		// play muted, without taking the audio focus, as soon as it's resumed.
+		loadUrl("javascript:var v = document.querySelector('video');\n" +
+				(v.playing() ? "" : "if (v != null) v.pause();\n") +
+				"var p = document.getElementById('movie_player');\n" +
+				"if ((p != null) && p.unMute) p.unMute();\n" +
+				"if (v != null) v.muted = false;");
+	}
+
+	// YouTube's start time parameter, rather than seeking once it plays, which could hit an ad
+	private static String withStartTime(String url, long pos) {
+		Uri u = Uri.parse(url);
+		if ((pos < 1000L) || !"/watch".equals(u.getPath())) return url;
+		Uri.Builder b = u.buildUpon().clearQuery();
+		for (String name : u.getQueryParameterNames()) {
+			if (name.equals("t")) continue;
+			for (String value : u.getQueryParameters(name)) b.appendQueryParameter(name, value);
+		}
+		return b.appendQueryParameter("t", (pos / 1000L) + "s").build().toString();
+	}
+
+	private static String videoId(String url) {
+		Uri u = Uri.parse(url);
+		String id = "/watch".equals(u.getPath()) ? u.getQueryParameter("v") : u.getPath();
+		return (id == null) ? "" : id;
+	}
+
 	// The same pages as isPreview() in attachListeners(): keep the two in sync
 	private static boolean isVideoUrl(@Nullable String url) {
 		if (url == null) return false;
@@ -164,9 +213,13 @@ public class YoutubeWebView extends FermataWebView {
 
 	@Override
 	protected void urlChanged(String url) {
+		if (isVideoUrl(url)) {
+			// Another video opened before the reopened one started
+			if ((reopening != null) && !videoId(url).equals(videoId(reopening.url()))) reopening = null;
+			return;
+		}
 		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
 		// even though YouTube keeps playing it as a muted preview
-		if (isVideoUrl(url)) return;
 		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
 		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() == this)) cb.onStop();
 	}
