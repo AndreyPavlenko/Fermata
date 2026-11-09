@@ -57,7 +57,12 @@ public class YoutubeWebView extends FermataWebView {
 	@Nullable
 	private Video reopening;
 
-	record Video(String url, long position, boolean playing) {}
+	// left: when it stopped playing, as SystemClock.elapsedRealtime(), or now if it's playing
+	record Video(String url, long position, boolean playing, long left) {
+		Video(String url, long position, boolean playing) {
+			this(url, position, playing, SystemClock.elapsedRealtime());
+		}
+	}
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -115,7 +120,7 @@ public class YoutubeWebView extends FermataWebView {
 			// Only a car screen's video: a phone screen restores its own from its saved state.
 			// Its playback stops here, so it reopens paused rather than start playing out of the blue.
 			Video v = a.isCarActivity() ? getVideo(a.getMediaSessionCallback()) : null;
-			if (v != null) closedVideo = new Video(v.url(), v.position(), false);
+			if (v != null) closedVideo = new Video(v.url(), v.position(), false, v.left());
 			js.pageRemoved();
 		}
 		super.onActivityEvent(a, e);
@@ -125,20 +130,27 @@ public class YoutubeWebView extends FermataWebView {
 	 * A car screen has no saved state to restore its page from, as a phone screen does. When a new one
 	 * opens, take over the video of the previous one: its page may still be there, as a car that's
 	 * switched off doesn't always close it, or it may be gone with its video, which then reopens paused.
+	 * Only if it was left within the minutes set in the settings.
 	 */
 	@Nullable
 	static Video takeOverVideo(MediaSessionCallback cb, YoutubeWebView page) {
+		Video v;
+
 		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() != page)) {
-			Video v = eng.getWebView().getVideo(cb);
+			v = eng.getWebView().getVideo(cb);
 			if (v == null) return null;
 			closedVideo = null;
 			cb.onStop();
-			return v;
+		} else {
+			v = closedVideo;
+			closedVideo = null;
+			if (v == null) return null;
 		}
 
-		Video v = closedVideo;
-		closedVideo = null;
-		return v;
+		// Only a video left recently: an older one would be unexpected, and the car screen opens on
+		// YouTube's home instead
+		long limit = page.getAddon().reopenVideoMinutes() * 60000L;
+		return ((limit > 0) && (SystemClock.elapsedRealtime() - v.left() <= limit)) ? v : null;
 	}
 
 	// The video playing or paused on this page
@@ -151,10 +163,11 @@ public class YoutubeWebView extends FermataWebView {
 		int state = st.getState();
 		boolean playing = (state == PlaybackStateCompat.STATE_PLAYING);
 		if (!playing && (state != PlaybackStateCompat.STATE_PAUSED)) return null;
+		long now = SystemClock.elapsedRealtime();
 		long pos = st.getPosition();
-		if (playing) pos += (long) ((SystemClock.elapsedRealtime() - st.getLastPositionUpdateTime()) *
-				st.getPlaybackSpeed());
-		return new Video(url, pos, playing);
+		if (!playing) return new Video(url, pos, false, st.getLastPositionUpdateTime());
+		pos += (long) ((now - st.getLastPositionUpdateTime()) * st.getPlaybackSpeed());
+		return new Video(url, pos, true, now);
 	}
 
 	/**

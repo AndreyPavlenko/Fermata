@@ -17,6 +17,8 @@
     <string name="auto_highest_video_quality">Auto-select highest video quality</string>
     <string name="youtube_player_controls">Use YouTube\'s controls in full screen</string>
     <string name="youtube_player_controls_sub">Instead of Fermata\'s control panel: progress bar, captions, settings, double-tap to seek</string>
+    <string name="reopen_video_min">Reopen the last video in the car within (minutes)</string>
+    <string name="reopen_video_min_sub">When Fermata\'s car screen opens again, e.g. after switching the car off, it reopens the video you left, if that was less than this long ago. 0 always opens YouTube\'s home</string>
     <string name="try_to_skip_ad">Try to skip advertising</string>
     <string name="sponsorblock" translatable="false">SponsorBlock</string>
     <string name="sponsorblock_sub">Skip crowd-sourced segments while watching YouTube.</string>
