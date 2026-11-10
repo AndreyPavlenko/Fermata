@@ -56,6 +56,12 @@ public class FermataWebClient extends WebViewClientCompat {
 	}
 
 	@Override
+	public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+		super.doUpdateVisitedHistory(view, url, isReload);
+		((FermataWebView) view).urlChanged(url);
+	}
+
+	@Override
 	public boolean shouldOverrideUrlLoading(@NonNull WebView view,
 																					@NonNull WebResourceRequest request) {
 		if (isYoutubeUri(request.getUrl())) {

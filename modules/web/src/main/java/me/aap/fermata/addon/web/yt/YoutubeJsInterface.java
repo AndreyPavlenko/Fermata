@@ -24,6 +24,10 @@ public class YoutubeJsInterface extends FermataJsInterface {
 		this.engine = engine;
 	}
 
+	void pageRemoved() {
+		engine.pageRemoved();
+	}
+
 	Promise<String> getResultPromise() {
 		if (result != null) result.cancel();
 		return result = new Promise<>();
@@ -54,6 +58,9 @@ public class YoutubeJsInterface extends FermataJsInterface {
 			case JS_VIDEO_QUALITIES:
 				Log.d("Video qualities: ", data);
 				setResult(data);
+				break;
+			case JS_FULL_SCREEN:
+				((YoutubeWebView) getWebView()).videoFullScreen = "VIDEO".equals(data);
 				break;
 			default:
 				super.handleEvent(event, data);

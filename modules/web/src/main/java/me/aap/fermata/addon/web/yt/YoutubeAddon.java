@@ -115,8 +115,30 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.title = R.string.auto_highest_video_quality;
 			o.visibility = visibility;
 		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_PLAYER_CONTROLS;
+			o.title = R.string.youtube_player_controls;
+			o.subtitle = R.string.youtube_player_controls_sub;
+			o.visibility = visibility;
+		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_PAUSE_ON_LEAVE;
+			o.title = R.string.youtube_pause_on_leave;
+			o.subtitle = R.string.youtube_pause_on_leave_sub;
+			o.visibility = visibility;
+		});
 
 		if (AUTO) {
+			set.addIntPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = YT_REOPEN_VIDEO_MIN;
+				o.seekMax = 60;
+				o.title = R.string.reopen_video_min;
+				o.subtitle = R.string.reopen_video_min_sub;
+				o.visibility = visibility;
+			});
 			set.addBooleanPref(o -> {
 				o.store = getPreferenceStore();
 				o.pref = YT_SKIP_ADD;
@@ -179,8 +201,21 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		getPreferenceStore().applyStringPref(VIDEO_SCALE, scale.prefName());
 	}
 
+	boolean pauseOnLeave() {
+		return getPreferenceStore().getBooleanPref(YT_PAUSE_ON_LEAVE);
+	}
+
 	boolean autoHighestQuality() {
 		return getPreferenceStore().getBooleanPref(YT_AUTO_HIGHEST_QUALITY);
+	}
+
+	boolean youtubePlayerControls() {
+		return getPreferenceStore().getBooleanPref(YT_PLAYER_CONTROLS);
+	}
+
+	// Minutes within which a new car screen reopens the last video, 0 for never
+	int reopenVideoMinutes() {
+		return AUTO ? getPreferenceStore().getIntPref(YT_REOPEN_VIDEO_MIN) : 0;
 	}
 
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {

@@ -30,8 +30,9 @@ if (CMAKE_ANDROID_ARCH_ABI MATCHES "arm64")
     FetchContent_Declare(vk_hpp GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Hpp
             GIT_TAG v1.3.275
     )
+    # Pinned for reproducible builds (main @ 2026-11-04)
     FetchContent_Declare(SPIRV-Headers GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers
-            GIT_TAG main
+            GIT_TAG 6efe5ae6b7c6ad29da3f2cc3f164b9c3d72b78b1
             OVERRIDE_FIND_PACKAGE
     )
     FetchContent_MakeAvailable(vk_hpp SPIRV-Headers)
@@ -49,7 +50,8 @@ find_library(LOG_LIB log)
 FetchContent_Declare(
         whispercpp
         GIT_REPOSITORY https://github.com/ggml-org/whisper.cpp.git
-        GIT_TAG master # v1.8.2
+        # Pinned for reproducible builds (master @ 2026-11-05, 1.9.5-dev)
+        GIT_TAG 727d3e7666485e12450746b523bfb4e7f057cc5e
 )
 FetchContent_MakeAvailable(whispercpp)
 

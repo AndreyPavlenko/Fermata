@@ -2,6 +2,7 @@ package me.aap.fermata.addon.web.yt;
 
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_ERR;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_EVENT;
+import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_FULL_SCREEN;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_ENDED;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_FOUND;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PAUSED;
@@ -10,10 +11,17 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PROGRESS;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
+import android.net.Uri;
+import android.os.SystemClock;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import org.json.JSONException;
+import org.json.JSONTokener;
 
 import java.util.List;
 
@@ -93,6 +101,131 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	@Override
+	public void onActivityEvent(MainActivityDelegate a, long e) {
+		// The page is gone with its activity (e.g. Fermata Auto exited from Android Auto), and nothing
+		// can continue its playback. Switching to another section only detaches it until it's shown again.
+		if ((e == ACTIVITY_DESTROY) && (js != null)) {
+			// Only a car screen's video: a phone screen restores its own from its saved state.
+			// Its playback stops here, so it reopens paused rather than start playing out of the blue.
+			Video v = a.isCarActivity() ? getVideo(a.getMediaSessionCallback()) : null;
+			if (v != null) closedVideo = new Video(v.url(), v.position(), false, v.left());
+			js.pageRemoved();
+		}
+		super.onActivityEvent(a, e);
+	}
+
+	/**
+	 * A car screen has no saved state to restore its page from, as a phone screen does. When a new one
+	 * opens, take over the video of the previous one: its page may still be there, as a car that's
+	 * switched off doesn't always close it, or it may be gone with its video, which then reopens paused.
+	 * Only if it was left within the minutes set in the settings.
+	 */
+	@Nullable
+	static Video takeOverVideo(MediaSessionCallback cb, YoutubeWebView page) {
+		Video v;
+
+		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() != page)) {
+			v = eng.getWebView().getVideo(cb);
+			if (v == null) return null;
+			closedVideo = null;
+			cb.onStop();
+		} else {
+			v = closedVideo;
+			closedVideo = null;
+			if (v == null) return null;
+		}
+
+		// Only a video left recently: an older one would be unexpected, and the car screen opens on
+		// YouTube's home instead
+		long limit = page.getAddon().reopenVideoMinutes() * 60000L;
+		return ((limit > 0) && (SystemClock.elapsedRealtime() - v.left() <= limit)) ? v : null;
+	}
+
+	// The video playing or paused on this page
+	@Nullable
+	private Video getVideo(MediaSessionCallback cb) {
+		if (!(cb.getEngine() instanceof YoutubeMediaEngine eng) || (eng.getWebView() != this)) return null;
+		String url = getUrl();
+		if (!isVideoUrl(url)) return null;
+		PlaybackStateCompat st = cb.getPlaybackState();
+		int state = st.getState();
+		boolean playing = (state == PlaybackStateCompat.STATE_PLAYING);
+		if (!playing && (state != PlaybackStateCompat.STATE_PAUSED)) return null;
+		long now = SystemClock.elapsedRealtime();
+		long pos = st.getPosition();
+		if (!playing) return new Video(url, pos, false, st.getLastPositionUpdateTime());
+		pos += (long) ((now - st.getLastPositionUpdateTime()) * st.getPlaybackSpeed());
+		return new Video(url, pos, true, now);
+	}
+
+	/**
+	 * Open a video at its position, playing or paused. It's set as it was when it starts playing rather
+	 * than after a delay, as the page may take a while to load, e.g. in a car that's just been started.
+	 */
+	void reopen(Video v) {
+		String url = v.url();
+		if (isVideoUrl(url)) {
+			reopening = v;
+			url = withStartTime(url, v.position());
+		}
+		loadUrl(url);
+	}
+
+	// Called when this page's video starts playing
+	void videoPlaying() {
+		Video v = reopening;
+		if (v == null) return;
+		reopening = null;
+		// Pausing from the page, its pause event then updates the session as any other pause does.
+		// YouTube may also start a video that the page opens by itself muted: unmute it, or it would
+		// play muted, without taking the audio focus, as soon as it's resumed.
+		loadUrl("javascript:var v = document.querySelector('video');\n" +
+				(v.playing() ? "" : "if (v != null) v.pause();\n") +
+				"var p = document.getElementById('movie_player');\n" +
+				"if ((p != null) && p.unMute) p.unMute();\n" +
+				"if (v != null) v.muted = false;");
+	}
+
+	// YouTube's start time parameter, rather than seeking once it plays, which could hit an ad
+	private static String withStartTime(String url, long pos) {
+		Uri u = Uri.parse(url);
+		if ((pos < 1000L) || !"/watch".equals(u.getPath())) return url;
+		Uri.Builder b = u.buildUpon().clearQuery();
+		for (String name : u.getQueryParameterNames()) {
+			if (name.equals("t")) continue;
+			for (String value : u.getQueryParameters(name)) b.appendQueryParameter(name, value);
+		}
+		return b.appendQueryParameter("t", (pos / 1000L) + "s").build().toString();
+	}
+
+	private static String videoId(String url) {
+		Uri u = Uri.parse(url);
+		String id = "/watch".equals(u.getPath()) ? u.getQueryParameter("v") : u.getPath();
+		return (id == null) ? "" : id;
+	}
+
+	// The same pages as isPreview() in attachListeners(): keep the two in sync
+	private static boolean isVideoUrl(@Nullable String url) {
+		if (url == null) return false;
+		String path = Uri.parse(url).getPath();
+		return (path != null) && (path.startsWith("/watch") || path.startsWith("/shorts") ||
+				path.startsWith("/live") || path.startsWith("/embed"));
+	}
+
+	@Override
+	protected void urlChanged(String url) {
+		if (isVideoUrl(url)) {
+			// Another video opened before the reopened one started
+			if ((reopening != null) && !videoId(url).equals(videoId(reopening.url()))) reopening = null;
+			return;
+		}
+		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
+		// even though YouTube keeps playing it as a muted preview
+		MediaSessionCallback cb = MainActivityDelegate.get(getContext()).getMediaSessionCallback();
+		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() == this)) cb.onStop();
+	}
+
+	@Override
 	protected void pageLoaded(String uri) {
 		attachListeners();
 		injectSponsorBlock();
@@ -115,6 +248,19 @@ public class YoutubeWebView extends FermataWebView {
 		String debug = BuildConfig.D ? JS_EVENT + "(" + JS_VIDEO_FOUND + ", null);\n" : "";
 		String scale = getAddon().getScale().prefName();
 		loadUrl("javascript:\n" +
+				// Muted autoplay previews in the feeds reuse the player, they are not user playback.
+				// The video pages are the same as in isVideoUrl(): keep the two in sync.
+				"function isPreview(v) {\n" +
+				"  return v.muted && !/^\\/(watch|shorts|live|embed)/.test(location.pathname);\n" +
+				"}\n" +
+				"function videoEvent(v, e) {\n" +
+				"  if (isPreview(v)) {\n" +
+				"    if (!v.fermataPlaying) return;\n" +
+				"    e = " + JS_VIDEO_PAUSED + ";\n" +
+				"  }\n" +
+				"  v.fermataPlaying = (e === " + JS_VIDEO_PLAYING + ");\n" +
+				"  " + JS_EVENT + "(e, (e === " + JS_VIDEO_ENDED + ") ? null : v.currentSrc);\n" +
+				"}\n" +
 				"function attachVideoListeners(v) {\n" +
 				"  if (v.getAttribute('FermataAttached') === 'true') return;\n" +
 				"  v.setAttribute('FermataAttached', 'true');\n" +
@@ -157,6 +303,13 @@ public class YoutubeWebView extends FermataWebView {
 				"  video.forEach(attachVideoListeners);\n" +
 				"   setTimeout(findVideo, 1000);\n" +
 				"}\n" +
+				"if (!window.__fermataFullScreen) {\n" +
+				"  window.__fermataFullScreen = true;\n" +
+				"  document.addEventListener('fullscreenchange', function() {\n" +
+				"    var e = document.fullscreenElement;\n" +
+				"    " + JS_EVENT + "(" + JS_FULL_SCREEN + ", e ? e.tagName : null);\n" +
+				"  });\n" +
+				"}\n" +
 				"findVideo();");
 	}
 
@@ -172,10 +325,31 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	protected boolean requestFullScreen() {
-		loadUrl("javascript: var v = document.querySelector('video');\n" +
-				"if ('webkitRequestFullscreen' in v) v.webkitRequestFullscreen();\n" +
-				"else if ('requestFullscreen' in v) v.requestFullscreen();\n" +
-				"else " + JS_EVENT + "(" + JS_ERR + ", 'Method requestFullscreen not found in ' + v);");
+		// With YouTube's controls, its own button lets YouTube switch to its full screen layout. Without the
+		// button (e.g. Shorts) the player goes full screen, and without the player the bare video, as without
+		// the option. A refused request falls back to the next one. Only the click can't tell, so whether
+		// full screen started is checked after a while.
+		loadUrl("javascript:(function() {\n" +
+				"  var v = document.querySelector('video');\n" +
+				"  if (!v) return;\n" +
+				"  var p = " + getAddon().youtubePlayerControls() + " && v.closest('#player-container-id');\n" +
+				"  var b = p && p.querySelector('button.fullscreen-icon');\n" +
+				"  function fs(e) {\n" +
+				"    if ('requestFullscreen' in e) return e.requestFullscreen();\n" +
+				"    if ('webkitRequestFullscreen' in e) return Promise.resolve(e.webkitRequestFullscreen());\n" +
+				"    return Promise.reject('Method requestFullscreen not found in ' + e);\n" +
+				"  }\n" +
+				"  function video() {\n" +
+				"    fs(v).catch(function(err) { " + JS_EVENT + "(" + JS_ERR + ", '' + err); });\n" +
+				"  }\n" +
+				"  function player() { fs(p).catch(video); }\n" +
+				"  if (!p) video();\n" +
+				"  else if (!b) player();\n" +
+				"  else {\n" +
+				"    b.click();\n" +
+				"    setTimeout(function() { if (!document.fullscreenElement) player(); }, 1500);\n" +
+				"  }\n" +
+				"})();");
 		return true;
 	}
 
@@ -219,16 +393,26 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	private void prevNext(boolean next) {
-		FermataChromeClient chrome = getWebChromeClient();
-		if (chrome == null) return;
-		chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
-				function prevNextVideo() {
-				  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
-				  console.log('Prev/Next buttons:', buttons);
-				  if (buttons) buttons[%d].click();
-				}
-				setTimeout(prevNextVideo, 600);
-				""".formatted(next ? 1 : 0), null));
+		evaluateJavascript("""
+				(function() {
+				  const p = document.querySelector('#movie_player') || document.querySelector('.html5-video-player');
+				  const fn = '%s';
+				  if (!p || (typeof p[fn] !== 'function')) return false;
+				  p[fn]();
+				  return true;
+				})();
+				""".formatted(next ? "nextVideo" : "previousVideo"), r -> {
+			if ("true".equals(r)) return;
+			// Player API not available, fall back to the page's prev/next buttons
+			FermataChromeClient chrome = getWebChromeClient();
+			if (chrome == null) return;
+			chrome.exitFullScreen().thenRun(() -> evaluateJavascript("""
+					setTimeout(() => {
+					  const buttons = document.querySelectorAll('button.player-middle-controls-prev-next-button');
+					  if (buttons.length > %1$d) buttons[%1$d].click();
+					}, 600);
+					""".formatted(next ? 1 : 0), null));
+		});
 	}
 
 	FutureSupplier<Long> getDuration() {
@@ -399,7 +583,22 @@ public class YoutubeWebView extends FermataWebView {
 
 	FutureSupplier<String> getVideoTitle() {
 		Promise<String> p = new Promise<>();
-		evaluateJavascript("document.title", p::complete);
+		// The page title is updated only some time after a video is opened, the player knows it already
+		evaluateJavascript("""
+				(function() {
+				  var v = document.querySelector('video');
+				  var p = v && v.closest('#movie_player');
+				  var d = p && p.getVideoData && p.getVideoData();
+				  return (d && d.title) || document.title;
+				})()""", json -> {
+			// evaluateJavascript() returns its result as JSON, so a string comes quoted and escaped
+			try {
+				Object v = new JSONTokener(json).nextValue();
+				p.complete((v instanceof String) ? (String) v : null);
+			} catch (JSONException ex) {
+				p.complete(json);
+			}
+		});
 		return p;
 	}
 
@@ -408,6 +607,6 @@ public class YoutubeWebView extends FermataWebView {
 		String p = scale.prefName();
 		loadUrl("javascript:" +
 				"document.querySelectorAll('video')" +
-				".forEach(v=> v.setAttribute('style', 'object-fit:" + p + "'));");
+				".forEach(v=> v.style.objectFit = '" + p + "');");
 	}
 }
