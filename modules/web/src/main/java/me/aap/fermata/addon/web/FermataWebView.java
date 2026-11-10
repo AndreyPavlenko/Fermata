@@ -222,6 +222,9 @@ public class FermataWebView extends WebView
 		return chrome;
 	}
 
+	protected void urlChanged(String url) {
+	}
+
 	protected void pageLoaded(String uri) {
 		addFocusHighlight();
 		getAddon().setLastUrl(uri);

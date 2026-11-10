@@ -43,6 +43,8 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
+	private static final Pref<IntSupplier> YT_REOPEN_VIDEO_MIN =
+			AUTO ? Pref.i("YT_REOPEN_VIDEO_MIN", 10) : null;
 	private static final Pref<BooleanSupplier> YT_PLAYER_CONTROLS =
 			Pref.b("YT_PLAYER_CONTROLS", false);
 	private static final Pref<BooleanSupplier> YT_PAUSE_ON_LEAVE = Pref.b("YT_PAUSE_ON_LEAVE", !AUTO);
@@ -120,6 +122,14 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		});
 
 		if (AUTO) {
+			set.addIntPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = YT_REOPEN_VIDEO_MIN;
+				o.seekMax = 60;
+				o.title = R.string.reopen_video_min;
+				o.subtitle = R.string.reopen_video_min_sub;
+				o.visibility = visibility;
+			});
 			set.addBooleanPref(o -> {
 				o.store = getPreferenceStore();
 				o.pref = YT_SKIP_ADD;
@@ -192,6 +202,11 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	boolean youtubePlayerControls() {
 		return getPreferenceStore().getBooleanPref(YT_PLAYER_CONTROLS);
+	}
+
+	// Minutes within which a new car screen reopens the last video, 0 for never
+	int reopenVideoMinutes() {
+		return AUTO ? getPreferenceStore().getIntPref(YT_REOPEN_VIDEO_MIN) : 0;
 	}
 
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {

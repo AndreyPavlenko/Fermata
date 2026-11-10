@@ -76,18 +76,14 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
+			PreferenceStore ps = addon.getPreferenceStore();
+			long pos = ps.getLongPref(RESUME_POS);
+			ps.removePref(RESUME_POS);
+			YoutubeWebView.Video video = (state != null) ? new YoutubeWebView.Video(url, pos, !pause) :
+					a.isCarActivity() ? YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) :
+							null;
 			webView.loadUrl(DEFAULT_URL);
-			if (!DEFAULT_URL.equals(url)) a.post(() -> webView.loadUrl(url));
-			a.postDelayed(() -> {
-				PreferenceStore ps = addon.getPreferenceStore();
-				long pos = ps.getLongPref(RESUME_POS);
-				ps.removePref(RESUME_POS);
-				MediaSessionCallback cb = a.getMediaSessionCallback();
-				if (cb.getEngine() instanceof YoutubeMediaEngine) {
-					if (pos > 0L) cb.onSeekTo(pos);
-					if (pause) cb.onPause();
-				}
-			}, 3000L);
+			if ((video != null) && !DEFAULT_URL.equals(video.url())) a.post(() -> webView.reopen(video));
 		});
 	}
 
