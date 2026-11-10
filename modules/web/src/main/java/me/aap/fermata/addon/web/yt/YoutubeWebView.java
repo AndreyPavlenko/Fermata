@@ -11,7 +11,6 @@ import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_PROGRESS;
 import static me.aap.fermata.addon.web.yt.YoutubeJsInterface.JS_VIDEO_QUALITIES;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.SystemClock;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.AttributeSet;
@@ -50,7 +49,20 @@ public class YoutubeWebView extends FermataWebView {
 					"  window.__fermataQ = null;\n" +
 					"}\n";
 	private YoutubeJsInterface js;
-	private boolean unmuteOnPlay;
+	// Reported by the page: the bare video, which has no YouTube controls, is what's in full screen
+	boolean videoFullScreen;
+	// The video of a page that went with its screen, for the next car screen to open again
+	private static Video closedVideo;
+	// The video this page is reopening, set as it was once it starts playing
+	@Nullable
+	private Video reopening;
+
+	// left: when it stopped playing, as SystemClock.elapsedRealtime(), or now if it's playing
+	record Video(String url, long position, boolean playing, long left) {
+		Video(String url, long position, boolean playing) {
+			this(url, position, playing, SystemClock.elapsedRealtime());
+		}
+	}
 
 	public YoutubeWebView(Context context) {
 		super(context);
@@ -146,7 +158,7 @@ public class YoutubeWebView extends FermataWebView {
 	private Video getVideo(MediaSessionCallback cb) {
 		if (!(cb.getEngine() instanceof YoutubeMediaEngine eng) || (eng.getWebView() != this)) return null;
 		String url = getUrl();
-		if (!isVideoUrl(url)) return null;
+		if (!YoutubeUrls.isVideoUrl(url)) return null;
 		PlaybackStateCompat st = cb.getPlaybackState();
 		int state = st.getState();
 		boolean playing = (state == PlaybackStateCompat.STATE_PLAYING);
@@ -164,9 +176,9 @@ public class YoutubeWebView extends FermataWebView {
 	 */
 	void reopen(Video v) {
 		String url = v.url();
-		if (isVideoUrl(url)) {
+		if (YoutubeUrls.isVideoUrl(url)) {
 			reopening = v;
-			url = withStartTime(url, v.position());
+			url = YoutubeUrls.withStartTime(url, v.position());
 		}
 		loadUrl(url);
 	}
@@ -182,41 +194,16 @@ public class YoutubeWebView extends FermataWebView {
 		loadUrl("javascript:var v = document.querySelector('video');\n" +
 				(v.playing() ? "" : "if (v != null) v.pause();\n") +
 				"var p = document.getElementById('movie_player');\n" +
-				"if ((p != null) && p.unMute) p.unMute();\n" +
+				"try { if ((p != null) && p.unMute) p.unMute(); } catch (e) {}\n" +
 				"if (v != null) v.muted = false;");
-	}
-
-	// YouTube's start time parameter, rather than seeking once it plays, which could hit an ad
-	private static String withStartTime(String url, long pos) {
-		Uri u = Uri.parse(url);
-		if ((pos < 1000L) || !"/watch".equals(u.getPath())) return url;
-		Uri.Builder b = u.buildUpon().clearQuery();
-		for (String name : u.getQueryParameterNames()) {
-			if (name.equals("t")) continue;
-			for (String value : u.getQueryParameters(name)) b.appendQueryParameter(name, value);
-		}
-		return b.appendQueryParameter("t", (pos / 1000L) + "s").build().toString();
-	}
-
-	private static String videoId(String url) {
-		Uri u = Uri.parse(url);
-		String id = "/watch".equals(u.getPath()) ? u.getQueryParameter("v") : u.getPath();
-		return (id == null) ? "" : id;
-	}
-
-	// The same pages as isPreview() in attachListeners(): keep the two in sync
-	private static boolean isVideoUrl(@Nullable String url) {
-		if (url == null) return false;
-		String path = Uri.parse(url).getPath();
-		return (path != null) && (path.startsWith("/watch") || path.startsWith("/shorts") ||
-				path.startsWith("/live") || path.startsWith("/embed"));
 	}
 
 	@Override
 	protected void urlChanged(String url) {
-		if (isVideoUrl(url)) {
+		if (YoutubeUrls.isVideoUrl(url)) {
 			// Another video opened before the reopened one started
-			if ((reopening != null) && !videoId(url).equals(videoId(reopening.url()))) reopening = null;
+			if ((reopening != null) &&
+					!YoutubeUrls.videoId(url).equals(YoutubeUrls.videoId(reopening.url()))) reopening = null;
 			return;
 		}
 		// Leaving the video within the page (e.g. YouTube's own back button) leaves it like goBack(),
@@ -259,27 +246,31 @@ public class YoutubeWebView extends FermataWebView {
 				"    e = " + JS_VIDEO_PAUSED + ";\n" +
 				"  }\n" +
 				"  v.fermataPlaying = (e === " + JS_VIDEO_PLAYING + ");\n" +
-				"  " + JS_EVENT + "(e, (e === " + JS_VIDEO_ENDED + ") ? null : v.currentSrc);\n" +
+				"  " + JS_EVENT + "(e, (e === " + JS_VIDEO_ENDED + ") ? fermataVideoUrl() : v.currentSrc);\n" +
 				"}\n" +
 				"function attachVideoListeners(v) {\n" +
 				"  if (v.getAttribute('FermataAttached') === 'true') return;\n" +
 				"  v.setAttribute('FermataAttached', 'true');\n" +
-				"  v.setAttribute('style', 'object-fit:" + scale + "');\n" + debug +
-				"  if ((v.currentTime > 0) && !v.paused && !v.ended) " + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);\n" +
-				"  v.addEventListener('playing', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PLAYING +
-				", v.currentSrc);});\n" +
-				"  v.addEventListener('pause', function(e) {" + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
-				", Math.floor(v.currentTime) + '|' + fermataVideoUrl());" + JS_EVENT + "(" +
-				JS_VIDEO_PAUSED + ", v.currentSrc);});\n" +
+				"  v.style.objectFit = '" + scale + "';\n" + debug +
+				"  if ((v.currentTime > 0) && !v.paused && !v.ended) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  v.addEventListener('playing', function(e) { videoEvent(v, " + JS_VIDEO_PLAYING + "); });\n" +
+				"  v.addEventListener('pause', function(e) {\n" +
+				"    if (!v.muted && !isPreview(v)) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
+				", Math.floor(v.currentTime) + '|' + fermataVideoUrl());\n" +
+				"    videoEvent(v, " + JS_VIDEO_PAUSED + ");\n" +
+				"  });\n" +
 				"  v.addEventListener('timeupdate', function(e) {\n" +
+				"    if (v.muted || isPreview(v)) return;\n" +
 				"    var t = Math.floor(v.currentTime);\n" +
 				"    if ((t % 5 != 0) || (t === v.fermataProgress)) return;\n" +
 				"    v.fermataProgress = t;\n" +
 				"    " + JS_EVENT + "(" + JS_VIDEO_PROGRESS + ", t + '|' + fermataVideoUrl());\n" +
 				"  });\n" +
-				"  v.addEventListener('ended', function(e) {" + JS_EVENT + "(" + JS_VIDEO_ENDED +
-				", null);});\n" +
+				"  v.addEventListener('ended', function(e) { videoEvent(v, " + JS_VIDEO_ENDED + "); });\n" +
+				// A muted preview unmuted in place becomes the user's playback
+				"  v.addEventListener('volumechange', function(e) {\n" +
+				"    if (!v.paused && !v.fermataPlaying && !isPreview(v)) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  });\n" +
 				"}\n" +
 				// Search results and the home feed play videos inline, so the page URL is not
 				// always the video URL. The player element knows the video id.
@@ -296,7 +287,7 @@ public class YoutubeWebView extends FermataWebView {
 				"    var u = p && p.getVideoUrl && p.getVideoUrl();\n" +
 				"    if (u) return u;\n" +
 				"  } catch (e) {}\n" +
-				"  return h;\n" +
+				"  return '';\n" +
 				"}\n" +
 				"function findVideo() {\n" +
 				"  var video = document.querySelectorAll('video');" +
@@ -359,24 +350,6 @@ public class YoutubeWebView extends FermataWebView {
 
 	void pause() {
 		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.pause();");
-	}
-
-	/**
-	 * YouTube starts a video muted if it autoplays without a tap. Used for the resumed video, so it
-	 * is unmuted once when it starts playing. Other autoplayed videos, like feed previews, stay muted.
-	 */
-	void unmuteOnPlay() {
-		unmuteOnPlay = true;
-	}
-
-	void playing() {
-		if (!unmuteOnPlay) return;
-		unmuteOnPlay = false;
-		loadUrl("javascript:\n" +
-				"var p = document.getElementById('movie_player');\n" +
-				"try { if (p && p.unMute) p.unMute(); } catch (e) {}\n" +
-				"var v = document.querySelector('video');\n" +
-				"if (v != null) v.muted = false;");
 	}
 
 	void stop() {
