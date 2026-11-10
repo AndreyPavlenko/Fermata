@@ -40,7 +40,6 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				break;
 			case JS_VIDEO_PLAYING:
 				Log.d("Video playing");
-				getYoutubeWebView().playing();
 				engine.playing(data);
 				break;
 			case JS_VIDEO_PAUSED:
@@ -49,7 +48,7 @@ public class YoutubeJsInterface extends FermataJsInterface {
 				break;
 			case JS_VIDEO_ENDED:
 				Log.d("Video ended");
-				getYoutubeWebView().getAddon().clearLastVideo();
+				getYoutubeWebView().getAddon().clearLastVideo(data);
 				engine.ended();
 				break;
 			case JS_VIDEO_PROGRESS:
@@ -73,19 +72,12 @@ public class YoutubeJsInterface extends FermataJsInterface {
 
 	// data: "<position in seconds>|<video url>"
 	private void saveProgress(String data) {
-		int idx = (data == null) ? -1 : data.indexOf('|');
-		if (idx <= 0) {
+		YoutubeUrls.Progress p = YoutubeUrls.parseProgress(data);
+		if (p == null) {
 			Log.e("Invalid video progress: ", data);
 			return;
 		}
-		int pos;
-		try {
-			pos = Integer.parseInt(data.substring(0, idx));
-		} catch (NumberFormatException err) {
-			Log.e(err, "Invalid video position: ", data);
-			return;
-		}
-		getYoutubeWebView().getAddon().saveLastVideo(data.substring(idx + 1), pos);
+		getYoutubeWebView().getAddon().saveLastVideo(p.url(), p.sec());
 	}
 
 	private void setResult(String data) {

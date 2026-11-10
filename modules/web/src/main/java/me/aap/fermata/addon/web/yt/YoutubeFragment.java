@@ -59,28 +59,11 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		YoutubeAddon addon = AddonManager.get().getAddon(YoutubeAddon.class);
 		if (addon == null) return;
 
-		String url;
-		boolean pause;
-		boolean resumed = false;
-
-		if (state != null) {
-			url = state.getString("url", DEFAULT_URL);
-			pause = state.getBoolean("pause", false);
-		} else {
-			// Fresh start, e.g. the process was killed after Android Auto disconnected
-			String resume = addon.getResumeUrl();
-			if (resume != null) {
-				Log.i("Resuming the last video: ", resume);
-				url = resume;
-				resumed = true;
-			} else {
-				url = DEFAULT_URL;
-			}
-			pause = false;
-		}
-
-		boolean unmute = resumed;
-
+		String url = (state != null) ? state.getString("url", DEFAULT_URL) : DEFAULT_URL;
+		boolean pause = (state != null) && state.getBoolean("pause", false);
+		PreferenceStore ps = addon.getPreferenceStore();
+		long pos = ps.getLongPref(RESUME_POS);
+		ps.removePref(RESUME_POS);
 		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(a -> {
 			YoutubeWebView webView = a.findViewById(R.id.ytWebView);
 			VideoView videoView = a.findViewById(R.id.ytVideoView);
@@ -88,7 +71,14 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
-			if (unmute) webView.unmuteOnPlay();
+			YoutubeWebView.Video v = (state != null) ? new YoutubeWebView.Video(url, pos, !pause) :
+					a.isCarActivity() ? YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) : null;
+			if ((v == null) && (state == null)) {
+				// Fresh start, e.g. the process was killed after Android Auto disconnected
+				v = addon.getLastVideo();
+				if (v != null) Log.i("Resuming the last video: ", v.url());
+			}
+			YoutubeWebView.Video video = v;
 			webView.loadUrl(DEFAULT_URL);
 			if ((video != null) && !DEFAULT_URL.equals(video.url())) a.post(() -> webView.reopen(video));
 		});
