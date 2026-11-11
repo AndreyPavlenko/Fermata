@@ -521,9 +521,18 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void setPosition(long position) {
-		double pos = position / 1000f;
-		loadUrl("javascript:var v = document.querySelector('video'); if (v != null) v.currentTime = " +
-				pos + ";");
+		double pos = position / 1000d;
+		// Seek through YouTube's player API when available: setting currentTime on the media
+		// element directly may be ignored or reverted by the player.
+		evaluateJavascript("""
+				(function() {
+				  const s = %s;
+				  const p = document.querySelector('#movie_player') || document.querySelector('.html5-video-player');
+				  if (p && (typeof p.seekTo === 'function')) { p.seekTo(s, true); return; }
+				  const v = document.querySelector('video');
+				  if (v != null) v.currentTime = s;
+				})();
+				""".formatted(Double.toString(pos)), null);
 	}
 
 	FutureSupplier<Float> getSpeed() {
