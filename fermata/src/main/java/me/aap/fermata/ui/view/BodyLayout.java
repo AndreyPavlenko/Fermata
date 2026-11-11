@@ -235,7 +235,7 @@ public class BodyLayout extends SplitLayout
 	@Override
 	public void onPlaybackError(String message) {
 		onPlaybackStopped();
-		Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+		Toast.makeText(getContext().getApplicationContext(), message, Toast.LENGTH_LONG).show();
 	}
 
 	@Override

@@ -438,7 +438,7 @@ public class LauncherActivity extends AppCompatActivity {
 						getContext().startActivity(intent);
 						MirrorDisplay.disableAccelRotation();
 					} catch (Exception err) {
-						Toast.makeText(getContext(), err.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+						Toast.makeText(getContext().getApplicationContext(), err.getLocalizedMessage(), Toast.LENGTH_LONG).show();
 					}
 				}
 			}
