@@ -462,7 +462,7 @@ public abstract class ActivityDelegate implements EventBroadcaster<ActivityListe
 
 		if (exitOnBackPressed()) {
 			backPressed = true;
-			Toast.makeText(getContext(), getExitMsg(), Toast.LENGTH_SHORT).show();
+			Toast.makeText(getContext().getApplicationContext(), getExitMsg(), Toast.LENGTH_SHORT).show();
 			App.get().getHandler().postDelayed(() -> backPressed = false, 2000);
 		}
 	}

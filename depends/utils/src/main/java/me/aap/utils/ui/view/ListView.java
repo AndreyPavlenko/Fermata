@@ -294,7 +294,7 @@ public class ListView<I> extends RecyclerView {
 		onCancel();
 		Log.w(err, "Failed to load items");
 		if (errorHandler != null) errorHandler.accept(err);
-		else Toast.makeText(getContext(), err.toString(), Toast.LENGTH_LONG).show();
+		else Toast.makeText(getContext().getApplicationContext(), err.toString(), Toast.LENGTH_LONG).show();
 	}
 
 	public interface ItemAdapter<I> {
