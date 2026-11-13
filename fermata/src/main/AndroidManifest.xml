@@ -48,6 +48,10 @@
         <intent>
             <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
         </intent>
+        <!-- The previous media app's media button receiver, to resume it when it has no session -->
+        <intent>
+            <action android:name="android.intent.action.MEDIA_BUTTON" />
+        </intent>
     </queries>
 
     <application

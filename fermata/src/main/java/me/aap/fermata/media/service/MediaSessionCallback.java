@@ -198,6 +198,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
+	private boolean otherAppKeyAction;
 	private Runnable carScreenLeft;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
@@ -464,7 +465,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
 		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
-		return handleKeyEvent(this, e, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
+		// The key's action may run after this returns (e.g. waiting for a double click), when the
+		// request's origin is no longer available: take it now
+		return handleKeyEvent(this, e, isRequestFromOtherApp(),
+				(i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
 	}
 
 	public void close() {
@@ -511,16 +515,31 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
-		// Only a request that came through the session from another app (e.g. Android Auto's autoplay) may be
-		// handed off. Fermata's own controls call this directly, outside of a session request.
-		boolean handOff;
-		try {
-			handOff = !lib.getContext().getPackageName().equals(session.getCurrentControllerInfo().getPackageName());
-		} catch (RuntimeException ex) {
-			handOff = false;
-		}
+		// Only a request from another app (e.g. Android Auto's autoplay or a media button) may be handed
+		// off. Fermata's own controls call this directly, outside of a session request.
+		boolean handOff = otherAppKeyAction || isRequestFromOtherApp();
 		playerTask.cancel();
 		playerTask = play(handOff);
+	}
+
+	// Within a session request: whether it came from another app
+	private boolean isRequestFromOtherApp() {
+		try {
+			return !lib.getContext().getPackageName()
+					.equals(session.getCurrentControllerInfo().getPackageName());
+		} catch (RuntimeException ex) {
+			return false;
+		}
+	}
+
+	// Run the action of a media button pressed in another app, which may run after the session request
+	public void runOtherAppKeyAction(Runnable action) {
+		otherAppKeyAction = true;
+		try {
+			action.run();
+		} finally {
+			otherAppKeyAction = false;
+		}
 	}
 
 	public FutureSupplier<Void> play() {
@@ -686,9 +705,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			carScreenLeft = null;
 			if (!lib.getPrefs().getBooleanPref(MediaLibPrefs.RESUME_PREVIOUS_APP_ON_LEAVE)) return;
 			int st = getPlaybackState().getState();
-			// Only with nothing to offer, which is what a greyed out play button means
-			if ((metadata != null) || ((st != STATE_NONE) && (st != STATE_STOPPED) && (st != STATE_ERROR)))
-				return;
+			// Only with nothing to offer, which is what a greyed out play button means. The session's
+			// metadata, as playback publishes it directly: a stopped song stays on the card.
+			if ((session.getController().getMetadata() != null) ||
+					((st != STATE_NONE) && (st != STATE_STOPPED) && (st != STATE_ERROR))) return;
 			PreviousMediaApp.handBack(lib.getContext(), lib.getPrefs());
 		};
 		App.get().getHandler().postDelayed(carScreenLeft, 2000);
@@ -1382,12 +1402,15 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state) {
+		PlaybackStateCompat prev = currentState;
 		currentState = state;
-		// A stop or engine switch deactivates the session. Publish resumed playback
-		// through an active session so system media controls can discover it again.
-		if ((state.getState() == STATE_PLAYING) && !session.isActive()) {
-			PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
-			session.setActive(true);
+
+		if (state.getState() == STATE_PLAYING) {
+			// Starting to play takes over from the most recent other app, whether or not the session was
+			// active (it is from the start, and a stop or engine switch deactivates it)
+			if (prev.getState() != STATE_PLAYING) PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
+			// Publish resumed playback through an active session so system media controls can discover it
+			if (!session.isActive()) session.setActive(true);
 		}
 		session.setPlaybackState(state);
 		service.updateNotification(state.getState(), getCurrentItem());
