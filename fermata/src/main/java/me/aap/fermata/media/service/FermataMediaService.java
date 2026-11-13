@@ -158,7 +158,11 @@ public class FermataMediaService extends MediaBrowserServiceCompat {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		MediaButtonReceiver.handleIntent(session, intent);
+		if ((intent != null) && Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction()) && (callback != null)) {
+			callback.onReceiverMediaButtonEvent(intent);
+		} else {
+			MediaButtonReceiver.handleIntent(session, intent);
+		}
 		return super.onStartCommand(intent, flags, startId);
 	}
 

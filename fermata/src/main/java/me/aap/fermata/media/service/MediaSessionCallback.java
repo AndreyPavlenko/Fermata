@@ -186,7 +186,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final BroadcastReceiver onCarConnection;
 	@Nullable
 	private final AsyncQueryHandler carConnectionQuery;
-	private boolean carConnected;
+	// CarConnection's type: 0 not connected, 1 native (Android Automotive), 2 projection (Android Auto)
+	private int carConnection;
 	private MediaEngine engine;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
@@ -267,9 +268,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			carConnectionQuery = new AsyncQueryHandler(ctx.getContentResolver()) {
 				@Override
 				protected void onQueryComplete(int token, Object cookie, Cursor c) {
-					boolean connected = isCarConnected(c);
-					if (carConnected && !connected) onPause();
-					carConnected = connected;
+					int connection = getCarConnection(c);
+					if ((carConnection != 0) && (connection == 0)) onPause();
+					carConnection = connection;
 				}
 			};
 			onCarConnection = new BroadcastReceiver() {
@@ -294,13 +295,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				new String[]{"CarConnectionState"}, null, null, null);
 	}
 
-	private static boolean isCarConnected(@Nullable Cursor c) {
-		if (c == null) return false;
+	private static int getCarConnection(@Nullable Cursor c) {
+		if (c == null) return 0;
 		try (c) {
-			return c.moveToNext() && (c.getInt(0) != 0); // 0: CONNECTION_TYPE_NOT_CONNECTED
+			return c.moveToNext() ? c.getInt(0) : 0;
 		} catch (Exception ex) {
 			Log.d(ex, "Failed to read the car connection");
-			return false;
+			return 0;
 		}
 	}
 
@@ -463,12 +464,21 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
-		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
 		// The key's action may run after this returns (e.g. waiting for a double click), when the
 		// request's origin is no longer available: take it now
-		return handleKeyEvent(this, e, isRequestFromOtherApp(),
-				(i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
+		return onMediaButtonEvent(mediaButtonEvent, isRequestFromOtherApp());
+	}
+
+	// A media button delivered to Fermata's media button receiver, e.g. when its session isn't the active
+	// one: pressed outside Fermata, even though passing it on to the session would make it look local
+	public boolean onReceiverMediaButtonEvent(Intent mediaButtonEvent) {
+		return onMediaButtonEvent(mediaButtonEvent, true);
+	}
+
+	private boolean onMediaButtonEvent(Intent mediaButtonEvent, boolean otherApp) {
+		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
+		return handleKeyEvent(this, e, otherApp, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
 	}
 
 	public void close() {
@@ -571,6 +581,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				MediaEngine eng = getEngine();
 				assert (eng != null);
 				assert (eng.getSource() != null);
+				PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
 				if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 					Log.i("Audio focus request failed");
 					return completedVoid();
@@ -709,6 +720,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			// metadata, as playback publishes it directly: a stopped song stays on the card.
 			if ((session.getController().getMetadata() != null) ||
 					((st != STATE_NONE) && (st != STATE_STOPPED) && (st != STATE_ERROR))) return;
+			// Only while Android Auto is projecting: the screen is also left when it disconnects. The state
+			// is kept up to date off the main thread, from Android Auto's connection broadcasts.
+			if (carConnection != 2) return;
 			PreviousMediaApp.handBack(lib.getContext(), lib.getPrefs());
 		};
 		App.get().getHandler().postDelayed(carScreenLeft, 2000);
@@ -1367,6 +1381,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
+		PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
 
 		if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 			Log.i("Audio focus request failed");

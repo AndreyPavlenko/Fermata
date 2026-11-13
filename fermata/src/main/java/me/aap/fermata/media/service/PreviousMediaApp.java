@@ -7,13 +7,13 @@ import static android.view.KeyEvent.KEYCODE_MEDIA_PLAY;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
-import android.net.Uri;
+import android.os.SystemClock;
 import android.view.KeyEvent;
 
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
 
 import java.util.List;
@@ -28,37 +28,46 @@ import me.aap.utils.log.Log;
 final class PreviousMediaApp {
 	// Fermata started playing while the previous app had a session, i.e. it took over from it
 	private static boolean tookOver;
+	// The most recent other session when Fermata asked for the audio focus, and when: the app it's taking
+	// over from, which may deactivate its session on losing the focus, before Fermata starts playing
+	private static String takingOverFrom;
+	private static long takingOverTime;
 
 	private PreviousMediaApp() {
 	}
 
-	// Called when Fermata's session becomes active: remember the most recent other session
-	static void record(Context ctx, MediaLibPrefs prefs) {
-		List<MediaController> sessions = getSessions(ctx, prefs);
-		if (sessions == null) return;
-
-		for (MediaController c : sessions) {
-			String pkg = c.getPackageName();
-			if (pkg.equals(ctx.getPackageName())) continue;
-			prefs.applyStringPref(MediaLibPrefs.PREVIOUS_MEDIA_APP, pkg);
-			tookOver = true;
-			return;
-		}
+	// Called before Fermata asks for the audio focus to play
+	static void beforeTakeOver(Context ctx, MediaLibPrefs prefs) {
+		takingOverFrom = getMostRecentOther(ctx, prefs);
+		takingOverTime = SystemClock.elapsedRealtime();
 	}
 
-	// Called when Fermata's car screen is closed with nothing to resume
+	// Called when Fermata starts playing: remember the app it took over from
+	static void record(Context ctx, MediaLibPrefs prefs) {
+		// Taken before the audio focus request, unless that was too long ago to belong to this playback,
+		// e.g. a web video that started playing by itself
+		String pkg = (SystemClock.elapsedRealtime() - takingOverTime < 30000L) ? takingOverFrom :
+				getMostRecentOther(ctx, prefs);
+		takingOverFrom = null;
+		takingOverTime = 0L;
+		if (pkg == null) return;
+		prefs.applyStringPref(MediaLibPrefs.PREVIOUS_MEDIA_APP, pkg);
+		tookOver = true;
+	}
+
+	@Nullable
+	private static String getMostRecentOther(Context ctx, MediaLibPrefs prefs) {
+		List<MediaController> sessions = getSessions(ctx, prefs);
+		if (sessions == null) return null;
+		for (MediaController c : sessions) {
+			if (!c.getPackageName().equals(ctx.getPackageName())) return c.getPackageName();
+		}
+		return null;
+	}
+
+	// Called when Fermata's car screen is closed with nothing to resume, while Android Auto is projecting
 	static void handBack(Context ctx, MediaLibPrefs prefs) {
 		if (!tookOver) return;
-
-		// Same query as the Car App Library's CarConnection: is Android Auto projecting right now?
-		try (Cursor c = ctx.getContentResolver().query(Uri.parse("content://androidx.car.app.connection"),
-				new String[]{"CarConnectionState"}, null, null, null)) {
-			if ((c == null) || !c.moveToNext() || (c.getInt(0) != 2)) return; // 2: CONNECTION_TYPE_PROJECTION
-		} catch (Exception ex) {
-			Log.d(ex, "Failed to query the car connection");
-			return;
-		}
-
 		List<MediaController> sessions = getSessions(ctx, prefs);
 		if (sessions == null) return;
 		String pkg = prefs.getStringPref(MediaLibPrefs.PREVIOUS_MEDIA_APP);
