@@ -6,6 +6,7 @@ import static me.aap.utils.async.Completed.completedNull;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
@@ -78,9 +79,11 @@ public class M3uFileSystem implements VirtualFileSystem {
 		String url = file.getUrl();
 
 		if (url == null) {
-			Log.d("Not an m3u file: ", file);
+			Log.e("M3U file has no URL set: ", file);
 			return completedNull();
 		}
+
+		Log.d("Loading M3U file: url=", redactUrl(url));
 
 		if (url.startsWith("/") || url.startsWith("content://")) {
 			p.complete(file);
@@ -88,18 +91,38 @@ public class M3uFileSystem implements VirtualFileSystem {
 		}
 
 		File cacheFile = file.getLocalFile();
+		Log.d("Cache file: ", cacheFile);
 		Context ctx = App.get();
 		HttpFileDownloader d = createDownloader(ctx,url);
 		d.setReturnExistingOnFail(true);
 		d.download(url, cacheFile, file.getPrefs()).onCompletion((f, err) -> {
 			if (err == null) {
+				Log.i("M3U download completed: ", cacheFile, " (", cacheFile.length(), " bytes)");
 				p.complete(file);
 			} else {
+				Log.e(err, "M3U download failed: ", redactUrl(url));
 				p.completeExceptionally(err);
 			}
 		});
 
 		return p;
+	}
+
+	private static String redactUrl(String url) {
+		try {
+			Uri uri = Uri.parse(url);
+			String scheme = uri.getScheme();
+			String host = uri.getHost();
+
+			if ((scheme == null) || (host == null)) return "<redacted>";
+
+			StringBuilder safe = new StringBuilder(scheme).append("://").append(host);
+			int port = uri.getPort();
+			if (port != -1) safe.append(':').append(port);
+			return safe.append("/...").toString();
+		} catch (Exception ex) {
+			return "<redacted>";
+		}
 	}
 
 	public static final class Provider implements VirtualFileSystem.Provider {

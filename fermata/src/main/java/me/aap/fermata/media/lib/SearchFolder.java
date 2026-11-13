@@ -16,6 +16,7 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,10 +47,12 @@ public class SearchFolder extends BrowsableItemBase {
 			METADATA_KEY_ALBUM,
 			METADATA_KEY_DISPLAY_SUBTITLE
 	};
+	private final String name;
 	private final List<PlayableItem> itemsFound;
 
-	private SearchFolder(String id, @NonNull BrowsableItem parent, List<Item> items) {
+	private SearchFolder(String id, @NonNull BrowsableItem parent, List<Item> items, String name) {
 		super(id, parent, null);
+		this.name = name;
 		itemsFound = new ArrayList<>(items.size());
 		for (Item i : items) {
 			if (i instanceof PlayableItem) itemsFound.add((PlayableItem) i);
@@ -65,10 +68,10 @@ public class SearchFolder extends BrowsableItemBase {
 		});
 	}
 
-	private static SearchFolder create(String id, BrowsableItem parent, List<Item> items,
+	private static SearchFolder create(String id, BrowsableItem parent, List<Item> items, String name,
 																		 Function<List<PlayableItem>, BrowsableItem> parentSupplier) {
 		return (SearchFolder) parent.getLib()
-				.getOrCreateCachedItem(id, fid -> new SearchFolder(id, parent, items) {
+				.getOrCreateCachedItem(id, fid -> new SearchFolder(id, parent, items, name) {
 					@Override
 					public BrowsableItem getParent() {
 						if (parentSupplier == null) return parent;
@@ -81,9 +84,15 @@ public class SearchFolder extends BrowsableItemBase {
 
 	public static FutureSupplier<SearchFolder> search(
 			@NonNull String q, @NonNull Function<List<PlayableItem>, BrowsableItem> parentSupplier) {
+		return search(q, null, parentSupplier);
+	}
+
+	public static FutureSupplier<SearchFolder> search(
+			@NonNull String q, @Nullable String name,
+			@NonNull Function<List<PlayableItem>, BrowsableItem> parentSupplier) {
 		BrowsableItem parent = parentSupplier.apply(emptyList());
 		if (parent == null) return completedNull();
-		String id = SCHEME + q + '@' + parent.getId();
+		String id = SCHEME + ((name == null) ? "" : name + ':') + q + '@' + parent.getId();
 		MediaLib lib = parent.getLib();
 		Item cached = lib.getCachedItem(id);
 		if (cached != null) return completed((SearchFolder) cached);
@@ -94,19 +103,19 @@ public class SearchFolder extends BrowsableItemBase {
 					List<Item> items = new ArrayList<>(ids.size());
 					return Async.forEach(iid -> lib.getItem(iid)
 							.ifNotNull(items::add), ids).map(v ->
-							SearchFolder.create(id, parent, items, parentSupplier));
+							SearchFolder.create(id, parent, items, searchName(name, parent), parentSupplier));
 				} else {
-					return recursiveSearch(id, q, parent, parentSupplier);
+					return recursiveSearch(id, q, parent, searchName(name, parent), parentSupplier);
 				}
 			});
 		} else {
-			return App.get().execute(() -> recursiveSearch(id, q, parent, parentSupplier))
+			return App.get().execute(() -> recursiveSearch(id, q, parent, searchName(name, parent), parentSupplier))
 					.map(FutureSupplier::peek);
 		}
 	}
 
 	private static FutureSupplier<SearchFolder> recursiveSearch(
-			String id, String q, BrowsableItem parent,
+			String id, String q, BrowsableItem parent, String name,
 			Function<List<PlayableItem>, BrowsableItem> ps) {
 		Pattern p;
 		List<Pattern> words;
@@ -127,15 +136,15 @@ public class SearchFolder extends BrowsableItemBase {
 
 		return recursiveVoiceSearch(parent, p, words, exact, matches, ps).then(v -> {
 			if (exact.value != null) {
-				return completed(SearchFolder.create(id, parent, singletonList(exact.value), ps));
+				return completed(SearchFolder.create(id, parent, singletonList(exact.value), name, ps));
 			} else if (!matches.isEmpty()) {
-				return completed(SearchFolder.create(id, parent, matches, ps));
+				return completed(SearchFolder.create(id, parent, matches, name, ps));
 			} else {
 				return recursiveVoiceSearch(parent.getRoot(), p, words, exact, matches, ps).then(v2 -> {
 					if (exact.value != null) {
-						return completed(SearchFolder.create(id, parent, singletonList(exact.value), ps));
+						return completed(SearchFolder.create(id, parent, singletonList(exact.value), name, ps));
 					} else if (!matches.isEmpty()) {
-						return completed(SearchFolder.create(id, parent, matches, ps));
+						return completed(SearchFolder.create(id, parent, matches, name, ps));
 					} else {
 						return completedNull();
 					}
@@ -195,6 +204,10 @@ public class SearchFolder extends BrowsableItemBase {
 		return 2;
 	}
 
+	private static String searchName(String name, BrowsableItem parent) {
+		return (name == null) ? parent.getLib().getContext().getString(R.string.voice_search) : name;
+	}
+
 	public List<PlayableItem> getItemsFound() {
 		return itemsFound;
 	}
@@ -202,7 +215,7 @@ public class SearchFolder extends BrowsableItemBase {
 	@NonNull
 	@Override
 	public String getName() {
-		return getLib().getContext().getString(R.string.voice_search);
+		return name;
 	}
 
 	@NonNull

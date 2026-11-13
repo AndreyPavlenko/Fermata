@@ -44,6 +44,7 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 	@Override
 	public FutureSupplier<TvM3uFile> select(MainActivityDelegate a, List<? extends VirtualFileSystem> fs) {
 		PreferenceStore ps = PrefsHolder.instance;
+		if (!ps.hasPref(RESP_TIMEOUT, false)) ps.applyIntPref(RESP_TIMEOUT, 30);
 		return requestPrefs(a, ps).thenRun(ps::removeBroadcastListeners).then(ok -> {
 			if (!ok) return completedNull();
 			return load(ps, TvM3uFileSystem.getInstance()).cast();
@@ -176,7 +177,10 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		sub.addIntPref(o -> {
 			o.store = ps;
 			o.pref = RESP_TIMEOUT;
+			o.seekMin = 0;
+			o.seekMax = 300;
 			o.title = me.aap.fermata.R.string.m3u_playlist_timeout;
+			o.subtitle = R.string.response_timeout_hint;
 		});
 
 		return requestPrefs(a, prefs, ps);
@@ -214,7 +218,9 @@ public class TvM3uFileSystemProvider extends M3uFileSystemProvider {
 		f.setLogoUrl(ps.getStringPref(LOGO_URL));
 		f.setPreferEpgLogo(ps.getBooleanPref(LOGO_PREFER_EPG));
 		f.setEpgMaxAge(EPG_FILE_AGE);
-		f.setResponseTimeout(ps.getIntPref(RESP_TIMEOUT));
+		int timeout = ps.getIntPref(RESP_TIMEOUT);
+		if (timeout < 0) timeout = 30;
+		f.setResponseTimeout(timeout);
 	}
 
 	public static void removeSource(TvM3uFile f) {
