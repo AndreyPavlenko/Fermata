@@ -75,8 +75,12 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 					a.isCarActivity() ? YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) : null;
 			if ((v == null) && (state == null)) {
 				// Fresh start, e.g. the process was killed after Android Auto disconnected
-				v = addon.getLastVideo();
-				if (v != null) Log.i("Resuming the last video: ", v.url());
+				v = addon.getLastVideo(a.isCarActivity());
+				if (v != null) {
+					Log.i("Resuming the last video: ", v.url());
+					// A car screen opening shouldn't start playing by itself: it's ready to resume
+					if (a.isCarActivity()) v = new YoutubeWebView.Video(v.url(), v.position(), false, v.left());
+				}
 			}
 			YoutubeWebView.Video video = v;
 			webView.loadUrl(DEFAULT_URL);

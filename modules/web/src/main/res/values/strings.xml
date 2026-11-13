@@ -15,12 +15,18 @@
     <string name="video_quality">Video quality</string>
     <string name="open_on_start">Open on start</string>
     <string name="resume_last_video">Resume last video</string>
-    <string name="resume_last_video_sub">Continue the last unfinished video when YouTube opens, e.g. after the car is switched off</string>
+    <string name="resume_last_video_sub">Continue the last unfinished video when YouTube opens, e.g. after the car is switched off. In the car it opens paused</string>
+    <string name="resume_last_video_within">In the car, only if left within</string>
+    <string name="minutes_10">10 minutes</string>
+    <string name="minutes_30">30 minutes</string>
+    <string name="hours_1">1 hour</string>
+    <string name="hours_2">2 hours</string>
+    <string name="hours_6">6 hours</string>
+    <string name="hours_12">12 hours</string>
+    <string name="no_limit">No limit</string>
     <string name="auto_highest_video_quality">Auto-select highest video quality</string>
     <string name="youtube_player_controls">Use YouTube\'s controls in full screen</string>
     <string name="youtube_player_controls_sub">Instead of Fermata\'s control panel: progress bar, captions, settings, double-tap to seek</string>
-    <string name="reopen_video_min">Reopen the last video in the car within (minutes)</string>
-    <string name="reopen_video_min_sub">When Fermata\'s car screen opens again, e.g. after switching the car off, it reopens the video you left, if that was less than this long ago. 0 always opens YouTube\'s home</string>
     <string name="try_to_skip_ad">Try to skip advertising</string>
     <string name="sponsorblock" translatable="false">SponsorBlock</string>
     <string name="sponsorblock_sub">Skip crowd-sourced segments while watching YouTube.</string>
