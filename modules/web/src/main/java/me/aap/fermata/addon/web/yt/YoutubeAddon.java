@@ -7,6 +7,7 @@ import android.content.Context;
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.List;
 
@@ -43,6 +44,9 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_AUTO_HIGHEST_QUALITY =
 			Pref.b("YT_AUTO_HIGHEST_QUALITY", false);
 	private static final Pref<BooleanSupplier> YT_SKIP_ADD = AUTO ? Pref.b("YT_SKIP_ADD", true) : null;
+	private static final Pref<BooleanSupplier> YT_RESUME_LAST = Pref.b("YT_RESUME_LAST", true);
+	private static final Pref<Supplier<String>> YT_LAST_VIDEO_URL = Pref.s("YT_LAST_VIDEO_URL", (String) null);
+	private static final Pref<IntSupplier> YT_LAST_VIDEO_POS = Pref.i("YT_LAST_VIDEO_POS", 0);
 	private static final Pref<IntSupplier> YT_REOPEN_VIDEO_MIN =
 			AUTO ? Pref.i("YT_REOPEN_VIDEO_MIN", 10) : null;
 	private static final Pref<BooleanSupplier> YT_PLAYER_CONTROLS =
@@ -98,6 +102,13 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.store = getPreferenceStore();
 			o.pref = YT_OPEN_ON_START;
 			o.title = R.string.open_on_start;
+			o.visibility = visibility;
+		});
+		set.addBooleanPref(o -> {
+			o.store = getPreferenceStore();
+			o.pref = YT_RESUME_LAST;
+			o.title = R.string.resume_last_video;
+			o.subtitle = R.string.resume_last_video_sub;
 			o.visibility = visibility;
 		});
 		set.addBooleanPref(o -> {
@@ -211,6 +222,38 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {
 		return prefs.contains(YT_AUTO_HIGHEST_QUALITY);
+	}
+
+	/**
+	 * The last watched video at its saved position, or null if resuming is disabled or there is nothing
+	 * to resume. Unlike the activity state, this survives the process being killed when Android Auto
+	 * disconnects.
+	 */
+	@Nullable
+	YoutubeWebView.Video getLastVideo() {
+		PreferenceStore ps = getPreferenceStore();
+		if (!ps.getBooleanPref(YT_RESUME_LAST)) return null;
+		String url = ps.getStringPref(YT_LAST_VIDEO_URL);
+		if (!YoutubeUrls.isVideoUrl(url)) return null;
+		return new YoutubeWebView.Video(url, ps.getIntPref(YT_LAST_VIDEO_POS) * 1000L, true);
+	}
+
+	void saveLastVideo(@Nullable String url, int posSec) {
+		if (!getPreferenceStore().getBooleanPref(YT_RESUME_LAST) || !YoutubeUrls.isVideoUrl(url)) return;
+		try (PreferenceStore.Edit e = getPreferenceStore().editPreferenceStore()) {
+			e.setStringPref(YT_LAST_VIDEO_URL, url);
+			e.setIntPref(YT_LAST_VIDEO_POS, posSec);
+		}
+	}
+
+	// Only the saved video: another may have ended, e.g. a muted preview
+	void clearLastVideo(@Nullable String endedUrl) {
+		String id = YoutubeUrls.videoId(endedUrl);
+		if (id.isEmpty() || !id.equals(YoutubeUrls.videoId(getPreferenceStore().getStringPref(YT_LAST_VIDEO_URL)))) return;
+		try (PreferenceStore.Edit e = getPreferenceStore().editPreferenceStore()) {
+			e.removePref(YT_LAST_VIDEO_URL);
+			e.removePref(YT_LAST_VIDEO_POS);
+		}
 	}
 
 	enum VideoScale {

@@ -26,6 +26,7 @@ import me.aap.fermata.media.service.MediaSessionCallback;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
 import me.aap.fermata.ui.view.VideoView;
 import me.aap.utils.function.LongSupplier;
+import me.aap.utils.log.Log;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.pref.PreferenceStore.Pref;
 import me.aap.utils.pref.SharedPreferenceStore;
@@ -58,17 +59,11 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 		YoutubeAddon addon = AddonManager.get().getAddon(YoutubeAddon.class);
 		if (addon == null) return;
 
-		String url;
-		boolean pause;
-
-		if (state != null) {
-			url = state.getString("url", DEFAULT_URL);
-			pause = state.getBoolean("pause", false);
-		} else {
-			url = DEFAULT_URL;
-			pause = false;
-		}
-
+		String url = (state != null) ? state.getString("url", DEFAULT_URL) : DEFAULT_URL;
+		boolean pause = (state != null) && state.getBoolean("pause", false);
+		PreferenceStore ps = addon.getPreferenceStore();
+		long pos = ps.getLongPref(RESUME_POS);
+		ps.removePref(RESUME_POS);
 		MainActivityDelegate.getActivityDelegate(view.getContext()).onSuccess(a -> {
 			YoutubeWebView webView = a.findViewById(R.id.ytWebView);
 			VideoView videoView = a.findViewById(R.id.ytVideoView);
@@ -76,12 +71,14 @@ public class YoutubeFragment extends WebBrowserFragment implements FermataServic
 			YoutubeChromeClient chromeClient = new YoutubeChromeClient(webView, videoView);
 			webView.init(addon, webClient, chromeClient);
 			registerListeners(a);
-			PreferenceStore ps = addon.getPreferenceStore();
-			long pos = ps.getLongPref(RESUME_POS);
-			ps.removePref(RESUME_POS);
-			YoutubeWebView.Video video = (state != null) ? new YoutubeWebView.Video(url, pos, !pause) :
-					a.isCarActivity() ? YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) :
-							null;
+			YoutubeWebView.Video v = (state != null) ? new YoutubeWebView.Video(url, pos, !pause) :
+					a.isCarActivity() ? YoutubeWebView.takeOverVideo(a.getMediaSessionCallback(), webView) : null;
+			if ((v == null) && (state == null)) {
+				// Fresh start, e.g. the process was killed after Android Auto disconnected
+				v = addon.getLastVideo();
+				if (v != null) Log.i("Resuming the last video: ", v.url());
+			}
+			YoutubeWebView.Video video = v;
 			webView.loadUrl(DEFAULT_URL);
 			if ((video != null) && !DEFAULT_URL.equals(video.url())) a.post(() -> webView.reopen(video));
 		});
