@@ -86,6 +86,7 @@ dependencies {
     testImplementation libs.junit5Api
     testImplementation libs.junit5Engine
     testImplementation libs.junit5Params
+    testRuntimeOnly libs.junit5Launcher
     androidTestImplementation libs.androidxTestJunit
     androidTestImplementation libs.androidxTestEspresso
 
