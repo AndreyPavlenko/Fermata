@@ -7,7 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,6 +39,7 @@ public class FermataApplication extends NetSplitCompatApp {
 	private volatile AddonManager addonManager;
 	private int mirroringMode;
 	private ServiceConnection eventService;
+	private volatile boolean internetBlockedNotified;
 
 	public static FermataApplication get() {
 		return App.get();
@@ -46,6 +50,24 @@ public class FermataApplication extends NetSplitCompatApp {
 		super.onCreate();
 		vfsManager = new FermataVfsManager();
 		bitmapCache = new BitmapCache();
+	}
+
+	@Override
+	public boolean isInternetAccessBlocked() {
+		return !getPreferenceStore().getBooleanPref(MainActivityPrefs.ENABLE_INTERNET);
+	}
+
+	@Override
+	public void onInternetBlocked() {
+		if (!internetBlockedNotified) {
+			internetBlockedNotified = true;
+			new Handler(Looper.getMainLooper()).post(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(get(), R.string.internet_disabled_toast, Toast.LENGTH_LONG).show();
+				}
+			});
+		}
 	}
 
 	@Override

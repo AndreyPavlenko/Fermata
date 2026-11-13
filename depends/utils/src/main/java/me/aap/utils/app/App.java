@@ -70,6 +70,13 @@ public class App extends android.app.Application {
 		return null;
 	}
 
+	public boolean isInternetAccessBlocked() {
+		return false;
+	}
+
+	public void onInternetBlocked() {
+	}
+
 	public int getLogFlushDelay() {
 		return 1;
 	}

@@ -98,6 +98,12 @@ public class HttpConnection extends HttpResponseEncoder implements HttpResponseH
 	}
 
 	public static void connect(Opts o, BiFunction<HttpResponse, Throwable, FutureSupplier<?>> consumer) {
+		App a = App.get();
+		if ((a != null) && a.isInternetAccessBlocked()) {
+			a.onInternetBlocked();
+			consumer.apply(null, new IOException("Internet access is disabled"));
+			return;
+		}
 		if (!checkRedirect(o, consumer)) return;
 		ConnectionId id = new ConnectionId(o.url);
 		FutureSupplier<HttpConnection> f;

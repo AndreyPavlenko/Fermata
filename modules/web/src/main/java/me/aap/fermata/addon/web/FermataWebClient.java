@@ -5,7 +5,11 @@ import static me.aap.utils.ui.activity.ActivityListener.FRAGMENT_CONTENT_CHANGED
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
 import androidx.annotation.NonNull;
 import androidx.webkit.WebResourceErrorCompat;
@@ -14,6 +18,7 @@ import androidx.webkit.WebViewFeature;
 
 import me.aap.fermata.addon.web.yt.YoutubeFragment;
 import me.aap.fermata.ui.activity.MainActivityDelegate;
+import me.aap.utils.app.App;
 import me.aap.utils.async.Completed;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.async.Promise;
@@ -24,7 +29,21 @@ import me.aap.utils.log.Log;
  * @author Andrey Pavlenko
  */
 public class FermataWebClient extends WebViewClientCompat {
+	private static final String BLOCK_PAGE = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Blocked</title><meta name='viewport' content='width=device-width,initial-scale=1'><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5;color:#333;text-align:center;padding:20px}h1{font-size:1.5rem;margin-bottom:8px}p{color:#666}</style></head><body><div><h1>Internet access is disabled</h1><p>Enable it in Settings to browse the web.</p></div></body></html>";
 	BooleanConsumer loading;
+
+	@Override
+	public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+		if (request.isForMainFrame()) {
+			App app = App.get();
+			if (app.isInternetAccessBlocked()) {
+				app.onInternetBlocked();
+				return new WebResourceResponse("text/html", "UTF-8",
+						new ByteArrayInputStream(BLOCK_PAGE.getBytes(StandardCharsets.UTF_8)));
+			}
+		}
+		return null;
+	}
 
 	@Override
 	public void onPageStarted(WebView view, String url, Bitmap favicon) {

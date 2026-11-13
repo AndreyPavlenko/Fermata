@@ -646,6 +646,12 @@ public class SettingsFragment extends MainActivityFragment
 				o.onClick = () -> importPrefs(a);
 			});
 		}
+		sub1.addBooleanPref(o -> {
+			o.store = a.getPrefs();
+			o.pref = MainActivityPrefs.ENABLE_INTERNET;
+			o.title = R.string.internet_access;
+			o.subtitle = R.string.internet_access_sub;
+		});
 		if (BuildConfig.AUTO) {
 			sub1.addBooleanPref(o -> {
 				o.store = a.getPrefs();
