@@ -233,14 +233,18 @@ public class YoutubeWebView extends FermataWebView {
 				"  v.setAttribute('FermataAttached', 'true');\n" +
 				"  v.style.objectFit = '" + scale + "';\n" + debug +
 				"  if ((v.currentTime > 0) && !v.paused && !v.ended) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
-				"  v.addEventListener('playing', function(e) { videoEvent(v, " + JS_VIDEO_PLAYING + "); });\n" +
+				"  v.addEventListener('playing', function(e) {\n" +
+				"    v.fermataStopped = false;\n" +
+				"    videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  });\n" +
+				// Stopping resets the position: not one to resume from
 				"  v.addEventListener('pause', function(e) {\n" +
-				"    if (!v.muted && !isPreview(v)) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
+				"    if (!v.muted && !isPreview(v) && !v.fermataStopped) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
 				", Math.floor(v.currentTime) + '|' + fermataVideoUrl());\n" +
 				"    videoEvent(v, " + JS_VIDEO_PAUSED + ");\n" +
 				"  });\n" +
 				"  v.addEventListener('timeupdate', function(e) {\n" +
-				"    if (v.muted || isPreview(v)) return;\n" +
+				"    if (v.muted || isPreview(v) || v.fermataStopped) return;\n" +
 				"    var t = Math.floor(v.currentTime);\n" +
 				"    if ((t % 5 != 0) || (t === v.fermataProgress)) return;\n" +
 				"    v.fermataProgress = t;\n" +
@@ -333,8 +337,9 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void stop() {
+		// Not a position to save for "Resume last video": the listeners skip the progress of this reset
 		loadUrl("javascript:var v = document.querySelector('video');\n" +
-				"if (v != null) { v.currentTime = 0; v.pause(); }");
+				"if (v != null) { v.fermataStopped = true; v.currentTime = 0; v.pause(); }");
 	}
 
 	void prev() {
