@@ -200,6 +200,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
 	private boolean otherAppKeyAction;
+	// Fermata is playing, including moving on from one item to the next
+	private boolean playing;
 	private Runnable carScreenLeft;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
@@ -464,24 +466,18 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
-		// The key's action may run after this returns (e.g. waiting for a double click), when the
-		// request's origin is no longer available: take it now
-		return onMediaButtonEvent(mediaButtonEvent, isRequestFromOtherApp());
-	}
-
-	// A media button delivered to Fermata's media button receiver, e.g. when its session isn't the active
-	// one: pressed outside Fermata, even though passing it on to the session would make it look local
-	public boolean onReceiverMediaButtonEvent(Intent mediaButtonEvent) {
-		return onMediaButtonEvent(mediaButtonEvent, true);
-	}
-
-	private boolean onMediaButtonEvent(Intent mediaButtonEvent, boolean otherApp) {
 		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
-		return handleKeyEvent(this, e, otherApp, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
+		// A media button reaching the session was pressed outside Fermata (a headset, Android Auto, the
+		// system): Fermata's UI handles its keys itself and never sends them to its session. One may still
+		// look like Fermata's own, as AndroidX MediaButtonReceiver passes the buttons it receives on
+		// through Fermata's controller. This is also kept for an action that runs after this returns
+		// (e.g. waiting for a double click).
+		return handleKeyEvent(this, e, true, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
 	}
 
 	public void close() {
+		onCarScreenShown(); // Cancels a pending handoff, which would use a stale car connection state
 		onStop();
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
@@ -581,7 +577,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				MediaEngine eng = getEngine();
 				assert (eng != null);
 				assert (eng.getSource() != null);
-				PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
+				if (!playing) PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
 				if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 					Log.i("Audio focus request failed");
 					return completedVoid();
@@ -1381,7 +1377,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
-		PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
+		if (!playing) PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
 
 		if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 			Log.i("Audio focus request failed");
@@ -1416,16 +1412,26 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd).build();
 	}
 
-	private void setPlaybackState(PlaybackStateCompat state) {
-		PlaybackStateCompat prev = currentState;
-		currentState = state;
+	// Between items or while loading: Fermata hasn't given up playing
+	private static boolean isTransition(int st) {
+		return (st == STATE_CONNECTING) || (st == STATE_BUFFERING) || (st == STATE_SKIPPING_TO_NEXT) ||
+				(st == STATE_SKIPPING_TO_PREVIOUS) || (st == PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM);
+	}
 
-		if (state.getState() == STATE_PLAYING) {
+	private void setPlaybackState(PlaybackStateCompat state) {
+		currentState = state;
+		int st = state.getState();
+
+		if (st == STATE_PLAYING) {
 			// Starting to play takes over from the most recent other app, whether or not the session was
-			// active (it is from the start, and a stop or engine switch deactivates it)
-			if (prev.getState() != STATE_PLAYING) PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
+			// active (it is from the start, and a stop or engine switch deactivates it). Moving on to
+			// another item doesn't: Fermata hasn't given up playing in between.
+			if (!playing) PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
+			playing = true;
 			// Publish resumed playback through an active session so system media controls can discover it
 			if (!session.isActive()) session.setActive(true);
+		} else if (!isTransition(st)) {
+			playing = false;
 		}
 		session.setPlaybackState(state);
 		service.updateNotification(state.getState(), getCurrentItem());
