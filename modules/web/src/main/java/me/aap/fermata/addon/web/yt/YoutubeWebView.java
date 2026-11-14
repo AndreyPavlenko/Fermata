@@ -237,14 +237,15 @@ public class YoutubeWebView extends FermataWebView {
 				"    v.fermataStopped = false;\n" +
 				"    videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
 				"  });\n" +
-				// Stopping resets the position: not one to resume from
+				// Stopping resets the position: not one to resume from. A muted video on a video page is still
+				// playback (only a muted one elsewhere is a feed preview), so its progress is saved too.
 				"  v.addEventListener('pause', function(e) {\n" +
-				"    if (!v.muted && !isPreview(v) && !v.fermataStopped) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
+				"    if (!isPreview(v) && !v.fermataStopped) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
 				", Math.floor(v.currentTime) + '|' + fermataVideoUrl());\n" +
 				"    videoEvent(v, " + JS_VIDEO_PAUSED + ");\n" +
 				"  });\n" +
 				"  v.addEventListener('timeupdate', function(e) {\n" +
-				"    if (v.muted || isPreview(v) || v.fermataStopped) return;\n" +
+				"    if (isPreview(v) || v.fermataStopped) return;\n" +
 				"    var t = Math.floor(v.currentTime);\n" +
 				"    if ((t % 5 != 0) || (t === v.fermataProgress)) return;\n" +
 				"    v.fermataProgress = t;\n" +
