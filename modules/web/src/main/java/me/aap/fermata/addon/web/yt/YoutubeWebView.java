@@ -51,8 +51,6 @@ public class YoutubeWebView extends FermataWebView {
 	private YoutubeJsInterface js;
 	// Reported by the page: the bare video, which has no YouTube controls, is what's in full screen
 	boolean videoFullScreen;
-	// The video of a page that went with its screen, for the next car screen to open again
-	private static Video closedVideo;
 	// The video this page is reopening, set as it was once it starts playing
 	@Nullable
 	private Video reopening;
@@ -116,41 +114,23 @@ public class YoutubeWebView extends FermataWebView {
 	public void onActivityEvent(MainActivityDelegate a, long e) {
 		// The page is gone with its activity (e.g. Fermata Auto exited from Android Auto), and nothing
 		// can continue its playback. Switching to another section only detaches it until it's shown again.
-		if ((e == ACTIVITY_DESTROY) && (js != null)) {
-			// Only a car screen's video: a phone screen restores its own from its saved state.
-			// Its playback stops here, so it reopens paused rather than start playing out of the blue.
-			Video v = a.isCarActivity() ? getVideo(a.getMediaSessionCallback()) : null;
-			if (v != null) closedVideo = new Video(v.url(), v.position(), false, v.left());
-			js.pageRemoved();
-		}
+		if ((e == ACTIVITY_DESTROY) && (js != null)) js.pageRemoved();
 		super.onActivityEvent(a, e);
 	}
 
 	/**
-	 * A car screen has no saved state to restore its page from, as a phone screen does. When a new one
-	 * opens, take over the video of the previous one: its page may still be there, as a car that's
-	 * switched off doesn't always close it, or it may be gone with its video, which then reopens paused.
-	 * Only if it was left within the minutes set in the settings.
+	 * A car screen has no saved state to restore its page from, as a phone screen does, and a car that's
+	 * switched off doesn't always close it. When a new one opens while the previous one's page is still
+	 * there with a video, take it over, as "Resume last video" would, within its time limit. The previous
+	 * page is stopped either way.
 	 */
 	@Nullable
 	static Video takeOverVideo(MediaSessionCallback cb, YoutubeWebView page) {
-		Video v;
-
-		if ((cb.getEngine() instanceof YoutubeMediaEngine eng) && (eng.getWebView() != page)) {
-			v = eng.getWebView().getVideo(cb);
-			if (v == null) return null;
-			closedVideo = null;
-			cb.onStop();
-		} else {
-			v = closedVideo;
-			closedVideo = null;
-			if (v == null) return null;
-		}
-
-		// Only a video left recently: an older one would be unexpected, and the car screen opens on
-		// YouTube's home instead
-		long limit = page.getAddon().reopenVideoMinutes() * 60000L;
-		return ((limit > 0) && (SystemClock.elapsedRealtime() - v.left() <= limit)) ? v : null;
+		if (!(cb.getEngine() instanceof YoutubeMediaEngine eng) || (eng.getWebView() == page)) return null;
+		Video v = eng.getWebView().getVideo(cb);
+		if (v == null) return null;
+		cb.onStop();
+		return page.getAddon().isRecentInCar(v.left()) ? v : null;
 	}
 
 	// The video playing or paused on this page
@@ -253,14 +233,19 @@ public class YoutubeWebView extends FermataWebView {
 				"  v.setAttribute('FermataAttached', 'true');\n" +
 				"  v.style.objectFit = '" + scale + "';\n" + debug +
 				"  if ((v.currentTime > 0) && !v.paused && !v.ended) videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
-				"  v.addEventListener('playing', function(e) { videoEvent(v, " + JS_VIDEO_PLAYING + "); });\n" +
+				"  v.addEventListener('playing', function(e) {\n" +
+				"    v.fermataStopped = false;\n" +
+				"    videoEvent(v, " + JS_VIDEO_PLAYING + ");\n" +
+				"  });\n" +
+				// Stopping resets the position: not one to resume from. A muted video on a video page is still
+				// playback (only a muted one elsewhere is a feed preview), so its progress is saved too.
 				"  v.addEventListener('pause', function(e) {\n" +
-				"    if (!v.muted && !isPreview(v)) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
+				"    if (!isPreview(v) && !v.fermataStopped) " + JS_EVENT + "(" + JS_VIDEO_PROGRESS +
 				", Math.floor(v.currentTime) + '|' + fermataVideoUrl());\n" +
 				"    videoEvent(v, " + JS_VIDEO_PAUSED + ");\n" +
 				"  });\n" +
 				"  v.addEventListener('timeupdate', function(e) {\n" +
-				"    if (v.muted || isPreview(v)) return;\n" +
+				"    if (isPreview(v) || v.fermataStopped) return;\n" +
 				"    var t = Math.floor(v.currentTime);\n" +
 				"    if ((t % 5 != 0) || (t === v.fermataProgress)) return;\n" +
 				"    v.fermataProgress = t;\n" +
@@ -353,8 +338,9 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	void stop() {
+		// Not a position to save for "Resume last video": the listeners skip the progress of this reset
 		loadUrl("javascript:var v = document.querySelector('video');\n" +
-				"if (v != null) { v.currentTime = 0; v.pause(); }");
+				"if (v != null) { v.fermataStopped = true; v.currentTime = 0; v.pause(); }");
 	}
 
 	void prev() {
