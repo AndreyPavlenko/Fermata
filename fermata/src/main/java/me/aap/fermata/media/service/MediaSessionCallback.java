@@ -1412,10 +1412,11 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd).build();
 	}
 
-	// Between items or while loading: Fermata hasn't given up playing
+	// Between items, while loading or seeking: Fermata hasn't given up playing
 	private static boolean isTransition(int st) {
 		return (st == STATE_CONNECTING) || (st == STATE_BUFFERING) || (st == STATE_SKIPPING_TO_NEXT) ||
-				(st == STATE_SKIPPING_TO_PREVIOUS) || (st == PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM);
+				(st == STATE_SKIPPING_TO_PREVIOUS) || (st == PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM) ||
+				(st == STATE_FAST_FORWARDING) || (st == STATE_REWINDING);
 	}
 
 	private void setPlaybackState(PlaybackStateCompat state) {
