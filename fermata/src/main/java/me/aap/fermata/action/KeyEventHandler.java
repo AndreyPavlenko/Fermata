@@ -24,18 +24,20 @@ public class KeyEventHandler {
 
 	private static Worker worker;
 
-	public static boolean handleKeyEvent(MediaSessionCallback cb, KeyEvent event,
+	// otherApp: the key was pressed in another app, e.g. a headset or Android Auto, not in Fermata
+	public static boolean handleKeyEvent(MediaSessionCallback cb, KeyEvent event, boolean otherApp,
 																			 IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
-		return handleKeyEvent(cb, null, event, defaultHandler);
+		return handleKeyEvent(cb, null, event, otherApp, defaultHandler);
 	}
 
 	public static boolean handleKeyEvent(MainActivityDelegate activity, KeyEvent event,
 																			 IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
-		return handleKeyEvent(activity.getMediaSessionCallback(), activity, event, defaultHandler);
+		return handleKeyEvent(activity.getMediaSessionCallback(), activity, event, false, defaultHandler);
 	}
 
 	private static boolean handleKeyEvent(MediaSessionCallback cb,
 																				@Nullable MainActivityDelegate activity, KeyEvent event,
+																				boolean otherApp,
 																				IntObjectFunction<KeyEvent, Boolean> defaultHandler) {
 		Log.i((activity == null) ? "Media: " : "Activity: ", event);
 
@@ -64,7 +66,7 @@ public class KeyEventHandler {
 		var action = event.getAction();
 		if (action == ACTION_MULTIPLE) {
 			Log.i(k, " key double click");
-			performAction(dblClickAction, cb, activity, uptimeMillis());
+			performAction(dblClickAction, cb, activity, uptimeMillis(), otherApp);
 			return true;
 		}
 		if (action != ACTION_DOWN) return defaultHandler.apply(code, event);
@@ -77,19 +79,21 @@ public class KeyEventHandler {
 		if (((clickAction == dblClickAction) && (clickAction == longClickAction)) ||
 				((dblClickAction == Action.NONE) && (longClickAction == Action.NONE))) {
 			Log.i(k, " key click");
-			performAction(clickAction, cb, activity, uptimeMillis());
+			performAction(clickAction, cb, activity, uptimeMillis(), otherApp);
 			return true;
 		}
 
-		worker = new Worker(cb, activity, k, clickAction, dblClickAction, longClickAction);
+		worker = new Worker(cb, activity, k, clickAction, dblClickAction, longClickAction, otherApp);
 		return true;
 	}
 
 	private static void performAction(Action action, MediaSessionCallback cb,
-																		@Nullable MainActivityDelegate activity, long timestamp) {
+																		@Nullable MainActivityDelegate activity, long timestamp,
+																		boolean otherApp) {
 		worker = null;
 		Log.i("Performing action ", action);
-		action.getHandler().handle(cb, activity, timestamp);
+		if (otherApp) cb.runOtherAppKeyAction(() -> action.getHandler().handle(cb, activity, timestamp));
+		else action.getHandler().handle(cb, activity, timestamp);
 	}
 
 	private static final class Worker implements Runnable {
@@ -100,19 +104,21 @@ public class KeyEventHandler {
 		private final Action clickAction;
 		private final Action dblClickAction;
 		private final Action longClickAction;
+		private final boolean otherApp;
 		private final long time;
 		private long longClickTime;
 		private boolean up;
 
 
 		Worker(MediaSessionCallback cb, @Nullable MainActivityDelegate activity, Key key,
-					 Action clickAction, Action dblClickAction, Action longClickAction) {
+					 Action clickAction, Action dblClickAction, Action longClickAction, boolean otherApp) {
 			this.cb = cb;
 			this.activity = activity;
 			this.key = key;
 			this.clickAction = clickAction;
 			this.dblClickAction = dblClickAction;
 			this.longClickAction = longClickAction;
+			this.otherApp = otherApp;
 			time = longClickTime = uptimeMillis();
 			sched(DBL_CLICK_INTERVAL);
 		}
@@ -190,7 +196,7 @@ public class KeyEventHandler {
 		}
 
 		private void handle(Action action) {
-			performAction(action, cb, activity, time);
+			performAction(action, cb, activity, time, otherApp);
 		}
 
 		private void sched(long delay) {

@@ -126,6 +126,7 @@ import me.aap.fermata.media.pref.PlaybackControlPrefs;
 import me.aap.fermata.media.sub.SubGrid;
 import me.aap.fermata.media.sub.Subtitles;
 import me.aap.fermata.ui.view.VideoView;
+import me.aap.utils.app.App;
 import me.aap.utils.async.FutureSupplier;
 import me.aap.utils.collection.CollectionUtils;
 import me.aap.utils.event.EventBroadcaster;
@@ -185,7 +186,8 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private final BroadcastReceiver onCarConnection;
 	@Nullable
 	private final AsyncQueryHandler carConnectionQuery;
-	private boolean carConnected;
+	// CarConnection's type: 0 not connected, 1 native (Android Automotive), 2 projection (Android Auto)
+	private int carConnection;
 	private MediaEngine engine;
 	private boolean playOnPrepared;
 	private boolean playOnAudioFocus;
@@ -197,6 +199,10 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	private Queue<Prioritized<MediaSessionCallbackAssistant>> assistants;
 	private FutureSupplier<?> playerTask = completedVoid();
 	private MediaMetadataCompat metadata;
+	private boolean otherAppKeyAction;
+	// Fermata is playing, including moving on from one item to the next
+	private boolean playing;
+	private Runnable carScreenLeft;
 
 	public MediaSessionCallback(FermataMediaService service, MediaSessionCompat session,
 															MediaLib lib,
@@ -264,9 +270,9 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 			carConnectionQuery = new AsyncQueryHandler(ctx.getContentResolver()) {
 				@Override
 				protected void onQueryComplete(int token, Object cookie, Cursor c) {
-					boolean connected = isCarConnected(c);
-					if (carConnected && !connected) onPause();
-					carConnected = connected;
+					int connection = getCarConnection(c);
+					if ((carConnection != 0) && (connection == 0)) onPause();
+					carConnection = connection;
 				}
 			};
 			onCarConnection = new BroadcastReceiver() {
@@ -291,13 +297,13 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				new String[]{"CarConnectionState"}, null, null, null);
 	}
 
-	private static boolean isCarConnected(@Nullable Cursor c) {
-		if (c == null) return false;
+	private static int getCarConnection(@Nullable Cursor c) {
+		if (c == null) return 0;
 		try (c) {
-			return c.moveToNext() && (c.getInt(0) != 0); // 0: CONNECTION_TYPE_NOT_CONNECTED
+			return c.moveToNext() ? c.getInt(0) : 0;
 		} catch (Exception ex) {
 			Log.d(ex, "Failed to read the car connection");
-			return false;
+			return 0;
 		}
 	}
 
@@ -462,10 +468,16 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 	public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
 		KeyEvent e = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 		if (e == null) return super.onMediaButtonEvent(mediaButtonEvent);
-		return handleKeyEvent(this, e, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
+		// A media button reaching the session was pressed outside Fermata (a headset, Android Auto, the
+		// system): Fermata's UI handles its keys itself and never sends them to its session. One may still
+		// look like Fermata's own, as AndroidX MediaButtonReceiver passes the buttons it receives on
+		// through Fermata's controller. This is also kept for an action that runs after this returns
+		// (e.g. waiting for a double click).
+		return handleKeyEvent(this, e, true, (i, ke) -> super.onMediaButtonEvent(mediaButtonEvent));
 	}
 
 	public void close() {
+		onCarScreenShown(); // Cancels a pending handoff, which would use a stale car connection state
 		onStop();
 		session.setActive(false);
 		lib.getContext().unregisterReceiver(onNoisy);
@@ -509,12 +521,39 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 	@Override
 	public void onPlay() {
+		// Only a request from another app (e.g. Android Auto's autoplay or a media button) may be handed
+		// off. Fermata's own controls call this directly, outside of a session request.
+		boolean handOff = otherAppKeyAction || isRequestFromOtherApp();
 		playerTask.cancel();
-		playerTask = play();
+		playerTask = play(handOff);
+	}
+
+	// Within a session request: whether it came from another app
+	private boolean isRequestFromOtherApp() {
+		try {
+			return !lib.getContext().getPackageName()
+					.equals(session.getCurrentControllerInfo().getPackageName());
+		} catch (RuntimeException ex) {
+			return false;
+		}
+	}
+
+	// Run the action of a media button pressed in another app, which may run after the session request
+	public void runOtherAppKeyAction(Runnable action) {
+		otherAppKeyAction = true;
+		try {
+			action.run();
+		} finally {
+			otherAppKeyAction = false;
+		}
+	}
+
+	public FutureSupplier<Void> play() {
+		return play(false);
 	}
 
 	@SuppressLint("SwitchIntDef")
-	public FutureSupplier<Void> play() {
+	private FutureSupplier<Void> play(boolean handOff) {
 		PlaybackStateCompat state = getPlaybackState();
 
 		switch (state.getState()) {
@@ -524,6 +563,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 						playPreparedItem(i, lib.getLastPlayedPosition(i));
 					} else {
 						// Report it right away, rather than leaving the caller (e.g. Android Auto's autoplay) waiting
+						if (handOff) PreviousMediaApp.resume(lib.getContext(), lib.getPrefs());
 						setMetadata(null);
 						setPlaybackState(new PlaybackStateCompat.Builder().setActions(SUPPORTED_ACTIONS)
 								.setState(STATE_ERROR, 0, 1.0f)
@@ -537,6 +577,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				MediaEngine eng = getEngine();
 				assert (eng != null);
 				assert (eng.getSource() != null);
+				if (!playing) PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
 				if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 					Log.i("Audio focus request failed");
 					return completedVoid();
@@ -661,6 +702,32 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 		// An external item (e.g. a web video) can't be resumed from here, don't keep showing it
 		if (external) setMetadata(null);
 		return completedVoid();
+	}
+
+	// Fermata's car screen is no longer visible
+	public void onCarScreenLeft() {
+		onCarScreenShown();
+		// The screen is also left when the car disconnects: give Android Auto time to report it
+		carScreenLeft = () -> {
+			carScreenLeft = null;
+			if (!lib.getPrefs().getBooleanPref(MediaLibPrefs.RESUME_PREVIOUS_APP_ON_LEAVE)) return;
+			int st = getPlaybackState().getState();
+			// Only with nothing to offer, which is what a greyed out play button means. The session's
+			// metadata, as playback publishes it directly: a stopped song stays on the card.
+			if ((session.getController().getMetadata() != null) ||
+					((st != STATE_NONE) && (st != STATE_STOPPED) && (st != STATE_ERROR))) return;
+			// Only while Android Auto is projecting: the screen is also left when it disconnects. The state
+			// is kept up to date off the main thread, from Android Auto's connection broadcasts.
+			if (carConnection != 2) return;
+			PreviousMediaApp.handBack(lib.getContext(), lib.getPrefs());
+		};
+		App.get().getHandler().postDelayed(carScreenLeft, 2000);
+	}
+
+	public void onCarScreenShown() {
+		if (carScreenLeft == null) return;
+		App.get().getHandler().removeCallbacks(carScreenLeft);
+		carScreenLeft = null;
 	}
 
 	private void stopped() {
@@ -1310,6 +1377,7 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 
 		playOnPrepared = true;
 		tryAnotherEngine = true;
+		if (!playing) PreviousMediaApp.beforeTakeOver(lib.getContext(), lib.getPrefs());
 
 		if (!eng.requestAudioFocus(audioManager, audioFocusReq)) {
 			Log.i("Audio focus request failed");
@@ -1344,12 +1412,27 @@ public class MediaSessionCallback extends MediaSessionCompat.Callback
 				.addCustomAction(i.isFavoriteItem() ? customFavoritesRemove : customFavoritesAdd).build();
 	}
 
+	// Between items, while loading or seeking: Fermata hasn't given up playing
+	private static boolean isTransition(int st) {
+		return (st == STATE_CONNECTING) || (st == STATE_BUFFERING) || (st == STATE_SKIPPING_TO_NEXT) ||
+				(st == STATE_SKIPPING_TO_PREVIOUS) || (st == PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM) ||
+				(st == STATE_FAST_FORWARDING) || (st == STATE_REWINDING);
+	}
+
 	private void setPlaybackState(PlaybackStateCompat state) {
 		currentState = state;
-		// A stop or engine switch deactivates the session. Publish resumed playback
-		// through an active session so system media controls can discover it again.
-		if ((state.getState() == STATE_PLAYING) && !session.isActive()) {
-			session.setActive(true);
+		int st = state.getState();
+
+		if (st == STATE_PLAYING) {
+			// Starting to play takes over from the most recent other app, whether or not the session was
+			// active (it is from the start, and a stop or engine switch deactivates it). Moving on to
+			// another item doesn't: Fermata hasn't given up playing in between.
+			if (!playing) PreviousMediaApp.record(lib.getContext(), lib.getPrefs());
+			playing = true;
+			// Publish resumed playback through an active session so system media controls can discover it
+			if (!session.isActive()) session.setActive(true);
+		} else if (!isTransition(st)) {
+			playing = false;
 		}
 		session.setPlaybackState(state);
 		service.updateNotification(state.getState(), getCurrentItem());
