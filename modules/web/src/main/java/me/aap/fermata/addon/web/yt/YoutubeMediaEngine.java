@@ -74,6 +74,13 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void playing(String url) {
+		// A video reopened paused while something else is playing (e.g. music in Fermata): leave that
+		// playback alone and only pause the video, which then plays when it's started from the page
+		if (web.isReopeningPaused() && cb.isPlaying() && (cb.getEngine() != this)) {
+			web.videoPlaying();
+			return;
+		}
+
 		if (BuildConfig.AUTO && web.getAddon().skipAd()) {
 			web.loadUrl("javascript:\n" +
 					"if (document.querySelectorAll('.ad-showing').length > 0) {\n" +
@@ -110,6 +117,8 @@ class YoutubeMediaEngine implements MediaEngine, OverlayMenu.SelectionHandler {
 	}
 
 	void paused() {
+		// Only this page's playback: the video may be paused while another engine is playing
+		if (cb.getEngine() != this) return;
 		ignorePause = true;
 		cb.onPause();
 		ignorePause = false;

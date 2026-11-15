@@ -3,6 +3,7 @@ package me.aap.fermata.addon.web.yt;
 import static me.aap.fermata.BuildConfig.AUTO;
 
 import android.content.Context;
+import android.os.SystemClock;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.Keep;
@@ -19,8 +20,10 @@ import me.aap.fermata.addon.web.WebBrowserAddon;
 import me.aap.fermata.ui.activity.MainActivityPrefs;
 import me.aap.utils.function.BooleanSupplier;
 import me.aap.utils.function.IntSupplier;
+import me.aap.utils.function.LongSupplier;
 import me.aap.utils.function.Supplier;
 import me.aap.utils.misc.ChangeableCondition;
+import me.aap.utils.pref.PrefCondition;
 import me.aap.utils.pref.PreferenceSet;
 import me.aap.utils.pref.PreferenceStore;
 import me.aap.utils.ui.fragment.ActivityFragment;
@@ -47,8 +50,11 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 	private static final Pref<BooleanSupplier> YT_RESUME_LAST = Pref.b("YT_RESUME_LAST", true);
 	private static final Pref<Supplier<String>> YT_LAST_VIDEO_URL = Pref.s("YT_LAST_VIDEO_URL", (String) null);
 	private static final Pref<IntSupplier> YT_LAST_VIDEO_POS = Pref.i("YT_LAST_VIDEO_POS", 0);
-	private static final Pref<IntSupplier> YT_REOPEN_VIDEO_MIN =
-			AUTO ? Pref.i("YT_REOPEN_VIDEO_MIN", 10) : null;
+	// When it was last saved, i.e. last seen playing or paused, as System.currentTimeMillis()
+	private static final Pref<LongSupplier> YT_LAST_VIDEO_TIME = Pref.l("YT_LAST_VIDEO_TIME", 0L);
+	// Minutes since the last video was left within which a car screen resumes it, 0 for no limit
+	private static final Pref<IntSupplier> YT_RESUME_LAST_WITHIN =
+			AUTO ? Pref.i("YT_RESUME_LAST_WITHIN", 60) : null;
 	private static final Pref<BooleanSupplier> YT_PLAYER_CONTROLS =
 			Pref.b("YT_PLAYER_CONTROLS", false);
 	private static final Pref<BooleanSupplier> YT_PAUSE_ON_LEAVE = Pref.b("YT_PAUSE_ON_LEAVE", !AUTO);
@@ -111,6 +117,19 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 			o.subtitle = R.string.resume_last_video_sub;
 			o.visibility = visibility;
 		});
+		if (AUTO) {
+			set.addListPref(o -> {
+				o.store = getPreferenceStore();
+				o.pref = YT_RESUME_LAST_WITHIN;
+				o.title = R.string.resume_last_video_within;
+				o.subtitle = me.aap.fermata.R.string.string_format;
+				o.formatSubtitle = true;
+				o.values = new int[]{R.string.minutes_10, R.string.minutes_30, R.string.hours_1,
+						R.string.hours_2, R.string.hours_6, R.string.hours_12, R.string.no_limit};
+				o.valuesMap = new int[]{10, 30, 60, 120, 360, 720, 0};
+				o.visibility = visibility.and(PrefCondition.create(getPreferenceStore(), YT_RESUME_LAST));
+			});
+		}
 		set.addBooleanPref(o -> {
 			o.store = getPreferenceStore();
 			o.pref = YT_AUTO_HIGHEST_QUALITY;
@@ -133,14 +152,6 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		});
 
 		if (AUTO) {
-			set.addIntPref(o -> {
-				o.store = getPreferenceStore();
-				o.pref = YT_REOPEN_VIDEO_MIN;
-				o.seekMax = 60;
-				o.title = R.string.reopen_video_min;
-				o.subtitle = R.string.reopen_video_min_sub;
-				o.visibility = visibility;
-			});
 			set.addBooleanPref(o -> {
 				o.store = getPreferenceStore();
 				o.pref = YT_SKIP_ADD;
@@ -215,27 +226,34 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		return getPreferenceStore().getBooleanPref(YT_PLAYER_CONTROLS);
 	}
 
-	// Minutes within which a new car screen reopens the last video, 0 for never
-	int reopenVideoMinutes() {
-		return AUTO ? getPreferenceStore().getIntPref(YT_REOPEN_VIDEO_MIN) : 0;
-	}
-
 	boolean autoHighestQualityChanged(List<Pref<?>> prefs) {
 		return prefs.contains(YT_AUTO_HIGHEST_QUALITY);
 	}
 
 	/**
-	 * The last watched video at its saved position, or null if resuming is disabled or there is nothing
-	 * to resume. Unlike the activity state, this survives the process being killed when Android Auto
-	 * disconnects.
+	 * The last watched video at its saved position, or null if resuming is disabled or there is nothing to
+	 * resume. In the car, also if it was left longer ago than the set limit: it may well have been
+	 * finished elsewhere since. Unlike the activity state, this survives the process being killed when
+	 * Android Auto disconnects.
 	 */
 	@Nullable
-	YoutubeWebView.Video getLastVideo() {
+	YoutubeWebView.Video getLastVideo(boolean car) {
 		PreferenceStore ps = getPreferenceStore();
 		if (!ps.getBooleanPref(YT_RESUME_LAST)) return null;
 		String url = ps.getStringPref(YT_LAST_VIDEO_URL);
 		if (!YoutubeUrls.isVideoUrl(url)) return null;
-		return new YoutubeWebView.Video(url, ps.getIntPref(YT_LAST_VIDEO_POS) * 1000L, true);
+		long time = ps.getLongPref(YT_LAST_VIDEO_TIME);
+		long left = SystemClock.elapsedRealtime() - Math.max(0L, System.currentTimeMillis() - time);
+		if (car && !isRecentInCar(left)) return null;
+		return new YoutubeWebView.Video(url, ps.getIntPref(YT_LAST_VIDEO_POS) * 1000L, true, left);
+	}
+
+	// Whether a video left at this time, as SystemClock.elapsedRealtime(), may be resumed in the car
+	boolean isRecentInCar(long left) {
+		PreferenceStore ps = getPreferenceStore();
+		if (!AUTO || !ps.getBooleanPref(YT_RESUME_LAST)) return false;
+		long limit = ps.getIntPref(YT_RESUME_LAST_WITHIN) * 60000L;
+		return (limit == 0L) || (SystemClock.elapsedRealtime() - left <= limit);
 	}
 
 	void saveLastVideo(@Nullable String url, int posSec) {
@@ -243,6 +261,7 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		try (PreferenceStore.Edit e = getPreferenceStore().editPreferenceStore()) {
 			e.setStringPref(YT_LAST_VIDEO_URL, url);
 			e.setIntPref(YT_LAST_VIDEO_POS, posSec);
+			e.setLongPref(YT_LAST_VIDEO_TIME, System.currentTimeMillis());
 		}
 	}
 
@@ -253,6 +272,7 @@ public class YoutubeAddon extends WebBrowserAddon implements PreferenceStore.Lis
 		try (PreferenceStore.Edit e = getPreferenceStore().editPreferenceStore()) {
 			e.removePref(YT_LAST_VIDEO_URL);
 			e.removePref(YT_LAST_VIDEO_POS);
+			e.removePref(YT_LAST_VIDEO_TIME);
 		}
 	}
 
