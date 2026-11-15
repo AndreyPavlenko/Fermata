@@ -72,13 +72,14 @@ final class PreviousMediaApp {
 		if (sessions == null) return;
 		String pkg = prefs.getStringPref(MediaLibPrefs.PREVIOUS_MEDIA_APP);
 
+		// Not if another app is already playing, the previous one or any other: leaving Fermata's screen
+		// mustn't interrupt it
 		for (MediaController c : sessions) {
-			if (!c.getPackageName().equals(pkg)) continue;
+			if (c.getPackageName().equals(ctx.getPackageName())) continue;
 			PlaybackState st = c.getPlaybackState();
-			if ((st != null) && (st.getState() == PlaybackState.STATE_PLAYING)) {
-				tookOver = false;
-				return;
-			}
+			if ((st == null) || (st.getState() != PlaybackState.STATE_PLAYING)) continue;
+			if (c.getPackageName().equals(pkg)) tookOver = false;
+			return;
 		}
 
 		resume(ctx, prefs);
