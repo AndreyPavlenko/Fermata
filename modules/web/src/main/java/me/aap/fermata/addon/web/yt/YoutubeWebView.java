@@ -164,6 +164,10 @@ public class YoutubeWebView extends FermataWebView {
 	}
 
 	// Called when this page's video starts playing
+	boolean isReopeningPaused() {
+		return (reopening != null) && !reopening.playing();
+	}
+
 	void videoPlaying() {
 		Video v = reopening;
 		if (v == null) return;
