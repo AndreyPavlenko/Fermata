@@ -216,11 +216,17 @@ abstract class HttpMessageEncoder<M extends HttpMessage> implements ByteBufferSu
 	static <T extends HttpMessageBase> void initMessage(T m, ByteBuffer bb) {
 		m.buf = bb;
 		m.headerEnd = bb.position();
+		boolean noContentLen = (m.contentLen == 0);
 		long contentLen = m.getContentLength();
 
 		if (contentLen > 0) {
 			if (bb.remaining() >= contentLen) bb.position((int) (bb.position() + contentLen));
 			else bb.position(bb.limit());
+		} else if (noContentLen && (m.transferEncodingStart == -1) && (m instanceof HttpResponse)
+				&& m.isConnectionClose()) {
+			// The payload is everything until the server closes the connection
+			m.closeDelimited = true;
+			bb.position(bb.limit());
 		}
 
 		m.payloadEnd = bb.position();
